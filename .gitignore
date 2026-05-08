@@ -7,3 +7,9 @@ artifacts/journal.db
 artifacts/*.db
 *.pyc
 artifacts/models/transformer_model/model.safetensors
+*.safetensors
+*.pt
+*.pth
+*.pkl
+*.joblib
+artifacts/models/
