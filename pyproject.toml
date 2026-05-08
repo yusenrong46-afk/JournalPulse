@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "emotion-journal-assistant"
+version = "0.1.0"
+description = "A wellness-oriented emotion journaling assistant with training, API, and Streamlit UI."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Thomas" }]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

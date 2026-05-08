@@ -1,0 +1,575 @@
+{
+  "generated_at": "2026-04-14T02:41:12.697604+00:00",
+  "selected_model": "transformer",
+  "models": {
+    "logistic_regression": {
+      "accuracy": 0.8295,
+      "macro_f1": 0.7264,
+      "classification_report": {
+        "sadness": {
+          "precision": 0.8634146341463415,
+          "recall": 0.9139414802065404,
+          "f1-score": 0.8879598662207357,
+          "support": 581.0
+        },
+        "joy": {
+          "precision": 0.7710706150341685,
+          "recall": 0.9741007194244604,
+          "f1-score": 0.8607755880483153,
+          "support": 695.0
+        },
+        "love": {
+          "precision": 0.8636363636363636,
+          "recall": 0.4779874213836478,
+          "f1-score": 0.6153846153846154,
+          "support": 159.0
+        },
+        "anger": {
+          "precision": 0.9120370370370371,
+          "recall": 0.7163636363636363,
+          "f1-score": 0.8024439918533605,
+          "support": 275.0
+        },
+        "fear": {
+          "precision": 0.8702702702702703,
+          "recall": 0.71875,
+          "f1-score": 0.7872860635696821,
+          "support": 224.0
+        },
+        "surprise": {
+          "precision": 0.9444444444444444,
+          "recall": 0.25757575757575757,
+          "f1-score": 0.40476190476190477,
+          "support": 66.0
+        },
+        "accuracy": 0.8295,
+        "macro avg": {
+          "precision": 0.8708122274281043,
+          "recall": 0.6764531691590071,
+          "f1-score": 0.7264353383064357,
+          "support": 2000.0
+        },
+        "weighted avg": {
+          "precision": 0.8414701103825062,
+          "recall": 0.8295,
+          "f1-score": 0.8178641657637746,
+          "support": 2000.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          531,
+          37,
+          1,
+          9,
+          3,
+          0
+        ],
+        [
+          7,
+          677,
+          10,
+          0,
+          1,
+          0
+        ],
+        [
+          11,
+          69,
+          76,
+          3,
+          0,
+          0
+        ],
+        [
+          30,
+          41,
+          1,
+          197,
+          6,
+          0
+        ],
+        [
+          29,
+          27,
+          0,
+          6,
+          161,
+          1
+        ],
+        [
+          7,
+          27,
+          0,
+          1,
+          14,
+          17
+        ]
+      ],
+      "examples": [
+        {
+          "text": "im feeling rather rotten so im not very ambitious right now",
+          "true_label": "sadness",
+          "predicted_label": "sadness",
+          "confidence": 0.5072,
+          "correct": true
+        },
+        {
+          "text": "im updating my blog because i feel shitty",
+          "true_label": "sadness",
+          "predicted_label": "sadness",
+          "confidence": 0.8518,
+          "correct": true
+        },
+        {
+          "text": "i felt anger when at the end of a telephone call",
+          "true_label": "anger",
+          "predicted_label": "sadness",
+          "confidence": 0.3033,
+          "correct": false
+        },
+        {
+          "text": "i jest i feel grumpy tired and pre menstrual which i probably am but then again its only been a week and im about as fit as a walrus on vacation for the summer",
+          "true_label": "anger",
+          "predicted_label": "joy",
+          "confidence": 0.3089,
+          "correct": false
+        },
+        {
+          "text": "i don t feel particularly agitated",
+          "true_label": "fear",
+          "predicted_label": "anger",
+          "confidence": 0.5551,
+          "correct": false
+        }
+      ]
+    },
+    "linear_svc": {
+      "accuracy": 0.8795,
+      "macro_f1": 0.8224,
+      "classification_report": {
+        "sadness": {
+          "precision": 0.9054054054054054,
+          "recall": 0.9225473321858864,
+          "f1-score": 0.9138959931798807,
+          "support": 581.0
+        },
+        "joy": {
+          "precision": 0.8841961852861036,
+          "recall": 0.9338129496402877,
+          "f1-score": 0.9083275017494752,
+          "support": 695.0
+        },
+        "love": {
+          "precision": 0.7862068965517242,
+          "recall": 0.7169811320754716,
+          "f1-score": 0.75,
+          "support": 159.0
+        },
+        "anger": {
+          "precision": 0.8984962406015038,
+          "recall": 0.8690909090909091,
+          "f1-score": 0.8835489833641405,
+          "support": 275.0
+        },
+        "fear": {
+          "precision": 0.8755980861244019,
+          "recall": 0.8169642857142857,
+          "f1-score": 0.8452655889145496,
+          "support": 224.0
+        },
+        "surprise": {
+          "precision": 0.7037037037037037,
+          "recall": 0.5757575757575758,
+          "f1-score": 0.6333333333333333,
+          "support": 66.0
+        },
+        "accuracy": 0.8795,
+        "macro avg": {
+          "precision": 0.8422677529454736,
+          "recall": 0.8058590307440694,
+          "f1-score": 0.8223952334235634,
+          "support": 2000.0
+        },
+        "weighted avg": {
+          "precision": 0.8776143338839154,
+          "recall": 0.8795,
+          "f1-score": 0.8778133240476969,
+          "support": 2000.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          536,
+          18,
+          2,
+          18,
+          7,
+          0
+        ],
+        [
+          10,
+          649,
+          27,
+          1,
+          1,
+          7
+        ],
+        [
+          4,
+          38,
+          114,
+          1,
+          0,
+          2
+        ],
+        [
+          18,
+          11,
+          2,
+          239,
+          5,
+          0
+        ],
+        [
+          21,
+          7,
+          0,
+          6,
+          183,
+          7
+        ],
+        [
+          3,
+          11,
+          0,
+          1,
+          13,
+          38
+        ]
+      ],
+      "examples": [
+        {
+          "text": "im feeling rather rotten so im not very ambitious right now",
+          "true_label": "sadness",
+          "predicted_label": "sadness",
+          "confidence": 0.4455,
+          "correct": true
+        },
+        {
+          "text": "im updating my blog because i feel shitty",
+          "true_label": "sadness",
+          "predicted_label": "sadness",
+          "confidence": 0.7365,
+          "correct": true
+        },
+        {
+          "text": "i don t feel particularly agitated",
+          "true_label": "fear",
+          "predicted_label": "anger",
+          "confidence": 0.4151,
+          "correct": false
+        },
+        {
+          "text": "i pay attention it deepens into a feeling of being invaded and helpless",
+          "true_label": "fear",
+          "predicted_label": "sadness",
+          "confidence": 0.3328,
+          "correct": false
+        },
+        {
+          "text": "im not sure the feeling of loss will ever go away but it may dull to a sweet feeling of nostalgia at what i shared in this life with my dad and the luck i had to have a dad for years",
+          "true_label": "sadness",
+          "predicted_label": "joy",
+          "confidence": 0.2492,
+          "correct": false
+        }
+      ]
+    },
+    "classical_explainer": {
+      "accuracy": 0.8795,
+      "macro_f1": 0.8224,
+      "classification_report": {
+        "sadness": {
+          "precision": 0.9054054054054054,
+          "recall": 0.9225473321858864,
+          "f1-score": 0.9138959931798807,
+          "support": 581.0
+        },
+        "joy": {
+          "precision": 0.8841961852861036,
+          "recall": 0.9338129496402877,
+          "f1-score": 0.9083275017494752,
+          "support": 695.0
+        },
+        "love": {
+          "precision": 0.7862068965517242,
+          "recall": 0.7169811320754716,
+          "f1-score": 0.75,
+          "support": 159.0
+        },
+        "anger": {
+          "precision": 0.8984962406015038,
+          "recall": 0.8690909090909091,
+          "f1-score": 0.8835489833641405,
+          "support": 275.0
+        },
+        "fear": {
+          "precision": 0.8755980861244019,
+          "recall": 0.8169642857142857,
+          "f1-score": 0.8452655889145496,
+          "support": 224.0
+        },
+        "surprise": {
+          "precision": 0.7037037037037037,
+          "recall": 0.5757575757575758,
+          "f1-score": 0.6333333333333333,
+          "support": 66.0
+        },
+        "accuracy": 0.8795,
+        "macro avg": {
+          "precision": 0.8422677529454736,
+          "recall": 0.8058590307440694,
+          "f1-score": 0.8223952334235634,
+          "support": 2000.0
+        },
+        "weighted avg": {
+          "precision": 0.8776143338839154,
+          "recall": 0.8795,
+          "f1-score": 0.8778133240476969,
+          "support": 2000.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          536,
+          18,
+          2,
+          18,
+          7,
+          0
+        ],
+        [
+          10,
+          649,
+          27,
+          1,
+          1,
+          7
+        ],
+        [
+          4,
+          38,
+          114,
+          1,
+          0,
+          2
+        ],
+        [
+          18,
+          11,
+          2,
+          239,
+          5,
+          0
+        ],
+        [
+          21,
+          7,
+          0,
+          6,
+          183,
+          7
+        ],
+        [
+          3,
+          11,
+          0,
+          1,
+          13,
+          38
+        ]
+      ],
+      "examples": [
+        {
+          "text": "im feeling rather rotten so im not very ambitious right now",
+          "true_label": "sadness",
+          "predicted_label": "sadness",
+          "confidence": 0.4455,
+          "correct": true
+        },
+        {
+          "text": "im updating my blog because i feel shitty",
+          "true_label": "sadness",
+          "predicted_label": "sadness",
+          "confidence": 0.7365,
+          "correct": true
+        },
+        {
+          "text": "i don t feel particularly agitated",
+          "true_label": "fear",
+          "predicted_label": "anger",
+          "confidence": 0.4151,
+          "correct": false
+        },
+        {
+          "text": "i pay attention it deepens into a feeling of being invaded and helpless",
+          "true_label": "fear",
+          "predicted_label": "sadness",
+          "confidence": 0.3328,
+          "correct": false
+        },
+        {
+          "text": "im not sure the feeling of loss will ever go away but it may dull to a sweet feeling of nostalgia at what i shared in this life with my dad and the luck i had to have a dad for years",
+          "true_label": "sadness",
+          "predicted_label": "joy",
+          "confidence": 0.2492,
+          "correct": false
+        }
+      ],
+      "model_name": "tfidf-linearsvc"
+    },
+    "transformer": {
+      "accuracy": 0.9,
+      "macro_f1": 0.86,
+      "classification_report": {
+        "sadness": {
+          "precision": 0.9473684210526315,
+          "recall": 0.9294320137693631,
+          "f1-score": 0.9383145091225021,
+          "support": 581.0
+        },
+        "joy": {
+          "precision": 0.9392592592592592,
+          "recall": 0.9122302158273381,
+          "f1-score": 0.9255474452554745,
+          "support": 695.0
+        },
+        "love": {
+          "precision": 0.7616279069767442,
+          "recall": 0.8238993710691824,
+          "f1-score": 0.7915407854984894,
+          "support": 159.0
+        },
+        "anger": {
+          "precision": 0.8661971830985915,
+          "recall": 0.8945454545454545,
+          "f1-score": 0.8801431127012522,
+          "support": 275.0
+        },
+        "fear": {
+          "precision": 0.8646288209606987,
+          "recall": 0.8839285714285714,
+          "f1-score": 0.8741721854304636,
+          "support": 224.0
+        },
+        "surprise": {
+          "precision": 0.7285714285714285,
+          "recall": 0.7727272727272727,
+          "f1-score": 0.75,
+          "support": 66.0
+        },
+        "accuracy": 0.9,
+        "macro avg": {
+          "precision": 0.8512755033198922,
+          "recall": 0.8694604832278636,
+          "f1-score": 0.8599530063346968,
+          "support": 2000.0
+        },
+        "weighted avg": {
+          "precision": 0.9021359352795448,
+          "recall": 0.9,
+          "f1-score": 0.9008125573381283,
+          "support": 2000.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          540,
+          8,
+          3,
+          20,
+          10,
+          0
+        ],
+        [
+          9,
+          634,
+          38,
+          5,
+          3,
+          6
+        ],
+        [
+          4,
+          23,
+          131,
+          1,
+          0,
+          0
+        ],
+        [
+          11,
+          5,
+          0,
+          246,
+          12,
+          1
+        ],
+        [
+          5,
+          1,
+          0,
+          8,
+          198,
+          12
+        ],
+        [
+          1,
+          4,
+          0,
+          4,
+          6,
+          51
+        ]
+      ],
+      "examples": [
+        {
+          "text": "im feeling rather rotten so im not very ambitious right now",
+          "true_label": "sadness",
+          "predicted_label": "sadness",
+          "confidence": 0.9549,
+          "correct": true
+        },
+        {
+          "text": "im updating my blog because i feel shitty",
+          "true_label": "sadness",
+          "predicted_label": "sadness",
+          "confidence": 0.9914,
+          "correct": true
+        },
+        {
+          "text": "i explain why i clung to a relationship with a boy who was in many ways immature and uncommitted despite the excitement i should have been feeling for getting accepted into the masters program at the university of virginia",
+          "true_label": "joy",
+          "predicted_label": "fear",
+          "confidence": 0.5344,
+          "correct": false
+        },
+        {
+          "text": "i don t feel particularly agitated",
+          "true_label": "fear",
+          "predicted_label": "anger",
+          "confidence": 0.7615,
+          "correct": false
+        },
+        {
+          "text": "im not sure the feeling of loss will ever go away but it may dull to a sweet feeling of nostalgia at what i shared in this life with my dad and the luck i had to have a dad for years",
+          "true_label": "sadness",
+          "predicted_label": "love",
+          "confidence": 0.8764,
+          "correct": false
+        }
+      ]
+    }
+  }
+}
