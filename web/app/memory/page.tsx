@@ -1,0 +1,3 @@
+export default function MemoryPage() {
+  return <div className="page-wrap narrow reveal"><header className="page-header"><div><span className="kicker">Episodic memory</span><h1>Nothing remembered without provenance.</h1></div></header><section className="flow-sheet"><span className="folio">Feature gate / closed</span><h2>Personal memory is intentionally disabled.</h2><p>The memory layer will open only after vector, recency, hybrid, and graph retrieval are evaluated for relevance, stale-belief reinforcement, privacy leakage, and deletion correctness.</p><div className="evidence-slip"><span>Required before activation</span><p>Explicit consent · visible source episodes · invalidation · export · deletion · retrieval benchmark</p></div></section></div>;
+}

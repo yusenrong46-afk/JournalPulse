@@ -5,33 +5,22 @@ services:
     plan: starter
     dockerfilePath: ./Dockerfile.api
     healthCheckPath: /ready
-    # A persistent disk keeps the SQLite journal across restarts/redeploys.
-    # Without this, /tmp is wiped on every restart and all entries are lost.
-    disk:
-      name: journalpulse-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: JOURNALPULSE_ENV
         value: production
-      - key: JOURNALPULSE_DEPLOYMENT_MODE
-        value: api
-      - key: JOURNALPULSE_DB_PATH
-        value: /data/journalpulse.db
-      # REQUIRED for serving: the trained model is not committed to git (too large).
-      # Push it to the Hugging Face Hub and set this to "<user>/<model>".
-      # See docs/PRODUCTION_DEPLOYMENT.md.
-      - key: JOURNALPULSE_HF_MODEL_ID
-        sync: false
-      # Optional: enable LLM-assisted classification + dynamic recommendations.
-      # Recommended classifier mode when a key is set: "hybrid".
-      - key: JOURNALPULSE_CLASSIFIER_MODE
-        value: calibrated
-      - key: JOURNALPULSE_LLM_MODE
-        value: "off"
+      - key: JOURNALPULSE_LLM_ENABLED
+        value: "true"
+      - key: JOURNALPULSE_LLM_ZDR
+        value: "true"
+      - key: JOURNALPULSE_MEMORY_ENABLED
+        value: "false"
+      - key: JOURNALPULSE_ADAPTIVE_POLICY_ENABLED
+        value: "false"
+      - key: JOURNALPULSE_LLM_MODEL
+        value: openai/gpt-5.4-mini
       - key: JOURNALPULSE_LLM_API_KEY
         sync: false
-      - key: JOURNALPULSE_LLM_BASE_URL
+      - key: SUPABASE_URL
         sync: false
-      - key: JOURNALPULSE_LLM_MODEL
+      - key: SUPABASE_ANON_KEY
         sync: false

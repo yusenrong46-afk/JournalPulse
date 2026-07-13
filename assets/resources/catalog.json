@@ -621,6 +621,38 @@
     "reviewed_at": "2026-05-09"
   },
   {
+    "id": "support_988_canada",
+    "title": "9-8-8 Suicide Crisis Helpline — Canada",
+    "url": "https://988.ca/",
+    "resource_type": "support",
+    "coping_style": "read",
+    "provider": "9-8-8 Canada",
+    "embed_kind": "link",
+    "duration_minutes": 1,
+    "summary": "Immediate, 24/7 suicide crisis support in Canada by call or text to 9-8-8.",
+    "emotion_tags": [
+      "sadness",
+      "fear",
+      "anger",
+      "surprise",
+      "love",
+      "joy"
+    ],
+    "tone_tags": [
+      "support",
+      "urgent",
+      "human"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": true,
+    "goal_tags": [
+      "connection",
+      "planning"
+    ],
+    "source_tier": "crisis_support",
+    "reviewed_at": "2026-07-12"
+  },
+  {
     "id": "support_988",
     "title": "988 Lifeline",
     "url": "https://988lifeline.org/",

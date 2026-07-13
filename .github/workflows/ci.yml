@@ -1,49 +1,40 @@
-name: ci
+name: release-gates
 
 on:
   push:
   pull_request:
 
 jobs:
-  test:
+  backend:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          lfs: true
+          python-version: "3.12"
+          cache: pip
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen --extra dev
+      - run: uv run ruff check src tests scripts research
+      - run: uv run mypy src
+      - run: uv run pytest --cov=journalpulse --cov-report=term-missing
+      - run: uv run python scripts/validate_resources.py
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.9"
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
-          python -m pip install ruff mypy
-
-      - name: Lint (ruff)
-        continue-on-error: true
-        run: python -m ruff check src tests
-
-      - name: Type check (mypy)
-        continue-on-error: true
-        run: python -m mypy src
-
-      - name: Run tests
-        env:
-          PYTHONPATH: src
-        run: python -m pytest -q
-
-      - name: Validate resources
-        env:
-          PYTHONPATH: src
-        run: python scripts/validate_resources.py
-
-      - name: Verify training candidate config
-        env:
-          PYTHONPATH: src
-        run: python scripts/train.py --dry-run-candidates --transformers distilroberta-base,bert-base-uncased
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

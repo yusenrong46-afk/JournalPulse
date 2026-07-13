@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="JournalPulse">
+  <rect width="512" height="512" fill="#172631"/>
+  <rect x="116" y="104" width="280" height="304" fill="#fffaf0"/>
+  <path d="M166 184h180M166 248h108M166 312h148" stroke="#2f6f6a" stroke-width="18"/>
+  <path d="M116 104h52v304h-52" fill="#b85e3d"/>
+</svg>
