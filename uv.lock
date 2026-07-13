@@ -348,6 +348,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
     { name = "pydantic" },
+    { name = "python-dotenv" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -388,6 +389,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3,<9" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5,<7" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=5,<7" },
+    { name = "python-dotenv", specifier = ">=1.0,<2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9,<1" },
     { name = "scikit-learn", marker = "extra == 'research'", specifier = ">=1.5,<2" },
     { name = "streamlit", marker = "extra == 'research'", specifier = ">=1.41,<2" },

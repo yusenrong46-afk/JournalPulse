@@ -133,8 +133,8 @@ def test_health_is_liveness_only_and_readiness_is_explicit(tmp_path: Path):
     with TestClient(app) as client:
         assert client.get("/health").json() == {"status": "ok"}
         readiness = client.get("/ready").json()
-        assert readiness["status"] == "ready"
-        assert readiness["checks"]["llm"] == "optional:not_configured"
+        assert readiness["status"] == "not_ready"
+        assert readiness["checks"]["llm"] == "not_ready:not_configured"
 
 
 def test_analysis_is_transient_and_can_be_corrected_before_save(tmp_path: Path):

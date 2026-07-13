@@ -51,6 +51,8 @@ Requires Python 3.12 and Node 22.
 ```bash
 uv sync --frozen --extra dev --extra research
 cp .env.example .env
+# Add a newly rotated OpenRouter key to JOURNALPULSE_LLM_API_KEY in .env.
+uv run python scripts/verify_openrouter.py
 uv run uvicorn journalpulse.api:app --reload --port 8000
 ```
 
@@ -64,8 +66,11 @@ npm run dev
 
 Open `http://localhost:3000`. Local development uses the configured development UUID; production rejects
 that header and requires a Supabase bearer token. Apply the SQL migration in `supabase/migrations/` before
-using Supabase. Put credentials only in local or deployment secrets. Never reuse a credential exposed in
-chat or source control.
+using Supabase. The API automatically loads the repository's ignored `.env` file, while real process
+environment variables take precedence. `OPENROUTER_API_KEY` is accepted as an alias. Put credentials only
+in local or deployment secrets. Never reuse a credential exposed in chat or source control.
+`/ready` remains `not_ready` while the LLM feature is enabled without a key; the live verification
+command confirms that the configured provider accepts a real schema-constrained request.
 
 The internal console is separate:
 

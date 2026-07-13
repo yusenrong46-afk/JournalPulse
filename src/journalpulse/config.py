@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -41,13 +43,17 @@ class Settings:
 
 
 def load_settings() -> Settings:
+    # Environment variables remain authoritative; .env only fills missing local values.
+    load_dotenv(PROJECT_ROOT / ".env", override=False)
     return Settings(
         environment=os.getenv("JOURNALPULSE_ENV", "local").strip().lower(),
         database_path=Path(
             os.getenv("JOURNALPULSE_DB_PATH", str(PROJECT_ROOT / "artifacts" / "research_beta.db"))
         ).expanduser(),
         resource_catalog_path=PROJECT_ROOT / "assets" / "resources" / "catalog.json",
-        openrouter_api_key=os.getenv("JOURNALPULSE_LLM_API_KEY") or None,
+        openrouter_api_key=(
+            os.getenv("JOURNALPULSE_LLM_API_KEY") or os.getenv("OPENROUTER_API_KEY") or None
+        ),
         openrouter_model=os.getenv("JOURNALPULSE_LLM_MODEL", "openai/gpt-5.4-mini").strip(),
         openrouter_base_url=os.getenv("JOURNALPULSE_LLM_BASE_URL", "https://openrouter.ai/api/v1").rstrip(
             "/"

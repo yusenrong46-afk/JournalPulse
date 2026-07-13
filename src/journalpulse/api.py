@@ -121,11 +121,18 @@ def create_app(
             checks["resources"] = "ready"
         except Exception as exc:
             checks["resources"] = f"not_ready:{exc.__class__.__name__}"
-        checks["llm"] = "ready" if settings.openrouter_enabled else "optional:not_configured"
+        if not settings.llm_feature_enabled:
+            checks["llm"] = "disabled"
+        elif settings.openrouter_enabled:
+            checks["llm"] = "configured:live_check_available"
+        else:
+            checks["llm"] = "not_ready:not_configured"
         checks["persistence"] = "supabase" if settings.supabase_enabled else "local_sqlite"
-        required_ready = checks["resources"] == "ready"
+        required_ready = (
+            checks["resources"] == "ready" and checks["llm"] != "not_ready:not_configured"
+        )
         if settings.environment == "production":
-            required_ready = required_ready and settings.openrouter_enabled and settings.supabase_enabled
+            required_ready = required_ready and settings.supabase_enabled
         return ReadinessResponse(status="ready" if required_ready else "not_ready", checks=checks)
 
     @app.post("/v1/reflections", response_model=ReflectionRecord, status_code=201)
