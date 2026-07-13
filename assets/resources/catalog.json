@@ -9,10 +9,25 @@
     "embed_kind": "youtube",
     "duration_minutes": 7,
     "summary": "A short guided meditation for anxious or low-energy moments when you want to reset without overthinking.",
-    "emotion_tags": ["sadness", "fear", "surprise", "love"],
-    "tone_tags": ["calm", "grounding", "gentle"],
+    "emotion_tags": [
+      "sadness",
+      "fear",
+      "surprise",
+      "love"
+    ],
+    "tone_tags": [
+      "calm",
+      "grounding",
+      "gentle"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": false
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "ground",
+      "watching"
+    ],
+    "source_tier": "activity",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "video_yoga_boost",
@@ -24,10 +39,27 @@
     "embed_kind": "youtube",
     "duration_minutes": 7,
     "summary": "A brief movement reset that channels restless or heavy energy into something more deliberate.",
-    "emotion_tags": ["sadness", "joy", "anger", "love", "surprise"],
-    "tone_tags": ["energizing", "release", "reset"],
+    "emotion_tags": [
+      "sadness",
+      "joy",
+      "anger",
+      "love",
+      "surprise"
+    ],
+    "tone_tags": [
+      "energizing",
+      "release",
+      "reset"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": false
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "movement",
+      "ground",
+      "watching"
+    ],
+    "source_tier": "activity",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "video_nature_bbc",
@@ -39,10 +71,27 @@
     "embed_kind": "youtube",
     "duration_minutes": 10,
     "summary": "A visual slowdown option when your mind feels noisy and you want something steady to look at.",
-    "emotion_tags": ["sadness", "fear", "surprise", "anger", "joy", "love"],
-    "tone_tags": ["calm", "awe", "soothing"],
+    "emotion_tags": [
+      "sadness",
+      "fear",
+      "surprise",
+      "anger",
+      "joy",
+      "love"
+    ],
+    "tone_tags": [
+      "calm",
+      "awe",
+      "soothing"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": false
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "ground",
+      "watching"
+    ],
+    "source_tier": "educational",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "site_nhs_breathing",
@@ -54,10 +103,25 @@
     "embed_kind": "link",
     "duration_minutes": 5,
     "summary": "A simple official breathing guide that works well when the feeling is stress, panic, or friction.",
-    "emotion_tags": ["fear", "anger", "sadness", "surprise"],
-    "tone_tags": ["grounding", "calm", "practical"],
+    "emotion_tags": [
+      "fear",
+      "anger",
+      "sadness",
+      "surprise"
+    ],
+    "tone_tags": [
+      "grounding",
+      "calm",
+      "practical"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": true
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "ground",
+      "movement"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "site_gratitude_thanks",
@@ -69,10 +133,26 @@
     "embed_kind": "link",
     "duration_minutes": 6,
     "summary": "A structured gratitude article that helps you shift from flatness into specificity and appreciation.",
-    "emotion_tags": ["sadness", "joy", "love", "surprise"],
-    "tone_tags": ["reflective", "uplifting", "connection"],
+    "emotion_tags": [
+      "sadness",
+      "joy",
+      "love",
+      "surprise"
+    ],
+    "tone_tags": [
+      "reflective",
+      "uplifting",
+      "connection"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": false
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "reframing",
+      "connection",
+      "reading"
+    ],
+    "source_tier": "educational",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "site_self_compassion",
@@ -84,10 +164,25 @@
     "embed_kind": "link",
     "duration_minutes": 8,
     "summary": "A good fit when you need a gentler frame instead of punishing self-talk.",
-    "emotion_tags": ["sadness", "anger", "fear", "love"],
-    "tone_tags": ["self-compassion", "reflective", "gentle"],
+    "emotion_tags": [
+      "sadness",
+      "anger",
+      "fear",
+      "love"
+    ],
+    "tone_tags": [
+      "self-compassion",
+      "reflective",
+      "gentle"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": false
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "reframing",
+      "reading"
+    ],
+    "source_tier": "educational",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "game_quick_draw",
@@ -99,10 +194,24 @@
     "embed_kind": "link",
     "duration_minutes": 3,
     "summary": "A tiny playful interruption that can break rumination and make the moment less heavy.",
-    "emotion_tags": ["sadness", "anger", "surprise"],
-    "tone_tags": ["playful", "light", "creative"],
+    "emotion_tags": [
+      "sadness",
+      "anger",
+      "surprise"
+    ],
+    "tone_tags": [
+      "playful",
+      "light",
+      "creative"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": false
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "play",
+      "ground"
+    ],
+    "source_tier": "activity",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "game_2048",
@@ -114,10 +223,25 @@
     "embed_kind": "link",
     "duration_minutes": 5,
     "summary": "A focused puzzle when you want a clean mental lane instead of spiraling.",
-    "emotion_tags": ["fear", "anger", "surprise", "joy"],
-    "tone_tags": ["focus", "structured", "absorbing"],
+    "emotion_tags": [
+      "fear",
+      "anger",
+      "surprise",
+      "joy"
+    ],
+    "tone_tags": [
+      "focus",
+      "structured",
+      "absorbing"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": false
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "play",
+      "ground"
+    ],
+    "source_tier": "activity",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "game_autodraw",
@@ -129,10 +253,372 @@
     "embed_kind": "link",
     "duration_minutes": 5,
     "summary": "A light creative tool for when you want to move energy without using many words.",
-    "emotion_tags": ["sadness", "joy", "love", "surprise"],
-    "tone_tags": ["creative", "light", "playful"],
+    "emotion_tags": [
+      "sadness",
+      "joy",
+      "love",
+      "surprise"
+    ],
+    "tone_tags": [
+      "creative",
+      "light",
+      "playful"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": false
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "play",
+      "movement"
+    ],
+    "source_tier": "activity",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_nimh_caring_mental_health",
+    "title": "Caring for Your Mental Health",
+    "url": "https://www.nimh.nih.gov/health/topics/caring-for-your-mental-health",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "National Institute of Mental Health",
+    "embed_kind": "link",
+    "duration_minutes": 7,
+    "summary": "A practical self-care overview covering movement, sleep, goals, gratitude, connection, and when to seek more support.",
+    "emotion_tags": [
+      "sadness",
+      "joy",
+      "love",
+      "anger",
+      "fear",
+      "surprise"
+    ],
+    "tone_tags": [
+      "self-care",
+      "practical",
+      "official"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "planning",
+      "connection",
+      "movement",
+      "reading"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_cdc_managing_stress",
+    "title": "Managing Stress",
+    "url": "https://www.cdc.gov/mental-health/living-with/index.html",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "CDC",
+    "embed_kind": "link",
+    "duration_minutes": 7,
+    "summary": "Official guidance for stress signs and healthy coping actions like breaks, journaling, movement, sleep, and social support.",
+    "emotion_tags": [
+      "sadness",
+      "anger",
+      "fear",
+      "surprise"
+    ],
+    "tone_tags": [
+      "stress",
+      "official",
+      "coping"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "planning",
+      "ground",
+      "movement",
+      "reading"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_nimh_need_help",
+    "title": "My Mental Health: Do I Need Help?",
+    "url": "https://www.nimh.nih.gov/health/publications/my-mental-health-do-i-need-help",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "National Institute of Mental Health",
+    "embed_kind": "link",
+    "duration_minutes": 5,
+    "summary": "A plain-language guide for deciding whether self-care is enough or whether professional support would be wiser.",
+    "emotion_tags": [
+      "sadness",
+      "anger",
+      "fear",
+      "surprise"
+    ],
+    "tone_tags": [
+      "decision",
+      "support",
+      "official"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": true,
+    "goal_tags": [
+      "planning",
+      "connection",
+      "reading"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_nhs_mindfulness",
+    "title": "Mindfulness",
+    "url": "https://www.nhs.uk/mental-health/self-help/tips-and-support/mindfulness/",
+    "resource_type": "website",
+    "coping_style": "move",
+    "provider": "NHS",
+    "embed_kind": "link",
+    "duration_minutes": 5,
+    "summary": "A gentle explanation of mindfulness and present-moment noticing for getting out of autopilot.",
+    "emotion_tags": [
+      "sadness",
+      "anger",
+      "fear",
+      "surprise",
+      "joy",
+      "love"
+    ],
+    "tone_tags": [
+      "mindfulness",
+      "grounding",
+      "official"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "ground",
+      "movement",
+      "reading"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_nhs_cope_depression",
+    "title": "How to Cope with Depression",
+    "url": "https://www.nhs.uk/mental-health/self-help/tips-and-support/cope-with-depression/",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "NHS",
+    "embed_kind": "link",
+    "duration_minutes": 6,
+    "summary": "Practical low-mood guidance around staying connected, gentle activity, food, alcohol, and routine.",
+    "emotion_tags": [
+      "sadness",
+      "fear"
+    ],
+    "tone_tags": [
+      "low-mood",
+      "routine",
+      "official"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "planning",
+      "connection",
+      "movement",
+      "reading"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_nhs_self_help_therapies",
+    "title": "Self-help Therapies",
+    "url": "https://www.nhs.uk/conditions/stress-anxiety-depression/self-help-therapies/",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "NHS",
+    "embed_kind": "link",
+    "duration_minutes": 6,
+    "summary": "A guide to self-help and guided self-help options for stress, anxiety, and depression.",
+    "emotion_tags": [
+      "sadness",
+      "fear",
+      "anger"
+    ],
+    "tone_tags": [
+      "self-help",
+      "therapy-skills",
+      "official"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "planning",
+      "reframing",
+      "reading"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_mhf_anxiety",
+    "title": "Coping with Feelings of Anxiety",
+    "url": "https://www.mentalhealth.org.uk/our-work/public-engagement/mental-health-awareness-week/what-can-we-do-cope-feelings-anxiety",
+    "resource_type": "website",
+    "coping_style": "move",
+    "provider": "Mental Health Foundation",
+    "embed_kind": "link",
+    "duration_minutes": 7,
+    "summary": "Actionable anxiety support with breathing, movement, diary, sleep, food, and connection ideas.",
+    "emotion_tags": [
+      "fear",
+      "surprise",
+      "anger"
+    ],
+    "tone_tags": [
+      "anxiety",
+      "breathing",
+      "movement"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "ground",
+      "movement",
+      "connection",
+      "reading"
+    ],
+    "source_tier": "nonprofit",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_mind_manage_anger",
+    "title": "How Right Now: Anger",
+    "url": "https://www.cdc.gov/howrightnow/emotion/anger/index.html",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "CDC",
+    "embed_kind": "link",
+    "duration_minutes": 7,
+    "summary": "Official guidance for angry or irritable stress responses, including pausing, breathing, routine, movement, and help-seeking.",
+    "emotion_tags": [
+      "anger",
+      "fear",
+      "surprise"
+    ],
+    "tone_tags": [
+      "anger",
+      "boundaries",
+      "cooldown"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "ground",
+      "planning",
+      "reframing",
+      "reading"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_mhf_manage_emotions",
+    "title": "How to Understand and Manage Your Emotions",
+    "url": "https://www.mentalhealth.org.uk/explore-mental-health/articles/how-understand-and-manage-your-emotions-9-top-tips",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "Mental Health Foundation",
+    "embed_kind": "link",
+    "duration_minutes": 9,
+    "summary": "A broad emotional-skills guide for naming feelings, identifying triggers, practicing self-compassion, and choosing responses.",
+    "emotion_tags": [
+      "sadness",
+      "joy",
+      "love",
+      "anger",
+      "fear",
+      "surprise"
+    ],
+    "tone_tags": [
+      "emotional-skills",
+      "self-compassion",
+      "reflection"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "reframing",
+      "planning",
+      "connection",
+      "reading"
+    ],
+    "source_tier": "nonprofit",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_mhf_kindness",
+    "title": "Kindness and Mental Health",
+    "url": "https://www.mentalhealth.org.uk/explore-mental-health/kindness",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "Mental Health Foundation",
+    "embed_kind": "link",
+    "duration_minutes": 5,
+    "summary": "A connection-focused resource about kindness toward yourself and others as a way to reduce isolation.",
+    "emotion_tags": [
+      "sadness",
+      "joy",
+      "love"
+    ],
+    "tone_tags": [
+      "connection",
+      "kindness",
+      "belonging"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "connection",
+      "reframing",
+      "reading"
+    ],
+    "source_tier": "nonprofit",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "site_nhs_relationships",
+    "title": "Maintaining Healthy Relationships and Mental Wellbeing",
+    "url": "https://www.nhs.uk/every-mind-matters/lifes-challenges/maintaining-healthy-relationships-and-mental-wellbeing/",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "NHS Every Mind Matters",
+    "embed_kind": "link",
+    "duration_minutes": 6,
+    "summary": "A relationship-focused guide for connection, loneliness, stress, anxiety, and looking after yourself in relationships.",
+    "emotion_tags": [
+      "sadness",
+      "joy",
+      "love",
+      "fear"
+    ],
+    "tone_tags": [
+      "relationships",
+      "connection",
+      "wellbeing"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "connection",
+      "planning",
+      "reading"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "support_988",
@@ -144,10 +630,27 @@
     "embed_kind": "link",
     "duration_minutes": 1,
     "summary": "Immediate emotional support in the United States by call, text, or chat.",
-    "emotion_tags": ["sadness", "fear", "anger", "surprise", "love", "joy"],
-    "tone_tags": ["support", "urgent", "human"],
+    "emotion_tags": [
+      "sadness",
+      "fear",
+      "anger",
+      "surprise",
+      "love",
+      "joy"
+    ],
+    "tone_tags": [
+      "support",
+      "urgent",
+      "human"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": true
+    "is_crisis_safe": true,
+    "goal_tags": [
+      "connection",
+      "planning"
+    ],
+    "source_tier": "crisis_support",
+    "reviewed_at": "2026-05-09"
   },
   {
     "id": "support_befrienders",
@@ -159,9 +662,353 @@
     "embed_kind": "link",
     "duration_minutes": 2,
     "summary": "An international support directory for people who need to talk right now.",
-    "emotion_tags": ["sadness", "fear", "anger", "surprise", "love", "joy"],
-    "tone_tags": ["support", "human", "urgent"],
+    "emotion_tags": [
+      "sadness",
+      "fear",
+      "anger",
+      "surprise",
+      "love",
+      "joy"
+    ],
+    "tone_tags": [
+      "support",
+      "human",
+      "urgent"
+    ],
     "is_browser_safe": true,
-    "is_crisis_safe": true
+    "is_crisis_safe": true,
+    "goal_tags": [
+      "connection",
+      "planning"
+    ],
+    "source_tier": "crisis_support",
+    "reviewed_at": "2026-05-09"
+  },
+  {
+    "id": "video_ted_vulnerability",
+    "title": "The Power of Vulnerability (TED)",
+    "url": "https://www.ted.com/talks/brene_brown_the_power_of_vulnerability",
+    "resource_type": "video",
+    "coping_style": "watch",
+    "provider": "TED — Brené Brown",
+    "embed_kind": "external",
+    "duration_minutes": 20,
+    "summary": "A warm, research-based talk on shame, courage, and letting yourself be seen — good for heavy or self-critical moments.",
+    "emotion_tags": [
+      "sadness",
+      "love",
+      "fear"
+    ],
+    "tone_tags": [
+      "reassuring",
+      "reflective"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "reframing",
+      "watching"
+    ],
+    "source_tier": "educational",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "video_happy_pharrell",
+    "title": "Pharrell Williams — Happy",
+    "url": "https://www.youtube.com/watch?v=ZbZSe6N_BXs",
+    "resource_type": "video",
+    "coping_style": "watch",
+    "provider": "YouTube",
+    "embed_kind": "youtube",
+    "duration_minutes": 4,
+    "summary": "An upbeat music video to lean into a good mood or gently lift a flat one.",
+    "emotion_tags": [
+      "joy",
+      "surprise"
+    ],
+    "tone_tags": [
+      "uplifting",
+      "energizing"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "watching",
+      "connection"
+    ],
+    "source_tier": "activity",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "video_ted_good_life",
+    "title": "What Makes a Good Life (TED)",
+    "url": "https://www.ted.com/talks/robert_waldinger_what_makes_a_good_life_lessons_from_the_longest_study_on_happiness",
+    "resource_type": "video",
+    "coping_style": "watch",
+    "provider": "TED — Robert Waldinger",
+    "embed_kind": "external",
+    "duration_minutes": 13,
+    "summary": "Findings from an 80-year study showing relationships matter most — a grounding watch for love and connection.",
+    "emotion_tags": [
+      "love",
+      "joy"
+    ],
+    "tone_tags": [
+      "reflective",
+      "warm"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "reframing",
+      "watching",
+      "connection"
+    ],
+    "source_tier": "educational",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "game_tetris",
+    "title": "Tetris (play in browser)",
+    "url": "https://tetris.com/play-tetris",
+    "resource_type": "game",
+    "coping_style": "play",
+    "provider": "Tetris.com",
+    "embed_kind": "external",
+    "duration_minutes": 10,
+    "summary": "A focused, repetitive puzzle that can absorb restless or angry energy for a few minutes.",
+    "emotion_tags": [
+      "anger",
+      "fear",
+      "surprise"
+    ],
+    "tone_tags": [
+      "absorbing",
+      "focusing"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "ground",
+      "play"
+    ],
+    "source_tier": "activity",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "game_freerice",
+    "title": "Freerice — quiz that donates",
+    "url": "https://freerice.com",
+    "resource_type": "game",
+    "coping_style": "play",
+    "provider": "World Food Programme",
+    "embed_kind": "external",
+    "duration_minutes": 10,
+    "summary": "Answer simple questions and trivia; correct answers donate rice through the UN WFP — small, meaningful distraction.",
+    "emotion_tags": [
+      "sadness",
+      "joy"
+    ],
+    "tone_tags": [
+      "meaningful",
+      "light"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "play",
+      "connection"
+    ],
+    "source_tier": "nonprofit",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "game_sudoku",
+    "title": "Sudoku (play in browser)",
+    "url": "https://sudoku.com",
+    "resource_type": "game",
+    "coping_style": "play",
+    "provider": "Sudoku.com",
+    "embed_kind": "external",
+    "duration_minutes": 12,
+    "summary": "A quiet logic puzzle to settle a racing or anxious mind with gentle focus.",
+    "emotion_tags": [
+      "fear",
+      "surprise"
+    ],
+    "tone_tags": [
+      "calming",
+      "focusing"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "ground",
+      "play"
+    ],
+    "source_tier": "activity",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "move_nhs_fitness_studio",
+    "title": "NHS Fitness Studio Exercise Videos",
+    "url": "https://www.nhs.uk/conditions/nhs-fitness-studio/",
+    "resource_type": "website",
+    "coping_style": "move",
+    "provider": "NHS",
+    "embed_kind": "external",
+    "duration_minutes": 15,
+    "summary": "Free guided workout videos (cardio, strength, yoga, pilates) to discharge tension and shift your state.",
+    "emotion_tags": [
+      "sadness",
+      "anger",
+      "fear"
+    ],
+    "tone_tags": [
+      "activating",
+      "steadying"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "movement"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "move_nhs_walking",
+    "title": "Walking for Health (NHS)",
+    "url": "https://www.nhs.uk/live-well/exercise/running-and-aerobic-exercises/walking-for-health/",
+    "resource_type": "website",
+    "coping_style": "move",
+    "provider": "NHS",
+    "embed_kind": "external",
+    "duration_minutes": 10,
+    "summary": "Simple guidance on using a short walk to clear your head and lift low or anxious moods.",
+    "emotion_tags": [
+      "sadness",
+      "fear"
+    ],
+    "tone_tags": [
+      "gentle",
+      "grounding"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "movement",
+      "ground"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "move_darebee_workouts",
+    "title": "DAREBEE — Free Quick Workouts",
+    "url": "https://darebee.com/workouts.html",
+    "resource_type": "website",
+    "coping_style": "move",
+    "provider": "DAREBEE",
+    "embed_kind": "external",
+    "duration_minutes": 8,
+    "summary": "No-equipment, printable workouts of all intensities to turn anger or restlessness into movement.",
+    "emotion_tags": [
+      "anger",
+      "joy"
+    ],
+    "tone_tags": [
+      "energizing",
+      "empowering"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "movement"
+    ],
+    "source_tier": "educational",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "site_greatergood_gratitude",
+    "title": "Greater Good — Gratitude Practices",
+    "url": "https://greatergood.berkeley.edu/topic/gratitude",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "Greater Good (UC Berkeley)",
+    "embed_kind": "link",
+    "duration_minutes": 8,
+    "summary": "Science-backed ways to notice and grow gratitude — a good fit for joyful or loving moments you want to hold onto.",
+    "emotion_tags": [
+      "joy",
+      "love"
+    ],
+    "tone_tags": [
+      "warm",
+      "reflective"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "reframing",
+      "reading",
+      "connection"
+    ],
+    "source_tier": "educational",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "site_apa_anger",
+    "title": "Control Anger Before It Controls You (APA)",
+    "url": "https://www.apa.org/topics/anger/control",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "American Psychological Association",
+    "embed_kind": "link",
+    "duration_minutes": 9,
+    "summary": "Practical, non-clinical strategies for understanding and channeling anger constructively.",
+    "emotion_tags": [
+      "anger"
+    ],
+    "tone_tags": [
+      "steadying",
+      "practical"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "reframing",
+      "planning",
+      "reading"
+    ],
+    "source_tier": "official",
+    "reviewed_at": "2026-06-03"
+  },
+  {
+    "id": "site_greatergood_awe",
+    "title": "Greater Good — The Science of Awe",
+    "url": "https://greatergood.berkeley.edu/topic/awe",
+    "resource_type": "website",
+    "coping_style": "read",
+    "provider": "Greater Good (UC Berkeley)",
+    "embed_kind": "link",
+    "duration_minutes": 7,
+    "summary": "How moments of awe and surprise expand perspective — for when something unexpected throws you off.",
+    "emotion_tags": [
+      "surprise",
+      "joy"
+    ],
+    "tone_tags": [
+      "curious",
+      "expansive"
+    ],
+    "is_browser_safe": true,
+    "is_crisis_safe": false,
+    "goal_tags": [
+      "reframing",
+      "reading"
+    ],
+    "source_tier": "educational",
+    "reviewed_at": "2026-06-03"
   }
 ]

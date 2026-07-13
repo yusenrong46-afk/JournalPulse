@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -39,3 +40,27 @@ def test_training_dry_run_can_skip_transformers():
 
     assert payload["transformer_candidates"] == []
     assert payload["will_train_transformers"] is False
+
+
+def test_resource_validation_script_and_streamlit_compile():
+    project_root = Path(__file__).resolve().parents[1]
+    env = {
+        **os.environ,
+        "PYTHONPYCACHEPREFIX": str(project_root / ".pytest_cache" / "pycache"),
+    }
+    subprocess.run(
+        [sys.executable, "scripts/validate_resources.py"],
+        cwd=project_root,
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        [sys.executable, "-m", "py_compile", "app/streamlit/app.py"],
+        cwd=project_root,
+        env=env,
+        check=True,
+        capture_output=True,
+        text=True,
+    )

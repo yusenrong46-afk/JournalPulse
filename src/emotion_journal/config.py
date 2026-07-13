@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ASSETS_DIR = PROJECT_ROOT / "assets"
@@ -7,6 +8,12 @@ MODELS_DIR = ARTIFACTS_DIR / "models"
 REPORTS_DIR = ARTIFACTS_DIR / "reports"
 DEFAULT_DB_PATH = ARTIFACTS_DIR / "journal.db"
 RESOURCE_CATALOG_PATH = ASSETS_DIR / "resources" / "catalog.json"
+
+APP_ENV_ENV = "JOURNALPULSE_ENV"
+API_BASE_URL_ENV = "JOURNALPULSE_API_BASE_URL"
+DB_PATH_ENV = "JOURNALPULSE_DB_PATH"
+HF_MODEL_ID_ENV = "JOURNALPULSE_HF_MODEL_ID"
+DEPLOYMENT_MODE_ENV = "JOURNALPULSE_DEPLOYMENT_MODE"
 
 RANDOM_SEED = 42
 MAX_TEXT_LENGTH = 5000
@@ -22,12 +29,94 @@ COACH_SUGGESTED_REPLY_LIMIT = 4
 COPING_STYLES = ("watch", "read", "play", "move")
 RESOURCE_ACTIONS = ("opened", "helpful", "dismissed")
 DEFAULT_RESOURCE_TYPES = ("video", "website", "game", "support")
+RESOURCE_GOAL_TAGS = (
+    "ground",
+    "planning",
+    "reframing",
+    "connection",
+    "movement",
+    "reading",
+    "watching",
+    "play",
+)
+SOURCE_TIERS = ("official", "nonprofit", "educational", "activity", "crisis_support")
 
 LLM_API_KEY_ENV = "JOURNALPULSE_LLM_API_KEY"
 LLM_BASE_URL_ENV = "JOURNALPULSE_LLM_BASE_URL"
 LLM_MODEL_ENV = "JOURNALPULSE_LLM_MODEL"
+LLM_MODE_ENV = "JOURNALPULSE_LLM_MODE"
+LLM_APP_URL_ENV = "JOURNALPULSE_LLM_APP_URL"
+LLM_APP_TITLE_ENV = "JOURNALPULSE_LLM_APP_TITLE"
+DEFAULT_LLM_BASE_URL = "https://openrouter.ai/api/v1"
+DEFAULT_LLM_MODE = "off"
 LLM_TIMEOUT_SECONDS = 10.0
-ADMIN_MODE_ENV = "JOURNALPULSE_ADMIN_MODE"
+CLASSIFIER_MODE_ENV = "JOURNALPULSE_CLASSIFIER_MODE"
+DEFAULT_CLASSIFIER_MODE = "calibrated"
+
+# AI-generated resource suggestions may only link to these reputable, browser-safe
+# domains. This is the guardrail that keeps the LLM from inventing risky links.
+# A suggestion's host must equal one of these or be a subdomain of one.
+RESOURCE_DOMAIN_SAFELIST = (
+    # Official / government health
+    "nimh.nih.gov",
+    "nih.gov",
+    "cdc.gov",
+    "samhsa.gov",
+    "who.int",
+    "nhs.uk",
+    "betterhealth.vic.gov.au",
+    # Nonprofit / advocacy
+    "mhanational.org",
+    "nami.org",
+    "apa.org",
+    "mind.org.uk",
+    "helpguide.org",
+    "988lifeline.org",
+    "actionforhappiness.org",
+    "self-compassion.org",
+    "greatergood.berkeley.edu",
+    # Education / reputable wellness
+    "headspace.com",
+    "calm.com",
+    "insighttimer.com",
+    "mindful.org",
+    "ted.com",
+    "khanacademy.org",
+    "coursera.org",
+    "edx.org",
+    "verywellmind.com",
+    "psychologytoday.com",
+    "positivepsychology.com",
+    "sleepfoundation.org",
+    "nutrition.org",
+    # Browser-safe media / play
+    "youtube.com",
+    "youtu.be",
+    "open.spotify.com",
+    "freerice.com",
+    "quickdraw.withgoogle.com",
+)
+
+
+def app_environment() -> str:
+    return os.getenv(APP_ENV_ENV, "local").strip().lower() or "local"
+
+
+def api_base_url() -> str:
+    return os.getenv(API_BASE_URL_ENV, "").strip().rstrip("/")
+
+
+def deployment_mode() -> str:
+    return os.getenv(DEPLOYMENT_MODE_ENV, "demo").strip().lower() or "demo"
+
+
+def database_path() -> Path:
+    configured = os.getenv(DB_PATH_ENV)
+    return Path(configured).expanduser() if configured else DEFAULT_DB_PATH
+
+
+def hf_model_id() -> str:
+    return os.getenv(HF_MODEL_ID_ENV, "").strip()
 
 LABELS = {
     0: "sadness",
@@ -74,37 +163,4 @@ CRISIS_KEYWORDS = {
     "can't go on",
     "hopeless",
     "not safe",
-}
-
-EMOTION_RECOMMENDATIONS = {
-    "sadness": [
-        "Take ten quiet minutes to name what feels heavy and what feels changeable.",
-        "Try a low-pressure reset like a short walk, water, or a check-in with someone you trust.",
-        "Write one small thing that helped you cope before and repeat that today.",
-    ],
-    "joy": [
-        "Capture what made today feel good so you can recreate it intentionally.",
-        "Share the highlight with someone close and let the moment stay social.",
-        "Turn the good energy into momentum on one small goal you care about.",
-    ],
-    "love": [
-        "Write a note about who or what made you feel connected today.",
-        "Translate the feeling into action with a message, gratitude, or quality time.",
-        "Notice what conditions helped you feel close and supported.",
-    ],
-    "anger": [
-        "Pause before reacting and write the boundary or value that feels crossed.",
-        "Discharge some tension first, then decide whether this needs action or distance.",
-        "Name the specific trigger so the next step feels deliberate instead of explosive.",
-    ],
-    "fear": [
-        "Shrink the situation into the next safe, concrete step you can control.",
-        "Use a grounding exercise to separate current facts from future worries.",
-        "Write what you know, what you fear, and what support would help right now.",
-    ],
-    "surprise": [
-        "Capture what happened and whether it felt energizing, disruptive, or both.",
-        "Use the unexpected moment to notice what you value or want to protect.",
-        "Turn the surprise into a learning note while the details are still fresh.",
-    ],
 }

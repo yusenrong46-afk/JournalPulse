@@ -422,7 +422,7 @@ Learn:
 Practice in this repo:
 
 - Open `app/streamlit/app.py`.
-- Find `render_new_entry_page()`.
+- Find `render_chat_page()`.
 - Find `render_prediction_summary()`.
 - Find `render_history_page()`.
 - Find `render_insights_page()`.
@@ -658,4 +658,3 @@ You should be able to explain these without reading notes:
 3. scikit-learn User Guide: https://scikit-learn.org/stable/user_guide.html
 4. Dive into Deep Learning: https://d2l.ai/
 5. FastAPI Tutorial: https://fastapi.tiangolo.com/tutorial/
-

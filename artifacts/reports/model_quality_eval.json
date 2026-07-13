@@ -1,0 +1,1368 @@
+{
+  "total_cases": 32,
+  "primary_accuracy": 0.7812,
+  "accepted_accuracy": 1.0,
+  "top3_primary_recall": 1.0,
+  "non_crisis_primary_accuracy": 0.8,
+  "non_crisis_accepted_accuracy": 1.0,
+  "non_crisis_cases": 30,
+  "crisis_routing_accuracy": 1.0,
+  "crisis_cases": 2,
+  "mixed_signal_rate": 0.1562,
+  "low_confidence_rate": 0.125,
+  "by_primary_emotion": {
+    "anger": {
+      "total": 4,
+      "primary_accuracy": 0.5,
+      "accepted_accuracy": 1.0
+    },
+    "fear": {
+      "total": 7,
+      "primary_accuracy": 0.7143,
+      "accepted_accuracy": 1.0
+    },
+    "joy": {
+      "total": 4,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "love": {
+      "total": 4,
+      "primary_accuracy": 0.5,
+      "accepted_accuracy": 1.0
+    },
+    "sadness": {
+      "total": 9,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "surprise": {
+      "total": 4,
+      "primary_accuracy": 0.75,
+      "accepted_accuracy": 1.0
+    }
+  },
+  "by_tag": {
+    "achievement": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "anxiety": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "betrayal": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "body": {
+      "total": 2,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "boundary": {
+      "total": 2,
+      "primary_accuracy": 0.5,
+      "accepted_accuracy": 1.0
+    },
+    "broad_distress": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "burnout": {
+      "total": 2,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "caregiving": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "connection": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "crisis": {
+      "total": 2,
+      "primary_accuracy": 0.5,
+      "accepted_accuracy": 1.0
+    },
+    "family": {
+      "total": 3,
+      "primary_accuracy": 0.6667,
+      "accepted_accuracy": 1.0
+    },
+    "future": {
+      "total": 2,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "gratitude": {
+      "total": 1,
+      "primary_accuracy": 0.0,
+      "accepted_accuracy": 1.0
+    },
+    "grief": {
+      "total": 2,
+      "primary_accuracy": 0.5,
+      "accepted_accuracy": 1.0
+    },
+    "health": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "heavy": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "home": {
+      "total": 1,
+      "primary_accuracy": 0.0,
+      "accepted_accuracy": 1.0
+    },
+    "injustice": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "loneliness": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "low_energy": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "low_mood": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "mixed": {
+      "total": 8,
+      "primary_accuracy": 0.75,
+      "accepted_accuracy": 1.0
+    },
+    "money": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "motivation": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "negated_wellbeing": {
+      "total": 2,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "planning": {
+      "total": 2,
+      "primary_accuracy": 0.5,
+      "accepted_accuracy": 1.0
+    },
+    "positive": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "relationship": {
+      "total": 6,
+      "primary_accuracy": 0.5,
+      "accepted_accuracy": 1.0
+    },
+    "relief": {
+      "total": 2,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "routine": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "safety": {
+      "total": 2,
+      "primary_accuracy": 0.5,
+      "accepted_accuracy": 1.0
+    },
+    "safety_negation": {
+      "total": 2,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "self_criticism": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "shame": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "small_win": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "social": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "support": {
+      "total": 1,
+      "primary_accuracy": 1.0,
+      "accepted_accuracy": 1.0
+    },
+    "uncertainty": {
+      "total": 4,
+      "primary_accuracy": 0.5,
+      "accepted_accuracy": 1.0
+    },
+    "work": {
+      "total": 5,
+      "primary_accuracy": 0.8,
+      "accepted_accuracy": 1.0
+    }
+  },
+  "confusion": [
+    {
+      "expected": "anger",
+      "predicted": "anger",
+      "count": 2
+    },
+    {
+      "expected": "anger",
+      "predicted": "sadness",
+      "count": 2
+    },
+    {
+      "expected": "fear",
+      "predicted": "fear",
+      "count": 5
+    },
+    {
+      "expected": "fear",
+      "predicted": "sadness",
+      "count": 2
+    },
+    {
+      "expected": "joy",
+      "predicted": "joy",
+      "count": 4
+    },
+    {
+      "expected": "love",
+      "predicted": "joy",
+      "count": 1
+    },
+    {
+      "expected": "love",
+      "predicted": "love",
+      "count": 2
+    },
+    {
+      "expected": "love",
+      "predicted": "sadness",
+      "count": 1
+    },
+    {
+      "expected": "sadness",
+      "predicted": "sadness",
+      "count": 9
+    },
+    {
+      "expected": "surprise",
+      "predicted": "fear",
+      "count": 1
+    },
+    {
+      "expected": "surprise",
+      "predicted": "surprise",
+      "count": 3
+    }
+  ],
+  "misses": [],
+  "rows": [
+    {
+      "id": "work_anger_plan_001",
+      "text": "My manager dismissed my idea in front of everyone and I keep replaying it. I want to calm down and plan what to say tomorrow.",
+      "expected_primary": "anger",
+      "accepted_emotions": [
+        "anger",
+        "sadness",
+        "fear"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.4958,
+      "confidence_band": "low",
+      "secondary_emotions": [
+        "anger",
+        "joy"
+      ],
+      "top_margin": 0.2584,
+      "is_mixed": true,
+      "uncertainty_reason": "low_top_confidence",
+      "top3": [
+        "sadness",
+        "anger",
+        "joy"
+      ],
+      "primary_correct": false,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "work",
+        "mixed",
+        "planning"
+      ],
+      "notes": "Work conflict should lean boundary/anger even with sadness wording."
+    },
+    {
+      "id": "work_fear_offer_002",
+      "text": "I got the offer and I am excited, but now I am scared I will fail once everyone expects more from me.",
+      "expected_primary": "fear",
+      "accepted_emotions": [
+        "fear",
+        "joy"
+      ],
+      "predicted": "fear",
+      "confidence": 0.8371,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.6876,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "fear",
+        "joy",
+        "sadness"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "work",
+        "mixed",
+        "future"
+      ],
+      "notes": null
+    },
+    {
+      "id": "grief_sadness_memory_003",
+      "text": "I miss my dad today. I laughed at an old memory and then cried in the car because the warmth made the absence feel bigger.",
+      "expected_primary": "sadness",
+      "accepted_emotions": [
+        "sadness",
+        "love"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.5396,
+      "confidence_band": "low",
+      "secondary_emotions": [
+        "joy",
+        "love"
+      ],
+      "top_margin": 0.3121,
+      "is_mixed": true,
+      "uncertainty_reason": "low_top_confidence",
+      "top3": [
+        "sadness",
+        "joy",
+        "love"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "grief",
+        "mixed",
+        "family"
+      ],
+      "notes": null
+    },
+    {
+      "id": "burnout_sadness_flat_004",
+      "text": "Nothing dramatic happened. I just feel flat, disconnected, and tired of pretending I have energy for everyone.",
+      "expected_primary": "sadness",
+      "accepted_emotions": [
+        "sadness"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.9881,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.9807,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "anger",
+        "joy"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "burnout",
+        "low_energy"
+      ],
+      "notes": null
+    },
+    {
+      "id": "relationship_love_005",
+      "text": "My friend remembered the tiny thing I was worried about and checked in before I even asked. I felt cared for and safe.",
+      "expected_primary": "love",
+      "accepted_emotions": [
+        "love",
+        "joy"
+      ],
+      "predicted": "love",
+      "confidence": 0.7793,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.6579,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "love",
+        "fear",
+        "joy"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "relationship",
+        "support"
+      ],
+      "notes": null
+    },
+    {
+      "id": "joy_pride_006",
+      "text": "I finally finished the project and I feel proud, light, and surprised by how much relief I am carrying.",
+      "expected_primary": "joy",
+      "accepted_emotions": [
+        "joy",
+        "surprise"
+      ],
+      "predicted": "joy",
+      "confidence": 0.8268,
+      "confidence_band": "high",
+      "secondary_emotions": [
+        "surprise"
+      ],
+      "top_margin": 0.6611,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "joy",
+        "surprise",
+        "anger"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "achievement",
+        "mixed"
+      ],
+      "notes": null
+    },
+    {
+      "id": "surprise_disruption_007",
+      "text": "The news came out of nowhere. I am not sure if it is good or bad yet, but my whole body is trying to catch up.",
+      "expected_primary": "surprise",
+      "accepted_emotions": [
+        "surprise",
+        "fear"
+      ],
+      "predicted": "surprise",
+      "confidence": 0.557,
+      "confidence_band": "medium",
+      "secondary_emotions": [
+        "joy"
+      ],
+      "top_margin": 0.1801,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "surprise",
+        "joy",
+        "fear"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "uncertainty",
+        "body"
+      ],
+      "notes": null
+    },
+    {
+      "id": "fear_health_waiting_008",
+      "text": "I am waiting for the test result and every notification makes my stomach drop. I know worrying will not change it, but I cannot settle.",
+      "expected_primary": "fear",
+      "accepted_emotions": [
+        "fear"
+      ],
+      "predicted": "fear",
+      "confidence": 0.5664,
+      "confidence_band": "medium",
+      "secondary_emotions": [
+        "joy",
+        "anger"
+      ],
+      "top_margin": 0.411,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "fear",
+        "joy",
+        "anger"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "health",
+        "uncertainty"
+      ],
+      "notes": null
+    },
+    {
+      "id": "anger_boundary_009",
+      "text": "I said yes again when I wanted to say no, and now I am irritated with them and with myself for folding so quickly.",
+      "expected_primary": "anger",
+      "accepted_emotions": [
+        "anger",
+        "sadness"
+      ],
+      "predicted": "anger",
+      "confidence": 0.9955,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.9939,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "anger",
+        "fear",
+        "sadness"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "boundary",
+        "relationship"
+      ],
+      "notes": null
+    },
+    {
+      "id": "love_gratitude_010",
+      "text": "Dinner was simple, but everyone stayed at the table laughing. I felt close to them in a way I want to remember.",
+      "expected_primary": "love",
+      "accepted_emotions": [
+        "love",
+        "joy"
+      ],
+      "predicted": "joy",
+      "confidence": 0.5788,
+      "confidence_band": "medium",
+      "secondary_emotions": [
+        "love"
+      ],
+      "top_margin": 0.1764,
+      "is_mixed": true,
+      "uncertainty_reason": "close_top_scores",
+      "top3": [
+        "joy",
+        "love",
+        "surprise"
+      ],
+      "primary_correct": false,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "family",
+        "gratitude"
+      ],
+      "notes": null
+    },
+    {
+      "id": "joy_relief_011",
+      "text": "The presentation is over and it went well. I keep smiling because the pressure finally left my shoulders.",
+      "expected_primary": "joy",
+      "accepted_emotions": [
+        "joy"
+      ],
+      "predicted": "joy",
+      "confidence": 0.9892,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.9854,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "joy",
+        "sadness",
+        "anger"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "work",
+        "relief"
+      ],
+      "notes": null
+    },
+    {
+      "id": "sadness_lonely_012",
+      "text": "I watched everyone make plans without me again. I know it may not be personal, but tonight it feels lonely.",
+      "expected_primary": "sadness",
+      "accepted_emotions": [
+        "sadness"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.9891,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.9825,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "love",
+        "fear"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "loneliness",
+        "social"
+      ],
+      "notes": null
+    },
+    {
+      "id": "surprise_positive_013",
+      "text": "They promoted me without warning. I am thrilled, stunned, and trying to understand what just changed.",
+      "expected_primary": "surprise",
+      "accepted_emotions": [
+        "surprise",
+        "joy"
+      ],
+      "predicted": "surprise",
+      "confidence": 0.7147,
+      "confidence_band": "medium",
+      "secondary_emotions": [
+        "joy"
+      ],
+      "top_margin": 0.449,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "surprise",
+        "joy",
+        "fear"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "work",
+        "positive",
+        "mixed"
+      ],
+      "notes": null
+    },
+    {
+      "id": "fear_negated_crisis_014",
+      "text": "I do not feel unsafe, I am not going to hurt myself, but I am overwhelmed and need a plan for tonight.",
+      "expected_primary": "fear",
+      "accepted_emotions": [
+        "fear",
+        "sadness"
+      ],
+      "predicted": "fear",
+      "confidence": 0.9895,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.9839,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "fear",
+        "sadness",
+        "anger"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "safety_negation",
+        "planning"
+      ],
+      "notes": null
+    },
+    {
+      "id": "crisis_direct_015",
+      "text": "I want to die and I do not feel safe being alone right now.",
+      "expected_primary": "sadness",
+      "accepted_emotions": [
+        "sadness",
+        "fear"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.56,
+      "confidence_band": "medium",
+      "secondary_emotions": [],
+      "top_margin": 0.22,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "fear",
+        "anger"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": true,
+      "predicted_crisis": true,
+      "crisis_correct": true,
+      "tags": [
+        "crisis",
+        "safety"
+      ],
+      "notes": null
+    },
+    {
+      "id": "crisis_unsafe_016",
+      "text": "I feel unsafe tonight and I need someone to help me stay away from hurting myself.",
+      "expected_primary": "fear",
+      "accepted_emotions": [
+        "fear",
+        "sadness"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.56,
+      "confidence_band": "medium",
+      "secondary_emotions": [],
+      "top_margin": 0.22,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "fear",
+        "anger"
+      ],
+      "primary_correct": false,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": true,
+      "predicted_crisis": true,
+      "crisis_correct": true,
+      "tags": [
+        "crisis",
+        "safety"
+      ],
+      "notes": null
+    },
+    {
+      "id": "anger_injustice_017",
+      "text": "They took credit for my work again. I feel hot with anger because I stayed quiet the first time and now it happened twice.",
+      "expected_primary": "anger",
+      "accepted_emotions": [
+        "anger"
+      ],
+      "predicted": "anger",
+      "confidence": 0.6279,
+      "confidence_band": "medium",
+      "secondary_emotions": [
+        "love"
+      ],
+      "top_margin": 0.2842,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "anger",
+        "love",
+        "fear"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "work",
+        "injustice"
+      ],
+      "notes": null
+    },
+    {
+      "id": "fear_social_018",
+      "text": "I keep rewriting the message because I am afraid it will sound needy or make them pull away.",
+      "expected_primary": "fear",
+      "accepted_emotions": [
+        "fear",
+        "sadness"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.759,
+      "confidence_band": "high",
+      "secondary_emotions": [
+        "fear"
+      ],
+      "top_margin": 0.5405,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "fear",
+        "anger"
+      ],
+      "primary_correct": false,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "relationship",
+        "uncertainty"
+      ],
+      "notes": null
+    },
+    {
+      "id": "sadness_shame_019",
+      "text": "I made one mistake and now I feel small, embarrassed, and disappointed in myself.",
+      "expected_primary": "sadness",
+      "accepted_emotions": [
+        "sadness",
+        "anger"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.9944,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.9926,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "fear",
+        "joy"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "self_criticism",
+        "shame"
+      ],
+      "notes": null
+    },
+    {
+      "id": "joy_connection_020",
+      "text": "The walk with my sister left me feeling lighter. We did not solve anything, but I felt understood.",
+      "expected_primary": "joy",
+      "accepted_emotions": [
+        "joy",
+        "love"
+      ],
+      "predicted": "joy",
+      "confidence": 0.8048,
+      "confidence_band": "high",
+      "secondary_emotions": [
+        "love"
+      ],
+      "top_margin": 0.6307,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "joy",
+        "love",
+        "sadness"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "connection",
+        "relief"
+      ],
+      "notes": null
+    },
+    {
+      "id": "love_missing_021",
+      "text": "I miss them badly, but the ache is full of love. I am sad because the connection mattered so much.",
+      "expected_primary": "love",
+      "accepted_emotions": [
+        "love",
+        "sadness"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.7994,
+      "confidence_band": "high",
+      "secondary_emotions": [
+        "love"
+      ],
+      "top_margin": 0.6158,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "love",
+        "joy"
+      ],
+      "primary_correct": false,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "grief",
+        "mixed",
+        "relationship"
+      ],
+      "notes": null
+    },
+    {
+      "id": "surprise_betrayal_022",
+      "text": "I found out they had been hiding it from me. I am shocked first, and the anger is starting to arrive behind it.",
+      "expected_primary": "surprise",
+      "accepted_emotions": [
+        "surprise",
+        "anger"
+      ],
+      "predicted": "surprise",
+      "confidence": 0.8428,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.7152,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "surprise",
+        "anger",
+        "fear"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "relationship",
+        "betrayal",
+        "mixed"
+      ],
+      "notes": null
+    },
+    {
+      "id": "fear_money_023",
+      "text": "The bill is bigger than I expected and I cannot stop calculating worst-case scenarios in my head.",
+      "expected_primary": "fear",
+      "accepted_emotions": [
+        "fear"
+      ],
+      "predicted": "fear",
+      "confidence": 0.6782,
+      "confidence_band": "medium",
+      "secondary_emotions": [
+        "joy"
+      ],
+      "top_margin": 0.4353,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "fear",
+        "joy",
+        "sadness"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "money",
+        "future"
+      ],
+      "notes": null
+    },
+    {
+      "id": "anger_home_024",
+      "text": "I cleaned up after everyone again and nobody noticed. I am tired, but mostly I feel taken for granted.",
+      "expected_primary": "anger",
+      "accepted_emotions": [
+        "anger",
+        "sadness"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.3896,
+      "confidence_band": "low",
+      "secondary_emotions": [
+        "anger",
+        "joy"
+      ],
+      "top_margin": 0.03,
+      "is_mixed": true,
+      "uncertainty_reason": "low_top_confidence",
+      "top3": [
+        "sadness",
+        "anger",
+        "joy"
+      ],
+      "primary_correct": false,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "home",
+        "boundary"
+      ],
+      "notes": null
+    },
+    {
+      "id": "sadness_burnout_025",
+      "text": "I used to care about this goal, but lately I only feel heavy when I think about starting again.",
+      "expected_primary": "sadness",
+      "accepted_emotions": [
+        "sadness"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.991,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.9879,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "love",
+        "joy"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "burnout",
+        "motivation"
+      ],
+      "notes": null
+    },
+    {
+      "id": "joy_small_win_026",
+      "text": "I made breakfast, answered the email, and took a shower. It sounds small, but today it felt like real momentum.",
+      "expected_primary": "joy",
+      "accepted_emotions": [
+        "joy"
+      ],
+      "predicted": "joy",
+      "confidence": 0.8279,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.6794,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "joy",
+        "sadness",
+        "fear"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "small_win",
+        "routine"
+      ],
+      "notes": null
+    },
+    {
+      "id": "fear_body_027",
+      "text": "My chest is tight and my thoughts are racing even though nothing is happening right now.",
+      "expected_primary": "fear",
+      "accepted_emotions": [
+        "fear"
+      ],
+      "predicted": "fear",
+      "confidence": 0.6389,
+      "confidence_band": "medium",
+      "secondary_emotions": [
+        "joy"
+      ],
+      "top_margin": 0.4729,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "fear",
+        "joy",
+        "anger"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "body",
+        "anxiety"
+      ],
+      "notes": null
+    },
+    {
+      "id": "surprise_confused_028",
+      "text": "They apologized after months of silence. I feel thrown off and do not know what I want yet.",
+      "expected_primary": "surprise",
+      "accepted_emotions": [
+        "surprise",
+        "fear",
+        "love"
+      ],
+      "predicted": "fear",
+      "confidence": 0.314,
+      "confidence_band": "low",
+      "secondary_emotions": [
+        "sadness",
+        "surprise"
+      ],
+      "top_margin": 0.0129,
+      "is_mixed": true,
+      "uncertainty_reason": "low_top_confidence",
+      "top3": [
+        "fear",
+        "sadness",
+        "surprise"
+      ],
+      "primary_correct": false,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "relationship",
+        "uncertainty"
+      ],
+      "notes": null
+    },
+    {
+      "id": "love_caregiving_029",
+      "text": "Taking care of my grandmother was exhausting today, but when she squeezed my hand I felt so much tenderness.",
+      "expected_primary": "love",
+      "accepted_emotions": [
+        "love",
+        "sadness"
+      ],
+      "predicted": "love",
+      "confidence": 0.9802,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.9678,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "love",
+        "joy",
+        "sadness"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "family",
+        "caregiving",
+        "mixed"
+      ],
+      "notes": null
+    },
+    {
+      "id": "sadness_hopeless_safe_030",
+      "text": "I feel hopeless about the job search today, but I am safe and I know this is a hard hour, not the whole story.",
+      "expected_primary": "sadness",
+      "accepted_emotions": [
+        "sadness",
+        "fear"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.9936,
+      "confidence_band": "high",
+      "secondary_emotions": [],
+      "top_margin": 0.9911,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "fear",
+        "joy"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "broad_distress",
+        "safety_negation"
+      ],
+      "notes": null
+    },
+    {
+      "id": "sadness_negated_wellbeing_031",
+      "text": "I am not feeling that well today, and I do not really know what I need yet.",
+      "expected_primary": "sadness",
+      "accepted_emotions": [
+        "sadness",
+        "fear"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.6485,
+      "confidence_band": "medium",
+      "secondary_emotions": [
+        "fear"
+      ],
+      "top_margin": 0.4025,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "fear",
+        "joy"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "negated_wellbeing",
+        "low_mood"
+      ],
+      "notes": null
+    },
+    {
+      "id": "sadness_not_okay_032",
+      "text": "I do not feel okay right now. Nothing dramatic happened, but everything feels heavier than normal.",
+      "expected_primary": "sadness",
+      "accepted_emotions": [
+        "sadness",
+        "fear"
+      ],
+      "predicted": "sadness",
+      "confidence": 0.6551,
+      "confidence_band": "medium",
+      "secondary_emotions": [
+        "fear"
+      ],
+      "top_margin": 0.4066,
+      "is_mixed": false,
+      "uncertainty_reason": null,
+      "top3": [
+        "sadness",
+        "fear",
+        "joy"
+      ],
+      "primary_correct": true,
+      "accepted_correct": true,
+      "top3_contains_primary": true,
+      "expected_crisis": false,
+      "predicted_crisis": false,
+      "crisis_correct": true,
+      "tags": [
+        "negated_wellbeing",
+        "heavy"
+      ],
+      "notes": null
+    }
+  ],
+  "generated_at": "2026-05-24T02:49:26.977184+00:00",
+  "eval_file": "/Users/thomas/Documents/JournalPulse/data/evals/journalpulse_eval.jsonl",
+  "model_quality_note": "This eval set is synthetic but product-shaped; use it for regression detection and error analysis, not as a clinical or population-level performance claim."
+}

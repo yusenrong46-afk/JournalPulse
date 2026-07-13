@@ -460,7 +460,7 @@ Deterministic generation is:
 - easier to test
 - easier to explain in interviews
 
-The app only uses optional LLM rewriting for coach wording, not for core prediction, safety, or ranking decisions.
+The app defaults to deterministic coach wording. Optional LLM modes can rewrite or return a validated structured coach payload, but they do not control core prediction, safety, or resource ranking decisions.
 
 ## 19. Explainability Layer
 
@@ -503,6 +503,9 @@ The resource catalog is curated and stored locally. Each resource has metadata s
 - `summary`
 - `emotion_tags`
 - `tone_tags`
+- `goal_tags`
+- `source_tier`
+- `reviewed_at`
 - `is_browser_safe`
 - `is_crisis_safe`
 
@@ -523,6 +526,8 @@ The resource ranking module:
 - filters by emotion
 - respects crisis safety
 - optionally filters by coping style
+- boosts resources that match the user's current goal, such as grounding, planning, reframing, connection, movement, reading, watching, or play
+- exposes rationale text so the UI can explain why a card appeared
 - boosts resources the user previously marked as helpful
 - lowers the ranking of dismissed resources
 
@@ -569,16 +574,30 @@ It keeps the product:
 
 ### Optional LLM layer
 
-The coach can optionally rewrite its wording through an OpenAI-compatible API adapter.
+The coach can optionally use an OpenAI-compatible API adapter through `JOURNALPULSE_LLM_MODE`. For the core product, OpenRouter is the preferred provider because one base URL can route to Gemma, Llama, Qwen, or other configured chat models:
+
+- `off`: deterministic only
+- `rewrite`: polish deterministic wording
+- `structured`: return a Pydantic-validated reflection-agent shape with assistant text, practical steps, replies, resource intent, allowed resource IDs, a reflection question, and optional communication draft
 
 Important:
 
-- the LLM does not choose the emotion
-- the LLM does not rank resources
+- by default, the deterministic artifact chooses the emotion
+- if `JOURNALPULSE_CLASSIFIER_MODE=llm` or `hybrid`, the same OpenAI-compatible adapter can run a strict structured emotion classifier
+- the LLM does not rank resources outside the deterministic candidate set
 - the LLM does not control safety behavior
-- the LLM only polishes wording
+- the LLM is bypassed in crisis mode
+- invalid LLM output falls back to deterministic behavior
 
 This is a strong design pattern because it keeps critical logic deterministic.
+
+Classifier modes:
+
+- `calibrated`: default; use the saved artifact plus transparent journal-language calibration.
+- `llm`: ask a validated structured LLM classifier for the primary emotion, secondary emotions, tags, intensity, confidence band, themes, and rationale.
+- `hybrid`: keep the artifact context available and allow the structured LLM classifier to override when configured.
+
+This lets the product move beyond the original DistilRoBERTa-only path while still preserving a deterministic fallback and audit trail.
 
 ## 22. Persistence Layer
 
@@ -659,6 +678,7 @@ FastAPI is excellent for ML prototypes and portfolio apps because it gives:
 ### Main endpoints
 
 - `GET /health`
+- `GET /ready`
 - `POST /predict`
 - `POST /entries`
 - `PATCH /entries/{id}/feedback`
@@ -666,6 +686,7 @@ FastAPI is excellent for ML prototypes and portfolio apps because it gives:
 - `GET /analytics`
 - `GET /resources`
 - `GET /resources/summary`
+- `GET /resources/recommendations`
 - `POST /resource-interactions`
 - `POST /coach/respond`
 
@@ -696,28 +717,28 @@ The Streamlit app is the main public demo surface.
 
 ### Pages
 
-- `New Entry`
-  - write a journal entry
-  - run prediction
-  - see reflection output
-  - see explanation phrases
-  - choose what kind of support would help right now
-  - browse resource tabs
-  - interact with the coach
-  - save the reflection
+- `Chat`
+  - write a journal message
+  - receive a bounded coach response
+  - keep emotion signals, matched resources, and save controls in a side context panel
+  - inspect explanation phrases only when desired
+  - continue the conversation with suggested replies or a free-form reply
 
-- `Resource Library`
+- `Resources`
   - browse the curated resource catalog
   - filter by emotion, resource type, and coping style
+  - inspect credibility badges, goal tags, and rationale text
   - inspect catalog coverage and validation status
 
 - `History`
   - inspect saved entries and summaries
+  - show seeded demo rows when the hosted SQLite store is empty
 
 - `Insights`
   - inspect trends, counts, preferred coping styles, and resource usefulness
+  - show seeded demo analytics when the hosted SQLite store is empty
 
-- `About the Model`
+- `Model`
   - inspect metadata and evaluation report
 
 ### Why Streamlit works well here
@@ -975,6 +996,9 @@ Recently completed upgrade areas:
 - richer but still safe coach summary persistence
 - Streamlit Cloud deployment configuration and documentation
 - Altair-based insight charts and model confusion-matrix views
+- optional structured LLM coach mode with deterministic fallback
+- source-tier and goal-tag resource metadata with rationale text
+- seeded recruiter-demo history and insights for empty Streamlit Cloud sessions
 
 ## 36. Final Mental Model
 

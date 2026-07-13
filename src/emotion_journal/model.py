@@ -11,9 +11,11 @@ from .config import (
     BASELINE_MODEL_NAME,
     EMOTION_TO_ID,
     EXPLANATION_PHRASE_LIMIT,
+    hf_model_id,
     LABELS,
     MODELS_DIR,
 )
+from .classification import analyze_emotion_scores, maybe_generate_llm_emotion_analysis
 from .preprocessing import normalize_text
 from .recommendations import build_support_response
 
@@ -35,6 +37,15 @@ class Prediction:
     interpretation: Optional[str] = None
     follow_up_prompts: List[str] = field(default_factory=list)
     explanation_phrases: List[str] = field(default_factory=list)
+    secondary_emotions: List[str] = field(default_factory=list)
+    emotion_tags: List[str] = field(default_factory=list)
+    top_margin: Optional[float] = None
+    is_mixed: bool = False
+    uncertainty_reason: Optional[str] = None
+    calibration_notes: List[str] = field(default_factory=list)
+    classifier_mode: str = "calibrated"
+    classifier_source: str = "artifact"
+    classifier_fallback_reason: Optional[str] = None
 
 
 class BaselineExplainer:
@@ -157,9 +168,28 @@ class ArtifactPredictor:
             import torch
             from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-            artifact_dir = model_dir / production_metadata["artifact_dir"]
+            model_source = hf_model_id()
+            local_artifact_dir = model_dir / production_metadata["artifact_dir"]
+            if not model_source:
+                weights_present = any(local_artifact_dir.glob("*.safetensors")) or (
+                    local_artifact_dir / "pytorch_model.bin"
+                ).exists()
+                if not weights_present:
+                    raise FileNotFoundError(
+                        "Transformer weights were not found locally and JOURNALPULSE_HF_MODEL_ID is not set. "
+                        "Push the trained model to the Hugging Face Hub and set "
+                        "JOURNALPULSE_HF_MODEL_ID=<your-model-id>, or place model.safetensors under "
+                        f"{local_artifact_dir}. See docs/PRODUCTION_DEPLOYMENT.md."
+                    )
+            artifact_dir = model_source or local_artifact_dir
             tokenizer = AutoTokenizer.from_pretrained(artifact_dir)
             model = AutoModelForSequenceClassification.from_pretrained(artifact_dir)
+            if model_source:
+                production_metadata = {
+                    **production_metadata,
+                    "artifact_source": "huggingface_hub",
+                    "hf_model_id": model_source,
+                }
             return cls(
                 model=model,
                 model_type=model_type,
@@ -215,13 +245,17 @@ class ArtifactPredictor:
             raise ValueError("Prediction requires non-empty text")
 
         probabilities = self._predict_probabilities(raw_text)
-        winner = int(np.argmax(probabilities))
-        emotion = self.label_map[winner]
-        confidence = float(probabilities[winner])
-        scores = {
+        base_scores = {
             self.label_map[index]: round(float(score), 4)
             for index, score in enumerate(probabilities)
         }
+        analysis = maybe_generate_llm_emotion_analysis(
+            raw_text,
+            analyze_emotion_scores(raw_text, base_scores),
+        )
+        emotion = analysis.emotion
+        confidence = analysis.confidence
+        scores = analysis.scores
 
         explanation_phrases: List[str] = []
         if self.explainer is not None:
@@ -237,12 +271,26 @@ class ArtifactPredictor:
             activity=activity,
             explanation_phrases=explanation_phrases,
         )
+        if analysis.is_mixed and not support["is_crisis"]:
+            secondary_text = ", ".join(analysis.secondary_emotions) if analysis.secondary_emotions else "another emotion"
+            support["recommendation"] = (
+                f"Treat this as a mixed signal led by {emotion}; check whether {secondary_text} is also present."
+            )
+            support["reflection_summary"] = (
+                f"The model sees {emotion} as the strongest signal, but the entry also overlaps with {secondary_text}."
+            )
+            support["interpretation"] = (
+                f"{support['interpretation']} The top emotion scores are close enough that this should be read as a reflection cue, not a definitive label."
+            )
         if support["is_crisis"]:
             explanation_phrases = []
+            analysis.secondary_emotions = []
+            analysis.is_mixed = False
+            analysis.uncertainty_reason = None
 
         return Prediction(
             emotion=emotion,
-            confidence=round(confidence, 4),
+            confidence=confidence,
             recommendation=support["recommendation"],
             disclaimer=support["disclaimer"],
             is_crisis=support["is_crisis"],
@@ -254,6 +302,15 @@ class ArtifactPredictor:
             interpretation=support["interpretation"],
             follow_up_prompts=support["follow_up_prompts"],
             explanation_phrases=explanation_phrases,
+            secondary_emotions=analysis.secondary_emotions,
+            emotion_tags=analysis.emotion_tags,
+            top_margin=analysis.top_margin,
+            is_mixed=analysis.is_mixed,
+            uncertainty_reason=analysis.uncertainty_reason,
+            calibration_notes=analysis.calibration_notes,
+            classifier_mode=analysis.classifier_mode,
+            classifier_source=analysis.classifier_source,
+            classifier_fallback_reason=analysis.classifier_fallback_reason,
         )
 
 

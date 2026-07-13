@@ -47,6 +47,9 @@ ENTRY_ADDITIONAL_COLUMNS = {
     "interpretation": "TEXT",
     "confidence_band": "TEXT",
     "model_name": "TEXT",
+    "classifier_mode": "TEXT",
+    "classifier_source": "TEXT",
+    "classifier_fallback_reason": "TEXT",
     "support_message": "TEXT",
     "follow_up_prompts_json": "TEXT",
     "explanation_phrases_json": "TEXT",
@@ -130,6 +133,8 @@ def _deserialize_entry(row: sqlite3.Row) -> dict:
     )
     if entry["coach_summary"] is None:
         entry["coach_summary"] = _legacy_coach_summary(entry)
+    entry["classifier_mode"] = entry.get("classifier_mode") or "calibrated"
+    entry["classifier_source"] = entry.get("classifier_source") or "artifact"
     return entry
 
 
@@ -159,6 +164,9 @@ def insert_entry(
     interpretation: Optional[str] = None,
     confidence_band: Optional[str] = None,
     model_name: Optional[str] = None,
+    classifier_mode: Optional[str] = None,
+    classifier_source: Optional[str] = None,
+    classifier_fallback_reason: Optional[str] = None,
     support_message: Optional[str] = None,
     follow_up_prompts=None,
     explanation_phrases=None,
@@ -173,10 +181,11 @@ def insert_entry(
             """
             INSERT INTO journal_entries (
                 text, emotion, confidence, recommendation, location, activity, feedback,
-                reflection_summary, interpretation, confidence_band, model_name, support_message,
+                reflection_summary, interpretation, confidence_band, model_name,
+                classifier_mode, classifier_source, classifier_fallback_reason, support_message,
                 follow_up_prompts_json, explanation_phrases_json, coach_state_summary, coach_summary_json,
                 suggested_resource_ids_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 text,
@@ -190,6 +199,9 @@ def insert_entry(
                 interpretation,
                 confidence_band,
                 model_name,
+                classifier_mode,
+                classifier_source,
+                classifier_fallback_reason,
                 support_message,
                 _serialize_list(follow_up_prompts),
                 _serialize_list(explanation_phrases),
