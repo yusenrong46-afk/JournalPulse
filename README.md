@@ -1,5 +1,7 @@
 # JournalPulse Research Beta
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fyusenrong46-afk%2FJournalPulse%2Ftree%2Fcodex%2Fjournalpulse-research-beta)
+
 JournalPulse is a privacy-aware, non-clinical reflection product and an adaptive-intervention research
 platform. A mobile-first Next.js PWA guides a person from writing, through correcting a bounded
 affective-state estimate, to choosing a target and trying one approved activity. FastAPI enforces safety,
