@@ -13,6 +13,12 @@ class SafetyMode(StrEnum):
     SUPPORT = "support"
 
 
+class SelectionSource(StrEnum):
+    POLICY = "policy"
+    POLICY_ACCEPTED = "policy_accepted"
+    USER_OVERRIDE = "user_override"
+
+
 class AffectiveState(BaseModel):
     valence: float = Field(ge=-1.0, le=1.0)
     arousal: float = Field(ge=0.0, le=1.0)
@@ -47,6 +53,9 @@ class PolicyDecision(BaseModel):
     safe_action_ids: list[str]
     context_snapshot: dict[str, Any]
     explanation: str
+    recommended_action_id: str | None = None
+    selection_source: SelectionSource = SelectionSource.POLICY
+    eligible_for_ope: bool = True
 
 
 class ReflectionCopy(BaseModel):
@@ -89,6 +98,18 @@ class PreparedAnalysis(BaseModel):
     resource_intent: str = Field(min_length=1, max_length=40)
 
 
+class ActionPreviewRequest(BaseModel):
+    state: AffectiveState
+    target: TargetState
+    context: dict[str, str] = Field(default_factory=dict)
+    resource_intent: str = Field(default="reflect", min_length=1, max_length=40)
+
+
+class ActionPreview(BaseModel):
+    decision: PolicyDecision
+    actions: list[dict[str, Any]]
+
+
 class AnalysisRequest(BaseModel):
     text: str = Field(min_length=1, max_length=5000)
     context: dict[str, str] = Field(default_factory=dict)
@@ -126,6 +147,7 @@ class ReflectionRequest(BaseModel):
     retain_text: bool | None = None
     locale: str = Field(default="CA", min_length=2, max_length=8)
     prepared_analysis: PreparedAnalysis | None = None
+    chosen_action_id: str | None = Field(default=None, min_length=1, max_length=120)
 
     @field_validator("text")
     @classmethod

@@ -1,10 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { StateControls } from "@/components/state-controls";
 import { apiRequest } from "@/lib/api";
-import type { AffectiveState, PreparedAnalysis, ReflectionRecord, Resource, TargetState } from "@/lib/types";
+import { usePreferences } from "@/lib/preferences";
+import type {
+  ActionPreview,
+  AffectiveState,
+  PreparedAnalysis,
+  ReflectionRecord,
+  Resource,
+  TargetState,
+} from "@/lib/types";
 
 const initialState: AffectiveState = {
   valence: 0,
@@ -23,32 +32,59 @@ const goals = [
 ];
 
 export default function ReflectPage() {
+  const [preferences] = usePreferences();
   const [step, setStep] = useState(1);
   const [text, setText] = useState("");
-  const [context, setContext] = useState("");
-  const [consent, setConsent] = useState(false);
-  const [retain, setRetain] = useState(false);
+  const [situation, setSituation] = useState("");
+  const [energy, setEnergy] = useState("medium");
+  const [socialContext, setSocialContext] = useState("alone");
+  const [consentOverride, setConsentOverride] = useState<boolean | null>(null);
+  const [retainOverride, setRetainOverride] = useState<boolean | null>(null);
   const [analysis, setAnalysis] = useState<PreparedAnalysis | null>(null);
   const [state, setState] = useState(initialState);
-  const [target, setTarget] = useState<TargetState>({ goal: "settle", valence: 0, arousal: 0.35, agency: 0.65 });
+  const [newTag, setNewTag] = useState("");
+  const [target, setTarget] = useState<TargetState>({
+    goal: "settle",
+    valence: 0,
+    arousal: 0.35,
+    agency: 0.65,
+  });
+  const [preview, setPreview] = useState<ActionPreview | null>(null);
+  const [selectedAction, setSelectedAction] = useState("");
   const [record, setRecord] = useState<ReflectionRecord | null>(null);
   const [resource, setResource] = useState<Resource | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const progress = useMemo(() => `${Math.min(step, 5)}/5`, [step]);
+  const consent = consentOverride ?? preferences.llmConsent;
+  const retain = retainOverride ?? preferences.retainText;
+  const context = useMemo(
+    () => ({ situation, energy, social_context: socialContext }),
+    [energy, situation, socialContext],
+  );
+
+  function addTag() {
+    const tag = newTag.trim().toLowerCase().replaceAll(" ", "_");
+    if (!tag || state.emotion_tags.includes(tag) || state.emotion_tags.length >= 6) return;
+    setState({ ...state, emotion_tags: [...state.emotion_tags, tag] });
+    setNewTag("");
+  }
 
   async function analyze() {
-    if (text.trim().length < 8) return setError("Write at least one complete thought before continuing.");
+    if (text.trim().length < 8) {
+      setError("Write at least one complete thought before continuing.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const result = await apiRequest<PreparedAnalysis>("/v1/reflections/analyze", {
         method: "POST",
-        body: JSON.stringify({ text, context: context ? { situation: context } : {}, llm_consent: consent, locale: "CA" }),
+        body: JSON.stringify({ text, context, llm_consent: consent, locale: preferences.locale }),
       });
       setAnalysis(result);
       setState({ ...result.state, confidence: 1 });
-      setStep(result.safety.mode === "support" ? 4 : 2);
+      setStep(result.safety.mode === "support" ? 5 : 2);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Analysis failed.");
     } finally {
@@ -56,8 +92,32 @@ export default function ReflectPage() {
     }
   }
 
-  async function decide() {
+  async function previewActions() {
     if (!analysis) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await apiRequest<ActionPreview>("/v1/actions/preview", {
+        method: "POST",
+        body: JSON.stringify({
+          state,
+          target,
+          context,
+          resource_intent: analysis.resource_intent,
+        }),
+      });
+      setPreview(result);
+      setSelectedAction(result.decision.action_id);
+      setStep(4);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Safe actions are unavailable.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function saveChoice() {
+    if (!analysis || !preview || !selectedAction) return;
     setLoading(true);
     setError(null);
     try {
@@ -65,42 +125,24 @@ export default function ReflectPage() {
         method: "POST",
         body: JSON.stringify({
           text,
-          context: context ? { situation: context } : {},
+          context,
           self_report: state,
           target,
           llm_consent: consent,
           retain_text: retain,
-          locale: "CA",
+          locale: preferences.locale,
           prepared_analysis: analysis,
+          chosen_action_id: selectedAction,
         }),
       });
       setRecord(saved);
-      const catalog = await apiRequest<{ items: Resource[] }>("/v1/resources");
-      setResource(catalog.items.find((item) => item.id === saved.decision.action_id) ?? null);
-      setStep(4);
+      setResource(preview.actions.find((item) => item.id === saved.decision.action_id) ?? null);
+      setStep(5);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Decision failed.");
+      setError(reason instanceof Error ? reason.message : "The action could not be saved.");
     } finally {
       setLoading(false);
     }
-  }
-
-  async function submitOutcome(form: FormData) {
-    if (!record) return;
-    setLoading(true);
-    await apiRequest("/v1/outcomes", {
-      method: "POST",
-      body: JSON.stringify({
-        decision_id: record.decision.decision_id,
-        completed: form.get("completed") === "yes",
-        post_state: state,
-        helpfulness: Number(form.get("helpfulness")),
-        effort: Number(form.get("effort")),
-        elapsed_minutes: Number(form.get("elapsed")),
-      }),
-    });
-    setLoading(false);
-    setStep(5);
   }
 
   return (
@@ -116,11 +158,18 @@ export default function ReflectPage() {
           <span className="folio">01 / Observe</span>
           <h2>What happened, what feeling is strongest, and what still feels unresolved?</h2>
           <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Write without trying to sound composed…" autoFocus />
-          <label className="field-label">Optional situation<input value={context} onChange={(event) => setContext(event.target.value)} placeholder="After work, before sleep, with someone…" /></label>
-          <div className="consent-box">
-            <label><input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} /><span><strong>Use private AI analysis</strong><small>Send this entry through an OpenRouter zero-data-retention route.</small></span></label>
-            <label><input type="checkbox" checked={retain} onChange={(event) => setRetain(event.target.checked)} /><span><strong>Keep my original text</strong><small>Otherwise only your approved structured state is saved.</small></span></label>
+          <label className="field-label">Optional situation<input value={situation} onChange={(event) => setSituation(event.target.value)} placeholder="After work, before sleep, with someone…" /></label>
+          <div className="context-grid">
+            <label>Energy<select value={energy} onChange={(event) => setEnergy(event.target.value)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+            <label>Social context<select value={socialContext} onChange={(event) => setSocialContext(event.target.value)}><option value="alone">Alone</option><option value="with_others">With others</option><option value="after_contact">After contact</option></select></label>
           </div>
+          <details className="processing-details">
+            <summary>Processing choices for this entry</summary>
+            <div className="consent-box">
+              <label><input type="checkbox" checked={consent} onChange={(event) => setConsentOverride(event.target.checked)} /><span><strong>Use private AI analysis</strong><small>Send through a zero-data-retention route when configured.</small></span></label>
+              <label><input type="checkbox" checked={retain} onChange={(event) => setRetainOverride(event.target.checked)} /><span><strong>Keep my original text</strong><small>Otherwise only your approved structured state is saved.</small></span></label>
+            </div>
+          </details>
           <button className="button primary" onClick={analyze} disabled={loading}>{loading ? "Reading carefully…" : "Check the signal"}</button>
         </section>
       )}
@@ -132,7 +181,11 @@ export default function ReflectPage() {
           <blockquote>{analysis.reflection.summary}</blockquote>
           <p className="interpretation">{analysis.reflection.interpretation}</p>
           <StateControls state={state} onChange={setState} />
-          <div className="tag-row">{state.emotion_tags.map((tag) => <span key={tag}>{tag.replaceAll("_", " ")}</span>)}</div>
+          <div className="tag-editor">
+            <div className="tag-row">{state.emotion_tags.map((tag) => <button key={tag} onClick={() => setState({ ...state, emotion_tags: state.emotion_tags.filter((item) => item !== tag) })}>{tag.replaceAll("_", " ")} ×</button>)}</div>
+            <label>Add your own signal<input value={newTag} onChange={(event) => setNewTag(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addTag(); } }} placeholder="for example: disappointed" /></label>
+            <button className="text-button" type="button" onClick={addTag}>Add tag</button>
+          </div>
           {state.uncertainty && <p className="method-note">Uncertainty: {state.uncertainty}</p>}
           <button className="button primary" onClick={() => setStep(3)}>This reflects me</button>
         </section>
@@ -144,26 +197,43 @@ export default function ReflectPage() {
           <h2>What would feel meaningfully different?</h2>
           <div className="goal-grid">{goals.map(([value, label]) => <button key={value} className={target.goal === value ? "goal active" : "goal"} onClick={() => setTarget({ ...target, goal: value })}><span>{label}</span><small>{value}</small></button>)}</div>
           <div className="target-row"><label>Desired activation<input type="range" min="0" max="1" step="0.05" value={target.arousal ?? 0.35} onChange={(event) => setTarget({ ...target, arousal: Number(event.target.value) })} /></label><label>Desired agency<input type="range" min="0" max="1" step="0.05" value={target.agency ?? 0.65} onChange={(event) => setTarget({ ...target, agency: Number(event.target.value) })} /></label></div>
-          <button className="button primary" onClick={decide} disabled={loading}>{loading ? "Choosing from safe options…" : "Find one next move"}</button>
+          <button className="button primary" onClick={previewActions} disabled={loading}>{loading ? "Checking the reviewed catalog…" : "Show safe options"}</button>
         </section>
       )}
 
-      {step === 4 && analysis?.safety.mode === "support" && !record && (
+      {step === 4 && preview && (
+        <section className="flow-sheet">
+          <span className="folio">04 / Choose</span>
+          <h2>Choose the action you are actually willing to try.</h2>
+          <p>The first option is the transparent baseline recommendation. Choosing another is recorded as your decision, not model performance.</p>
+          <div className="resource-choice-grid">
+            {preview.actions.map((item) => {
+              const recommended = item.id === preview.decision.action_id;
+              return <button key={item.id} className={selectedAction === item.id ? "resource-choice active" : "resource-choice"} onClick={() => setSelectedAction(item.id)}><span className="resource-meta">{recommended ? "Baseline pick" : "Safe alternative"} · {item.duration_minutes ?? "—"} min</span><strong>{item.title}</strong><p>{item.summary}</p><small>{item.provider} · {item.resource_type}</small></button>;
+            })}
+          </div>
+          <button className="button primary" onClick={saveChoice} disabled={loading || !selectedAction}>{loading ? "Saving your choice…" : "Use this action"}</button>
+        </section>
+      )}
+
+      {step === 5 && analysis?.safety.mode === "support" && !record && (
         <section className="flow-sheet support-sheet"><span className="folio">Support mode</span><h2>Human support comes first.</h2><p>{analysis.safety.support_message}</p><a className="button urgent" href="https://988.ca/" target="_blank" rel="noreferrer">Open 9-8-8 Canada</a></section>
       )}
 
-      {step === 4 && record && (
-        <section className="flow-sheet">
-          <span className="folio">04 / Act</span>
+      {step === 5 && record && (
+        <section className="flow-sheet action-sheet">
+          <span className="folio">05 / Act</span>
+          <div className="action-duration">{resource?.duration_minutes ?? "—"}<small>minutes</small></div>
           <h2>{resource?.title ?? "Take a deliberate pause"}</h2>
-          <p>{resource?.summary ?? "Step away for two minutes and notice what changes without forcing it."}</p>
-          <div className="evidence-slip"><span>Why this</span><p>{record.decision.explanation}</p><small>{record.decision.policy_name} · propensity {record.decision.propensity.toFixed(2)}</small></div>
-          {resource && <a className="button primary" href={resource.url} target="_blank" rel="noreferrer">Open {resource.resource_type}</a>}
-          <details><summary>Record a check-in now</summary><form action={submitOutcome} className="outcome-form"><label>Did you try it?<select name="completed" defaultValue="yes"><option value="yes">Yes</option><option value="no">Not yet</option></select></label><label>Helpfulness, 1–5<input name="helpfulness" type="number" min="1" max="5" defaultValue="3" /></label><label>Effort, 1–5<input name="effort" type="number" min="1" max="5" defaultValue="2" /></label><label>Minutes elapsed<input name="elapsed" type="number" min="0" defaultValue="10" /></label><button className="button secondary" disabled={loading}>Save outcome</button></form></details>
+          <p>{resource?.summary ?? "Step away briefly and notice what changes without forcing it."}</p>
+          <div className="evidence-slip"><span>Why this</span><p>{record.decision.explanation}</p><small>{record.decision.selection_source.replaceAll("_", " ")} · {record.decision.eligible_for_ope ? "eligible for policy evaluation" : "excluded from policy evaluation"}</small></div>
+          <div className="button-row">
+            {resource && <a className="button primary" href={resource.url} target="_blank" rel="noreferrer">Open {resource.resource_type}</a>}
+            <Link className="button secondary" href={`/check-in?decision=${record.decision.decision_id}`}>Check in afterward</Link>
+          </div>
+          <Link className="text-button" href="/">I’ll check in later</Link>
         </section>
       )}
-
-      {step === 5 && <section className="flow-sheet complete-sheet"><span className="folio">05 / Learn</span><h2>Outcome recorded.</h2><p>This is one observation, not a conclusion. Repeated outcomes are what allow the policy to learn responsibly.</p><button className="button primary" onClick={() => window.location.assign("/")}>Return to today</button></section>}
       {error && <p className="error-note" role="alert">{error}</p>}
     </div>
   );

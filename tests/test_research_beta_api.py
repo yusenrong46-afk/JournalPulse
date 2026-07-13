@@ -85,6 +85,12 @@ def test_guided_reflection_outcome_insights_and_delete(tmp_path: Path):
         assert insights["reflection_count"] == 1
         assert insights["completed_outcomes"] == 1
         assert insights["average_state_change"]["agency"] == 0.24
+        assert insights["completion_rate"] == 1.0
+        assert insights["pending_decision_ids"] == []
+        assert insights["state_trajectory"][0]["reflection_id"] == record["id"]
+        assert len(
+            client.get("/v1/outcomes", headers={"X-JournalPulse-User": USER_A}).json()["items"]
+        ) == 1
 
         assert client.get("/v1/reflections", headers={"X-JournalPulse-User": USER_B}).json()["items"] == []
         deleted = client.delete(f"/v1/reflections/{record['id']}", headers={"X-JournalPulse-User": USER_A})
@@ -201,3 +207,65 @@ def test_outcome_cannot_be_attached_to_another_users_decision(tmp_path: Path):
         )
         assert response.status_code == 404
         assert response.json()["detail"] == "Policy decision not found"
+
+
+def test_action_preview_and_user_override_preserve_policy_provenance(tmp_path: Path):
+    app = create_app(settings=settings(tmp_path))
+    with TestClient(app) as client:
+        preview = client.post(
+            "/v1/actions/preview",
+            json={
+                "state": reflection_payload()["self_report"],
+                "target": reflection_payload()["target"],
+                "context": {"activity": "after work"},
+                "resource_intent": "reflect",
+            },
+        )
+        assert preview.status_code == 200
+        choices = preview.json()["actions"]
+        assert len(choices) == 3
+        assert all(item["url"].startswith("https://") for item in choices)
+
+        recommended = preview.json()["decision"]["action_id"]
+        alternative = next(item["id"] for item in choices if item["id"] != recommended)
+        saved = client.post(
+            "/v1/reflections",
+            headers={"X-JournalPulse-User": USER_A},
+            json=reflection_payload(chosen_action_id=alternative),
+        )
+        assert saved.status_code == 201
+        decision = saved.json()["decision"]
+        assert decision["action_id"] == alternative
+        assert decision["recommended_action_id"] == recommended
+        assert decision["selection_source"] == "user_override"
+        assert decision["eligible_for_ope"] is False
+
+
+def test_unsafe_action_choice_is_rejected(tmp_path: Path):
+    app = create_app(settings=settings(tmp_path))
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/reflections",
+            headers={"X-JournalPulse-User": USER_A},
+            json=reflection_payload(chosen_action_id="model-generated-url"),
+        )
+        assert response.status_code == 422
+        assert response.json()["detail"] == "Chosen action is not in the safe set"
+
+
+def test_only_one_check_in_is_accepted_per_decision(tmp_path: Path):
+    app = create_app(settings=settings(tmp_path))
+    with TestClient(app) as client:
+        record = client.post(
+            "/v1/reflections",
+            headers={"X-JournalPulse-User": USER_A},
+            json=reflection_payload(),
+        ).json()
+        payload = {"decision_id": record["decision"]["decision_id"], "completed": True}
+        first = client.post("/v1/outcomes", headers={"X-JournalPulse-User": USER_A}, json=payload)
+        duplicate = client.post(
+            "/v1/outcomes", headers={"X-JournalPulse-User": USER_A}, json=payload
+        )
+        assert first.status_code == 201
+        assert duplicate.status_code == 409
+        assert duplicate.json()["detail"] == "Check-in already recorded"

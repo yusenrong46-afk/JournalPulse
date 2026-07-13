@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { apiRequest } from "@/lib/api";
+import { usePreferences } from "@/lib/preferences";
 
 const DELETE_PHRASE = "delete my journal data";
 
 export default function PrivacyPage() {
+  const [preferences, updatePreferences, preferencesLoaded] = usePreferences();
   const [confirmation, setConfirmation] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -58,10 +60,17 @@ export default function PrivacyPage() {
       </header>
       <section className="flow-sheet">
         <span className="folio">Processing choices</span>
+        {preferencesLoaded && (
+          <div className="preference-panel">
+            <label><span><strong>Private AI analysis</strong><small>Default for new reflections</small></span><input type="checkbox" checked={preferences.llmConsent} onChange={(event) => updatePreferences({ ...preferences, llmConsent: event.target.checked })} /></label>
+            <label><span><strong>Retain original text</strong><small>Structured states remain available when this is off</small></span><input type="checkbox" checked={preferences.retainText} onChange={(event) => updatePreferences({ ...preferences, retainText: event.target.checked })} /></label>
+            <label><span><strong>Default follow-up window</strong><small>Used when recording elapsed time</small></span><select value={preferences.followUpMinutes} onChange={(event) => updatePreferences({ ...preferences, followUpMinutes: Number(event.target.value) })}><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="20">20 minutes</option><option value="60">1 hour</option></select></label>
+          </div>
+        )}
         <div className="privacy-list">
           <article>
             <strong>AI analysis</strong>
-            <p>Opt in per reflection. Requests require zero-data-retention routing.</p>
+            <p>Your saved default can still be changed for each reflection. Requests require zero-data-retention routing.</p>
           </article>
           <article>
             <strong>Original text</strong>

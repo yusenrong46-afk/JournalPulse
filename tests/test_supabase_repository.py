@@ -97,6 +97,9 @@ def test_supabase_adapter_forwards_user_jwt_and_writes_normalized_audit_rows(tmp
         "/rest/v1/safety_events",
     ]
     assert all(payload["user_id"] == str(USER_ID) for _, _, payload in requests)
+    decision_payload = next(payload for _, path, payload in requests if path.endswith("policy_decisions"))
+    assert decision_payload["selection_source"] == "policy"
+    assert decision_payload["eligible_for_ope"] is True
 
 
 def test_bulk_delete_uses_authenticated_database_function(tmp_path: Path):

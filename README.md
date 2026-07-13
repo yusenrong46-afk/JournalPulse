@@ -16,8 +16,10 @@ gates pass.
 
 ## What exists now
 
-- Next.js 16 / TypeScript PWA with Today, Reflect, History, Patterns, Memory, and Privacy flows.
-- FastAPI contracts for analysis, saved reflections, outcomes, insights, resources, export, and deletion.
+- Next.js 16 / TypeScript PWA with onboarding, Today, five-stage Reflect, Action, Check-in,
+  searchable History, trajectory Patterns, Memory, and Privacy flows.
+- FastAPI contracts for analysis, curated-action preview, explicit user overrides, saved reflections,
+  delayed outcomes, trajectories, pending check-ins, resources, export, and deletion.
 - Deterministic safety precedence and consent-aware OpenRouter structured extraction.
 - Supabase Auth validation, Postgres schema, tested user scoping, and RLS policies.
 - Curated HTTPS resource catalog; the model cannot generate destinations.
@@ -33,9 +35,9 @@ flowchart LR
   SAFE -->|support| HUMAN["Human support resource"]
   SAFE -->|normal + consent| LLM["Structured LLM / ZDR"]
   LLM --> CORRECT["User correction"]
-  CORRECT --> CATALOG["Safe catalog"]
-  CATALOG --> POLICY["Fixed policy"]
-  POLICY --> DB["Supabase Postgres + RLS"]
+  CORRECT --> CATALOG["Three safe choices"]
+  CATALOG --> POLICY["Baseline recommendation + user choice"]
+  POLICY --> DB["Decision provenance"]
   DB --> OUTCOME["Delayed outcome"]
 ```
 
@@ -78,7 +80,7 @@ uv run ruff check src tests scripts research
 uv run mypy src
 uv run pytest --cov=journalpulse --cov-report=term-missing
 uv run python scripts/validate_resources.py
-cd web && npm run lint && npm run typecheck && npm run build
+cd web && npm run lint && npm run typecheck && npm run build && npm run test:e2e
 ```
 
 Mocks validate request contracts in CI. Release evidence for model promotion must use a rotated secret and

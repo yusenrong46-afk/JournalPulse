@@ -69,12 +69,30 @@ def approved_actions(path: Path, *, intent: str, support_ids: list[str] | None =
         "watch": "watch",
         "read": "read",
         "play": "play",
+        "reflect": "read",
+    }
+    intent_to_goal = {
+        "ground": "ground",
+        "connect": "connection",
     }
     desired_style = intent_to_style.get(intent)
+    desired_goal = intent_to_goal.get(intent)
     matched = [
         resource
         for resource in resources
         if resource.get("resource_type") != "support"
         and (desired_style is None or resource.get("coping_style") == desired_style)
+        and (desired_goal is None or desired_goal in resource.get("goal_tags", []))
     ]
     return matched[:8]
+
+
+def action_intent(resource_intent: str, goal: str) -> str:
+    goal_intents = {
+        "settle": "ground",
+        "move": "move",
+        "understand": "read",
+        "connect": "connect",
+        "act": "move",
+    }
+    return goal_intents.get(goal, resource_intent)

@@ -12,6 +12,10 @@ from .config import Settings
 from .domain import OutcomeRecord, ReflectionRecord
 
 
+class DuplicateOutcomeError(ValueError):
+    pass
+
+
 class Repository(Protocol):
     def save_reflection(self, record: ReflectionRecord) -> ReflectionRecord: ...
     def save_outcome(self, record: OutcomeRecord) -> OutcomeRecord: ...
@@ -80,6 +84,8 @@ class SQLiteRepository:
         reflections = self.list_reflections(record.user_id, limit=10000, offset=0)
         if not any(item.decision.decision_id == record.decision_id for item in reflections):
             raise ValueError("Policy decision does not belong to this user")
+        if any(item.decision_id == record.decision_id for item in self.list_outcomes(record.user_id)):
+            raise DuplicateOutcomeError("An outcome already exists for this decision")
         payload = record.model_dump(mode="json")
         with self.connect() as connection:
             connection.execute(
@@ -218,6 +224,9 @@ class SupabaseRepository:
                 "policy_name": record.decision.policy_name,
                 "policy_version": record.decision.policy_version,
                 "action_id": record.decision.action_id,
+                "recommended_action_id": record.decision.recommended_action_id,
+                "selection_source": record.decision.selection_source,
+                "eligible_for_ope": record.decision.eligible_for_ope,
                 "propensity": record.decision.propensity,
                 "available_actions": record.decision.safe_action_ids,
                 "context_snapshot": record.decision.context_snapshot,
@@ -259,6 +268,18 @@ class SupabaseRepository:
         )
         if not decisions:
             raise ValueError("Policy decision does not belong to this user")
+        outcomes = self._request(
+            "GET",
+            "outcomes",
+            params={
+                "select": "id",
+                "decision_id": f"eq.{record.decision_id}",
+                "user_id": f"eq.{record.user_id}",
+                "limit": 1,
+            },
+        )
+        if outcomes:
+            raise DuplicateOutcomeError("An outcome already exists for this decision")
         self._request(
             "POST",
             "outcomes",

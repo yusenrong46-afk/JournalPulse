@@ -1,8 +1,14 @@
-const CACHE = "journalpulse-shell-v1";
-const SHELL = ["/", "/reflect", "/history", "/patterns", "/privacy", "/memory"];
+const CACHE = "journalpulse-shell-v2";
+const SHELL = ["/", "/welcome", "/reflect", "/check-in", "/history", "/patterns", "/privacy", "/memory"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))),
+  );
 });
 
 self.addEventListener("fetch", (event) => {

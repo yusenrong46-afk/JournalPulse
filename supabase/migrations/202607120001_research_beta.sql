@@ -56,6 +56,10 @@ create table if not exists public.policy_decisions (
   policy_name text not null,
   policy_version text not null,
   action_id text not null,
+  recommended_action_id text,
+  selection_source text not null default 'policy'
+    check (selection_source in ('policy', 'policy_accepted', 'user_override')),
+  eligible_for_ope boolean not null default true,
   propensity double precision not null check (propensity > 0 and propensity <= 1),
   available_actions jsonb not null,
   context_snapshot jsonb not null,
@@ -133,6 +137,8 @@ end $$;
 create index if not exists reflections_user_created_idx on public.reflections(user_id, created_at desc);
 create index if not exists decisions_user_created_idx on public.policy_decisions(user_id, created_at desc);
 create index if not exists outcomes_user_created_idx on public.outcomes(user_id, created_at desc);
+create unique index if not exists outcomes_user_decision_unique_idx
+  on public.outcomes(user_id, decision_id);
 create index if not exists memories_user_created_idx on public.episodic_memories(user_id, created_at desc);
 
 create or replace function public.delete_my_journalpulse_data()

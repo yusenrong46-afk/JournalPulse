@@ -11,6 +11,8 @@ from pydantic import BaseModel
 from .auth import AuthContext, resolve_auth
 from .config import Settings, load_settings
 from .domain import (
+    ActionPreview,
+    ActionPreviewRequest,
     AffectiveState,
     AnalysisRequest,
     ModelRun,
@@ -22,11 +24,12 @@ from .domain import (
     ReflectionRecord,
     ReflectionRequest,
     SafetyMode,
+    SelectionSource,
 )
 from .intelligence import OpenRouterReflectionClient, safe_analyze
-from .persistence import Repository, SQLiteRepository, SupabaseRepository
+from .persistence import DuplicateOutcomeError, Repository, SQLiteRepository, SupabaseRepository
 from .policy import FixedBaselinePolicy, ReflectionPolicy
-from .resources import approved_actions, load_catalog
+from .resources import action_intent, approved_actions, load_catalog
 from .safety import assess_safety
 
 
@@ -36,12 +39,27 @@ class ReflectionPage(BaseModel):
     offset: int
 
 
+class OutcomePage(BaseModel):
+    items: list[OutcomeRecord]
+
+
+class StatePoint(BaseModel):
+    reflection_id: UUID
+    created_at: str
+    valence: float
+    arousal: float
+    agency: float
+
+
 class InsightsResponse(BaseModel):
     reflection_count: int
     completed_outcomes: int
     action_counts: dict[str, int]
     average_helpfulness_by_action: dict[str, float]
     average_state_change: dict[str, float] | None
+    completion_rate: float
+    pending_decision_ids: list[UUID]
+    state_trajectory: list[StatePoint]
     note: str = "These are descriptive personal patterns, not causal or clinical conclusions."
 
 
@@ -171,13 +189,41 @@ def create_app(
             state = payload.self_report or prepared.state
             reflection = prepared.reflection
             model_run = prepared.model_run
-            actions = approved_actions(settings.resource_catalog_path, intent=prepared.resource_intent)
+            intent = action_intent(prepared.resource_intent, payload.target.goal)
+            actions = approved_actions(settings.resource_catalog_path, intent=intent)
             decision = policy.decide(
                 state=state,
                 target=payload.target,
                 actions=actions,
                 context=payload.context,
             )
+            if payload.chosen_action_id:
+                if payload.chosen_action_id not in decision.safe_action_ids:
+                    raise HTTPException(status_code=422, detail="Chosen action is not in the safe set")
+                recommended = decision.action_id
+                if payload.chosen_action_id == recommended:
+                    decision = decision.model_copy(
+                        update={
+                            "recommended_action_id": recommended,
+                            "selection_source": SelectionSource.POLICY_ACCEPTED,
+                        }
+                    )
+                else:
+                    decision = decision.model_copy(
+                        update={
+                            "action_id": payload.chosen_action_id,
+                            "recommended_action_id": recommended,
+                            "propensity": 1.0,
+                            "policy_name": "user-choice",
+                            "policy_version": "1.0.0",
+                            "selection_source": SelectionSource.USER_OVERRIDE,
+                            "eligible_for_ope": False,
+                            "explanation": (
+                                "You chose a safe alternative. This decision is recorded as a user "
+                                "override and excluded from off-policy evaluation."
+                            ),
+                        }
+                    )
 
         retain_text = (
             payload.retain_text if payload.retain_text is not None else settings.raw_text_retention_default
@@ -241,6 +287,22 @@ def create_app(
             resource_intent=analysis.resource_intent,
         )
 
+    @app.post("/v1/actions/preview", response_model=ActionPreview)
+    def preview_actions(payload: ActionPreviewRequest) -> ActionPreview:
+        intent = action_intent(payload.resource_intent, payload.target.goal)
+        actions = approved_actions(settings.resource_catalog_path, intent=intent)
+        decision = policy.decide(
+            state=payload.state,
+            target=payload.target,
+            actions=actions,
+            context=payload.context,
+        )
+        visible_ids = set(decision.safe_action_ids[:3])
+        return ActionPreview(
+            decision=decision,
+            actions=[item for item in actions if item["id"] in visible_ids],
+        )
+
     @app.post("/v1/outcomes", response_model=OutcomeRecord, status_code=201)
     def create_outcome(
         payload: OutcomeRequest, auth: AuthContext = Depends(auth_dependency)
@@ -248,8 +310,14 @@ def create_app(
         record = OutcomeRecord(user_id=auth.user_id, **payload.model_dump())
         try:
             return repositories(auth).save_outcome(record)
+        except DuplicateOutcomeError as exc:
+            raise HTTPException(status_code=409, detail="Check-in already recorded") from exc
         except ValueError as exc:
             raise HTTPException(status_code=404, detail="Policy decision not found") from exc
+
+    @app.get("/v1/outcomes", response_model=OutcomePage)
+    def outcomes(auth: AuthContext = Depends(auth_dependency)) -> OutcomePage:
+        return OutcomePage(items=repositories(auth).list_outcomes(auth.user_id))
 
     @app.get("/v1/reflections", response_model=ReflectionPage)
     def reflections(
@@ -273,6 +341,7 @@ def create_app(
         helpfulness: dict[str, list[int]] = defaultdict(list)
         deltas: dict[str, list[float]] = defaultdict(list)
         state_by_decision = {str(item.decision.decision_id): item.state for item in reflections}
+        completed_decisions = {str(item.decision_id) for item in outcomes}
         for outcome in outcomes:
             action_id = action_by_decision.get(str(outcome.decision_id), "unknown")
             if outcome.helpfulness is not None:
@@ -295,6 +364,22 @@ def create_app(
                 if deltas
                 else None
             ),
+            completion_rate=round(len(completed_decisions) / len(reflections), 3) if reflections else 0.0,
+            pending_decision_ids=[
+                item.decision.decision_id
+                for item in reflections
+                if str(item.decision.decision_id) not in completed_decisions
+            ],
+            state_trajectory=[
+                StatePoint(
+                    reflection_id=item.id,
+                    created_at=item.created_at.isoformat(),
+                    valence=item.state.valence,
+                    arousal=item.state.arousal,
+                    agency=item.state.agency,
+                )
+                for item in reversed(reflections)
+            ],
         )
 
     @app.get("/v1/resources")

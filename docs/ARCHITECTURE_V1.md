@@ -8,15 +8,20 @@ Next.js PWA -> FastAPI -> auth boundary -> safety gate
                                 v
                        user-corrected state
                                 v
-                  safe catalog -> fixed policy
+             safe catalog -> preview -> user choice
                                 v
-                 Postgres + RLS -> delayed outcome
+             provenance log -> delayed outcome
 ```
 
 The consumer product is a guided workflow, not a chatbot. Safety runs before external processing.
 The model proposes a bounded affective state; the person corrects it; a policy receives only approved
 catalog actions. Production currently uses a transparent fixed policy. Adaptive algorithms and episodic
 memory remain disabled until their independent evidence gates pass.
+
+The policy first previews a recommendation and safe alternatives. Accepting the recommendation preserves
+its propensity. Selecting an alternative records the baseline recommendation, marks the final action as a
+user override, and excludes that decision from off-policy evaluation. One delayed outcome may close each
+decision; unfinished decisions remain visible on Today and History.
 
 ## Responsibility boundaries
 
