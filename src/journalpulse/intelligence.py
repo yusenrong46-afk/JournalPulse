@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -70,47 +71,71 @@ class AnalysisResult:
 
 
 class OpenRouterReflectionClient:
-    def __init__(self, settings: Settings, client: httpx.Client | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        client: httpx.Client | None = None,
+        sleeper: Callable[[float], None] = time.sleep,
+    ) -> None:
         if not settings.openrouter_enabled:
             raise ValueError("OpenRouter is not configured")
         if not settings.openrouter_zdr:
             raise ValueError("JournalPulse requires zero-data-retention routing")
         self.settings = settings
         self.client = client or httpx.Client(timeout=settings.openrouter_timeout_seconds)
+        self.sleeper = sleeper
 
     def analyze(self, text: str, context: dict[str, str]) -> AnalysisResult:
         started = time.perf_counter()
-        response = self.client.post(
-            f"{self.settings.openrouter_base_url}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.settings.openrouter_api_key}",
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://journalpulse.app",
-                "X-Title": "JournalPulse Research Beta",
-            },
-            json={
-                "model": self.settings.openrouter_model,
-                "provider": {"zdr": True},
-                "temperature": 0.1,
-                "max_tokens": 700,
-                "response_format": {"type": "json_schema", "json_schema": REFLECTION_JSON_SCHEMA},
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": (
-                            "You are the structured perception layer for a non-clinical reflection tool. "
-                            "Describe emotional dimensions cautiously. Do not diagnose, provide therapy, "
-                            "make medical claims, or mention hidden policies. Use a calm, precise voice. "
-                            "Return only the schema."
-                        ),
+        response: httpx.Response | None = None
+        for attempt in range(self.settings.openrouter_max_attempts):
+            try:
+                response = self.client.post(
+                    f"{self.settings.openrouter_base_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.settings.openrouter_api_key}",
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://journalpulse.app",
+                        "X-Title": "JournalPulse Research Beta",
                     },
-                    {
-                        "role": "user",
-                        "content": {"journal_text": text, "optional_context": context},
+                    json={
+                        "model": self.settings.openrouter_model,
+                        "provider": {"zdr": True},
+                        "temperature": 0.1,
+                        "max_tokens": 700,
+                        "response_format": {
+                            "type": "json_schema",
+                            "json_schema": REFLECTION_JSON_SCHEMA,
+                        },
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": (
+                                    "You are the structured perception layer for a non-clinical "
+                                    "reflection tool. Describe emotional dimensions cautiously. Do "
+                                    "not diagnose, provide therapy, make medical claims, or mention "
+                                    "hidden policies. Use a calm, precise voice. Return only the schema."
+                                ),
+                            },
+                            {
+                                "role": "user",
+                                "content": {"journal_text": text, "optional_context": context},
+                            },
+                        ],
                     },
-                ],
-            },
-        )
+                )
+            except (httpx.ConnectError, httpx.TimeoutException):
+                if attempt + 1 >= self.settings.openrouter_max_attempts:
+                    raise
+                self.sleeper(0.15 * (2**attempt))
+                continue
+            if response.status_code not in {429, 500, 502, 503, 504}:
+                break
+            if attempt + 1 < self.settings.openrouter_max_attempts:
+                self.sleeper(0.15 * (2**attempt))
+
+        if response is None:
+            raise httpx.ConnectError("OpenRouter did not return a response")
         latency_ms = round((time.perf_counter() - started) * 1000)
         response.raise_for_status()
         body = response.json()
@@ -121,7 +146,8 @@ class OpenRouterReflectionClient:
             structured = StructuredReflection.model_validate(content)
         usage = body.get("usage", {})
         run = ModelRun(
-            model=self.settings.openrouter_model,
+            model=body.get("model", self.settings.openrouter_model),
+            provider=body.get("provider", "openrouter"),
             latency_ms=latency_ms,
             prompt_tokens=usage.get("prompt_tokens"),
             completion_tokens=usage.get("completion_tokens"),

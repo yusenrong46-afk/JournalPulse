@@ -59,48 +59,78 @@ class SQLiteRepository:
                 );
                 CREATE INDEX IF NOT EXISTS idx_outcomes_user_decision
                     ON outcomes(user_id, decision_id);
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_outcomes_user_decision_unique
+                    ON outcomes(user_id, decision_id);
                 """
             )
 
     def save_reflection(self, record: ReflectionRecord) -> ReflectionRecord:
         payload = record.model_dump(mode="json")
         with self.connect() as connection:
-            connection.execute(
-                """
-                INSERT INTO reflections (id, user_id, created_at, text, payload_json)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    str(record.id),
-                    str(record.user_id),
-                    record.created_at.isoformat(),
-                    record.text,
-                    json.dumps(payload),
-                ),
-            )
+            existing = connection.execute(
+                "SELECT user_id, payload_json FROM reflections WHERE id = ?", (str(record.id),)
+            ).fetchone()
+            if existing is not None:
+                if existing["user_id"] != str(record.user_id):
+                    raise ValueError("Reflection request ID belongs to another user")
+                return ReflectionRecord.model_validate_json(existing["payload_json"])
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO reflections (id, user_id, created_at, text, payload_json)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        str(record.id),
+                        str(record.user_id),
+                        record.created_at.isoformat(),
+                        record.text,
+                        json.dumps(payload),
+                    ),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise ValueError("Reflection request ID is already in use") from exc
         return record
 
     def save_outcome(self, record: OutcomeRecord) -> OutcomeRecord:
-        reflections = self.list_reflections(record.user_id, limit=10000, offset=0)
-        if not any(item.decision.decision_id == record.decision_id for item in reflections):
-            raise ValueError("Policy decision does not belong to this user")
-        if any(item.decision_id == record.decision_id for item in self.list_outcomes(record.user_id)):
-            raise DuplicateOutcomeError("An outcome already exists for this decision")
         payload = record.model_dump(mode="json")
         with self.connect() as connection:
-            connection.execute(
-                """
-                INSERT INTO outcomes (id, user_id, decision_id, created_at, payload_json)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (
-                    str(record.id),
-                    str(record.user_id),
-                    str(record.decision_id),
-                    record.created_at.isoformat(),
-                    json.dumps(payload),
-                ),
-            )
+            existing = connection.execute(
+                "SELECT user_id, decision_id, payload_json FROM outcomes WHERE id = ?",
+                (str(record.id),),
+            ).fetchone()
+            if existing is not None:
+                if (
+                    existing["user_id"] != str(record.user_id)
+                    or existing["decision_id"] != str(record.decision_id)
+                ):
+                    raise ValueError("Outcome request ID is already in use")
+                return OutcomeRecord.model_validate_json(existing["payload_json"])
+            reflections = connection.execute(
+                "SELECT payload_json FROM reflections WHERE user_id = ?", (str(record.user_id),)
+            ).fetchall()
+            if not any(
+                ReflectionRecord.model_validate_json(item["payload_json"]).decision.decision_id
+                == record.decision_id
+                for item in reflections
+            ):
+                raise ValueError("Policy decision does not belong to this user")
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO outcomes (id, user_id, decision_id, created_at, payload_json)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        str(record.id),
+                        str(record.user_id),
+                        str(record.decision_id),
+                        record.created_at.isoformat(),
+                        json.dumps(payload),
+                    ),
+                )
+            except sqlite3.IntegrityError as exc:
+                raise DuplicateOutcomeError("An outcome already exists for this decision") from exc
         return record
 
     def list_reflections(self, user_id: UUID, *, limit: int = 50, offset: int = 0) -> list[ReflectionRecord]:
@@ -185,113 +215,23 @@ class SupabaseRepository:
 
     def save_reflection(self, record: ReflectionRecord) -> ReflectionRecord:
         payload = record.model_dump(mode="json")
-        self._request(
-            "POST",
-            "reflections",
-            json={
-                "id": str(record.id),
-                "user_id": str(record.user_id),
-                "created_at": record.created_at.isoformat(),
-                "raw_text": record.text,
-                "text_retained": record.text_retained,
-                "context": record.context,
-                "state": record.state.model_dump(mode="json"),
-                "target": record.target.model_dump(mode="json"),
-                "reflection": record.reflection.model_dump(mode="json"),
-                "safety": record.safety.model_dump(mode="json"),
-                "decision": record.decision.model_dump(mode="json"),
-                "model_run": record.model_run.model_dump(mode="json") if record.model_run else None,
-                "record": payload,
-            },
-        )
-        self._request(
-            "POST",
-            "affective_observations",
-            json={
-                "user_id": str(record.user_id),
-                "reflection_id": str(record.id),
-                "observation_kind": "self_report",
-                "state": record.state.model_dump(mode="json"),
-            },
-        )
-        self._request(
-            "POST",
-            "policy_decisions",
-            json={
-                "id": str(record.decision.decision_id),
-                "user_id": str(record.user_id),
-                "reflection_id": str(record.id),
-                "policy_name": record.decision.policy_name,
-                "policy_version": record.decision.policy_version,
-                "action_id": record.decision.action_id,
-                "recommended_action_id": record.decision.recommended_action_id,
-                "selection_source": record.decision.selection_source,
-                "eligible_for_ope": record.decision.eligible_for_ope,
-                "propensity": record.decision.propensity,
-                "available_actions": record.decision.safe_action_ids,
-                "context_snapshot": record.decision.context_snapshot,
-            },
-        )
-        if record.model_run:
-            self._request(
-                "POST",
-                "model_runs",
-                json={
-                    "user_id": str(record.user_id),
-                    "reflection_id": str(record.id),
-                    **record.model_run.model_dump(mode="json"),
-                },
-            )
-        self._request(
-            "POST",
-            "safety_events",
-            json={
-                "user_id": str(record.user_id),
-                "reflection_id": str(record.id),
-                "mode": record.safety.mode,
-                "reason_codes": record.safety.reasons,
-                "locale": record.safety.locale,
-            },
-        )
-        return record
+        saved = self._request("POST", "rpc/save_reflection_bundle", json={"payload": payload})
+        return ReflectionRecord.model_validate(saved)
 
     def save_outcome(self, record: OutcomeRecord) -> OutcomeRecord:
-        decisions = self._request(
-            "GET",
-            "policy_decisions",
-            params={
-                "select": "id",
-                "id": f"eq.{record.decision_id}",
-                "user_id": f"eq.{record.user_id}",
-                "limit": 1,
-            },
-        )
-        if not decisions:
-            raise ValueError("Policy decision does not belong to this user")
-        outcomes = self._request(
-            "GET",
-            "outcomes",
-            params={
-                "select": "id",
-                "decision_id": f"eq.{record.decision_id}",
-                "user_id": f"eq.{record.user_id}",
-                "limit": 1,
-            },
-        )
-        if outcomes:
-            raise DuplicateOutcomeError("An outcome already exists for this decision")
-        self._request(
-            "POST",
-            "outcomes",
-            json={
-                "id": str(record.id),
-                "user_id": str(record.user_id),
-                "decision_id": str(record.decision_id),
-                "created_at": record.created_at.isoformat(),
-                "record": record.model_dump(mode="json"),
-            },
-        )
-        return record
+        try:
+            saved = self._request(
+                "POST",
+                "rpc/save_outcome_record",
+                json={"payload": record.model_dump(mode="json")},
+            )
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 409:
+                raise DuplicateOutcomeError("An outcome already exists for this decision") from exc
+            if exc.response.status_code in {400, 404}:
+                raise ValueError("Policy decision does not belong to this user") from exc
+            raise
+        return OutcomeRecord.model_validate(saved)
 
     def list_reflections(self, user_id: UUID, *, limit: int = 50, offset: int = 0) -> list[ReflectionRecord]:
         rows = self._request(

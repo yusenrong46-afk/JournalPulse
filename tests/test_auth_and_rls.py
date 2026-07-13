@@ -3,7 +3,9 @@ from pathlib import Path
 import httpx
 import pytest
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
+from journalpulse.api import create_app
 from journalpulse.auth import resolve_auth
 from journalpulse.config import Settings
 
@@ -71,6 +73,42 @@ def test_supabase_rejects_missing_or_invalid_session(tmp_path: Path):
         )
     assert invalid.value.status_code == 401
 
+    unavailable_client = httpx.Client(
+        transport=httpx.MockTransport(lambda _: (_ for _ in ()).throw(httpx.ConnectError("down")))
+    )
+    with pytest.raises(HTTPException) as unavailable:
+        resolve_auth(
+            configured(tmp_path, supabase=True),
+            authorization="Bearer signed-session",
+            development_user=None,
+            client=unavailable_client,
+        )
+    assert unavailable.value.status_code == 503
+
+
+def test_analysis_and_action_preview_require_session_in_supabase_mode(tmp_path: Path):
+    app = create_app(settings=configured(tmp_path, supabase=True))
+    with TestClient(app) as client:
+        analysis = client.post(
+            "/v1/reflections/analyze",
+            json={"text": "This should not spend provider tokens anonymously."},
+        )
+        preview = client.post(
+            "/v1/actions/preview",
+            json={
+                "state": {
+                    "valence": 0,
+                    "arousal": 0.5,
+                    "agency": 0.5,
+                    "emotion_tags": [],
+                    "confidence": 1,
+                },
+                "target": {"goal": "settle"},
+            },
+        )
+        assert analysis.status_code == 401
+        assert preview.status_code == 401
+
 
 def test_migration_enables_rls_and_owner_policy_for_every_user_table():
     migration = (
@@ -97,3 +135,15 @@ def test_migration_enables_rls_and_owner_policy_for_every_user_table():
     assert "security invoker" in migration
     assert "delete_my_journalpulse_data" in migration
     assert "references public.policy_decisions(id) on delete cascade" in migration
+
+    hardening = (
+        Path(__file__).resolve().parents[1]
+        / "supabase"
+        / "migrations"
+        / "202607120002_foundation_hardening.sql"
+    ).read_text(encoding="utf-8")
+    assert "save_reflection_bundle" in hardening
+    assert "save_outcome_record" in hardening
+    assert hardening.count("security invoker") == 2
+    assert hardening.count("auth.uid()") == 2
+    assert "grant execute on function public.save_reflection_bundle(jsonb) to authenticated" in hardening

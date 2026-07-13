@@ -27,13 +27,16 @@ def resolve_auth(
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Missing bearer token")
         token = authorization.removeprefix("Bearer ").strip()
-        response = (client or httpx.Client(timeout=10)).get(
-            f"{settings.supabase_url.rstrip('/')}/auth/v1/user",
-            headers={
-                "apikey": settings.supabase_anon_key or "",
-                "Authorization": f"Bearer {token}",
-            },
-        )
+        try:
+            response = (client or httpx.Client(timeout=10)).get(
+                f"{settings.supabase_url.rstrip('/')}/auth/v1/user",
+                headers={
+                    "apikey": settings.supabase_anon_key or "",
+                    "Authorization": f"Bearer {token}",
+                },
+            )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=503, detail="Authentication service unavailable") from exc
         if response.status_code != 200:
             raise HTTPException(status_code=401, detail="Invalid or expired session")
         return AuthContext(user_id=UUID(response.json()["id"]), access_token=token)

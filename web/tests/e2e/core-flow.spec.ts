@@ -35,6 +35,7 @@ const preferences = {
   onboarded: true,
   llmConsent: false,
   retainText: false,
+  encryptedDrafts: false,
   followUpMinutes: 10,
   locale: "CA",
 };
@@ -49,6 +50,9 @@ test("guided reflection preserves the human correction step", async ({ page }) =
   await onboard(page);
   await page.route("http://127.0.0.1:8000/**", async (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === "/v1/system/status") {
+      return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
+    }
     if (url.pathname.endsWith("/analyze")) return route.fulfill({ json: analysis });
     if (url.pathname === "/v1/actions/preview") {
       return route.fulfill({
@@ -129,14 +133,17 @@ test("guided reflection preserves the human correction step", async ({ page }) =
   await page.getByPlaceholder("Write without trying to sound composed…").fill(
     "The meeting is replaying in my head and I cannot settle.",
   );
-  await page.getByRole("button", { name: "Check the signal" }).click();
+  await page.getByRole("button", { name: "Continue to my state" }).click();
   await expect(page.getByText("The system’s read is a proposal, not a verdict.")).toBeVisible();
+  await expect(page.getByText("Local reflection mode")).toBeVisible();
   await page.getByRole("button", { name: "This reflects me" }).click();
-  await page.getByRole("button", { name: "Show safe options" }).click();
+  await page.getByRole("button", { name: "Show reviewed options" }).click();
   await expect(page.getByText("Choose the action you are actually willing to try.")).toBeVisible();
   await page.getByRole("button", { name: "Use this action" }).click();
   await expect(page.getByRole("heading", { name: "A two-minute breathing reset" })).toBeVisible();
   await expect(page.getByText(/policy accepted · eligible for policy evaluation/)).toBeVisible();
+  const reminder = await page.evaluate(() => localStorage.getItem("journalpulse_reminders_v1"));
+  expect(JSON.parse(reminder ?? "[]")).toHaveLength(1);
 });
 
 test("welcome flow stores explicit defaults before the first reflection", async ({ page }) => {
@@ -150,8 +157,15 @@ test("welcome flow stores explicit defaults before the first reflection", async 
 
 test("delayed check-in records a post-action state", async ({ page }) => {
   await onboard(page);
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "journalpulse_reminders_v1",
+      JSON.stringify([{ decisionId: "20000000-0000-4000-8000-000000000001", actionId: "mindful_breathing_ucla", actionTitle: "A two-minute breathing reset", dueAt: "2026-07-12T12:10:00Z" }]),
+    );
+  });
   await page.route("http://127.0.0.1:8000/**", async (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname === "/v1/system/status") return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
     if (url.pathname === "/v1/reflections") {
       return route.fulfill({ json: { items: [{ id: "reflection-1", created_at: "2026-07-12T12:00:00Z", text_retained: false, context: {}, state: analysis.state, target: { goal: "settle" }, reflection: analysis.reflection, safety: analysis.safety, decision: { decision_id: "20000000-0000-4000-8000-000000000001", action_id: "mindful_breathing_ucla", propensity: 1, policy_name: "fixed-baseline", policy_version: "1.0.0", safe_action_ids: ["mindful_breathing_ucla"], context_snapshot: {}, explanation: "Baseline", selection_source: "policy_accepted", eligible_for_ope: true } }] } });
     }
@@ -164,6 +178,7 @@ test("delayed check-in records a post-action state", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "A two-minute breathing reset" })).toBeVisible();
   await page.getByRole("button", { name: "Record this outcome" }).click();
   await expect(page.getByRole("heading", { name: "One observation recorded." })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("journalpulse_reminders_v1"))).toBe("[]");
 });
 
 test("mobile Today screen has a stable scientific-journal composition", async ({ page }, testInfo) => {
@@ -171,6 +186,7 @@ test("mobile Today screen has a stable scientific-journal composition", async ({
   await onboard(page);
   await page.route("http://127.0.0.1:8000/**", (route) => {
     const pathname = new URL(route.request().url()).pathname;
+    if (pathname === "/v1/system/status") return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
     return route.fulfill({
       json:
         pathname === "/v1/insights"
@@ -198,4 +214,30 @@ test("mobile Today screen has a stable scientific-journal composition", async ({
     fullPage: true,
     maxDiffPixelRatio: 0.02,
   });
+});
+
+test("encrypted draft recovery survives a refresh only after opt-in", async ({ page }) => {
+  await page.addInitScript((value) => {
+    window.localStorage.setItem(
+      "journalpulse_preferences_v1",
+      JSON.stringify({ ...value, encryptedDrafts: true }),
+    );
+  }, preferences);
+  await page.route("http://127.0.0.1:8000/**", (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname === "/v1/system/status") {
+      return route.fulfill({
+        json: { analysis_mode: "local_fallback", persistence_mode: "this_device", message: "Local mode." },
+      });
+    }
+    return route.fulfill({ status: 404, json: { detail: "Not needed for draft recovery" } });
+  });
+
+  await page.goto("/reflect");
+  const entry = page.getByPlaceholder("Write without trying to sound composed…");
+  await entry.fill("This unfinished thought should survive one accidental refresh.");
+  await expect(page.getByText("Encrypted draft saved on this device.")).toBeVisible();
+  await page.reload();
+  await expect(entry).toHaveValue("This unfinished thought should survive one accidental refresh.");
+  await expect(page.getByText("Encrypted draft restored on this device.")).toBeVisible();
 });

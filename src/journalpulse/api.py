@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import os
 from collections import Counter, defaultdict
 from collections.abc import Callable
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.middleware.gzip import GZipMiddleware
 
 from .auth import AuthContext, resolve_auth
 from .config import Settings, load_settings
@@ -27,6 +31,7 @@ from .domain import (
     SelectionSource,
 )
 from .intelligence import OpenRouterReflectionClient, safe_analyze
+from .middleware import RequestContextMiddleware, SlidingWindowRateLimiter
 from .persistence import DuplicateOutcomeError, Repository, SQLiteRepository, SupabaseRepository
 from .policy import FixedBaselinePolicy, ReflectionPolicy
 from .resources import action_intent, approved_actions, load_catalog
@@ -74,6 +79,12 @@ class DeletionResponse(BaseModel):
     note: str = "Journal data was deleted. Your sign-in identity remains active."
 
 
+class SystemStatusResponse(BaseModel):
+    analysis_mode: str
+    persistence_mode: str
+    message: str
+
+
 def create_app(
     *,
     settings: Settings | None = None,
@@ -83,6 +94,7 @@ def create_app(
 ) -> FastAPI:
     settings = settings or load_settings()
     policy = policy or FixedBaselinePolicy()
+    analysis_limiter = SlidingWindowRateLimiter(limit=settings.analysis_rate_limit_per_minute)
 
     def default_repository_factory(auth: AuthContext) -> Repository:
         if settings.supabase_enabled and auth.access_token:
@@ -91,12 +103,15 @@ def create_app(
 
     repositories = repository_factory or default_repository_factory
     app = FastAPI(title="JournalPulse Research Beta API", version="1.0.0")
+    app.add_middleware(RequestContextMiddleware, max_request_bytes=settings.max_request_bytes)
+    app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        allow_origins=list(settings.cors_origins),
         allow_credentials=True,
         allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-JournalPulse-User"],
+        allow_headers=["Authorization", "Content-Type", "X-JournalPulse-User", "X-Request-ID"],
+        expose_headers=["X-Request-ID"],
     )
 
     def auth_dependency(
@@ -116,6 +131,8 @@ def create_app(
     @app.get("/ready", response_model=ReadinessResponse)
     def ready() -> ReadinessResponse:
         checks: dict[str, str] = {}
+        issues = settings.configuration_issues
+        checks["configuration"] = "ready" if not issues else f"not_ready:{','.join(issues)}"
         try:
             load_catalog(settings.resource_catalog_path)
             checks["resources"] = "ready"
@@ -129,11 +146,31 @@ def create_app(
             checks["llm"] = "not_ready:not_configured"
         checks["persistence"] = "supabase" if settings.supabase_enabled else "local_sqlite"
         required_ready = (
-            checks["resources"] == "ready" and checks["llm"] != "not_ready:not_configured"
+            checks["configuration"] == "ready"
+            and checks["resources"] == "ready"
+            and checks["llm"] != "not_ready:not_configured"
         )
         if settings.environment == "production":
             required_ready = required_ready and settings.supabase_enabled
         return ReadinessResponse(status="ready" if required_ready else "not_ready", checks=checks)
+
+    @app.get("/v1/system/status", response_model=SystemStatusResponse)
+    def system_status(auth: AuthContext = Depends(auth_dependency)) -> SystemStatusResponse:
+        del auth
+        if not settings.llm_feature_enabled:
+            analysis_mode = "local_only"
+            message = "Private AI analysis is turned off. Your corrections remain the source of truth."
+        elif settings.openrouter_enabled:
+            analysis_mode = "ai_configured"
+            message = "Private AI analysis is configured. A safe local fallback remains available."
+        else:
+            analysis_mode = "local_fallback"
+            message = "AI analysis is unavailable, so entries use the local reflection fallback."
+        return SystemStatusResponse(
+            analysis_mode=analysis_mode,
+            persistence_mode="account" if settings.supabase_enabled else "this_device",
+            message=message,
+        )
 
     @app.post("/v1/reflections", response_model=ReflectionRecord, status_code=201)
     def create_reflection(
@@ -235,22 +272,37 @@ def create_app(
         retain_text = (
             payload.retain_text if payload.retain_text is not None else settings.raw_text_retention_default
         )
-        record = ReflectionRecord(
-            user_id=auth.user_id,
-            text=payload.text if retain_text else None,
-            text_retained=retain_text,
-            context=payload.context,
-            state=state,
-            target=payload.target,
-            reflection=reflection,
-            safety=safety,
-            decision=decision,
-            model_run=model_run,
-        )
-        return repositories(auth).save_reflection(record)
+        record_data = {
+            "user_id": auth.user_id,
+            "text": payload.text if retain_text else None,
+            "text_retained": retain_text,
+            "context": payload.context,
+            "state": state,
+            "target": payload.target,
+            "reflection": reflection,
+            "safety": safety,
+            "decision": decision,
+            "model_run": model_run,
+        }
+        if payload.client_request_id is not None:
+            record_data["id"] = payload.client_request_id
+        record = ReflectionRecord.model_validate(record_data)
+        try:
+            return repositories(auth).save_reflection(record)
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail="Reflection request ID is already in use") from exc
 
     @app.post("/v1/reflections/analyze", response_model=PreparedAnalysis)
-    def analyze_reflection(payload: AnalysisRequest) -> PreparedAnalysis:
+    def analyze_reflection(
+        payload: AnalysisRequest, auth: AuthContext = Depends(auth_dependency)
+    ) -> PreparedAnalysis:
+        allowed, retry_after = analysis_limiter.check(str(auth.user_id))
+        if not allowed:
+            raise HTTPException(
+                status_code=429,
+                detail="Please wait before requesting another analysis",
+                headers={"Retry-After": str(retry_after)},
+            )
         safety = assess_safety(payload.text, payload.locale)
         if safety.mode == SafetyMode.SUPPORT:
             return PreparedAnalysis(
@@ -295,7 +347,10 @@ def create_app(
         )
 
     @app.post("/v1/actions/preview", response_model=ActionPreview)
-    def preview_actions(payload: ActionPreviewRequest) -> ActionPreview:
+    def preview_actions(
+        payload: ActionPreviewRequest, auth: AuthContext = Depends(auth_dependency)
+    ) -> ActionPreview:
+        del auth
         intent = action_intent(payload.resource_intent, payload.target.goal)
         actions = approved_actions(settings.resource_catalog_path, intent=intent)
         decision = policy.decide(
@@ -314,7 +369,10 @@ def create_app(
     def create_outcome(
         payload: OutcomeRequest, auth: AuthContext = Depends(auth_dependency)
     ) -> OutcomeRecord:
-        record = OutcomeRecord(user_id=auth.user_id, **payload.model_dump())
+        record_data = {"user_id": auth.user_id, **payload.model_dump(exclude={"client_request_id"})}
+        if payload.client_request_id is not None:
+            record_data["id"] = payload.client_request_id
+        record = OutcomeRecord.model_validate(record_data)
         try:
             return repositories(auth).save_outcome(record)
         except DuplicateOutcomeError as exc:
@@ -407,6 +465,12 @@ def create_app(
     def delete_account_data(auth: AuthContext = Depends(auth_dependency)) -> DeletionResponse:
         deleted = repositories(auth).delete_user_data(auth.user_id)
         return DeletionResponse(deleted_records=deleted)
+
+    web_dist_value = os.getenv("JOURNALPULSE_WEB_DIST", "").strip()
+    if web_dist_value:
+        web_dist = Path(web_dist_value).expanduser().resolve()
+        if web_dist.is_dir():
+            app.mount("/", StaticFiles(directory=web_dist, html=True), name="journalpulse-web")
 
     return app
 

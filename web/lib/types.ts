@@ -112,3 +112,9 @@ export type Insights = {
   }>;
   note: string;
 };
+
+export type SystemStatus = {
+  analysis_mode: "ai_configured" | "local_fallback" | "local_only";
+  persistence_mode: "account" | "this_device";
+  message: string;
+};

@@ -9,6 +9,7 @@ export default function WelcomePage() {
   const router = useRouter();
   const [llmConsent, setLlmConsent] = useState(false);
   const [retainText, setRetainText] = useState(false);
+  const [encryptedDrafts, setEncryptedDrafts] = useState(false);
 
   function continueToReflection() {
     savePreferences({
@@ -16,6 +17,7 @@ export default function WelcomePage() {
       onboarded: true,
       llmConsent,
       retainText,
+      encryptedDrafts,
     });
     router.push("/reflect");
   }
@@ -23,9 +25,10 @@ export default function WelcomePage() {
   return (
     <div className="page-wrap narrow welcome-page">
       <header className="flow-header">
-        <div>
+        <div className="page-heading-copy">
           <span className="kicker">Before the first entry</span>
           <h1>A field journal, not a diagnosis.</h1>
+          <p>Set the boundary once. You can change any choice for each individual reflection.</p>
         </div>
       </header>
       <section className="flow-sheet">
@@ -49,8 +52,12 @@ export default function WelcomePage() {
             <input type="checkbox" checked={retainText} onChange={(event) => setRetainText(event.target.checked)} />
             <span><strong>Keep my original journal text</strong><small>Off by default. Structured states can be saved without the entry.</small></span>
           </label>
+          <label>
+            <input type="checkbox" checked={encryptedDrafts} onChange={(event) => setEncryptedDrafts(event.target.checked)} />
+            <span><strong>Recover unfinished drafts</strong><small>Encrypt one active draft on this device for up to 24 hours.</small></span>
+          </label>
         </div>
-        <button className="button primary" onClick={continueToReflection}>Set my preferences</button>
+        <button className="button primary" onClick={continueToReflection}>Set my preferences <span aria-hidden="true">→</span></button>
         <p className="method-note">If language suggests immediate danger, support mode bypasses AI and experimentation.</p>
       </section>
     </div>

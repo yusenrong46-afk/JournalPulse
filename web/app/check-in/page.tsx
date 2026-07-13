@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 import { StateControls } from "@/components/state-controls";
 import { apiRequest } from "@/lib/api";
 import { usePreferences } from "@/lib/preferences";
+import { clearReminder } from "@/lib/reminders";
 import type { AffectiveState, OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
 
 function CheckInWorkspace() {
@@ -25,6 +26,7 @@ function CheckInWorkspace() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const requestId = useRef("");
 
   const elapsed = elapsedOverride ?? preferences.followUpMinutes;
 
@@ -56,7 +58,9 @@ function CheckInWorkspace() {
     try {
       await apiRequest<OutcomeRecord>("/v1/outcomes", {
         method: "POST",
+        retry: true,
         body: JSON.stringify({
+          client_request_id: requestId.current || (requestId.current = crypto.randomUUID()),
           decision_id: reflection.decision.decision_id,
           completed,
           post_state: postState,
@@ -66,6 +70,7 @@ function CheckInWorkspace() {
           note: note || null,
         }),
       });
+      clearReminder(reflection.decision.decision_id);
       setSaved(true);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The check-in could not be saved.");

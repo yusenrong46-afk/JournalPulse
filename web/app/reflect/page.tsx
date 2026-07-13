@@ -1,11 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { StateControls } from "@/components/state-controls";
 import { apiRequest } from "@/lib/api";
 import { usePreferences } from "@/lib/preferences";
+import { saveReminder } from "@/lib/reminders";
+import {
+  clearReflectionDraft,
+  loadReflectionDraft,
+  saveReflectionDraft,
+} from "@/lib/reflection-draft";
 import type {
   ActionPreview,
   AffectiveState,
@@ -31,8 +37,13 @@ const goals = [
   ["act", "Prepare one next step"],
 ];
 
+const stages = ["Observe", "Correct", "Orient", "Choose", "Act"];
+
 export default function ReflectPage() {
-  const [preferences] = usePreferences();
+  const [preferences, , preferencesLoaded] = usePreferences();
+  const initialized = useRef(false);
+  const [clientRequestId, setClientRequestId] = useState(() => crypto.randomUUID());
+  const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved">("idle");
   const [step, setStep] = useState(1);
   const [text, setText] = useState("");
   const [situation, setSituation] = useState("");
@@ -63,11 +74,88 @@ export default function ReflectPage() {
     [energy, situation, socialContext],
   );
 
+  useEffect(() => {
+    if (!preferencesLoaded || initialized.current) return;
+    initialized.current = true;
+    if (!preferences.encryptedDrafts) return;
+    loadReflectionDraft().then((draft) => {
+      if (!draft) {
+        setClientRequestId(crypto.randomUUID());
+        return;
+      }
+      setClientRequestId(draft.clientRequestId || crypto.randomUUID());
+      setStep(Math.min(Math.max(draft.step, 1), 4));
+      setText(draft.text);
+      setSituation(draft.situation);
+      setEnergy(draft.energy);
+      setSocialContext(draft.socialContext);
+      setConsentOverride(draft.consentOverride);
+      setRetainOverride(draft.retainOverride);
+      setAnalysis(draft.analysis);
+      setState(draft.state);
+      setTarget(draft.target);
+      setPreview(draft.preview);
+      setSelectedAction(draft.selectedAction);
+      setDraftStatus("restored");
+    });
+  }, [preferences.encryptedDrafts, preferencesLoaded]);
+
+  useEffect(() => {
+    if (!initialized.current || !preferences.encryptedDrafts || !clientRequestId || !text.trim()) {
+      return;
+    }
+    if (record || analysis?.safety.mode === "support") {
+      void clearReflectionDraft();
+      return;
+    }
+    const timeout = window.setTimeout(() => {
+      saveReflectionDraft({
+        clientRequestId,
+        step,
+        text,
+        situation,
+        energy,
+        socialContext,
+        consentOverride,
+        retainOverride,
+        analysis,
+        state,
+        target,
+        preview,
+        selectedAction,
+      })
+        .then(() => setDraftStatus("saved"))
+        .catch(() => setDraftStatus("idle"));
+    }, 400);
+    return () => window.clearTimeout(timeout);
+  }, [
+    analysis,
+    clientRequestId,
+    consentOverride,
+    energy,
+    preferences.encryptedDrafts,
+    preview,
+    record,
+    retainOverride,
+    selectedAction,
+    situation,
+    socialContext,
+    state,
+    step,
+    target,
+    text,
+  ]);
+
   function addTag() {
     const tag = newTag.trim().toLowerCase().replaceAll(" ", "_");
     if (!tag || state.emotion_tags.includes(tag) || state.emotion_tags.length >= 6) return;
     setState({ ...state, emotion_tags: [...state.emotion_tags, tag] });
     setNewTag("");
+  }
+
+  async function startOver() {
+    await clearReflectionDraft();
+    window.location.reload();
   }
 
   async function analyze() {
@@ -99,6 +187,7 @@ export default function ReflectPage() {
     try {
       const result = await apiRequest<ActionPreview>("/v1/actions/preview", {
         method: "POST",
+        retry: true,
         body: JSON.stringify({
           state,
           target,
@@ -123,7 +212,9 @@ export default function ReflectPage() {
     try {
       const saved = await apiRequest<ReflectionRecord>("/v1/reflections", {
         method: "POST",
+        retry: true,
         body: JSON.stringify({
+          client_request_id: clientRequestId || crypto.randomUUID(),
           text,
           context,
           self_report: state,
@@ -136,7 +227,15 @@ export default function ReflectPage() {
         }),
       });
       setRecord(saved);
-      setResource(preview.actions.find((item) => item.id === saved.decision.action_id) ?? null);
+      void clearReflectionDraft();
+      const selectedResource = preview.actions.find((item) => item.id === saved.decision.action_id) ?? null;
+      setResource(selectedResource);
+      saveReminder({
+        decisionId: saved.decision.decision_id,
+        actionId: saved.decision.action_id,
+        actionTitle: selectedResource?.title ?? "Your selected action",
+        dueAt: new Date(Date.now() + preferences.followUpMinutes * 60_000).toISOString(),
+      });
       setStep(5);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The action could not be saved.");
@@ -148,15 +247,23 @@ export default function ReflectPage() {
   return (
     <div className="page-wrap narrow reveal">
       <header className="flow-header">
-        <div><span className="kicker">Guided reflection</span><h1>One signal at a time.</h1></div>
-        <div className="step-counter"><span>{progress}</span><small>field sequence</small></div>
+        <div className="page-heading-copy"><span className="kicker">Guided reflection</span><h1>One signal at a time.</h1><p>Pause, check the interpretation, then choose one action that feels possible now.</p></div>
+        <div className="step-counter"><span>{progress}</span><small>guided sequence</small></div>
       </header>
+      <ol className="flow-stage-nav" aria-label="Reflection progress">
+        {stages.map((stageName, index) => {
+          const stageNumber = index + 1;
+          const status = stageNumber === step ? "current" : stageNumber < step ? "complete" : "upcoming";
+          return <li key={stageName} className={status} aria-current={stageNumber === step ? "step" : undefined}><span>{stageNumber < step ? "✓" : String(stageNumber).padStart(2, "0")}</span><strong>{stageName}</strong></li>;
+        })}
+      </ol>
       <div className="progress-track"><span style={{ width: `${Math.min(step, 5) * 20}%` }} /></div>
 
       {step === 1 && (
         <section className="flow-sheet">
           <span className="folio">01 / Observe</span>
           <h2>What happened, what feeling is strongest, and what still feels unresolved?</h2>
+          <p className="section-lede">No need to make it coherent. Start with the moment that still has energy.</p>
           <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Write without trying to sound composed…" autoFocus />
           <label className="field-label">Optional situation<input value={situation} onChange={(event) => setSituation(event.target.value)} placeholder="After work, before sleep, with someone…" /></label>
           <div className="context-grid">
@@ -170,7 +277,13 @@ export default function ReflectPage() {
               <label><input type="checkbox" checked={retain} onChange={(event) => setRetainOverride(event.target.checked)} /><span><strong>Keep my original text</strong><small>Otherwise only your approved structured state is saved.</small></span></label>
             </div>
           </details>
-          <button className="button primary" onClick={analyze} disabled={loading}>{loading ? "Reading carefully…" : "Check the signal"}</button>
+          <button className="button primary" onClick={analyze} disabled={loading}>{loading ? "Reading carefully…" : "Continue to my state"}<span aria-hidden="true">→</span></button>
+          {preferences.encryptedDrafts && draftStatus !== "idle" && (
+            <p className="draft-note" role="status">
+              {draftStatus === "restored" ? "Encrypted draft restored on this device." : "Encrypted draft saved on this device."}
+              {draftStatus === "restored" && <button className="text-button" type="button" onClick={() => void startOver()}>Start over</button>}
+            </p>
+          )}
         </section>
       )}
 
@@ -180,6 +293,14 @@ export default function ReflectPage() {
           <h2>The system’s read is a proposal, not a verdict.</h2>
           <blockquote>{analysis.reflection.summary}</blockquote>
           <p className="interpretation">{analysis.reflection.interpretation}</p>
+          <div className={analysis.model_run.used_fallback ? "analysis-note fallback" : "analysis-note"}>
+            <strong>{analysis.model_run.used_fallback ? "Local reflection mode" : "Private analysis completed"}</strong>
+            <span>
+              {analysis.model_run.used_fallback
+                ? "AI was unavailable or not selected. Adjust every value below before continuing."
+                : "This reading is still only a proposal. Your correction becomes the saved state."}
+            </span>
+          </div>
           <StateControls state={state} onChange={setState} />
           <div className="tag-editor">
             <div className="tag-row">{state.emotion_tags.map((tag) => <button key={tag} onClick={() => setState({ ...state, emotion_tags: state.emotion_tags.filter((item) => item !== tag) })}>{tag.replaceAll("_", " ")} ×</button>)}</div>
@@ -187,7 +308,10 @@ export default function ReflectPage() {
             <button className="text-button" type="button" onClick={addTag}>Add tag</button>
           </div>
           {state.uncertainty && <p className="method-note">Uncertainty: {state.uncertainty}</p>}
-          <button className="button primary" onClick={() => setStep(3)}>This reflects me</button>
+          <div className="button-row">
+            <button className="button primary" onClick={() => setStep(3)}>This reflects me <span aria-hidden="true">→</span></button>
+            <button className="button secondary" type="button" onClick={() => setStep(1)}>Back to writing</button>
+          </div>
         </section>
       )}
 
@@ -197,7 +321,10 @@ export default function ReflectPage() {
           <h2>What would feel meaningfully different?</h2>
           <div className="goal-grid">{goals.map(([value, label]) => <button key={value} className={target.goal === value ? "goal active" : "goal"} onClick={() => setTarget({ ...target, goal: value })}><span>{label}</span><small>{value}</small></button>)}</div>
           <div className="target-row"><label>Desired activation<input type="range" min="0" max="1" step="0.05" value={target.arousal ?? 0.35} onChange={(event) => setTarget({ ...target, arousal: Number(event.target.value) })} /></label><label>Desired agency<input type="range" min="0" max="1" step="0.05" value={target.agency ?? 0.65} onChange={(event) => setTarget({ ...target, agency: Number(event.target.value) })} /></label></div>
-          <button className="button primary" onClick={previewActions} disabled={loading}>{loading ? "Checking the reviewed catalog…" : "Show safe options"}</button>
+          <div className="button-row">
+            <button className="button primary" onClick={previewActions} disabled={loading}>{loading ? "Checking the reviewed catalog…" : "Show reviewed options"}<span aria-hidden="true">→</span></button>
+            <button className="button secondary" type="button" onClick={() => setStep(2)}>Back to the signal</button>
+          </div>
         </section>
       )}
 
@@ -212,7 +339,10 @@ export default function ReflectPage() {
               return <button key={item.id} className={selectedAction === item.id ? "resource-choice active" : "resource-choice"} onClick={() => setSelectedAction(item.id)}><span className="resource-meta">{recommended ? "Baseline pick" : "Safe alternative"} · {item.duration_minutes ?? "—"} min</span><strong>{item.title}</strong><p>{item.summary}</p><small>{item.provider} · {item.resource_type}</small></button>;
             })}
           </div>
-          <button className="button primary" onClick={saveChoice} disabled={loading || !selectedAction}>{loading ? "Saving your choice…" : "Use this action"}</button>
+          <div className="button-row">
+            <button className="button primary" onClick={saveChoice} disabled={loading || !selectedAction}>{loading ? "Saving your choice…" : "Use this action"}<span aria-hidden="true">→</span></button>
+            <button className="button secondary" type="button" onClick={() => setStep(3)}>Back to the target</button>
+          </div>
         </section>
       )}
 

@@ -7,9 +7,11 @@ services:
     healthCheckPath: /ready
     envVars:
       - key: JOURNALPULSE_ENV
-        value: production
+        value: preview
+      - key: JOURNALPULSE_DB_PATH
+        value: /var/data/journalpulse.db
       - key: JOURNALPULSE_LLM_ENABLED
-        value: "true"
+        value: "false"
       - key: JOURNALPULSE_LLM_ZDR
         value: "true"
       - key: JOURNALPULSE_MEMORY_ENABLED
@@ -18,9 +20,7 @@ services:
         value: "false"
       - key: JOURNALPULSE_LLM_MODEL
         value: openai/gpt-5.4-mini
-      - key: JOURNALPULSE_LLM_API_KEY
-        sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
+    disk:
+      name: journalpulse-data
+      mountPath: /var/data
+      sizeGB: 1

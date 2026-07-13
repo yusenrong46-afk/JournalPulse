@@ -81,3 +81,52 @@ def test_openrouter_client_refuses_non_zdr_configuration(tmp_path: Path):
         assert "zero-data-retention" in str(exc)
     else:
         raise AssertionError("non-ZDR configuration must be rejected")
+
+
+def test_openrouter_retries_transient_failure_then_validates_schema(tmp_path: Path):
+    calls = 0
+    delays: list[float] = []
+
+    def handler(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(503, json={"error": "temporarily unavailable"})
+        return httpx.Response(
+            200,
+            json={
+                "model": "resolved-model",
+                "provider": "zdr-provider",
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps(
+                                {
+                                    "valence": 0.2,
+                                    "arousal": 0.4,
+                                    "agency": 0.7,
+                                    "emotion_tags": ["relief"],
+                                    "confidence": 0.8,
+                                    "uncertainty": None,
+                                    "summary": "The difficult part appears to be over.",
+                                    "interpretation": "Relief and remaining activation coexist.",
+                                    "reflection_question": "What would help the activation settle?",
+                                    "resource_intent": "pause",
+                                }
+                            )
+                        }
+                    }
+                ],
+            },
+        )
+
+    result = OpenRouterReflectionClient(
+        settings(tmp_path),
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+        sleeper=delays.append,
+    ).analyze("I finished the difficult task.", {})
+
+    assert calls == 2
+    assert delays == [0.15]
+    assert result.model_run.model == "resolved-model"
+    assert result.model_run.provider == "zdr-provider"

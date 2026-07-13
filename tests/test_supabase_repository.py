@@ -80,8 +80,9 @@ def test_supabase_adapter_forwards_user_jwt_and_writes_normalized_audit_rows(tmp
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["authorization"] == "Bearer user-session"
-        requests.append((request.method, request.url.path, json.loads(request.content or b"{}")))
-        return httpx.Response(201, json=[{}])
+        body = json.loads(request.content or b"{}")
+        requests.append((request.method, request.url.path, body))
+        return httpx.Response(200, json=body["payload"])
 
     repository = SupabaseRepository(
         settings(tmp_path),
@@ -89,15 +90,10 @@ def test_supabase_adapter_forwards_user_jwt_and_writes_normalized_audit_rows(tmp
         client=httpx.Client(transport=httpx.MockTransport(handler)),
     )
     repository.save_reflection(record())
-    assert [path for _, path, _ in requests] == [
-        "/rest/v1/reflections",
-        "/rest/v1/affective_observations",
-        "/rest/v1/policy_decisions",
-        "/rest/v1/model_runs",
-        "/rest/v1/safety_events",
-    ]
-    assert all(payload["user_id"] == str(USER_ID) for _, _, payload in requests)
-    decision_payload = next(payload for _, path, payload in requests if path.endswith("policy_decisions"))
+    assert [path for _, path, _ in requests] == ["/rest/v1/rpc/save_reflection_bundle"]
+    payload = requests[0][2]["payload"]
+    assert payload["user_id"] == str(USER_ID)
+    decision_payload = payload["decision"]
     assert decision_payload["selection_source"] == "policy"
     assert decision_payload["eligible_for_ope"] is True
 

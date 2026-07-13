@@ -6,6 +6,7 @@ export type Preferences = {
   onboarded: boolean;
   llmConsent: boolean;
   retainText: boolean;
+  encryptedDrafts: boolean;
   followUpMinutes: number;
   locale: string;
 };
@@ -14,6 +15,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   onboarded: false,
   llmConsent: false,
   retainText: false,
+  encryptedDrafts: false,
   followUpMinutes: 10,
   locale: "CA",
 };

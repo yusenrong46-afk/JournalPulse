@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -137,6 +138,25 @@ def test_health_is_liveness_only_and_readiness_is_explicit(tmp_path: Path):
         assert readiness["checks"]["llm"] == "not_ready:not_configured"
 
 
+def test_static_export_can_share_the_api_origin(tmp_path: Path, monkeypatch):
+    web_dist = tmp_path / "web-out"
+    history_dist = web_dist / "history"
+    history_dist.mkdir(parents=True)
+    (web_dist / "index.html").write_text("<h1>JournalPulse</h1>", encoding="utf-8")
+    (web_dist / "app.js").write_text("const journalPulse = true;\n" * 100, encoding="utf-8")
+    (history_dist / "index.html").write_text("<h1>History</h1>", encoding="utf-8")
+    monkeypatch.setenv("JOURNALPULSE_WEB_DIST", str(web_dist))
+
+    app = create_app(settings=settings(tmp_path))
+    with TestClient(app) as client:
+        assert client.get("/").text == "<h1>JournalPulse</h1>"
+        assert client.get("/history/").text == "<h1>History</h1>"
+        assert client.get("/app.js", headers={"Accept-Encoding": "gzip"}).headers[
+            "content-encoding"
+        ] == "gzip"
+        assert client.get("/health").json() == {"status": "ok"}
+
+
 def test_analysis_is_transient_and_can_be_corrected_before_save(tmp_path: Path):
     app = create_app(settings=settings(tmp_path))
     with TestClient(app) as client:
@@ -269,3 +289,72 @@ def test_only_one_check_in_is_accepted_per_decision(tmp_path: Path):
         assert first.status_code == 201
         assert duplicate.status_code == 409
         assert duplicate.json()["detail"] == "Check-in already recorded"
+
+
+def test_client_request_ids_make_retries_idempotent(tmp_path: Path):
+    app = create_app(settings=settings(tmp_path))
+    reflection_request_id = "30000000-0000-4000-8000-000000000001"
+    outcome_request_id = "40000000-0000-4000-8000-000000000001"
+    with TestClient(app) as client:
+        payload = reflection_payload(client_request_id=reflection_request_id)
+        first = client.post(
+            "/v1/reflections", json=payload, headers={"X-JournalPulse-User": USER_A}
+        )
+        retried = client.post(
+            "/v1/reflections", json=payload, headers={"X-JournalPulse-User": USER_A}
+        )
+        assert first.status_code == retried.status_code == 201
+        assert first.json()["id"] == retried.json()["id"] == reflection_request_id
+        history = client.get(
+            "/v1/reflections", headers={"X-JournalPulse-User": USER_A}
+        ).json()
+        assert len(history["items"]) == 1
+
+        outcome_payload = {
+            "client_request_id": outcome_request_id,
+            "decision_id": first.json()["decision"]["decision_id"],
+            "completed": True,
+        }
+        outcome = client.post(
+            "/v1/outcomes", json=outcome_payload, headers={"X-JournalPulse-User": USER_A}
+        )
+        outcome_retry = client.post(
+            "/v1/outcomes", json=outcome_payload, headers={"X-JournalPulse-User": USER_A}
+        )
+        assert outcome.status_code == outcome_retry.status_code == 201
+        assert outcome.json()["id"] == outcome_retry.json()["id"] == outcome_request_id
+
+
+def test_request_guards_add_trace_headers_limit_size_and_rate(tmp_path: Path):
+    configured = replace(settings(tmp_path), analysis_rate_limit_per_minute=1)
+    app = create_app(settings=configured)
+    with TestClient(app) as client:
+        health = client.get("/health", headers={"X-Request-ID": "browser-request-123"})
+        assert health.headers["x-request-id"] == "browser-request-123"
+        assert health.headers["x-content-type-options"] == "nosniff"
+
+        oversized = client.post(
+            "/v1/reflections/analyze",
+            content=b"x" * (configured.max_request_bytes + 1),
+            headers={"Content-Type": "application/json"},
+        )
+        assert oversized.status_code == 413
+
+        analysis_payload = {
+            "text": "A complete thought that is long enough to inspect.",
+            "llm_consent": False,
+            "locale": "CA",
+        }
+        assert client.post("/v1/reflections/analyze", json=analysis_payload).status_code == 200
+        limited = client.post("/v1/reflections/analyze", json=analysis_payload)
+        assert limited.status_code == 429
+        assert int(limited.headers["retry-after"]) >= 1
+
+
+def test_system_status_explains_local_fallback_without_model_language(tmp_path: Path):
+    app = create_app(settings=settings(tmp_path))
+    with TestClient(app) as client:
+        status = client.get("/v1/system/status").json()
+        assert status["analysis_mode"] == "local_fallback"
+        assert status["persistence_mode"] == "this_device"
+        assert "unavailable" in status["message"].lower()

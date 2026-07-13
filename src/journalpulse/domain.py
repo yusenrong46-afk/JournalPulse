@@ -139,6 +139,7 @@ class OutcomeRecord(BaseModel):
 
 
 class ReflectionRequest(BaseModel):
+    client_request_id: UUID | None = None
     text: str = Field(min_length=1, max_length=5000)
     context: dict[str, str] = Field(default_factory=dict)
     self_report: AffectiveState | None = None
@@ -159,6 +160,7 @@ class ReflectionRequest(BaseModel):
 
 
 class OutcomeRequest(BaseModel):
+    client_request_id: UUID | None = None
     decision_id: UUID
     completed: bool
     post_state: AffectiveState | None = None

@@ -17,6 +17,7 @@ jobs:
       - run: uv sync --frozen --extra dev
       - run: uv run ruff check src tests scripts research
       - run: uv run mypy src
+      - run: uv run python scripts/export_openapi.py --check
       - run: uv run pytest --cov=journalpulse --cov-report=term-missing
       - run: uv run python scripts/validate_resources.py
 
@@ -35,6 +36,8 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run generate:api && git diff --exit-code -- openapi.json lib/generated-api.ts
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
