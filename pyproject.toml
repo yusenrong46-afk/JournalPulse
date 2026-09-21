@@ -52,7 +52,7 @@ addopts = "-ra"
 [tool.ruff]
 line-length = 110
 target-version = "py312"
-src = ["src", "tests", "scripts", "research"]
+src = ["src", "tests", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
