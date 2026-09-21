@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 
 import { apiRequest } from "@/lib/api";
@@ -105,9 +104,6 @@ export default function PrivacyPage() {
           <button className="button secondary" onClick={exportData} type="button">
             Export my data
           </button>
-          <Link className="text-button" href="/memory">
-            Inspect memory status
-          </Link>
         </div>
       </section>
       <section className="flow-sheet danger-zone" aria-labelledby="delete-data-heading">
