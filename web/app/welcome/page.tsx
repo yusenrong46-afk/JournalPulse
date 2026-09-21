@@ -39,7 +39,7 @@ export default function WelcomePage() {
           reviewed catalog. It does not provide therapy, treatment, or emergency care.
         </p>
         <div className="boundary-grid">
-          <article><strong>1</strong><span>Write privately</span><small>Original text is not retained unless you choose it.</small></article>
+          <article><strong>1</strong><span>Write privately</span><small>The original entry is saved only if you choose it. Summaries and situation notes can still be stored on the server.</small></article>
           <article><strong>2</strong><span>Correct the read</span><small>Automated interpretation is always editable.</small></article>
           <article><strong>3</strong><span>Test one action</span><small>Outcomes become observations, not clinical claims.</small></article>
         </div>
@@ -50,7 +50,7 @@ export default function WelcomePage() {
           </label>
           <label>
             <input type="checkbox" checked={retainText} onChange={(event) => setRetainText(event.target.checked)} />
-            <span><strong>Keep my original journal text</strong><small>Off by default. Structured states can be saved without the entry.</small></span>
+            <span><strong>Keep my original journal text</strong><small>Off by default. Summaries, interpretations, and situation notes can still be saved on the server.</small></span>
           </label>
           <label>
             <input type="checkbox" checked={encryptedDrafts} onChange={(event) => setEncryptedDrafts(event.target.checked)} />

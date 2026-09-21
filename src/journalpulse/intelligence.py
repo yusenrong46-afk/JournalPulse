@@ -12,6 +12,10 @@ from .config import Settings
 from .domain import AffectiveState, ModelRun, ReflectionCopy
 
 
+class UnsupportedProviderResponse(Exception):
+    """Provider message.content was not a string or a text-part array."""
+
+
 class StructuredReflection(BaseModel):
     valence: float = Field(ge=-1.0, le=1.0)
     arousal: float = Field(ge=0.0, le=1.0)
@@ -101,7 +105,6 @@ class OpenRouterReflectionClient:
                     json={
                         "model": self.settings.openrouter_model,
                         "provider": {"zdr": True},
-                        "temperature": 0.1,
                         "max_tokens": 700,
                         "response_format": {
                             "type": "json_schema",
@@ -119,7 +122,7 @@ class OpenRouterReflectionClient:
                             },
                             {
                                 "role": "user",
-                                "content": {"journal_text": text, "optional_context": context},
+                                "content": _user_message_content(text, context),
                             },
                         ],
                     },
@@ -140,10 +143,7 @@ class OpenRouterReflectionClient:
         response.raise_for_status()
         body = response.json()
         content = body["choices"][0]["message"]["content"]
-        if isinstance(content, str):
-            structured = StructuredReflection.model_validate_json(content)
-        else:
-            structured = StructuredReflection.model_validate(content)
+        structured = structured_reflection_from_content(content)
         usage = body.get("usage", {})
         run = ModelRun(
             model=body.get("model", self.settings.openrouter_model),
@@ -170,6 +170,34 @@ class OpenRouterReflectionClient:
             resource_intent=structured.resource_intent,
             model_run=run,
         )
+
+
+def _user_message_content(text: str, context: dict[str, str]) -> str:
+    if not context:
+        return text
+    details = "\n".join(f"{key}: {value}" for key, value in context.items())
+    return f"{text}\n\nContext:\n{details}"
+
+
+def _text_from_content_parts(content: list[Any]) -> str:
+    if not content:
+        raise UnsupportedProviderResponse("Provider content array was empty")
+    chunks: list[str] = []
+    for part in content:
+        if not isinstance(part, dict) or part.get("type") != "text" or not isinstance(part.get("text"), str):
+            raise UnsupportedProviderResponse("Provider content included a non-text part")
+        chunks.append(part["text"])
+    return "".join(chunks)
+
+
+def structured_reflection_from_content(content: Any) -> StructuredReflection:
+    if isinstance(content, str):
+        return StructuredReflection.model_validate_json(content)
+    if isinstance(content, list):
+        return StructuredReflection.model_validate_json(_text_from_content_parts(content))
+    raise UnsupportedProviderResponse(
+        f"Unsupported provider content type: {type(content).__name__}"
+    )
 
 
 def deterministic_reflection(text: str, state: AffectiveState | None = None) -> AnalysisResult:
@@ -214,6 +242,8 @@ def safe_analyze(
         return deterministic_reflection(text, self_report)
     try:
         return (client or OpenRouterReflectionClient(settings)).analyze(text, context)
+    except UnsupportedProviderResponse:
+        raise
     except (httpx.HTTPError, KeyError, ValueError, ValidationError) as exc:
         fallback = deterministic_reflection(text, self_report)
         return AnalysisResult(

@@ -78,7 +78,7 @@ export default function PrivacyPage() {
         {preferencesLoaded && (
           <div className="preference-panel">
             <label><span><strong>Private AI analysis</strong><small>Default for new reflections</small></span><input type="checkbox" checked={preferences.llmConsent} onChange={(event) => updatePreferences({ ...preferences, llmConsent: event.target.checked })} /></label>
-            <label><span><strong>Retain original text</strong><small>Structured states remain available when this is off</small></span><input type="checkbox" checked={preferences.retainText} onChange={(event) => updatePreferences({ ...preferences, retainText: event.target.checked })} /></label>
+            <label><span><strong>Retain original text</strong><small>Summaries, interpretations, and situation notes can still be stored on the server</small></span><input type="checkbox" checked={preferences.retainText} onChange={(event) => updatePreferences({ ...preferences, retainText: event.target.checked })} /></label>
             <label><span><strong>Recover unfinished drafts</strong><small>Encrypted on this device and removed after 24 hours</small></span><input type="checkbox" checked={preferences.encryptedDrafts} onChange={(event) => void setDraftRecovery(event.target.checked)} /></label>
             <label><span><strong>Default follow-up window</strong><small>Used when recording elapsed time</small></span><select value={preferences.followUpMinutes} onChange={(event) => updatePreferences({ ...preferences, followUpMinutes: Number(event.target.value) })}><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="20">20 minutes</option><option value="60">1 hour</option></select></label>
           </div>
@@ -90,7 +90,7 @@ export default function PrivacyPage() {
           </article>
           <article>
             <strong>Original text</strong>
-            <p>Off by default. You may save only the structured state you approved.</p>
+            <p>Off by default. Turning this off omits the original entry. Summaries, interpretations, and the situation you provide can still be saved on the server. Preview storage is the server database, not a private copy that exists only in this browser.</p>
           </article>
           <article>
             <strong>Personal memory</strong>
