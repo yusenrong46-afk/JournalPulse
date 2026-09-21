@@ -7,6 +7,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { StateControls } from "@/components/state-controls";
 import { apiRequest } from "@/lib/api";
 import { usePreferences } from "@/lib/preferences";
+import { reportedState } from "@/lib/reported-state";
 import { clearReminder } from "@/lib/reminders";
 import type { AffectiveState, OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
 
@@ -43,7 +44,7 @@ function CheckInWorkspace() {
           : history.items.find((item) => !completedIds.has(item.decision.decision_id));
         if (!selected) return;
         setReflection(selected);
-        setPostState({ ...selected.state, confidence: 1 });
+        setPostState(reportedState(selected.state));
         setExisting(outcomes.items.find((item) => item.decision_id === selected.decision.decision_id) ?? null);
         setResource(catalog.items.find((item) => item.id === selected.decision.action_id) ?? null);
       })

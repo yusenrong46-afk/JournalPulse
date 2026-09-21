@@ -8,8 +8,8 @@ HIGH_RISK_PATTERNS = (
     r"\b(?:want|plan|going) to (?:die|kill myself|end my life)\b",
     r"\b(?:hurt|harm) myself\b",
     r"\b(?:not|do not|don't) feel safe (?:right now|tonight|today|alone)?\b",
-    r"\bI (?:have|made) a suicide plan\b",
-    r"\bI might act on (?:it|these thoughts)\b",
+    r"\bi (?:have|made) a suicide plan\b",
+    r"\bi might act on (?:it|these thoughts)\b",
     r"\boverdose (?:myself|tonight|today)\b",
 )
 
@@ -33,13 +33,25 @@ SUPPORT_BY_LOCALE = {
 }
 
 
+_CLAUSE_BREAK = re.compile(r"[.!?]+|;|\s+\bbut\b\s+|,\s*")
+
+
+def _clauses(normalized: str) -> list[str]:
+    parts = [part.strip() for part in _CLAUSE_BREAK.split(normalized) if part.strip()]
+    return parts or [normalized]
+
+
+def _clause_has_unnegated_risk(clause: str) -> bool:
+    has_risk = any(re.search(pattern, clause) for pattern in HIGH_RISK_PATTERNS)
+    if not has_risk:
+        return False
+    # Negation suppresses risk only inside the same clause, not the rest of the entry.
+    return not any(re.search(pattern, clause) for pattern in NEGATED_PATTERNS)
+
+
 def assess_safety(text: str, locale: str = "CA") -> SafetyResult:
     normalized = " ".join(text.lower().split())
-    if any(re.search(pattern, normalized) for pattern in NEGATED_PATTERNS):
-        return SafetyResult(mode=SafetyMode.NORMAL, locale=locale.upper(), exploration_allowed=True)
-
-    reasons = [pattern for pattern in HIGH_RISK_PATTERNS if re.search(pattern, normalized)]
-    if not reasons:
+    if not any(_clause_has_unnegated_risk(clause) for clause in _clauses(normalized)):
         return SafetyResult(mode=SafetyMode.NORMAL, locale=locale.upper(), exploration_allowed=True)
 
     locale_key = locale.upper()

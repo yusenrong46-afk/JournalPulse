@@ -2,9 +2,14 @@ import json
 from pathlib import Path
 
 import httpx
+import pytest
 
 from journalpulse.config import Settings
-from journalpulse.intelligence import OpenRouterReflectionClient
+from journalpulse.intelligence import (
+    OpenRouterReflectionClient,
+    UnsupportedProviderResponse,
+    safe_analyze,
+)
 
 
 def settings(tmp_path: Path) -> Settings:
@@ -64,6 +69,11 @@ def test_openrouter_request_enforces_zdr_and_json_schema(tmp_path: Path):
     result = OpenRouterReflectionClient(settings(tmp_path), client=client).analyze(
         "The meeting is still bothering me.", {"activity": "work"}
     )
+    user_content = observed["messages"][1]["content"]
+    assert isinstance(user_content, str)
+    assert not isinstance(user_content, dict)
+    assert "The meeting is still bothering me." in user_content
+    assert "temperature" not in observed
     assert observed["provider"] == {"zdr": True}
     assert observed["response_format"]["type"] == "json_schema"
     assert observed["response_format"]["json_schema"]["strict"] is True
@@ -130,3 +140,71 @@ def test_openrouter_retries_transient_failure_then_validates_schema(tmp_path: Pa
     assert delays == [0.15]
     assert result.model_run.model == "resolved-model"
     assert result.model_run.provider == "zdr-provider"
+
+
+def _valid_reflection_json() -> str:
+    return json.dumps(
+        {
+            "valence": -0.4,
+            "arousal": 0.7,
+            "agency": 0.35,
+            "emotion_tags": ["frustration"],
+            "confidence": 0.83,
+            "uncertainty": None,
+            "summary": "The meeting still feels unresolved.",
+            "interpretation": "The language points to frustration and reduced agency.",
+            "reflection_question": "What outcome would make the meeting feel complete?",
+            "resource_intent": "reflect",
+        }
+    )
+
+
+def test_openrouter_parses_text_part_array_content(tmp_path: Path):
+    def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": [{"type": "text", "text": _valid_reflection_json()}]
+                        }
+                    }
+                ]
+            },
+        )
+
+    result = OpenRouterReflectionClient(
+        settings(tmp_path),
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    ).analyze("The meeting is still bothering me.", {})
+    assert result.state.confidence == 0.83
+    assert result.model_run.schema_valid is True
+    assert result.model_run.used_fallback is False
+
+
+def test_unsupported_provider_content_is_not_treated_as_successful_output(tmp_path: Path):
+    shapes = (
+        {"unexpected": True},
+        [{"type": "image_url", "image_url": {"url": "https://example.invalid/x"}}],
+        None,
+    )
+    for shape in shapes:
+        def handler(_: httpx.Request, payload: object = shape) -> httpx.Response:
+            return httpx.Response(200, json={"choices": [{"message": {"content": payload}}]})
+
+        client = OpenRouterReflectionClient(
+            settings(tmp_path),
+            client=httpx.Client(transport=httpx.MockTransport(handler)),
+        )
+        with pytest.raises(UnsupportedProviderResponse):
+            client.analyze("The meeting is still bothering me.", {})
+        with pytest.raises(UnsupportedProviderResponse):
+            safe_analyze(
+                settings(tmp_path),
+                text="The meeting is still bothering me.",
+                context={},
+                consent=True,
+                self_report=None,
+                client=client,
+            )

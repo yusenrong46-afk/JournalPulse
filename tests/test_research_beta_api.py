@@ -133,9 +133,10 @@ def test_health_is_liveness_only_and_readiness_is_explicit(tmp_path: Path):
     app = create_app(settings=settings(tmp_path))
     with TestClient(app) as client:
         assert client.get("/health").json() == {"status": "ok"}
-        readiness = client.get("/ready").json()
-        assert readiness["status"] == "not_ready"
-        assert readiness["checks"]["llm"] == "not_ready:not_configured"
+        readiness = client.get("/ready")
+        assert readiness.status_code == 503
+        assert readiness.json()["status"] == "not_ready"
+        assert readiness.json()["checks"]["llm"] == "not_ready:not_configured"
 
 
 def test_static_export_can_share_the_api_origin(tmp_path: Path, monkeypatch):
@@ -356,5 +357,116 @@ def test_system_status_explains_local_fallback_without_model_language(tmp_path: 
     with TestClient(app) as client:
         status = client.get("/v1/system/status").json()
         assert status["analysis_mode"] == "local_fallback"
-        assert status["persistence_mode"] == "this_device"
+        assert status["persistence_mode"] == "server_sqlite"
         assert "unavailable" in status["message"].lower()
+
+
+def test_ready_returns_503_when_required_configuration_is_missing(tmp_path: Path):
+    app = create_app(settings=settings(tmp_path))
+    with TestClient(app) as client:
+        response = client.get("/ready")
+        assert response.status_code == 503
+        body = response.json()
+        assert body["status"] == "not_ready"
+        assert body["checks"]["llm"] == "not_ready:not_configured"
+        assert body["checks"]["persistence"] == "server_sqlite"
+
+
+def test_ready_does_not_claim_an_unrun_provider_probe(tmp_path: Path):
+    configured = replace(settings(tmp_path), openrouter_api_key="test-only-key")
+    app = create_app(settings=configured)
+    with TestClient(app) as client:
+        response = client.get("/ready")
+        assert response.status_code == 200
+        assert response.json()["status"] == "ready"
+        assert response.json()["checks"]["llm"] == "configured:not_probed"
+
+
+def test_save_without_prepared_analysis_cannot_bypass_generation_limit(tmp_path: Path):
+    class CountingClient:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def analyze(self, text: str, context: dict[str, str]):
+            del text, context
+            self.calls += 1
+            from journalpulse.intelligence import deterministic_reflection
+
+            return deterministic_reflection("synthetic")
+
+    counter = CountingClient()
+    configured = replace(
+        settings(tmp_path),
+        analysis_rate_limit_per_minute=1,
+        openrouter_api_key="test-only-key",
+    )
+    app = create_app(settings=configured, intelligence_client=counter)
+    with TestClient(app) as client:
+        analyzed = client.post(
+            "/v1/reflections/analyze",
+            json={
+                "text": "A complete thought that is long enough to inspect.",
+                "llm_consent": True,
+                "locale": "CA",
+            },
+        )
+        assert analyzed.status_code == 200
+        assert counter.calls == 1
+        saved = client.post(
+            "/v1/reflections",
+            json=reflection_payload(llm_consent=True),
+            headers={"X-JournalPulse-User": USER_A},
+        )
+        assert saved.status_code == 429
+        assert int(saved.headers["retry-after"]) >= 1
+        assert counter.calls == 1
+
+
+def test_forged_client_model_run_is_not_stored_as_verified_output(tmp_path: Path):
+    app = create_app(settings=settings(tmp_path))
+    forged = {
+        "state": {
+            "valence": -0.2,
+            "arousal": 0.4,
+            "agency": 0.3,
+            "emotion_tags": ["avoidance"],
+            "confidence": 0.42,
+        },
+        "reflection": {
+            "summary": "Client summary that must stay distinguishable.",
+            "interpretation": "Client interpretation.",
+            "reflection_question": "What is one next step?",
+        },
+        "safety": {
+            "mode": "support",
+            "reasons": ["forged"],
+            "locale": "US",
+            "exploration_allowed": False,
+            "support_message": "forged support message",
+            "resource_ids": ["forged-resource"],
+        },
+        "model_run": {
+            "model": "forged-model",
+            "provider": "forged-provider",
+            "latency_ms": 12,
+            "schema_valid": True,
+            "used_fallback": False,
+        },
+        "resource_intent": "reflect",
+    }
+    with TestClient(app) as client:
+        saved = client.post(
+            "/v1/reflections",
+            json=reflection_payload(prepared_analysis=forged, llm_consent=True),
+            headers={"X-JournalPulse-User": USER_A},
+        )
+        assert saved.status_code == 201
+        record = saved.json()
+        assert record["model_run"]["model"] == "unverified-client-analysis"
+        assert record["model_run"]["provider"] == "client"
+        assert record["model_run"]["schema_valid"] is False
+        assert record["model_run"]["used_fallback"] is True
+        assert record["model_run"]["fallback_reason"] == "unverified_client_analysis"
+        assert record["model_run"]["model"] != "forged-model"
+        assert record["safety"]["mode"] == "normal"
+        assert record["safety"]["support_message"] is None

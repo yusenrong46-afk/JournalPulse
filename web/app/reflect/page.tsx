@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { StateControls } from "@/components/state-controls";
 import { apiRequest } from "@/lib/api";
 import { usePreferences } from "@/lib/preferences";
+import { reportedState } from "@/lib/reported-state";
 import { saveReminder } from "@/lib/reminders";
 import {
   clearReflectionDraft,
@@ -26,7 +27,7 @@ const initialState: AffectiveState = {
   arousal: 0.5,
   agency: 0.5,
   emotion_tags: [],
-  confidence: 1,
+  confidence: 0,
 };
 
 const goals = [
@@ -171,7 +172,7 @@ export default function ReflectPage() {
         body: JSON.stringify({ text, context, llm_consent: consent, locale: preferences.locale }),
       });
       setAnalysis(result);
-      setState({ ...result.state, confidence: 1 });
+      setState(reportedState(result.state));
       setStep(result.safety.mode === "support" ? 5 : 2);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Analysis failed.");
@@ -274,7 +275,7 @@ export default function ReflectPage() {
             <summary>Processing choices for this entry</summary>
             <div className="consent-box">
               <label><input type="checkbox" checked={consent} onChange={(event) => setConsentOverride(event.target.checked)} /><span><strong>Use private AI analysis</strong><small>Send through a zero-data-retention route when configured.</small></span></label>
-              <label><input type="checkbox" checked={retain} onChange={(event) => setRetainOverride(event.target.checked)} /><span><strong>Keep my original text</strong><small>Otherwise only your approved structured state is saved.</small></span></label>
+              <label><input type="checkbox" checked={retain} onChange={(event) => setRetainOverride(event.target.checked)} /><span><strong>Keep my original text</strong><small>The original entry is omitted unless this is on. Summaries, interpretations, and situation notes can still be saved on the server.</small></span></label>
             </div>
           </details>
           <button className="button primary" onClick={analyze} disabled={loading}>{loading ? "Reading carefully…" : "Continue to my state"}<span aria-hidden="true">→</span></button>
