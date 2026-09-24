@@ -118,3 +118,50 @@ export type SystemStatus = {
   persistence_mode: "account" | "server_sqlite";
   message: string;
 };
+
+export type ConversationMessage = {
+  id: string;
+  conversation_id: string;
+  client_message_id?: string | null;
+  role: "user" | "assistant";
+  content?: string | null;
+  created_at: string;
+  safety_mode: "normal" | "support";
+  model_run?: PreparedAnalysis["model_run"] | null;
+};
+
+export type ActionCard = {
+  resource_intent: string;
+  card_reason: string;
+  decision_preview: ReflectionRecord["decision"];
+  actions: Resource[];
+  offered_message_id?: string | null;
+};
+
+export type Conversation = {
+  id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  status: "open" | "closed";
+  llm_consent: boolean;
+  retain_text: boolean;
+  safety_mode: "normal" | "support";
+  summary?: string | null;
+  card?: ActionCard | null;
+  safety?: PreparedAnalysis["safety"] | null;
+  reflection_id?: string | null;
+  locale: string;
+  prompt_version: string;
+};
+
+export type ConversationDetail = {
+  conversation: Conversation;
+  messages: ConversationMessage[];
+};
+
+export type ConversationTurn = {
+  conversation: Conversation;
+  user_message: ConversationMessage;
+  assistant_message: ConversationMessage;
+};

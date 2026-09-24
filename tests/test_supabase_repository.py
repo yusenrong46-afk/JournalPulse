@@ -98,6 +98,77 @@ def test_supabase_adapter_forwards_user_jwt_and_writes_normalized_audit_rows(tmp
     assert decision_payload["eligible_for_ope"] is True
 
 
+def test_conversation_turn_and_close_use_authenticated_functions(tmp_path: Path):
+    requests: list[tuple[str, str, dict]] = []
+    stored: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content or b"{}")
+        requests.append((request.method, request.url.path, body))
+        if request.url.path.endswith("/save_conversation_turn"):
+            stored.update(body["payload"]["conversation"])
+            return httpx.Response(200, json=body["payload"])
+        if request.method == "GET" and request.url.path.endswith("/conversations"):
+            return httpx.Response(200, json=[{"record": stored}])
+        if request.url.path.endswith("/close_conversation"):
+            closed = {**stored, "status": "closed"}
+            return httpx.Response(200, json=closed)
+        return httpx.Response(200, json=body)
+
+    from datetime import UTC, datetime
+    from uuid import uuid4
+
+    from journalpulse.domain import Conversation, ConversationMessage, MessageRole, SafetyMode
+
+    repository = SupabaseRepository(
+        settings(tmp_path),
+        "user-session",
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    conversation = Conversation(
+        id=uuid4(),
+        user_id=USER_ID,
+        created_at=datetime(2026, 9, 24, tzinfo=UTC),
+        updated_at=datetime(2026, 9, 24, tzinfo=UTC),
+        llm_consent=True,
+        retain_text=False,
+        locale="CA",
+        prompt_version="2026-09-24.1",
+    )
+    user_message = ConversationMessage(
+        conversation_id=conversation.id,
+        client_message_id=uuid4(),
+        role=MessageRole.USER,
+        content="Hello",
+        created_at=datetime(2026, 9, 24, tzinfo=UTC),
+        safety_mode=SafetyMode.NORMAL,
+    )
+    assistant_message = ConversationMessage(
+        conversation_id=conversation.id,
+        role=MessageRole.ASSISTANT,
+        content="I hear you.",
+        created_at=datetime(2026, 9, 24, 0, 0, 1, tzinfo=UTC),
+        safety_mode=SafetyMode.NORMAL,
+        model_run=ModelRun(model="openai/gpt-6-luna", latency_ms=5, schema_valid=True),
+    )
+    repository.save_turn(conversation, user_message, assistant_message)
+    repository.close_conversation(
+        USER_ID,
+        conversation.id,
+        purge=True,
+        now=datetime(2026, 9, 24, 0, 5, tzinfo=UTC),
+    )
+    paths = [path for _, path, _ in requests]
+    assert paths[0] == "/rest/v1/rpc/save_conversation_turn"
+    assert paths[1] == "/rest/v1/conversations"
+    turn_payload = requests[0][2]["payload"]
+    assert turn_payload["user_message"]["content"] == "Hello"
+    assert turn_payload["assistant_message"]["content"] == "I hear you."
+    assert turn_payload["conversation"]["user_id"] == str(USER_ID)
+    assert paths[-1] == "/rest/v1/rpc/close_conversation"
+    assert requests[-1][2] == {"conversation_id": str(conversation.id), "purge": True}
+
+
 def test_bulk_delete_uses_authenticated_database_function(tmp_path: Path):
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url.path == "/rest/v1/rpc/delete_my_journalpulse_data"

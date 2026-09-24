@@ -107,7 +107,10 @@ export function TodayDashboard() {
           <span className="folio">Today / field note</span>
           <h2>{latest ? "Begin another useful observation" : "Begin with one honest observation"}</h2>
           <p>{latest ? "Your previous loop is closed. Start again only when there is something worth noticing." : "Write what happened, correct the system’s read, and choose what you want to change—not how you are supposed to feel."}</p>
-          <Link className="button primary" href="/reflect">Open a reflection <span aria-hidden="true">→</span></Link>
+          <div className="button-row">
+            <Link className="button primary" href="/reflect">Open a reflection <span aria-hidden="true">→</span></Link>
+            <Link className="button secondary" href="/talk">Talk it through</Link>
+          </div>
         </section>
       )}
         <aside className="evidence-panel" aria-label="Your evidence so far">

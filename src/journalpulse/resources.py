@@ -87,6 +87,20 @@ def approved_actions(path: Path, *, intent: str, support_ids: list[str] | None =
     return matched[:8]
 
 
+def goal_for_intent(resource_intent: str) -> str:
+    intents = {
+        "ground": "settle",
+        "move": "move",
+        "connect": "connect",
+        "reflect": "understand",
+        "read": "understand",
+        "play": "act",
+        "watch": "settle",
+        "pause": "settle",
+    }
+    return intents.get(resource_intent, "settle")
+
+
 def action_intent(resource_intent: str, goal: str) -> str:
     goal_intents = {
         "settle": "ground",

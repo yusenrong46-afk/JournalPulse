@@ -16,6 +16,14 @@ class UnsupportedProviderResponse(Exception):
     """Provider message.content was not a string or a text-part array."""
 
 
+class ConversationProviderError(Exception):
+    """The conversation model failed, or its completion cannot be shown."""
+
+    def __init__(self, message: str, *, status_code: int = 502) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+
+
 class StructuredReflection(BaseModel):
     valence: float = Field(ge=-1.0, le=1.0)
     arousal: float = Field(ge=0.0, le=1.0)
@@ -105,7 +113,11 @@ class OpenRouterReflectionClient:
                     json={
                         "model": self.settings.openrouter_model,
                         "provider": {"zdr": True},
-                        "max_tokens": 700,
+                        # Medium reasoning counts toward this limit. 4000 leaves room for
+                        # the structured reflection after the reasoning tokens.
+                        "max_tokens": 4000,
+                        "include_reasoning": False,
+                        "reasoning": {"effort": "medium"},
                         "response_format": {
                             "type": "json_schema",
                             "json_schema": REFLECTION_JSON_SCHEMA,
@@ -190,14 +202,18 @@ def _text_from_content_parts(content: list[Any]) -> str:
     return "".join(chunks)
 
 
-def structured_reflection_from_content(content: Any) -> StructuredReflection:
+def _json_text_from_content(content: Any) -> str:
     if isinstance(content, str):
-        return StructuredReflection.model_validate_json(content)
+        return content
     if isinstance(content, list):
-        return StructuredReflection.model_validate_json(_text_from_content_parts(content))
+        return _text_from_content_parts(content)
     raise UnsupportedProviderResponse(
         f"Unsupported provider content type: {type(content).__name__}"
     )
+
+
+def structured_reflection_from_content(content: Any) -> StructuredReflection:
+    return StructuredReflection.model_validate_json(_json_text_from_content(content))
 
 
 def deterministic_reflection(text: str, state: AffectiveState | None = None) -> AnalysisResult:
@@ -254,3 +270,174 @@ def safe_analyze(
                 update={"fallback_reason": f"openrouter_{exc.__class__.__name__}"}
             ),
         )
+
+
+CONVERSATION_PROMPT_VERSION = "2026-09-24.1"
+
+CONVERSATION_SYSTEM_PROMPT = (
+    "You are a non-clinical journaling companion. Write in plain text, about 120 words at most, "
+    "and ask one question at a time. Reflect the person's own words. Do not diagnose, give medical "
+    "or crisis advice, claim memory of other conversations, or output URLs, phone numbers, or "
+    "resource names. Set offer_action only when the person asks what to do next or sounds ready "
+    "to try one small thing. Return only the schema."
+)
+
+CONVERSATION_JSON_SCHEMA: dict[str, Any] = {
+    "name": "journalpulse_conversation_turn",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["reply", "offer_action", "resource_intent", "card_reason", "summary"],
+        "properties": {
+            "reply": {"type": "string", "minLength": 1, "maxLength": 1200},
+            "offer_action": {"type": "boolean"},
+            "resource_intent": {
+                "type": "string",
+                "enum": ["ground", "move", "connect", "reflect", "play", "watch", "read", "pause"],
+            },
+            "card_reason": {"type": "string", "maxLength": 240},
+            "summary": {"type": "string", "minLength": 1, "maxLength": 420},
+        },
+    },
+}
+
+
+class ConversationTurnOutput(BaseModel):
+    reply: str = Field(min_length=1, max_length=1200)
+    offer_action: bool
+    resource_intent: str = Field(min_length=1, max_length=40)
+    card_reason: str = Field(default="", max_length=240)
+    summary: str = Field(min_length=1, max_length=420)
+
+    def require_card_reason(self) -> ConversationTurnOutput:
+        if self.offer_action and not self.card_reason.strip():
+            raise ValueError("card_reason is required when an action is offered")
+        return self
+
+
+@dataclass(frozen=True)
+class ConversationCompletion:
+    reply: str
+    offer_action: bool
+    resource_intent: str
+    card_reason: str
+    summary: str
+    model_run: ModelRun
+
+
+class OpenRouterConversationClient:
+    """One Luna turn. There is no canned reply when the provider fails."""
+
+    def __init__(
+        self,
+        settings: Settings,
+        client: httpx.Client | None = None,
+        sleeper: Callable[[float], None] = time.sleep,
+    ) -> None:
+        if not settings.openrouter_api_key or not settings.chat_model:
+            raise ValueError("OpenRouter is not configured")
+        if not settings.openrouter_zdr:
+            raise ValueError("JournalPulse requires zero-data-retention routing")
+        self.settings = settings
+        self.client = client or httpx.Client(timeout=settings.chat_timeout_seconds)
+        self.sleeper = sleeper
+
+    def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
+        # Parameter set is limited to what OpenRouter lists for openai/gpt-6-luna
+        # (models list and endpoints page, 2026-09-24): max_tokens, response_format,
+        # structured_outputs, reasoning, include_reasoning. Temperature is not supported.
+        # The request asks for medium effort, the model's default, and excludes
+        # reasoning text from the reply. Bedrock does not list response_format.
+        body = {
+            "model": self.settings.chat_model,
+            "provider": {"zdr": True},
+            "max_tokens": 4000,
+            "include_reasoning": False,
+            "reasoning": {"effort": "medium"},
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": CONVERSATION_JSON_SCHEMA,
+            },
+            "messages": [
+                {"role": "system", "content": CONVERSATION_SYSTEM_PROMPT},
+                *messages,
+            ],
+        }
+        started = time.perf_counter()
+        response = self._post(body)
+        latency_ms = round((time.perf_counter() - started) * 1000)
+        payload = response.json()
+        choice = payload["choices"][0]
+        if choice.get("finish_reason") == "length":
+            raise ConversationProviderError("The model reply was cut off. Nothing was saved.")
+        try:
+            content = choice["message"]["content"]
+            structured = ConversationTurnOutput.model_validate_json(
+                _json_text_from_content(content)
+            ).require_card_reason()
+        except UnsupportedProviderResponse:
+            raise
+        except (KeyError, ValueError, ValidationError) as exc:
+            raise ConversationProviderError(
+                "The model reply did not match the conversation schema. Nothing was saved."
+            ) from exc
+        usage = payload.get("usage", {})
+        raw_provider = payload.get("provider", "openrouter")
+        provider = raw_provider if isinstance(raw_provider, str) else "openrouter"
+        return ConversationCompletion(
+            reply=structured.reply,
+            offer_action=structured.offer_action,
+            resource_intent=structured.resource_intent,
+            card_reason=structured.card_reason,
+            summary=structured.summary,
+            model_run=ModelRun(
+                model=payload.get("model", self.settings.chat_model),
+                provider=provider,
+                latency_ms=latency_ms,
+                prompt_tokens=usage.get("prompt_tokens"),
+                completion_tokens=usage.get("completion_tokens"),
+                schema_valid=True,
+                prompt_version=CONVERSATION_PROMPT_VERSION,
+            ),
+        )
+
+    def _post(self, body: dict[str, Any]) -> httpx.Response:
+        response: httpx.Response | None = None
+        for attempt in range(self.settings.openrouter_max_attempts):
+            try:
+                response = self.client.post(
+                    f"{self.settings.openrouter_base_url}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.settings.openrouter_api_key}",
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://journalpulse.app",
+                        "X-Title": "JournalPulse Research Beta",
+                    },
+                    json=body,
+                )
+            except (httpx.ConnectError, httpx.TimeoutException) as exc:
+                if attempt + 1 >= self.settings.openrouter_max_attempts:
+                    raise ConversationProviderError(
+                        "Luna did not respond in time. Nothing was saved.",
+                        status_code=503,
+                    ) from exc
+                self.sleeper(0.15 * (2**attempt))
+                continue
+            if response.status_code not in {429, 500, 502, 503, 504}:
+                break
+            if attempt + 1 < self.settings.openrouter_max_attempts:
+                self.sleeper(0.15 * (2**attempt))
+        if response is None:
+            raise ConversationProviderError(
+                "Luna did not respond in time. Nothing was saved.",
+                status_code=503,
+            )
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            detail = exc.response.text[:500]
+            raise ConversationProviderError(
+                f"The model request failed. Nothing was saved. {detail}".strip()
+            ) from exc
+        return response

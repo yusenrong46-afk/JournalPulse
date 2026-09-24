@@ -19,7 +19,7 @@ def settings(tmp_path: Path) -> Settings:
         database_path=tmp_path / "unused.db",
         resource_catalog_path=root / "assets" / "resources" / "catalog.json",
         openrouter_api_key="test-only-key",
-        openrouter_model="openai/gpt-5.4-mini",
+        openrouter_model="openai/gpt-6-luna",
         openrouter_base_url="https://openrouter.ai/api/v1",
         openrouter_zdr=True,
         openrouter_timeout_seconds=2,
@@ -74,6 +74,10 @@ def test_openrouter_request_enforces_zdr_and_json_schema(tmp_path: Path):
     assert not isinstance(user_content, dict)
     assert "The meeting is still bothering me." in user_content
     assert "temperature" not in observed
+    assert observed["model"] == "openai/gpt-6-luna"
+    assert observed["reasoning"] == {"effort": "medium"}
+    assert observed["include_reasoning"] is False
+    assert observed["max_tokens"] == 4000
     assert observed["provider"] == {"zdr": True}
     assert observed["response_format"]["type"] == "json_schema"
     assert observed["response_format"]["json_schema"]["strict"] is True

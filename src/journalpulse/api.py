@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from collections import Counter, defaultdict
 from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
@@ -14,6 +15,7 @@ from starlette.middleware.gzip import GZipMiddleware
 
 from .auth import AuthContext, resolve_auth
 from .config import Settings, load_settings
+from .conversations import ConversationClient, register_conversation_routes
 from .domain import (
     ActionPreview,
     ActionPreviewRequest,
@@ -28,12 +30,11 @@ from .domain import (
     ReflectionRecord,
     ReflectionRequest,
     SafetyMode,
-    SelectionSource,
 )
 from .intelligence import OpenRouterReflectionClient, UnsupportedProviderResponse, safe_analyze
 from .middleware import RequestContextMiddleware, SlidingWindowRateLimiter
 from .persistence import DuplicateOutcomeError, Repository, SQLiteRepository, SupabaseRepository
-from .policy import FixedBaselinePolicy, ReflectionPolicy
+from .policy import FixedBaselinePolicy, ReflectionPolicy, apply_user_choice
 from .resources import action_intent, approved_actions, load_catalog
 from .safety import assess_safety
 
@@ -91,6 +92,8 @@ def create_app(
     repository_factory: Callable[[AuthContext], Repository] | None = None,
     policy: ReflectionPolicy | None = None,
     intelligence_client: OpenRouterReflectionClient | None = None,
+    conversation_client: ConversationClient | None = None,
+    clock: Callable[[], datetime] | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     policy = policy or FixedBaselinePolicy()
@@ -270,33 +273,10 @@ def create_app(
                 actions=actions,
                 context=payload.context,
             )
-            if payload.chosen_action_id:
-                if payload.chosen_action_id not in decision.safe_action_ids:
-                    raise HTTPException(status_code=422, detail="Chosen action is not in the safe set")
-                recommended = decision.action_id
-                if payload.chosen_action_id == recommended:
-                    decision = decision.model_copy(
-                        update={
-                            "recommended_action_id": recommended,
-                            "selection_source": SelectionSource.POLICY_ACCEPTED,
-                        }
-                    )
-                else:
-                    decision = decision.model_copy(
-                        update={
-                            "action_id": payload.chosen_action_id,
-                            "recommended_action_id": recommended,
-                            "propensity": 1.0,
-                            "policy_name": "user-choice",
-                            "policy_version": "1.0.0",
-                            "selection_source": SelectionSource.USER_OVERRIDE,
-                            "eligible_for_ope": False,
-                            "explanation": (
-                                "You chose a safe alternative. This decision is recorded as a user "
-                                "override and excluded from off-policy evaluation."
-                            ),
-                        }
-                    )
+            try:
+                decision = apply_user_choice(decision, payload.chosen_action_id)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail="Chosen action is not in the safe set") from exc
 
         retain_text = (
             payload.retain_text if payload.retain_text is not None else settings.raw_text_retention_default
@@ -494,6 +474,17 @@ def create_app(
     def delete_account_data(auth: AuthContext = Depends(auth_dependency)) -> DeletionResponse:
         deleted = repositories(auth).delete_user_data(auth.user_id)
         return DeletionResponse(deleted_records=deleted)
+
+    register_conversation_routes(
+        app,
+        settings=settings,
+        repositories=repositories,
+        policy=policy,
+        enforce_generation_limit=enforce_generation_limit,
+        auth_dependency=auth_dependency,
+        conversation_client=conversation_client,
+        clock=clock or (lambda: datetime.now(UTC)),
+    )
 
     web_dist_value = os.getenv("JOURNALPULSE_WEB_DIST", "").strip()
     if web_dist_value:
