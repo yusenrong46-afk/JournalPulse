@@ -15,7 +15,9 @@ Next.js PWA -> request guard -> auth boundary -> safety gate
 
 The consumer product is a guided workflow plus one short conversation at `/talk`. Safety runs before
 any model call. Talk is not a general chatbot: it has no tools, no search over old entries, and no
-memory of other conversations.
+memory of other conversations. Guided reflection (`JOURNALPULSE_LLM_MODEL`) and Talk
+(`JOURNALPULSE_CHAT_MODEL`) both default to `openai/gpt-6-luna`, with reasoning effort `medium` and
+reasoning text left out of the reply.
 The model proposes a bounded affective state; the person corrects it; a policy receives only approved
 catalog actions. Production currently uses a transparent fixed policy. Adaptive algorithms and episodic
 memory remain disabled until their independent evidence gates pass.

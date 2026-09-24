@@ -113,7 +113,11 @@ class OpenRouterReflectionClient:
                     json={
                         "model": self.settings.openrouter_model,
                         "provider": {"zdr": True},
-                        "max_tokens": 700,
+                        # Medium reasoning counts toward this limit. 4000 leaves room for
+                        # the structured reflection after the reasoning tokens.
+                        "max_tokens": 4000,
+                        "include_reasoning": False,
+                        "reasoning": {"effort": "medium"},
                         "response_format": {
                             "type": "json_schema",
                             "json_schema": REFLECTION_JSON_SCHEMA,
@@ -343,14 +347,14 @@ class OpenRouterConversationClient:
         # Parameter set is limited to what OpenRouter lists for openai/gpt-6-luna
         # (models list and endpoints page, 2026-09-24): max_tokens, response_format,
         # structured_outputs, reasoning, include_reasoning. Temperature is not supported.
-        # Reasoning defaults to medium, so the request asks for low effort and excludes
+        # The request asks for medium effort, the model's default, and excludes
         # reasoning text from the reply. Bedrock does not list response_format.
         body = {
             "model": self.settings.chat_model,
             "provider": {"zdr": True},
             "max_tokens": 4000,
             "include_reasoning": False,
-            "reasoning": {"effort": "low"},
+            "reasoning": {"effort": "medium"},
             "response_format": {
                 "type": "json_schema",
                 "json_schema": CONVERSATION_JSON_SCHEMA,

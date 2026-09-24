@@ -90,7 +90,7 @@ def load_settings() -> Settings:
         openrouter_api_key=(
             os.getenv("JOURNALPULSE_LLM_API_KEY") or os.getenv("OPENROUTER_API_KEY") or None
         ),
-        openrouter_model=os.getenv("JOURNALPULSE_LLM_MODEL", "openai/gpt-5.4-mini").strip(),
+        openrouter_model=os.getenv("JOURNALPULSE_LLM_MODEL", "openai/gpt-6-luna").strip(),
         openrouter_base_url=os.getenv("JOURNALPULSE_LLM_BASE_URL", "https://openrouter.ai/api/v1").rstrip(
             "/"
         ),

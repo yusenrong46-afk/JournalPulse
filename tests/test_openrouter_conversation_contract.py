@@ -87,7 +87,7 @@ def test_luna_request_uses_only_documented_parameters(tmp_path: Path):
     assert observed["provider"] == {"zdr": True}
     assert "temperature" not in observed
     assert set(observed) == ALLOWED_BODY_KEYS
-    assert observed["reasoning"] == {"effort": "low"}
+    assert observed["reasoning"] == {"effort": "medium"}
     assert observed["include_reasoning"] is False
     assert observed["response_format"]["json_schema"]["strict"] is True
     assert observed["max_tokens"] == 4000
