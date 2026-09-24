@@ -216,6 +216,199 @@ test("mobile Today screen has a stable scientific-journal composition", async ({
   });
 });
 
+const conversationId = "10000000-0000-4000-8000-000000000010";
+const talkAction = {
+  id: "mindful_breathing_ucla",
+  title: "A two-minute breathing reset",
+  url: "https://www.uclahealth.org/",
+  summary: "A short guided pause from a reviewed source.",
+  provider: "UCLA Health",
+  resource_type: "website",
+  coping_style: "reflect",
+  duration_minutes: 2,
+};
+
+function openConversation(safetyMode: "normal" | "support" = "normal") {
+  return {
+    id: conversationId,
+    user_id: "00000000-0000-4000-8000-000000000001",
+    created_at: "2026-09-24T12:00:00Z",
+    updated_at: "2026-09-24T12:00:00Z",
+    status: "open",
+    llm_consent: true,
+    retain_text: false,
+    safety_mode: safetyMode,
+    summary: "The meeting still feels unresolved.",
+    card: safetyMode === "support" ? null : {
+      resource_intent: "reflect",
+      card_reason: "A short pause matches what you asked for.",
+      decision_preview: {
+        decision_id: "20000000-0000-4000-8000-000000000010",
+        action_id: talkAction.id,
+        propensity: 1,
+        policy_name: "fixed-baseline",
+        policy_version: "1.0.0",
+        safe_action_ids: [talkAction.id],
+        explanation: "Selected from the reviewed catalog.",
+        selection_source: "policy",
+        eligible_for_ope: true,
+      },
+      actions: [talkAction],
+      offered_message_id: "30000000-0000-4000-8000-000000000010",
+    },
+    safety: safetyMode === "support"
+      ? { mode: "support", reasons: ["risk"], locale: "CA", exploration_allowed: false, support_message: "Contact 9-8-8.", resource_ids: [] }
+      : { mode: "normal", reasons: [], locale: "CA", exploration_allowed: true, resource_ids: [] },
+    reflection_id: null,
+    locale: "CA",
+    prompt_version: "2026-09-24.1",
+  };
+}
+
+test("talk saves a reviewed action and a follow-up reminder", async ({ page }) => {
+  await onboard(page);
+  await page.route("http://127.0.0.1:8000/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/system/status") {
+      return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
+    }
+    if (url.pathname === "/v1/conversations" && route.request().method() === "POST") {
+      return route.fulfill({ status: 201, json: openConversation() });
+    }
+    if (url.pathname === `/v1/conversations/${conversationId}/messages`) {
+      return route.fulfill({
+        json: {
+          conversation: openConversation(),
+          user_message: { id: "30000000-0000-4000-8000-000000000011", conversation_id: conversationId, role: "user", content: "The meeting is still in my head.", created_at: "2026-09-24T12:01:00Z", safety_mode: "normal" },
+          assistant_message: { id: "30000000-0000-4000-8000-000000000010", conversation_id: conversationId, role: "assistant", content: "That meeting is still taking up space. A short pause is one option.", created_at: "2026-09-24T12:01:01Z", safety_mode: "normal" },
+        },
+      });
+    }
+    if (url.pathname === `/v1/conversations/${conversationId}` && route.request().method() === "GET") {
+      return route.fulfill({ json: { conversation: openConversation(), messages: [] } });
+    }
+    if (url.pathname === `/v1/conversations/${conversationId}/accept`) {
+      return route.fulfill({
+        status: 201,
+        json: {
+          id: "10000000-0000-4000-8000-000000000099",
+          created_at: "2026-09-24T12:02:00Z",
+          text_retained: false,
+          context: { source: "conversation", conversation_id: conversationId },
+          state: analysis.state,
+          target: { goal: "understand" },
+          reflection: analysis.reflection,
+          safety: analysis.safety,
+          decision: {
+            decision_id: "20000000-0000-4000-8000-000000000010",
+            action_id: talkAction.id,
+            propensity: 1,
+            policy_name: "fixed-baseline",
+            policy_version: "1.0.0",
+            safe_action_ids: [talkAction.id],
+            explanation: "You accepted the baseline action.",
+            selection_source: "policy_accepted",
+            eligible_for_ope: true,
+          },
+        },
+      });
+    }
+    return route.fulfill({ status: 404, json: { detail: "Unhandled talk route" } });
+  });
+
+  await page.goto("/talk");
+  await page.getByRole("checkbox", { name: /Use private AI analysis for this conversation/ }).check();
+  await page.getByRole("button", { name: "Start this conversation" }).click();
+  await page.getByPlaceholder("Write the next thing you want to say…").fill("The meeting is still in my head.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByText("That meeting is still taking up space.")).toBeVisible();
+  await page.getByRole("button", { name: /A two-minute breathing reset/ }).click();
+  await page.getByRole("button", { name: "Use this action" }).click();
+  await expect(page.getByRole("link", { name: "Check in afterward" })).toBeVisible();
+  const reminder = await page.evaluate(() => localStorage.getItem("journalpulse_reminders_v1"));
+  expect(JSON.parse(reminder ?? "[]")).toHaveLength(1);
+});
+
+test("talk support mode shows 9-8-8 and hides the composer", async ({ page }) => {
+  await onboard(page);
+  await page.route("http://127.0.0.1:8000/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/system/status") {
+      return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
+    }
+    if (url.pathname === "/v1/conversations" && route.request().method() === "POST") {
+      return route.fulfill({ status: 201, json: openConversation() });
+    }
+    if (url.pathname === `/v1/conversations/${conversationId}/messages`) {
+      const support = openConversation("support");
+      return route.fulfill({
+        json: {
+          conversation: support,
+          user_message: { id: "30000000-0000-4000-8000-000000000021", conversation_id: conversationId, role: "user", content: "I have a suicide plan", created_at: "2026-09-24T12:01:00Z", safety_mode: "support" },
+          assistant_message: { id: "30000000-0000-4000-8000-000000000022", conversation_id: conversationId, role: "assistant", content: "Contact 9-8-8.", created_at: "2026-09-24T12:01:01Z", safety_mode: "support" },
+        },
+      });
+    }
+    if (url.pathname === `/v1/conversations/${conversationId}` && route.request().method() === "GET") {
+      return route.fulfill({ json: { conversation: openConversation(), messages: [] } });
+    }
+    return route.fulfill({ status: 404, json: { detail: "Unhandled support route" } });
+  });
+
+  await page.goto("/talk");
+  await page.getByRole("checkbox", { name: /Use private AI analysis for this conversation/ }).check();
+  await page.getByRole("button", { name: "Start this conversation" }).click();
+  await page.getByPlaceholder("Write the next thing you want to say…").fill("I have a suicide plan");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByRole("link", { name: "Open 9-8-8 Canada" })).toBeVisible();
+  await expect(page.getByPlaceholder("Write the next thing you want to say…")).toHaveCount(0);
+});
+
+test("talk restores an open conversation from the server", async ({ page }) => {
+  await onboard(page);
+  await page.addInitScript((id) => {
+    window.localStorage.setItem("journalpulse_open_conversation_v1", id);
+  }, conversationId);
+  await page.route("http://127.0.0.1:8000/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/system/status") {
+      return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
+    }
+    if (url.pathname === `/v1/conversations/${conversationId}`) {
+      return route.fulfill({
+        json: {
+          conversation: openConversation(),
+          messages: [
+            { id: "30000000-0000-4000-8000-000000000031", conversation_id: conversationId, role: "user", content: "Restored from the server.", created_at: "2026-09-24T12:01:00Z", safety_mode: "normal" },
+            { id: "30000000-0000-4000-8000-000000000032", conversation_id: conversationId, role: "assistant", content: "I still have that from the server.", created_at: "2026-09-24T12:01:01Z", safety_mode: "normal" },
+          ],
+        },
+      });
+    }
+    return route.fulfill({ status: 404, json: { detail: "Unhandled restore route" } });
+  });
+  await page.goto("/talk");
+  await expect(page.getByText("Restored from the server.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("I still have that from the server.")).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("journalpulse_open_conversation_v1"))).toBe(conversationId);
+  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("Restored from the server.");
+});
+
+test("talk links to the guided reflection when private AI is unavailable", async ({ page }) => {
+  await onboard(page);
+  await page.route("http://127.0.0.1:8000/**", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/system/status") {
+      return route.fulfill({ json: { analysis_mode: "local_only", persistence_mode: "this_device", message: "AI is off." } });
+    }
+    return route.fulfill({ status: 404, json: { detail: "Unavailable" } });
+  });
+  await page.goto("/talk");
+  await expect(page.getByRole("heading", { name: "Talk needs private AI analysis." })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Open a guided reflection/ })).toHaveAttribute("href", "/reflect");
+});
+
 test("encrypted draft recovery survives a refresh only after opt-in", async ({ page }) => {
   await page.addInitScript((value) => {
     window.localStorage.setItem(

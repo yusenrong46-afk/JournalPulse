@@ -1,4 +1,4 @@
-type NavIconName = "today" | "reflect" | "history" | "patterns" | "privacy";
+type NavIconName = "today" | "reflect" | "talk" | "history" | "patterns" | "privacy";
 
 export function NavIcon({ name }: { name: NavIconName }) {
   if (name === "today") {
@@ -15,6 +15,15 @@ export function NavIcon({ name }: { name: NavIconName }) {
       <svg aria-hidden="true" viewBox="0 0 24 24">
         <path d="M5.5 18.5h3.2L18 9.2l-3.2-3.2-9.3 9.3v3.2Z" />
         <path d="m13.5 7.3 3.2 3.2M5.5 21h13" />
+      </svg>
+    );
+  }
+
+  if (name === "talk") {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M6 7.5h12v8.2H11l-3.6 2.6v-2.6H6v-8.2Z" />
+        <path d="M9 11h6M9 13.4h3.5" />
       </svg>
     );
   }
