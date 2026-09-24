@@ -209,6 +209,8 @@ def test_export_and_delete_all_user_data_are_isolated(tmp_path: Path):
         assert client.get("/v1/export", headers={"X-JournalPulse-User": USER_A}).json() == {
             "reflections": [],
             "outcomes": [],
+            "conversations": [],
+            "conversation_messages": [],
         }
         assert len(
             client.get("/v1/reflections", headers={"X-JournalPulse-User": USER_B}).json()["items"]
