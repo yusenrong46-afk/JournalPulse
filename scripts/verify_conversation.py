@@ -5,8 +5,9 @@ from __future__ import annotations
 from journalpulse.config import load_settings
 from journalpulse.intelligence import ConversationProviderError, OpenRouterConversationClient
 
-INPUT_USD_PER_MILLION = 0.20
-OUTPUT_USD_PER_MILLION = 1.20
+# OpenRouter models-list price for openai/gpt-6-luna on 2026-09-24: $0.10 / $0.50 per million.
+INPUT_USD_PER_MILLION = 0.10
+OUTPUT_USD_PER_MILLION = 0.50
 TURNS = (
     "I finished a hard meeting and I still feel a little restless. I want to notice that.",
     "A short walk might help. What is one small thing I could try?",

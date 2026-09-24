@@ -61,7 +61,7 @@ Requires Python 3.12 and Node 22.
 uv sync --frozen --extra dev
 cp .env.example .env
 # Add a newly rotated OpenRouter key to JOURNALPULSE_LLM_API_KEY in .env.
-# Talk uses JOURNALPULSE_CHAT_MODEL (default openai/gpt-5.6-luna) and
+# Talk uses JOURNALPULSE_CHAT_MODEL (default openai/gpt-6-luna) and
 # JOURNALPULSE_CHAT_TIMEOUT_SECONDS (default 45). The wizard model is unchanged.
 uv run python scripts/verify_openrouter.py
 # A paid two-turn Luna check. Run only when explicitly authorized:

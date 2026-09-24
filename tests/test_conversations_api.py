@@ -48,7 +48,7 @@ def completion(*, offer: bool) -> ConversationCompletion:
         card_reason="A short reviewed pause matches what you described." if offer else "",
         summary="The meeting is still unresolved.",
         model_run=ModelRun(
-            model="openai/gpt-5.6-luna",
+            model="openai/gpt-6-luna",
             provider="openrouter",
             latency_ms=12,
             schema_valid=True,
@@ -130,7 +130,7 @@ def test_conversation_accepts_a_catalog_card_and_checks_in(tmp_path: Path):
         assert record["decision"]["policy_name"] == "fixed-baseline"
         assert record["decision"]["action_id"] == action_id
         assert record["decision"]["selection_source"] == "policy_accepted"
-        assert record["model_run"]["model"] == "openai/gpt-5.6-luna"
+        assert record["model_run"]["model"] == "openai/gpt-6-luna"
         assert record["reflection"]["reflection_question"] == "What changed after you tried it?"
         outcome = client.post(
             "/v1/outcomes",

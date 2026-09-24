@@ -58,7 +58,7 @@ def _response(content: object, finish_reason: str = "stop") -> httpx.Response:
     return httpx.Response(
         200,
         json={
-            "model": "openai/gpt-5.6-luna",
+            "model": "openai/gpt-6-luna",
             "provider": "openrouter",
             "choices": [{"finish_reason": finish_reason, "message": {"content": content}}],
             "usage": {"prompt_tokens": 40, "completion_tokens": 30},
@@ -83,7 +83,7 @@ def test_luna_request_uses_only_documented_parameters(tmp_path: Path):
             {"role": "user", "content": "Yes."},
         ]
     )
-    assert observed["model"] == "openai/gpt-5.6-luna"
+    assert observed["model"] == "openai/gpt-6-luna"
     assert observed["provider"] == {"zdr": True}
     assert "temperature" not in observed
     assert set(observed) == ALLOWED_BODY_KEYS

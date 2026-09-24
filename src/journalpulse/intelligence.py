@@ -340,10 +340,11 @@ class OpenRouterConversationClient:
         self.sleeper = sleeper
 
     def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
-        # Parameter set is limited to what OpenRouter lists for openai/gpt-5.6-luna:
-        # max_tokens, response_format, structured_outputs, reasoning, include_reasoning.
-        # Temperature is not a supported parameter. Reasoning defaults to medium, so the
-        # request asks for low effort and excludes reasoning text from the reply.
+        # Parameter set is limited to what OpenRouter lists for openai/gpt-6-luna
+        # (models list and endpoints page, 2026-09-24): max_tokens, response_format,
+        # structured_outputs, reasoning, include_reasoning. Temperature is not supported.
+        # Reasoning defaults to medium, so the request asks for low effort and excludes
+        # reasoning text from the reply. Bedrock does not list response_format.
         body = {
             "model": self.settings.chat_model,
             "provider": {"zdr": True},

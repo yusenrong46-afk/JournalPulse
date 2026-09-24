@@ -149,7 +149,7 @@ def test_conversation_turn_and_close_use_authenticated_functions(tmp_path: Path)
         content="I hear you.",
         created_at=datetime(2026, 9, 24, 0, 0, 1, tzinfo=UTC),
         safety_mode=SafetyMode.NORMAL,
-        model_run=ModelRun(model="openai/gpt-5.6-luna", latency_ms=5, schema_valid=True),
+        model_run=ModelRun(model="openai/gpt-6-luna", latency_ms=5, schema_valid=True),
     )
     repository.save_turn(conversation, user_message, assistant_message)
     repository.close_conversation(

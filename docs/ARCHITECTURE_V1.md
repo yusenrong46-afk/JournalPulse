@@ -34,7 +34,7 @@ event in one database transaction. In local tests, SQLite enforces the same uniq
 
 `POST /v1/conversations` starts one consented chat. Each turn runs `assess_safety` first. Support mode
 stores a fixed assistant message and never calls the model. A normal turn calls
-`OpenRouterConversationClient` with `JOURNALPULSE_CHAT_MODEL` (default `openai/gpt-5.6-luna`),
+`OpenRouterConversationClient` with `JOURNALPULSE_CHAT_MODEL` (default `openai/gpt-6-luna`),
 zero-data-retention routing, and a strict JSON schema. The model may propose a catalog intent. The
 fixed policy chooses at most three reviewed actions. Accepting one writes an ordinary
 `ReflectionRecord`, so Today, History, Check-in, Patterns, export, and deletion stay unchanged.
