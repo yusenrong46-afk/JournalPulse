@@ -147,3 +147,24 @@ def test_migration_enables_rls_and_owner_policy_for_every_user_table():
     assert hardening.count("security invoker") == 2
     assert hardening.count("auth.uid()") == 2
     assert "grant execute on function public.save_reflection_bundle(jsonb) to authenticated" in hardening
+
+    conversations = (
+        Path(__file__).resolve().parents[1]
+        / "supabase"
+        / "migrations"
+        / "202609240001_conversations.sql"
+    ).read_text(encoding="utf-8")
+    for table in ("conversations", "conversation_messages"):
+        assert f"alter table public.{table} enable row level security" in conversations
+        assert f"create policy {table}_owner" in conversations or (
+            table == "conversations" and "create policy conversations_owner" in conversations
+        )
+    assert "auth.uid() = user_id" in conversations
+    assert conversations.count("security invoker") == 3
+    assert "grant execute on function public.save_conversation_turn(jsonb) to authenticated" in conversations
+    close_grant = "grant execute on function public.close_conversation(uuid, boolean) to authenticated"
+    assert close_grant in conversations
+    assert "revoke all on function public.save_conversation_turn(jsonb) from public" in conversations
+    assert "delete from public.conversation_messages" in conversations
+    assert "delete from public.conversations" in conversations
+    assert "references public.reflections(id) on delete set null" in conversations
