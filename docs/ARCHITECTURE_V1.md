@@ -13,7 +13,9 @@ Next.js PWA -> request guard -> auth boundary -> safety gate
              atomic provenance log -> delayed outcome
 ```
 
-The consumer product is a guided workflow, not a chatbot. Safety runs before external processing.
+The consumer product is a guided workflow plus one short conversation at `/talk`. Safety runs before
+any model call. Talk is not a general chatbot: it has no tools, no search over old entries, and no
+memory of other conversations.
 The model proposes a bounded affective state; the person corrects it; a policy receives only approved
 catalog actions. Production currently uses a transparent fixed policy. Adaptive algorithms and episodic
 memory remain disabled until their independent evidence gates pass.
@@ -28,6 +30,20 @@ returns the original record instead of creating another one. In Supabase, a sing
 `security invoker` function writes the reflection, observation, policy decision, model run, and safety
 event in one database transaction. In local tests, SQLite enforces the same uniqueness contract.
 
+## Conversations
+
+`POST /v1/conversations` starts one consented chat. Each turn runs `assess_safety` first. Support mode
+stores a fixed assistant message and never calls the model. A normal turn calls
+`OpenRouterConversationClient` with `JOURNALPULSE_CHAT_MODEL` (default `openai/gpt-5.6-luna`),
+zero-data-retention routing, and a strict JSON schema. The model may propose a catalog intent. The
+fixed policy chooses at most three reviewed actions. Accepting one writes an ordinary
+`ReflectionRecord`, so Today, History, Check-in, Patterns, export, and deletion stay unchanged.
+
+Open messages stay on the server so a reload can restore them. Ending the conversation clears message
+text unless the person asked to keep it. The summary, card reason, and decision remain on the linked
+reflection. A lazy 24-hour sweep closes stale open conversations for the current user at the start of
+each conversation request. A person who never returns is not swept until an operator job exists.
+
 ## Responsibility boundaries
 
 - `journalpulse.safety`: deterministic support routing and exploration shutdown.
@@ -36,6 +52,7 @@ event in one database transaction. In local tests, SQLite enforces the same uniq
 - `journalpulse.policy`: policy contract and fixed baseline; no hidden model blending.
 - `journalpulse.persistence`: user-scoped local test adapter and RLS-preserving Supabase adapter.
 - `journalpulse.api`: orchestration, validation, history, outcomes, insights, export, and deletion.
+- `journalpulse.conversations`: the Talk turn, accept, close, and delete routes.
 - `journalpulse.middleware`: request-size bounds, trace IDs, security headers, redacted request logs, and
   the single-instance analysis rate limiter.
 - `web/`: mobile-first user product; no raw journal content in the service-worker cache.

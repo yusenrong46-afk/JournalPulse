@@ -18,12 +18,13 @@ gates pass.
 
 ## What exists now
 
-- Next.js 16 / TypeScript PWA with onboarding, Today, five-stage Reflect, Action, Check-in,
-  searchable History, trajectory Patterns, and Privacy flows.
+- Next.js 16 / TypeScript PWA with onboarding, Today, five-stage Reflect, a short Talk
+  conversation, Action, Check-in, searchable History, trajectory Patterns, and Privacy flows.
 - Responsive scientific-journal interface with an icon-led mobile shell, explicit processing status,
   encrypted draft recovery, stable offline fallback, and WCAG-focused interaction states.
-- FastAPI contracts for analysis, curated-action preview, explicit user overrides, saved reflections,
-  delayed outcomes, trajectories, pending check-ins, resources, export, and deletion.
+- FastAPI contracts for analysis, a bounded Luna conversation, curated-action preview, explicit
+  user overrides, saved reflections, delayed outcomes, trajectories, pending check-ins, resources,
+  export, and deletion.
 - Deterministic safety precedence and consent-aware OpenRouter structured extraction.
 - Authenticated analysis endpoints, bounded request sizes/rates, provider retries, and request trace IDs.
 - Supabase Auth validation, Postgres schema, tested user scoping, and RLS policies.
@@ -60,7 +61,11 @@ Requires Python 3.12 and Node 22.
 uv sync --frozen --extra dev
 cp .env.example .env
 # Add a newly rotated OpenRouter key to JOURNALPULSE_LLM_API_KEY in .env.
+# Talk uses JOURNALPULSE_CHAT_MODEL (default openai/gpt-5.6-luna) and
+# JOURNALPULSE_CHAT_TIMEOUT_SECONDS (default 45). The wizard model is unchanged.
 uv run python scripts/verify_openrouter.py
+# A paid two-turn Luna check. Run only when explicitly authorized:
+# uv run python scripts/verify_conversation.py
 uv run uvicorn journalpulse.api:app --reload --port 8000
 ```
 
