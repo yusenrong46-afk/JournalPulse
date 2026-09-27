@@ -1,11 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "src/journalpulse/api.py": {
-      "maxDuration": 60,
-      "excludeFiles": "{tests/**,web/node_modules/**,web/.next/**,web/out/**,docs/**,.git/**}"
-    }
-  },
   "headers": [
     {
       "source": "/(.*)",

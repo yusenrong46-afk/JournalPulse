@@ -1,5 +1,8 @@
 .venv
 .venv312
+.env
+.env.*
+.vercel
 web/node_modules
 web/.next
 web/out
