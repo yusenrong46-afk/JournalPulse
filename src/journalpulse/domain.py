@@ -73,6 +73,7 @@ class ModelRun(BaseModel):
     schema_valid: bool
     used_fallback: bool = False
     fallback_reason: str | None = None
+    prompt_version: str | None = None
 
 
 class ReflectionRecord(BaseModel):
@@ -168,3 +169,77 @@ class OutcomeRequest(BaseModel):
     effort: int | None = Field(default=None, ge=1, le=5)
     elapsed_minutes: int | None = Field(default=None, ge=0, le=10080)
     note: str | None = Field(default=None, max_length=1000)
+
+
+class ConversationStatus(StrEnum):
+    OPEN = "open"
+    CLOSED = "closed"
+
+
+class MessageRole(StrEnum):
+    USER = "user"
+    ASSISTANT = "assistant"
+
+
+class ConversationMessage(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    conversation_id: UUID
+    client_message_id: UUID | None = None
+    role: MessageRole
+    content: str | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    safety_mode: SafetyMode
+    model_run: ModelRun | None = None
+
+
+class ActionCard(BaseModel):
+    resource_intent: str = Field(min_length=1, max_length=40)
+    card_reason: str = Field(min_length=1, max_length=240)
+    decision_preview: PolicyDecision
+    actions: list[dict[str, Any]] = Field(max_length=3)
+    offered_message_id: UUID | None = None
+
+
+class Conversation(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    user_id: UUID
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    status: ConversationStatus = ConversationStatus.OPEN
+    llm_consent: bool
+    retain_text: bool = False
+    safety_mode: SafetyMode = SafetyMode.NORMAL
+    summary: str | None = Field(default=None, max_length=420)
+    card: ActionCard | None = None
+    safety: SafetyResult | None = None
+    reflection_id: UUID | None = None
+    locale: str = Field(min_length=2, max_length=8)
+    prompt_version: str = Field(min_length=1, max_length=80)
+
+
+class StartConversationRequest(BaseModel):
+    client_request_id: UUID | None = None
+    llm_consent: bool = False
+    retain_text: bool = False
+    locale: str = Field(default="CA", min_length=2, max_length=8)
+
+
+class ConversationTurnRequest(BaseModel):
+    client_message_id: UUID
+    text: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("text")
+    @classmethod
+    def strip_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("text must not be blank")
+        if len(value) > 2000:
+            raise ValueError("text is too long")
+        return value
+
+
+class AcceptConversationRequest(BaseModel):
+    client_request_id: UUID | None = None
+    action_id: str = Field(min_length=1, max_length=120)
+    self_report: AffectiveState

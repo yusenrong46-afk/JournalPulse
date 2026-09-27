@@ -41,6 +41,8 @@ class Settings:
     max_request_bytes: int = 64_000
     analysis_rate_limit_per_minute: int = 20
     openrouter_max_attempts: int = 2
+    chat_model: str = "openai/gpt-6-luna"
+    chat_timeout_seconds: float = 45.0
 
     @property
     def openrouter_enabled(self) -> bool:
@@ -88,7 +90,7 @@ def load_settings() -> Settings:
         openrouter_api_key=(
             os.getenv("JOURNALPULSE_LLM_API_KEY") or os.getenv("OPENROUTER_API_KEY") or None
         ),
-        openrouter_model=os.getenv("JOURNALPULSE_LLM_MODEL", "openai/gpt-5.4-mini").strip(),
+        openrouter_model=os.getenv("JOURNALPULSE_LLM_MODEL", "openai/gpt-6-luna").strip(),
         openrouter_base_url=os.getenv("JOURNALPULSE_LLM_BASE_URL", "https://openrouter.ai/api/v1").rstrip(
             "/"
         ),
@@ -106,4 +108,6 @@ def load_settings() -> Settings:
             os.getenv("JOURNALPULSE_ANALYSIS_RATE_LIMIT_PER_MINUTE", "20")
         ),
         openrouter_max_attempts=int(os.getenv("JOURNALPULSE_LLM_MAX_ATTEMPTS", "2")),
+        chat_model=os.getenv("JOURNALPULSE_CHAT_MODEL", "openai/gpt-6-luna").strip(),
+        chat_timeout_seconds=float(os.getenv("JOURNALPULSE_CHAT_TIMEOUT_SECONDS", "45")),
     )

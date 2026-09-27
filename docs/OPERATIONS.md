@@ -10,6 +10,8 @@ or production-scale availability.
 - Production readiness requires Supabase, an explicitly configured non-local CORS origin, and a rotated
   OpenRouter key whenever AI processing is enabled.
 - `scripts/verify_openrouter.py` performs the separately controlled live schema-constrained provider call.
+- `scripts/verify_conversation.py` performs one separately authorized two-turn Luna check. It is not
+  part of CI. Run it only when the operator has approved a paid call.
 - Every HTTP response receives `X-Request-ID`. Logs contain method, path, status, latency, and that ID;
   they must never contain request bodies, authorization headers, credentials, or journal text.
 
@@ -42,7 +44,9 @@ invite external testers until Supabase Auth and RLS are enabled.
 | Expired browser session | Refresh once, then return to private sign-in without discarding an opted-in draft |
 | Lost response after a write | Retry with the same client request UUID and return the original record |
 | Oversized body | Reject before model or persistence work with 413 |
-| Analysis-rate limit | Return 429 and `Retry-After`; ordinary history and privacy operations remain available |
+| Analysis-rate limit | Return 429 and `Retry-After`; ordinary history and privacy operations remain available. The same limiter covers reflection analysis and conversation turns |
+| Conversation timeout, invalid schema, or truncated reply | Save nothing for that turn and return 502 or 503. The browser keeps the unsent text. There is no canned chat reply |
+| Open conversation idle for 24 hours | The next conversation request from that user closes it and clears message text unless they chose to keep it. A user who never returns is not swept until an operator job exists |
 | Browser offline | Keep writing on-page, show offline status, and never claim the entry was saved |
 | First PWA load | Cache only the static offline page; never prefetch every route or cache API responses |
 

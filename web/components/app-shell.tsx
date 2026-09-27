@@ -11,6 +11,7 @@ import { SystemStatus } from "@/components/system-status";
 const navigation = [
   { href: "/", label: "Today", icon: "today", note: "Current loop" },
   { href: "/reflect", label: "Reflect", icon: "reflect", note: "New observation" },
+  { href: "/talk", label: "Talk", icon: "talk", note: "Short conversation" },
   { href: "/history", label: "History", icon: "history", note: "Private record" },
   { href: "/patterns", label: "Patterns", icon: "patterns", note: "Your evidence" },
   { href: "/privacy", label: "Privacy", icon: "privacy", note: "Data controls" },

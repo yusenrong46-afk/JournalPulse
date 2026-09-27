@@ -41,7 +41,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-for (const path of ["/", "/reflect", "/privacy"]) {
+for (const path of ["/", "/reflect", "/talk", "/privacy"]) {
   test(`${path} has no serious automated accessibility violations`, async ({ page }) => {
     await page.goto(path);
     const results = await new AxeBuilder({ page }).analyze();

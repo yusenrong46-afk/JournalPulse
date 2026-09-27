@@ -92,6 +92,10 @@ export default function PrivacyPage() {
             <p>Off by default. Turning this off omits the original entry. Summaries, interpretations, and the situation you provide can still be saved on the server. Preview storage is the server database, not a private copy that exists only in this browser.</p>
           </article>
           <article>
+            <strong>Conversations</strong>
+            <p>While a conversation is open, its messages are stored on the server so it survives a reload. When it ends, original text is cleared unless you chose to keep it. The summary, card reason, and decision stay on the linked reflection. An open conversation with no activity for 24 hours is closed the next time you use Talk. A conversation you never open again stays until an operator sweep exists.</p>
+          </article>
+          <article>
             <strong>Personal memory</strong>
             <p>Disabled until retrieval, provenance, and deletion behavior are validated.</p>
           </article>
@@ -110,8 +114,8 @@ export default function PrivacyPage() {
         <span className="folio">Irreversible</span>
         <h2 id="delete-data-heading">Delete all journal data</h2>
         <p>
-          This removes reflections, outcomes, model records, safety events, and memories. It does
-          not remove your sign-in identity.
+          This removes conversations, messages, reflections, outcomes, model records, safety events,
+          and memories. It does not remove your sign-in identity.
         </p>
         <label className="field-label">
           Type “{DELETE_PHRASE}” to confirm

@@ -378,7 +378,7 @@ summary { cursor: pointer; color: var(--teal); min-height: 44px; }
   .page-surface { margin: 0; padding: 24px 16px 110px; }
   .service-strip { margin-bottom: 18px; align-items: flex-start; }
   .service-strip > span:last-child { display: grid; gap: 2px; }
-  .bottom-nav { position: fixed; inset: auto 0 0; z-index: 12; display: grid; grid-template-columns: repeat(5, 1fr); min-height: 76px; padding: 7px 6px max(7px, env(safe-area-inset-bottom)); border-top: 1px solid var(--rule); background: rgba(241,236,223,.97); box-shadow: 0 -14px 40px rgba(69,57,38,.08); backdrop-filter: blur(18px); }
+  .bottom-nav { position: fixed; inset: auto 0 0; z-index: 12; display: grid; grid-template-columns: repeat(6, 1fr); min-height: 76px; padding: 7px 4px max(7px, env(safe-area-inset-bottom)); border-top: 1px solid var(--rule); background: rgba(241,236,223,.97); box-shadow: 0 -14px 40px rgba(69,57,38,.08); backdrop-filter: blur(18px); }
   .bottom-nav a { display: grid; place-items: center; align-content: center; gap: 3px; min-width: 0; min-height: 56px; font-size: .56rem; text-decoration: none; color: var(--ink-soft); }
   .bottom-nav a .nav-icon { width: 26px; height: 25px; }
   .bottom-nav a .nav-icon svg { width: 19px; height: 19px; }
@@ -442,6 +442,14 @@ summary { cursor: pointer; color: var(--teal); min-height: 44px; }
   .history-summary { grid-template-columns: 1fr; }
   .history-summary > div { border-right: 0; border-bottom: 1px solid var(--rule); }
 }
+
+.talk-log { display: grid; gap: 12px; margin: 0 0 18px; padding: 0; list-style: none; }
+.talk-log li { max-width: min(42rem, 92%); padding: 14px 16px; border: 1px solid var(--rule); background: var(--sheet); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.talk-log li.user { justify-self: end; background: var(--paper); border-color: var(--teal); }
+.talk-log li.assistant { justify-self: start; }
+.talk-composer { display: grid; gap: 10px; }
+.talk-composer textarea:disabled { opacity: 0.7; }
+.talk-status { margin: 0 0 12px; color: var(--ink-soft); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }

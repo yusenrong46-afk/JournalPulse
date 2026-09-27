@@ -1,6 +1,85 @@
 {
   "components": {
     "schemas": {
+      "AcceptConversationRequest": {
+        "properties": {
+          "action_id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Action Id",
+            "type": "string"
+          },
+          "client_request_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Request Id"
+          },
+          "self_report": {
+            "$ref": "#/components/schemas/AffectiveState"
+          }
+        },
+        "required": [
+          "action_id",
+          "self_report"
+        ],
+        "title": "AcceptConversationRequest",
+        "type": "object"
+      },
+      "ActionCard": {
+        "properties": {
+          "actions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "maxItems": 3,
+            "title": "Actions",
+            "type": "array"
+          },
+          "card_reason": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Card Reason",
+            "type": "string"
+          },
+          "decision_preview": {
+            "$ref": "#/components/schemas/PolicyDecision"
+          },
+          "offered_message_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offered Message Id"
+          },
+          "resource_intent": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Resource Intent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource_intent",
+          "card_reason",
+          "decision_preview",
+          "actions"
+        ],
+        "title": "ActionCard",
+        "type": "object"
+      },
       "ActionPreview": {
         "properties": {
           "actions": {
@@ -142,6 +221,245 @@
         "title": "AnalysisRequest",
         "type": "object"
       },
+      "Conversation": {
+        "properties": {
+          "card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActionCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "llm_consent": {
+            "title": "Llm Consent",
+            "type": "boolean"
+          },
+          "locale": {
+            "maxLength": 8,
+            "minLength": 2,
+            "title": "Locale",
+            "type": "string"
+          },
+          "prompt_version": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "reflection_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflection Id"
+          },
+          "retain_text": {
+            "default": false,
+            "title": "Retain Text",
+            "type": "boolean"
+          },
+          "safety": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafetyResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "safety_mode": {
+            "$ref": "#/components/schemas/SafetyMode",
+            "default": "normal"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConversationStatus",
+            "default": "open"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "maxLength": 420,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "llm_consent",
+          "locale",
+          "prompt_version"
+        ],
+        "title": "Conversation",
+        "type": "object"
+      },
+      "ConversationDetail": {
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/Conversation"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "conversation",
+          "messages"
+        ],
+        "title": "ConversationDetail",
+        "type": "object"
+      },
+      "ConversationMessage": {
+        "properties": {
+          "client_message_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Message Id"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "model_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "role": {
+            "$ref": "#/components/schemas/MessageRole"
+          },
+          "safety_mode": {
+            "$ref": "#/components/schemas/SafetyMode"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "role",
+          "safety_mode"
+        ],
+        "title": "ConversationMessage",
+        "type": "object"
+      },
+      "ConversationStatus": {
+        "enum": [
+          "open",
+          "closed"
+        ],
+        "title": "ConversationStatus",
+        "type": "string"
+      },
+      "ConversationTurnRequest": {
+        "properties": {
+          "client_message_id": {
+            "format": "uuid",
+            "title": "Client Message Id",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_message_id",
+          "text"
+        ],
+        "title": "ConversationTurnRequest",
+        "type": "object"
+      },
+      "ConversationTurnResult": {
+        "properties": {
+          "assistant_message": {
+            "$ref": "#/components/schemas/ConversationMessage"
+          },
+          "conversation": {
+            "$ref": "#/components/schemas/Conversation"
+          },
+          "user_message": {
+            "$ref": "#/components/schemas/ConversationMessage"
+          }
+        },
+        "required": [
+          "conversation",
+          "user_message",
+          "assistant_message"
+        ],
+        "title": "ConversationTurnResult",
+        "type": "object"
+      },
       "DeletionResponse": {
         "properties": {
           "auth_identity_deleted": {
@@ -254,6 +572,14 @@
         "title": "InsightsResponse",
         "type": "object"
       },
+      "MessageRole": {
+        "enum": [
+          "user",
+          "assistant"
+        ],
+        "title": "MessageRole",
+        "type": "string"
+      },
       "ModelRun": {
         "properties": {
           "completion_tokens": {
@@ -299,6 +625,17 @@
               }
             ],
             "title": "Prompt Tokens"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
           },
           "provider": {
             "default": "openrouter",
@@ -943,6 +1280,41 @@
         "title": "SelectionSource",
         "type": "string"
       },
+      "StartConversationRequest": {
+        "properties": {
+          "client_request_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Request Id"
+          },
+          "llm_consent": {
+            "default": false,
+            "title": "Llm Consent",
+            "type": "boolean"
+          },
+          "locale": {
+            "default": "CA",
+            "maxLength": 8,
+            "minLength": 2,
+            "title": "Locale",
+            "type": "string"
+          },
+          "retain_text": {
+            "default": false,
+            "title": "Retain Text",
+            "type": "boolean"
+          }
+        },
+        "title": "StartConversationRequest",
+        "type": "object"
+      },
       "StatePoint": {
         "properties": {
           "agency": {
@@ -1272,6 +1644,449 @@
           }
         },
         "summary": "Preview Actions"
+      }
+    },
+    "/v1/conversations": {
+      "post": {
+        "operationId": "start_conversation_v1_conversations_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartConversationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Conversation"
+      }
+    },
+    "/v1/conversations/{conversation_id}": {
+      "delete": {
+        "operationId": "delete_conversation_v1_conversations__conversation_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Conversation"
+      },
+      "get": {
+        "operationId": "read_conversation_v1_conversations__conversation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Conversation"
+      }
+    },
+    "/v1/conversations/{conversation_id}/accept": {
+      "post": {
+        "operationId": "accept_card_v1_conversations__conversation_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptConversationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReflectionRecord"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Card"
+      }
+    },
+    "/v1/conversations/{conversation_id}/close": {
+      "post": {
+        "operationId": "close_conversation_v1_conversations__conversation_id__close_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Close Conversation"
+      }
+    },
+    "/v1/conversations/{conversation_id}/messages": {
+      "post": {
+        "operationId": "continue_conversation_v1_conversations__conversation_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationTurnRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationTurnResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Continue Conversation"
       }
     },
     "/v1/export": {

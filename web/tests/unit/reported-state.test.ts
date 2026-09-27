@@ -27,10 +27,12 @@ describe("reported affective state", () => {
     ).toBe(0);
   });
 
-  test("reflect and check-in do not hard-code confidence 1", () => {
+  test("reflect, check-in, and talk do not hard-code confidence 1", () => {
     const reflect = readFileSync(resolve(process.cwd(), "app/reflect/page.tsx"), "utf8");
     const checkIn = readFileSync(resolve(process.cwd(), "app/check-in/page.tsx"), "utf8");
+    const talk = readFileSync(resolve(process.cwd(), "app/talk/page.tsx"), "utf8");
     expect(reflect).not.toContain("confidence: 1");
     expect(checkIn).not.toContain("confidence: 1");
+    expect(talk).not.toContain("confidence: 1");
   });
 });

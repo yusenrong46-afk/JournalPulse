@@ -20,6 +20,8 @@
   - paragraph: Write what happened, correct the system’s read, and choose what you want to change—not how you are supposed to feel.
   - link "Open a reflection":
     - /url: /reflect
+  - link "Talk it through":
+    - /url: /talk
   - complementary "Your evidence so far":
     - text: Evidence so far updated
     - strong: "0"
@@ -53,6 +55,8 @@
     - /url: /
   - link "Reflect":
     - /url: /reflect
+  - link "Talk":
+    - /url: /talk
   - link "History":
     - /url: /history
   - link "Patterns":
