@@ -24,8 +24,9 @@ or production-scale availability.
    and API from one origin with gzip compression.
 4. For a personal preview, deploy `render.yaml`, confirm the persistent disk is mounted at `/var/data`,
    and verify `/ready` reports `server_sqlite` with AI explicitly disabled.
-5. For a multi-user beta, apply Supabase migrations in filename order and confirm both atomic write
-   functions are executable only by `authenticated` users.
+5. For a multi-user beta, apply Supabase migrations in filename order. `scripts/verify_postgres_schema.py`
+   recreates a scratch database, applies those migrations, and checks RLS plus the atomic write functions.
+   It is the check to run before pointing the API at a new project.
 6. Add Supabase and rotated OpenRouter values through Render secrets, change the environment to
    `production`, enable AI, and require every `/ready` dependency to be ready.
 7. Complete one disposable-user reflection, outcome, export, single deletion, and bulk deletion.

@@ -14,6 +14,19 @@ concurrency:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,6 +41,12 @@ jobs:
       - run: uv run python scripts/export_openapi.py --check
       - run: uv run pytest --cov=journalpulse --cov-report=term-missing
       - run: uv run python scripts/validate_resources.py
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Verify migrations against PostgreSQL
+        env:
+          JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+        run: uv run python scripts/verify_postgres_schema.py
 
   frontend:
     runs-on: ubuntu-latest
