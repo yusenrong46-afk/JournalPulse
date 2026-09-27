@@ -5,7 +5,10 @@ import httpx
 import pytest
 
 from journalpulse.config import Settings
+from journalpulse.domain import FEELINGS
 from journalpulse.intelligence import (
+    CONVERSATION_JSON_SCHEMA,
+    CONVERSATION_PROMPT_VERSION,
     ConversationProviderError,
     OpenRouterConversationClient,
     UnsupportedProviderResponse,
@@ -49,6 +52,7 @@ def _payload(**overrides: object) -> dict:
         "resource_intent": "reflect",
         "card_reason": "",
         "summary": "A hard moment is still present.",
+        "feelings": [],
     }
     body.update(overrides)
     return body
@@ -185,5 +189,28 @@ def test_text_part_arrays_are_accepted(tmp_path: Path):
         client=httpx.Client(transport=httpx.MockTransport(handler)),
     ).complete([{"role": "user", "content": "Hello."}])
     assert result.reply.startswith("That sounds heavy")
-    assert result.model_run.prompt_version == "2026-09-24.1"
+    assert result.model_run.prompt_version == CONVERSATION_PROMPT_VERSION
     assert result.model_run.schema_valid is True
+
+
+def test_suggested_feelings_come_only_from_the_allowed_list(tmp_path: Path):
+    def known(_: httpx.Request) -> httpx.Response:
+        return _response(json.dumps(_payload(feelings=["tired", "anxious", "tired"])))
+
+    result = OpenRouterConversationClient(
+        settings(tmp_path),
+        client=httpx.Client(transport=httpx.MockTransport(known)),
+    ).complete([{"role": "user", "content": "Hello."}])
+    assert result.feelings == ("tired", "anxious")
+    schema = CONVERSATION_JSON_SCHEMA["schema"]
+    assert "feelings" in schema["required"]
+    assert set(schema["properties"]["feelings"]["items"]["enum"]) == set(FEELINGS)
+
+    def invented(_: httpx.Request) -> httpx.Response:
+        return _response(json.dumps(_payload(feelings=["depressed"])))
+
+    with pytest.raises(ConversationProviderError, match="schema"):
+        OpenRouterConversationClient(
+            settings(tmp_path),
+            client=httpx.Client(transport=httpx.MockTransport(invented)),
+        ).complete([{"role": "user", "content": "Hello."}])

@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from .config import Settings
-from .domain import AffectiveState, ModelRun, ReflectionCopy
+from .domain import FEELINGS, AffectiveState, ModelRun, ReflectionCopy
 
 
 class UnsupportedProviderResponse(Exception):
@@ -295,14 +295,17 @@ def safe_analyze(
         )
 
 
-CONVERSATION_PROMPT_VERSION = "2026-09-24.1"
+CONVERSATION_PROMPT_VERSION = "2026-09-27.1"
 
 CONVERSATION_SYSTEM_PROMPT = (
-    "You are a non-clinical journaling companion. Write in plain text, about 120 words at most, "
-    "and ask one question at a time. Reflect the person's own words. Do not diagnose, give medical "
-    "or crisis advice, claim memory of other conversations, or output URLs, phone numbers, or "
-    "resource names. Set offer_action only when the person asks what to do next or sounds ready "
-    "to try one small thing. Return only the schema."
+    "You are Luna, a small, warm journaling companion. You are not a therapist. Write in plain, "
+    "friendly language, 80 words at most, and ask one question at a time. Reflect the person's own "
+    "words. Gently help them say what happened and how it feels; do not rush to fixes. Do not "
+    "diagnose, give medical or crisis advice, claim memory of other conversations, or output URLs, "
+    "phone numbers, or resource names. In feelings, list up to three words from the allowed list "
+    "that best match what the person has said so far; leave it empty if you cannot tell. Set "
+    "offer_action once you understand how they feel and they ask what to do, or sound ready to try "
+    "one small thing. Return only the schema."
 )
 
 CONVERSATION_JSON_SCHEMA: dict[str, Any] = {
@@ -311,7 +314,14 @@ CONVERSATION_JSON_SCHEMA: dict[str, Any] = {
     "schema": {
         "type": "object",
         "additionalProperties": False,
-        "required": ["reply", "offer_action", "resource_intent", "card_reason", "summary"],
+        "required": [
+            "reply",
+            "offer_action",
+            "resource_intent",
+            "card_reason",
+            "summary",
+            "feelings",
+        ],
         "properties": {
             "reply": {"type": "string", "minLength": 1, "maxLength": 1200},
             "offer_action": {"type": "boolean"},
@@ -321,6 +331,11 @@ CONVERSATION_JSON_SCHEMA: dict[str, Any] = {
             },
             "card_reason": {"type": "string", "maxLength": 240},
             "summary": {"type": "string", "minLength": 1, "maxLength": 420},
+            "feelings": {
+                "type": "array",
+                "maxItems": 3,
+                "items": {"type": "string", "enum": list(FEELINGS)},
+            },
         },
     },
 }
@@ -332,6 +347,15 @@ class ConversationTurnOutput(BaseModel):
     resource_intent: str = Field(min_length=1, max_length=40)
     card_reason: str = Field(default="", max_length=240)
     summary: str = Field(min_length=1, max_length=420)
+    feelings: list[str] = Field(default_factory=list, max_length=3)
+
+    @field_validator("feelings")
+    @classmethod
+    def known_feelings(cls, value: list[str]) -> list[str]:
+        unknown = [item for item in value if item not in FEELINGS]
+        if unknown:
+            raise ValueError(f"unknown feelings: {unknown}")
+        return list(dict.fromkeys(value))
 
     def require_card_reason(self) -> ConversationTurnOutput:
         if self.offer_action and not self.card_reason.strip():
@@ -347,6 +371,7 @@ class ConversationCompletion:
     card_reason: str
     summary: str
     model_run: ModelRun
+    feelings: tuple[str, ...] = ()
 
 
 class OpenRouterConversationClient:
@@ -414,6 +439,7 @@ class OpenRouterConversationClient:
             resource_intent=structured.resource_intent,
             card_reason=structured.card_reason,
             summary=structured.summary,
+            feelings=tuple(structured.feelings),
             model_run=ModelRun(
                 model=payload.get("model", self.settings.chat_model),
                 provider=provider,

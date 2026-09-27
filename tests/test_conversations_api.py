@@ -1,3 +1,4 @@
+import json
 import threading
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -82,12 +83,22 @@ def say(
     text: str,
     user: str = USER_A,
     message_id: str | None = None,
+    goal: str | None = None,
 ):
+    body: dict[str, object] = {"client_message_id": message_id or str(uuid4()), "text": text}
+    if goal is not None:
+        body["goal"] = goal
     return client.post(
         f"/v1/conversations/{conversation_id}/messages",
         headers={"X-JournalPulse-User": user},
-        json={"client_message_id": message_id or str(uuid4()), "text": text},
+        json=body,
     )
+
+
+def choose_goal(client: TestClient, conversation_id: str, goal: str = "understand", user: str = USER_A):
+    response = say(client, conversation_id, f"I'd like help to {goal}.", user=user, goal=goal)
+    assert response.status_code == 200, response.text
+    return response.json()
 
 
 def test_conversation_accepts_a_catalog_card_and_checks_in(tmp_path: Path):
@@ -98,10 +109,17 @@ def test_conversation_accepts_a_catalog_card_and_checks_in(tmp_path: Path):
         first = say(client, conversation["id"], "The meeting is still replaying in my head.")
         assert first.status_code == 200, first.text
         assert first.json()["conversation"]["card"] is None
+        assert first.json()["conversation"]["ready_for_action"] is False
         second = say(client, conversation["id"], "I think I could try one small thing.")
         assert second.status_code == 200, second.text
-        card = second.json()["conversation"]["card"]
-        assert card["resource_intent"] == "reflect"
+        assert second.json()["conversation"]["ready_for_action"] is True
+        assert second.json()["conversation"]["card"] is None
+        turn = choose_goal(client, conversation["id"], "understand")
+        assert len(model.calls) == 2
+        card = turn["conversation"]["card"]
+        assert turn["assistant_message"]["model_run"]["model"] == "luna-guided"
+        assert card["goal"] == "understand"
+        assert card["resource_intent"] == "read"
         assert card["actions"]
         assert len(card["actions"]) <= 3
         action_id = card["decision_preview"]["action_id"]
@@ -130,6 +148,7 @@ def test_conversation_accepts_a_catalog_card_and_checks_in(tmp_path: Path):
         assert record["decision"]["policy_name"] == "fixed-baseline"
         assert record["decision"]["action_id"] == action_id
         assert record["decision"]["selection_source"] == "policy_accepted"
+        assert record["target"]["goal"] == "understand"
         assert record["model_run"]["model"] == "openai/gpt-6-luna"
         assert record["reflection"]["reflection_question"] == "What changed after you tried it?"
         outcome = client.post(
@@ -312,7 +331,7 @@ def test_twenty_first_user_message_is_rejected_without_a_model_call(tmp_path: Pa
         assert len(model.calls) == 20
 
 
-def test_talk_refuses_to_start_without_consent_or_a_configured_model(tmp_path: Path, monkeypatch):
+def test_guided_luna_runs_without_consent_or_a_model(tmp_path: Path, monkeypatch):
     def forbidden(*args: object, **kwargs: object) -> None:
         del args, kwargs
         raise AssertionError("conversation client must not be constructed")
@@ -321,22 +340,64 @@ def test_talk_refuses_to_start_without_consent_or_a_configured_model(tmp_path: P
         "journalpulse.conversations.OpenRouterConversationClient",
         forbidden,
     )
+    private_line = "My sister's wedding speech is tomorrow and I'm exhausted and anxious."
     with TestClient(create_app(settings=chat_settings(tmp_path))) as client:
-        refused = client.post(
-            "/v1/conversations",
+        conversation = start(client, llm_consent=False)
+        assert conversation["mode"] == "guided"
+        assert conversation["llm_consent"] is False
+        first = say(client, conversation["id"], private_line)
+        assert first.status_code == 200, first.text
+        body = first.json()
+        assert body["assistant_message"]["model_run"]["model"] == "luna-guided"
+        assert body["conversation"]["feelings"] == ["tired", "anxious"]
+        assert body["conversation"]["ready_for_action"] is False
+        say(client, conversation["id"], "Mostly in my chest.")
+        third = say(client, conversation["id"], "I just want it to go well.")
+        assert third.json()["conversation"]["ready_for_action"] is True
+        turn = choose_goal(client, conversation["id"], "settle")
+        card = turn["conversation"]["card"]
+        assert card["goal"] == "settle"
+        assert all(item["resource_type"] != "support" for item in card["actions"])
+        saved = client.post(
+            f"/v1/conversations/{conversation['id']}/accept",
             headers={"X-JournalPulse-User": USER_A},
-            json={"llm_consent": False, "retain_text": False, "locale": "CA"},
+            json={
+                "action_id": card["decision_preview"]["action_id"],
+                "self_report": {
+                    "valence": -0.4,
+                    "arousal": 0.7,
+                    "agency": 0.4,
+                    "emotion_tags": ["tired", "anxious"],
+                    "confidence": 0.6,
+                },
+            },
         )
-        assert refused.status_code == 409
-        assert "private AI analysis" in refused.json()["detail"]
+        assert saved.status_code == 201, saved.text
+        record = saved.json()
+        assert record["target"]["goal"] == "settle"
+        assert "wedding" not in json.dumps(record)
     disabled = chat_settings(tmp_path, openrouter_api_key=None, llm_feature_enabled=False)
     with TestClient(create_app(settings=disabled)) as client:
-        refused = client.post(
-            "/v1/conversations",
-            headers={"X-JournalPulse-User": USER_A},
-            json={"llm_consent": True, "retain_text": False, "locale": "CA"},
+        conversation = start(client, llm_consent=True)
+        assert conversation["mode"] == "guided"
+
+
+def test_a_goal_turn_still_goes_through_the_safety_gate(tmp_path: Path):
+    model = ScriptedClient([False])
+    app = create_app(settings=chat_settings(tmp_path), conversation_client=model)
+    with TestClient(app) as client:
+        conversation = start(client)
+        response = say(
+            client,
+            conversation["id"],
+            "I want to kill myself tonight.",
+            goal="settle",
         )
-        assert refused.status_code == 409
+        assert response.status_code == 200, response.text
+        updated = response.json()["conversation"]
+        assert updated["safety_mode"] == "support"
+        assert updated["card"]["resource_intent"] == "pause"
+        assert model.calls == []
 
 
 def test_accept_rejects_unknown_actions_and_a_missing_card(tmp_path: Path):
@@ -359,6 +420,7 @@ def test_accept_rejects_unknown_actions_and_a_missing_card(tmp_path: Path):
         )
         assert missing.status_code == 409
         say(client, conversation["id"], "Maybe one small thing now.")
+        choose_goal(client, conversation["id"])
         rejected = client.post(
             f"/v1/conversations/{conversation['id']}/accept",
             headers={"X-JournalPulse-User": USER_A},
@@ -416,8 +478,9 @@ def test_conversations_are_private_deletable_and_exported(tmp_path: Path):
     }
     with TestClient(app) as client:
         conversation = start(client)
-        said = say(client, conversation["id"], "A private note for user A.")
-        action_id = said.json()["conversation"]["card"]["decision_preview"]["action_id"]
+        say(client, conversation["id"], "A private note for user A.")
+        said = choose_goal(client, conversation["id"])
+        action_id = said["conversation"]["card"]["decision_preview"]["action_id"]
         saved = client.post(
             f"/v1/conversations/{conversation['id']}/accept",
             headers={"X-JournalPulse-User": USER_A},
@@ -451,7 +514,7 @@ def test_conversations_are_private_deletable_and_exported(tmp_path: Path):
 
         exported = client.get("/v1/export", headers={"X-JournalPulse-User": USER_A})
         assert len(exported.json()["conversations"]) == 1
-        assert len(exported.json()["conversation_messages"]) == 2
+        assert len(exported.json()["conversation_messages"]) == 4
         removed = client.delete(
             f"/v1/conversations/{conversation['id']}",
             headers={"X-JournalPulse-User": USER_A},

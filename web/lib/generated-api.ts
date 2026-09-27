@@ -317,6 +317,7 @@ export interface components {
             /** Card Reason */
             card_reason: string;
             decision_preview: components["schemas"]["PolicyDecision"];
+            goal?: components["schemas"]["Goal"] | null;
             /** Offered Message Id */
             offered_message_id?: string | null;
             /** Resource Intent */
@@ -386,6 +387,8 @@ export interface components {
              * Format: date-time
              */
             created_at?: string;
+            /** Feelings */
+            feelings?: string[];
             /**
              * Id
              * Format: uuid
@@ -395,8 +398,15 @@ export interface components {
             llm_consent: boolean;
             /** Locale */
             locale: string;
+            /** @default ai */
+            mode: components["schemas"]["ConversationMode"];
             /** Prompt Version */
             prompt_version: string;
+            /**
+             * Ready For Action
+             * @default false
+             */
+            ready_for_action: boolean;
             /** Reflection Id */
             reflection_id?: string | null;
             /**
@@ -454,6 +464,11 @@ export interface components {
             safety_mode: components["schemas"]["SafetyMode"];
         };
         /**
+         * ConversationMode
+         * @enum {string}
+         */
+        ConversationMode: "ai" | "guided";
+        /**
          * ConversationStatus
          * @enum {string}
          */
@@ -465,6 +480,7 @@ export interface components {
              * Format: uuid
              */
             client_message_id: string;
+            goal?: components["schemas"]["Goal"] | null;
             /** Text */
             text: string;
         };
@@ -489,6 +505,11 @@ export interface components {
              */
             note: string;
         };
+        /**
+         * Goal
+         * @enum {string}
+         */
+        Goal: "settle" | "move" | "understand" | "connect" | "act";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
