@@ -1,37 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, type Route, test } from "@playwright/test";
 
-const analysis = {
-  state: {
-    valence: -0.4,
-    arousal: 0.7,
-    agency: 0.35,
-    emotion_tags: ["frustration", "work stress"],
-    confidence: 0.82,
-    uncertainty: "The desired outcome is not explicit.",
-  },
-  reflection: {
-    summary: "The meeting still feels unresolved.",
-    interpretation: "The language suggests frustration and reduced agency.",
-    reflection_question: "What would make this feel complete?",
-  },
-  safety: {
-    mode: "normal",
-    reasons: [],
-    locale: "CA",
-    exploration_allowed: true,
-    resource_ids: [],
-  },
-  model_run: {
-    model: "deterministic-fallback",
-    provider: "openrouter",
-    latency_ms: 0,
-    schema_valid: true,
-    used_fallback: true,
-  },
-  resource_intent: "reflect",
-};
+const API = "http://127.0.0.1:8000";
+const CONVERSATION_ID = "10000000-0000-4000-8000-000000000010";
+const DECISION_ID = "20000000-0000-4000-8000-000000000001";
 
-const preferences = {
+const onboarded = {
   onboarded: true,
   llmConsent: false,
   retainText: false,
@@ -40,404 +13,266 @@ const preferences = {
   locale: "CA",
 };
 
-async function onboard(page: import("@playwright/test").Page) {
-  await page.addInitScript((value) => {
-    window.localStorage.setItem("journalpulse_preferences_v1", JSON.stringify(value));
-  }, preferences);
-}
-
-test("guided reflection preserves the human correction step", async ({ page }) => {
-  await onboard(page);
-  await page.route("http://127.0.0.1:8000/**", async (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname === "/v1/system/status") {
-      return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
-    }
-    if (url.pathname.endsWith("/analyze")) return route.fulfill({ json: analysis });
-    if (url.pathname === "/v1/actions/preview") {
-      return route.fulfill({
-        json: {
-          decision: {
-            decision_id: "20000000-0000-4000-8000-000000000001",
-            action_id: "mindful_breathing_ucla",
-            propensity: 1,
-            policy_name: "fixed-baseline",
-            policy_version: "1.0.0",
-            safe_action_ids: ["mindful_breathing_ucla", "nature_reset"],
-            context_snapshot: {},
-            explanation: "Selected deterministically from the reviewed safe set.",
-            recommended_action_id: null,
-            selection_source: "policy",
-            eligible_for_ope: true,
-          },
-          actions: [
-            {
-              id: "mindful_breathing_ucla",
-              title: "A two-minute breathing reset",
-              url: "https://www.uclahealth.org/",
-              summary: "A short guided pause from a reviewed source.",
-              provider: "UCLA Health",
-              resource_type: "website",
-              coping_style: "reflect",
-              duration_minutes: 2,
-            },
-            {
-              id: "nature_reset",
-              title: "A quiet nature reset",
-              url: "https://www.bbc.com/earth",
-              summary: "A visual slowdown from a reviewed source.",
-              provider: "BBC Earth",
-              resource_type: "video",
-              coping_style: "watch",
-              duration_minutes: 5,
-            },
-          ],
-        },
-      });
-    }
-    if (url.pathname === "/v1/reflections") {
-      return route.fulfill({
-        status: 201,
-        json: {
-          id: "10000000-0000-4000-8000-000000000001",
-          user_id: "00000000-0000-4000-8000-000000000001",
-          created_at: "2026-07-12T12:00:00Z",
-          text: null,
-          text_retained: false,
-          context: {},
-          state: analysis.state,
-          target: { goal: "settle", valence: 0, arousal: 0.35, agency: 0.65 },
-          reflection: analysis.reflection,
-          safety: analysis.safety,
-          decision: {
-            decision_id: "20000000-0000-4000-8000-000000000001",
-            action_id: "mindful_breathing_ucla",
-            propensity: 1,
-            policy_name: "fixed-baseline",
-            policy_version: "1.0.0",
-            safe_action_ids: ["mindful_breathing_ucla"],
-            context_snapshot: {},
-            explanation: "Selected deterministically from the reviewed safe set.",
-            recommended_action_id: "mindful_breathing_ucla",
-            selection_source: "policy_accepted",
-            eligible_for_ope: true,
-          },
-          model_run: analysis.model_run,
-        },
-      });
-    }
-    return route.fulfill({ status: 404, json: { detail: "Unhandled test route" } });
-  });
-
-  await page.goto("/reflect");
-  await page.getByPlaceholder("Write without trying to sound composed…").fill(
-    "The meeting is replaying in my head and I cannot settle.",
-  );
-  await page.getByRole("button", { name: "Continue to my state" }).click();
-  await expect(page.getByText("The system’s read is a proposal, not a verdict.")).toBeVisible();
-  await expect(page.getByText("Local reflection mode")).toBeVisible();
-  await page.getByRole("button", { name: "This reflects me" }).click();
-  await page.getByRole("button", { name: "Show reviewed options" }).click();
-  await expect(page.getByText("Choose the action you are actually willing to try.")).toBeVisible();
-  await page.getByRole("button", { name: "Use this action" }).click();
-  await expect(page.getByRole("heading", { name: "A two-minute breathing reset" })).toBeVisible();
-  await expect(page.getByText(/policy accepted · eligible for policy evaluation/)).toBeVisible();
-  const reminder = await page.evaluate(() => localStorage.getItem("journalpulse_reminders_v1"));
-  expect(JSON.parse(reminder ?? "[]")).toHaveLength(1);
-});
-
-test("welcome flow stores explicit defaults before the first reflection", async ({ page }) => {
-  await page.goto("/welcome");
-  await page.getByRole("checkbox", { name: /Allow private AI analysis/ }).check();
-  await page.getByRole("button", { name: "Set my preferences" }).click();
-  await expect(page).toHaveURL(/\/reflect$/);
-  const saved = await page.evaluate(() => window.localStorage.getItem("journalpulse_preferences_v1"));
-  expect(JSON.parse(saved ?? "{}").llmConsent).toBe(true);
-});
-
-test("delayed check-in records a post-action state", async ({ page }) => {
-  await onboard(page);
-  await page.addInitScript(() => {
-    window.localStorage.setItem(
-      "journalpulse_reminders_v1",
-      JSON.stringify([{ decisionId: "20000000-0000-4000-8000-000000000001", actionId: "mindful_breathing_ucla", actionTitle: "A two-minute breathing reset", dueAt: "2026-07-12T12:10:00Z" }]),
-    );
-  });
-  await page.route("http://127.0.0.1:8000/**", async (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname === "/v1/system/status") return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
-    if (url.pathname === "/v1/reflections") {
-      return route.fulfill({ json: { items: [{ id: "reflection-1", created_at: "2026-07-12T12:00:00Z", text_retained: false, context: {}, state: analysis.state, target: { goal: "settle" }, reflection: analysis.reflection, safety: analysis.safety, decision: { decision_id: "20000000-0000-4000-8000-000000000001", action_id: "mindful_breathing_ucla", propensity: 1, policy_name: "fixed-baseline", policy_version: "1.0.0", safe_action_ids: ["mindful_breathing_ucla"], context_snapshot: {}, explanation: "Baseline", selection_source: "policy_accepted", eligible_for_ope: true } }] } });
-    }
-    if (url.pathname === "/v1/outcomes" && route.request().method() === "GET") return route.fulfill({ json: { items: [] } });
-    if (url.pathname === "/v1/outcomes" && route.request().method() === "POST") return route.fulfill({ status: 201, json: { id: "outcome-1", decision_id: "20000000-0000-4000-8000-000000000001", created_at: "2026-07-12T12:10:00Z", completed: true } });
-    if (url.pathname === "/v1/resources") return route.fulfill({ json: { items: [{ id: "mindful_breathing_ucla", title: "A two-minute breathing reset", url: "https://www.uclahealth.org/", summary: "Pause.", provider: "UCLA", resource_type: "website", coping_style: "reflect" }] } });
-    return route.fulfill({ status: 404, json: { detail: "Unhandled test route" } });
-  });
-  await page.goto("/check-in?decision=20000000-0000-4000-8000-000000000001");
-  await expect(page.getByRole("heading", { name: "A two-minute breathing reset" })).toBeVisible();
-  await page.getByRole("button", { name: "Record this outcome" }).click();
-  await expect(page.getByRole("heading", { name: "One observation recorded." })).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem("journalpulse_reminders_v1"))).toBe("[]");
-});
-
-test("mobile Today screen has a stable scientific-journal composition", async ({ page }, testInfo) => {
-  test.skip(!testInfo.project.name.startsWith("mobile"), "Mobile visual baseline only");
-  // Today renders the current date, so the composition is only comparable against a fixed clock.
-  await page.clock.setFixedTime(new Date("2026-03-12T09:00:00Z"));
-  await onboard(page);
-  await page.route("http://127.0.0.1:8000/**", (route) => {
-    const pathname = new URL(route.request().url()).pathname;
-    if (pathname === "/v1/system/status") return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
-    return route.fulfill({
-      json:
-        pathname === "/v1/insights"
-          ? {
-              reflection_count: 0,
-              completed_outcomes: 0,
-              action_counts: {},
-              average_helpfulness_by_action: {},
-              average_state_change: null,
-              completion_rate: 0,
-              pending_decision_ids: [],
-              state_trajectory: [],
-              note: "Descriptive only.",
-            }
-          : { items: [] },
-    });
-  });
-  await page.goto("/");
-  await expect(page.getByRole("heading", { name: "Begin with one honest observation" })).toBeVisible();
-  expect(
-    await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
-  ).toBe(true);
-  await expect(page.locator("body")).toMatchAriaSnapshot({ name: "today-mobile.aria.yml" });
-  // The aria snapshot matches a subset, so destinations have to be pinned separately.
-  await expect(page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link")).toHaveText([
-    "Today",
-    "Reflect",
-    "Talk",
-    "History",
-    "Patterns",
-    "Privacy",
-  ]);
-});
-
-const conversationId = "10000000-0000-4000-8000-000000000010";
-const talkAction = {
-  id: "mindful_breathing_ucla",
-  title: "A two-minute breathing reset",
-  url: "https://www.uclahealth.org/",
-  summary: "A short guided pause from a reviewed source.",
-  provider: "UCLA Health",
+const breathing = {
+  id: "site_nhs_breathing",
+  title: "NHS Breathing Exercises for Stress",
+  url: "https://www.nhs.uk/mental-health/self-help/guides-tools-and-activities/breathing-exercises-for-stress/",
+  summary: "A short breathing exercise.",
+  provider: "NHS",
   resource_type: "website",
-  coping_style: "reflect",
-  duration_minutes: 2,
+  coping_style: "move",
+  duration_minutes: 5,
 };
 
-function openConversation(safetyMode: "normal" | "support" = "normal") {
+const walk = { ...breathing, id: "move_nhs_walking", title: "Walking for Health (NHS)", duration_minutes: 10 };
+
+const decision = {
+  decision_id: DECISION_ID,
+  action_id: breathing.id,
+  propensity: 1,
+  policy_name: "fixed-baseline",
+  policy_version: "1.0.0",
+  safe_action_ids: [breathing.id, walk.id],
+  explanation: "Baseline pick.",
+  selection_source: "policy",
+  eligible_for_ope: true,
+};
+
+function conversation(overrides: Record<string, unknown> = {}) {
   return {
-    id: conversationId,
+    id: CONVERSATION_ID,
     user_id: "00000000-0000-4000-8000-000000000001",
-    created_at: "2026-09-24T12:00:00Z",
-    updated_at: "2026-09-24T12:00:00Z",
+    created_at: "2026-09-27T20:00:00Z",
+    updated_at: "2026-09-27T20:00:00Z",
     status: "open",
-    llm_consent: true,
+    llm_consent: false,
     retain_text: false,
-    safety_mode: safetyMode,
-    summary: "The meeting still feels unresolved.",
-    card: safetyMode === "support" ? null : {
-      resource_intent: "reflect",
-      card_reason: "A short pause matches what you asked for.",
-      decision_preview: {
-        decision_id: "20000000-0000-4000-8000-000000000010",
-        action_id: talkAction.id,
-        propensity: 1,
-        policy_name: "fixed-baseline",
-        policy_version: "1.0.0",
-        safe_action_ids: [talkAction.id],
-        explanation: "Selected from the reviewed catalog.",
-        selection_source: "policy",
-        eligible_for_ope: true,
-      },
-      actions: [talkAction],
-      offered_message_id: "30000000-0000-4000-8000-000000000010",
-    },
-    safety: safetyMode === "support"
-      ? { mode: "support", reasons: ["risk"], locale: "CA", exploration_allowed: false, support_message: "Contact 9-8-8.", resource_ids: [] }
-      : { mode: "normal", reasons: [], locale: "CA", exploration_allowed: true, resource_ids: [] },
-    reflection_id: null,
+    safety_mode: "normal",
+    summary: null,
+    card: null,
     locale: "CA",
-    prompt_version: "2026-09-24.1",
+    prompt_version: "guided-2026-09-27.1",
+    mode: "guided",
+    feelings: [],
+    ready_for_action: false,
+    ...overrides,
   };
 }
 
-test("talk saves a reviewed action and a follow-up reminder", async ({ page }) => {
-  await onboard(page);
-  await page.route("http://127.0.0.1:8000/**", async (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname === "/v1/system/status") {
-      return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
-    }
-    if (url.pathname === "/v1/conversations" && route.request().method() === "POST") {
-      return route.fulfill({ status: 201, json: openConversation() });
-    }
-    if (url.pathname === `/v1/conversations/${conversationId}/messages`) {
-      return route.fulfill({
-        json: {
-          conversation: openConversation(),
-          user_message: { id: "30000000-0000-4000-8000-000000000011", conversation_id: conversationId, role: "user", content: "The meeting is still in my head.", created_at: "2026-09-24T12:01:00Z", safety_mode: "normal" },
-          assistant_message: { id: "30000000-0000-4000-8000-000000000010", conversation_id: conversationId, role: "assistant", content: "That meeting is still taking up space. A short pause is one option.", created_at: "2026-09-24T12:01:01Z", safety_mode: "normal" },
-        },
-      });
-    }
-    if (url.pathname === `/v1/conversations/${conversationId}` && route.request().method() === "GET") {
-      return route.fulfill({ json: { conversation: openConversation(), messages: [] } });
-    }
-    if (url.pathname === `/v1/conversations/${conversationId}/accept`) {
-      return route.fulfill({
-        status: 201,
-        json: {
-          id: "10000000-0000-4000-8000-000000000099",
-          created_at: "2026-09-24T12:02:00Z",
-          text_retained: false,
-          context: { source: "conversation", conversation_id: conversationId },
-          state: analysis.state,
-          target: { goal: "understand" },
-          reflection: analysis.reflection,
-          safety: analysis.safety,
-          decision: {
-            decision_id: "20000000-0000-4000-8000-000000000010",
-            action_id: talkAction.id,
-            propensity: 1,
-            policy_name: "fixed-baseline",
-            policy_version: "1.0.0",
-            safe_action_ids: [talkAction.id],
-            explanation: "You accepted the baseline action.",
-            selection_source: "policy_accepted",
-            eligible_for_ope: true,
-          },
-        },
-      });
-    }
-    return route.fulfill({ status: 404, json: { detail: "Unhandled talk route" } });
-  });
+function message(role: "user" | "assistant", content: string, safety = "normal") {
+  return {
+    id: crypto.randomUUID(),
+    conversation_id: CONVERSATION_ID,
+    role,
+    content,
+    created_at: "2026-09-27T20:00:01Z",
+    safety_mode: safety,
+  };
+}
 
-  await page.goto("/talk");
-  await page.getByRole("checkbox", { name: /Use private AI analysis for this conversation/ }).check();
-  await page.getByRole("button", { name: "Start this conversation" }).click();
-  await page.getByPlaceholder("Write the next thing you want to say…").fill("The meeting is still in my head.");
-  await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByText("That meeting is still taking up space.")).toBeVisible();
-  await page.getByRole("button", { name: /A two-minute breathing reset/ }).click();
-  await page.getByRole("button", { name: "Use this action" }).click();
-  await expect(page.getByRole("link", { name: "Check in afterward" })).toBeVisible();
-  const reminder = await page.evaluate(() => localStorage.getItem("journalpulse_reminders_v1"));
-  expect(JSON.parse(reminder ?? "[]")).toHaveLength(1);
-});
+const reflection = {
+  id: "30000000-0000-4000-8000-000000000001",
+  created_at: "2026-09-27T20:05:00Z",
+  text: null,
+  text_retained: false,
+  context: { source: "conversation" },
+  state: { valence: -0.4, arousal: 0.6, agency: 0.4, emotion_tags: ["tired", "stressed"], confidence: 0.6 },
+  target: { goal: "settle" },
+  reflection: { summary: "You checked in with Luna.", interpretation: "Calm down.", reflection_question: "What changed?" },
+  safety: { mode: "normal", reasons: [], locale: "CA", exploration_allowed: true, resource_ids: [] },
+  decision,
+};
 
-test("talk support mode shows 9-8-8 and hides the composer", async ({ page }) => {
-  await onboard(page);
-  await page.route("http://127.0.0.1:8000/**", async (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname === "/v1/system/status") {
-      return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
-    }
-    if (url.pathname === "/v1/conversations" && route.request().method() === "POST") {
-      return route.fulfill({ status: 201, json: openConversation() });
-    }
-    if (url.pathname === `/v1/conversations/${conversationId}/messages`) {
-      const support = openConversation("support");
-      return route.fulfill({
-        json: {
-          conversation: support,
-          user_message: { id: "30000000-0000-4000-8000-000000000021", conversation_id: conversationId, role: "user", content: "I have a suicide plan", created_at: "2026-09-24T12:01:00Z", safety_mode: "support" },
-          assistant_message: { id: "30000000-0000-4000-8000-000000000022", conversation_id: conversationId, role: "assistant", content: "Contact 9-8-8.", created_at: "2026-09-24T12:01:01Z", safety_mode: "support" },
-        },
-      });
-    }
-    if (url.pathname === `/v1/conversations/${conversationId}` && route.request().method() === "GET") {
-      return route.fulfill({ json: { conversation: openConversation(), messages: [] } });
-    }
-    return route.fulfill({ status: 404, json: { detail: "Unhandled support route" } });
-  });
+async function fulfilJson(route: Route, json: unknown, status = 200) {
+  return route.fulfill({ status, json });
+}
 
-  await page.goto("/talk");
-  await page.getByRole("checkbox", { name: /Use private AI analysis for this conversation/ }).check();
-  await page.getByRole("button", { name: "Start this conversation" }).click();
-  await page.getByPlaceholder("Write the next thing you want to say…").fill("I have a suicide plan");
-  await page.getByRole("button", { name: "Send" }).click();
-  await expect(page.getByRole("link", { name: "Open 9-8-8 Canada" })).toBeVisible();
-  await expect(page.getByPlaceholder("Write the next thing you want to say…")).toHaveCount(0);
-});
-
-test("talk restores an open conversation from the server", async ({ page }) => {
-  await onboard(page);
-  await page.addInitScript((id) => {
-    window.localStorage.setItem("journalpulse_open_conversation_v1", id);
-  }, conversationId);
-  await page.route("http://127.0.0.1:8000/**", async (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname === "/v1/system/status") {
-      return route.fulfill({ json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." } });
-    }
-    if (url.pathname === `/v1/conversations/${conversationId}`) {
-      return route.fulfill({
-        json: {
-          conversation: openConversation(),
-          messages: [
-            { id: "30000000-0000-4000-8000-000000000031", conversation_id: conversationId, role: "user", content: "Restored from the server.", created_at: "2026-09-24T12:01:00Z", safety_mode: "normal" },
-            { id: "30000000-0000-4000-8000-000000000032", conversation_id: conversationId, role: "assistant", content: "I still have that from the server.", created_at: "2026-09-24T12:01:01Z", safety_mode: "normal" },
-          ],
-        },
-      });
-    }
-    return route.fulfill({ status: 404, json: { detail: "Unhandled restore route" } });
-  });
-  await page.goto("/talk");
-  await expect(page.getByText("Restored from the server.")).toBeVisible();
-  await page.reload();
-  await expect(page.getByText("I still have that from the server.")).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem("journalpulse_open_conversation_v1"))).toBe(conversationId);
-  expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("Restored from the server.");
-});
-
-test("talk links to the guided reflection when private AI is unavailable", async ({ page }) => {
-  await onboard(page);
-  await page.route("http://127.0.0.1:8000/**", async (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname === "/v1/system/status") {
-      return route.fulfill({ json: { analysis_mode: "local_only", persistence_mode: "this_device", message: "AI is off." } });
-    }
-    return route.fulfill({ status: 404, json: { detail: "Unavailable" } });
-  });
-  await page.goto("/talk");
-  await expect(page.getByRole("heading", { name: "Talk needs private AI analysis." })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Open a guided reflection/ })).toHaveAttribute("href", "/reflect");
-});
-
-test("encrypted draft recovery survives a refresh only after opt-in", async ({ page }) => {
+async function seed(page: Page, preferences: Record<string, unknown> | null = onboarded) {
   await page.addInitScript((value) => {
-    window.localStorage.setItem(
-      "journalpulse_preferences_v1",
-      JSON.stringify({ ...value, encryptedDrafts: true }),
-    );
+    if (value) window.localStorage.setItem("journalpulse_preferences_v1", JSON.stringify(value));
   }, preferences);
-  await page.route("http://127.0.0.1:8000/**", (route) => {
-    const pathname = new URL(route.request().url()).pathname;
-    if (pathname === "/v1/system/status") {
-      return route.fulfill({
-        json: { analysis_mode: "local_fallback", persistence_mode: "this_device", message: "Local mode." },
+}
+
+test("a new person meets Luna and chooses how Luna replies", async ({ page }) => {
+  await seed(page, null);
+  await page.route(`${API}/**`, (route) => fulfilJson(route, { items: [] }));
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/welcome/);
+  await expect(page.getByRole("heading", { name: "Hi, I’m Luna." })).toBeVisible();
+  await page.getByRole("button", { name: "Nice to meet you" }).click();
+  const next = page.getByRole("button", { name: "Continue" });
+  await expect(next).toBeDisabled();
+  await page.getByRole("button", { name: /Simple Luna/ }).click();
+  await next.click();
+  await page.getByRole("button", { name: "Let’s begin" }).click();
+  await expect(page).toHaveURL(/\/talk/);
+  await expect(page.getByRole("button", { name: /AI help off/ })).toBeVisible();
+  const saved = await page.evaluate(() => JSON.parse(window.localStorage.getItem("journalpulse_preferences_v1") ?? "{}"));
+  expect(saved).toMatchObject({ onboarded: true, llmConsent: false });
+});
+
+test("a chat goes from a mood tap to one saved small step", async ({ page }) => {
+  await seed(page);
+  const turns: Array<Record<string, unknown>> = [];
+  let accepted: Record<string, unknown> | null = null;
+  await page.route(`${API}/**`, async (route) => {
+    const url = new URL(route.request().url());
+    const method = route.request().method();
+    if (url.pathname === "/v1/conversations" && method === "POST") {
+      const body = route.request().postDataJSON();
+      expect(body.llm_consent).toBe(false);
+      return fulfilJson(route, conversation(), 201);
+    }
+    if (url.pathname === `/v1/conversations/${CONVERSATION_ID}/messages`) {
+      const body = route.request().postDataJSON();
+      turns.push(body);
+      if (body.goal) {
+        return fulfilJson(route, {
+          conversation: conversation({
+            ready_for_action: true,
+            feelings: ["tired"],
+            card: { resource_intent: "ground", card_reason: "Calm.", decision_preview: decision, actions: [breathing, walk], goal: body.goal },
+          }),
+          user_message: message("user", body.text),
+          assistant_message: message("assistant", "Here are three small ways to calm things down."),
+        });
+      }
+      return fulfilJson(route, {
+        conversation: conversation({ ready_for_action: turns.length >= 2, feelings: ["tired", "stressed"] }),
+        user_message: message("user", body.text),
+        assistant_message: message("assistant", turns.length >= 2 ? "Want to find one small thing to try together?" : "What part of that is sitting with you most?"),
       });
     }
-    return route.fulfill({ status: 404, json: { detail: "Not needed for draft recovery" } });
+    if (url.pathname === `/v1/conversations/${CONVERSATION_ID}/accept`) {
+      accepted = route.request().postDataJSON();
+      return fulfilJson(route, reflection, 201);
+    }
+    return fulfilJson(route, { items: [] });
   });
 
-  await page.goto("/reflect");
-  const entry = page.getByPlaceholder("Write without trying to sound composed…");
-  await entry.fill("This unfinished thought should survive one accidental refresh.");
-  await expect(page.getByText("Encrypted draft saved on this device.")).toBeVisible();
-  await page.reload();
-  await expect(entry).toHaveValue("This unfinished thought should survive one accidental refresh.");
-  await expect(page.getByText("Encrypted draft restored on this device.")).toBeVisible();
+  await page.goto("/talk");
+  await page.getByRole("button", { name: /Low/ }).click();
+  await expect(page.getByText("What part of that is sitting with you most?")).toBeVisible();
+  expect(turns[0].text).toBe("I'm feeling kind of low.");
+
+  await page.getByLabel("Message Luna").fill("Work is a lot and I'm worn out.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await page.getByRole("button", { name: /Yes, let’s find one small thing/ }).click();
+
+  const feelings = page.getByRole("group", { name: "Feelings" });
+  await expect(feelings.getByRole("button", { name: /Tired/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(feelings.getByRole("button", { name: /Stressed/ })).toHaveAttribute("aria-pressed", "true");
+  await feelings.getByRole("button", { name: /Stressed/ }).click();
+  await page.getByRole("button", { name: "That’s it" }).click();
+  await page.getByRole("button", { name: /Calm down/ }).click();
+
+  expect(turns.at(-1)).toMatchObject({ goal: "settle", text: "I'm feeling tired. I'd like to calm down." });
+  const pick = page.getByRole("button", { name: /Luna’s pick/ });
+  await expect(pick).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: /Walking for Health/ }).click();
+  await page.getByRole("button", { name: "Let’s try it" }).click();
+
+  await expect(page.getByRole("heading", { name: "Nice choice." })).toBeVisible();
+  expect(accepted).toMatchObject({ action_id: walk.id });
+  const report = (accepted as unknown as { self_report: { emotion_tags: string[]; valence: number; confidence: number } }).self_report;
+  expect(report.emotion_tags).toEqual(["tired"]);
+  expect(report.valence).toBeLessThan(0);
+  expect(report.confidence).toBeLessThan(1);
 });
+
+test("support mode puts people first and hides the chat box", async ({ page }) => {
+  await seed(page);
+  await page.route(`${API}/**`, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/conversations") return fulfilJson(route, conversation(), 201);
+    if (url.pathname.endsWith("/messages")) {
+      const body = route.request().postDataJSON();
+      return fulfilJson(route, {
+        conversation: conversation({
+          safety_mode: "support",
+          card: {
+            resource_intent: "pause",
+            card_reason: "Human support first.",
+            decision_preview: { ...decision, action_id: "support_988_canada", safe_action_ids: ["support_988_canada"] },
+            actions: [{ ...breathing, id: "support_988_canada", title: "9-8-8 Suicide Crisis Helpline — Canada", resource_type: "support", url: "https://988.ca/" }],
+          },
+        }),
+        user_message: message("user", body.text, "support"),
+        assistant_message: message("assistant", "Please contact 9-8-8 now.", "support"),
+      });
+    }
+    return fulfilJson(route, { items: [] });
+  });
+  await page.goto("/talk");
+  await page.getByLabel("Message Luna").fill("I want to end my life.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByText("You don’t have to handle this alone.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Call or text 9-8-8" })).toHaveAttribute("href", "https://988.ca/");
+  await expect(page.getByLabel("Message Luna")).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "Luna is here with you" })).toBeVisible();
+});
+
+test("a check-in records how much the step helped", async ({ page }) => {
+  await seed(page);
+  let outcome: Record<string, unknown> | null = null;
+  await page.route(`${API}/**`, async (route) => {
+    const url = new URL(route.request().url());
+    const method = route.request().method();
+    if (url.pathname === "/v1/reflections") return fulfilJson(route, { items: [reflection] });
+    if (url.pathname === "/v1/resources") return fulfilJson(route, { items: [breathing, walk] });
+    if (url.pathname === "/v1/outcomes" && method === "POST") {
+      outcome = route.request().postDataJSON();
+      return fulfilJson(route, { id: "o1", decision_id: DECISION_ID, created_at: "2026-09-27T20:20:00Z", completed: true }, 201);
+    }
+    return fulfilJson(route, { items: [] });
+  });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: /NHS Breathing Exercises for Stress.*Did it help/ })).toBeVisible();
+  await page.getByRole("link", { name: /A lot/ }).click();
+  await expect(page.getByRole("heading", { name: "How much did it help?" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /A lot/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: /Calm$/ }).click();
+  await page.getByRole("button", { name: "Save my check-in" }).click();
+  await expect(page.getByRole("heading", { name: "Thank you!" })).toBeVisible();
+  expect(outcome).toMatchObject({ decision_id: DECISION_ID, completed: true, helpfulness: 5 });
+  expect((outcome as unknown as { post_state: { emotion_tags: string[] } }).post_state.emotion_tags).toEqual(["calm"]);
+});
+
+test("journey grows a plant for each check-in and names what helped", async ({ page }) => {
+  await seed(page);
+  await page.route(`${API}/**`, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/reflections") return fulfilJson(route, { items: [reflection] });
+    if (url.pathname === "/v1/resources") return fulfilJson(route, { items: [breathing] });
+    if (url.pathname === "/v1/outcomes") {
+      return fulfilJson(route, { items: [{ id: "o1", decision_id: DECISION_ID, created_at: "2026-09-27T20:20:00Z", completed: true, helpfulness: 5 }] });
+    }
+    return fulfilJson(route, { items: [] });
+  });
+  await page.goto("/journey");
+  await expect(page.getByRole("img", { name: /Helped a lot/ })).toBeVisible();
+  await expect(page.getByText("helped 1 of 1")).toBeVisible();
+  await expect(page.getByText("😴 Tired")).toBeVisible();
+});
+
+test("the main navigation has three calm destinations", async ({ page }) => {
+  await seed(page);
+  await page.route(`${API}/**`, (route) => fulfilJson(route, { items: [] }));
+  await page.goto("/");
+  const nav = page.getByRole("navigation", { name: "Main" }).or(page.getByRole("complementary", { name: "Main" }));
+  const visible = nav.locator("visible=true").first();
+  await expect(visible.getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(visible.getByRole("link", { name: "Journey", exact: true })).toHaveAttribute("href", "/journey");
+  await expect(visible.getByRole("link", { name: "Me", exact: true })).toHaveAttribute("href", "/me");
+  await expect(page.getByRole("link", { name: "Talk with Luna" }).first()).toBeVisible();
+  await expect(page.getByText(/Observe|Orient/)).toHaveCount(0);
+});
+
+for (const [from, to] of [["/reflect", "/talk"], ["/history", "/journey"], ["/patterns", "/journey"], ["/privacy", "/me"]]) {
+  test(`${from} now leads to ${to}`, async ({ page }) => {
+    await seed(page);
+    await page.route(`${API}/**`, (route) => fulfilJson(route, { items: [] }));
+    await page.goto(from);
+    await expect(page).toHaveURL(new RegExp(`${to}$`));
+  });
+}

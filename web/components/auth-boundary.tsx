@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 
+import { Luna } from "@/components/luna";
 import { useRoutePath } from "@/lib/route-path";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -46,8 +47,9 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
   if (!configured || publicPath) return children;
   if (authorizedPath !== pathname) {
     return (
-      <div className="page-wrap narrow" aria-busy="true">
-        <section className="paper-card skeleton-card" aria-label="Checking your private session" />
+      <div className="loading-luna" role="status" aria-busy="true">
+        <Luna mood="sleepy" size={96} decorative />
+        <span>Waking Luna up…</span>
       </div>
     );
   }

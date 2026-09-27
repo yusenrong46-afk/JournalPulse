@@ -4,32 +4,39 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
-import { StateControls } from "@/components/state-controls";
+import { Luna } from "@/components/luna";
+import { Icon } from "@/components/nav-icon";
 import { apiRequest } from "@/lib/api";
-import { usePreferences } from "@/lib/preferences";
-import { reportedState } from "@/lib/reported-state";
+import { FEELINGS, selfReport } from "@/lib/feelings";
 import { clearReminder } from "@/lib/reminders";
-import type { AffectiveState, OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
+import type { OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
+
+const HELP_FACES = [
+  { score: 1, emoji: "😣", label: "Not at all" },
+  { score: 2, emoji: "😕", label: "A little" },
+  { score: 3, emoji: "😐", label: "Somewhat" },
+  { score: 4, emoji: "🙂", label: "Helped" },
+  { score: 5, emoji: "😄", label: "A lot" },
+];
 
 function CheckInWorkspace() {
-  const [preferences] = usePreferences();
   const searchParams = useSearchParams();
   const requestedDecision = searchParams.get("decision");
+  const prefilled = Number(searchParams.get("h"));
   const [reflection, setReflection] = useState<ReflectionRecord | null>(null);
   const [resource, setResource] = useState<Resource | null>(null);
-  const [postState, setPostState] = useState<AffectiveState | null>(null);
-  const [existing, setExisting] = useState<OutcomeRecord | null>(null);
-  const [completed, setCompleted] = useState(true);
-  const [helpfulness, setHelpfulness] = useState(3);
-  const [effort, setEffort] = useState(2);
-  const [elapsedOverride, setElapsedOverride] = useState<number | null>(null);
+  const [alreadyDone, setAlreadyDone] = useState(false);
+  const [tried, setTried] = useState<boolean | null>(
+    searchParams.get("tried") === "no" ? false : prefilled >= 1 && prefilled <= 5 ? true : null,
+  );
+  const [helpfulness, setHelpfulness] = useState<number | null>(prefilled >= 1 && prefilled <= 5 ? prefilled : null);
+  const [feelings, setFeelings] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const requestId = useRef("");
-
-  const elapsed = elapsedOverride ?? preferences.followUpMinutes;
 
   useEffect(() => {
     Promise.all([
@@ -38,24 +45,24 @@ function CheckInWorkspace() {
       apiRequest<{ items: Resource[] }>("/v1/resources"),
     ])
       .then(([history, outcomes, catalog]) => {
-        const completedIds = new Set(outcomes.items.map((item) => item.decision_id));
+        const done = new Set(outcomes.items.map((item) => item.decision_id));
         const selected = requestedDecision
           ? history.items.find((item) => item.decision.decision_id === requestedDecision)
-          : history.items.find((item) => !completedIds.has(item.decision.decision_id));
+          : history.items.find((item) => !done.has(item.decision.decision_id));
         if (!selected) return;
         setReflection(selected);
-        setPostState(reportedState(selected.state));
-        setExisting(outcomes.items.find((item) => item.decision_id === selected.decision.decision_id) ?? null);
+        setAlreadyDone(done.has(selected.decision.decision_id));
         setResource(catalog.items.find((item) => item.id === selected.decision.action_id) ?? null);
       })
-      .catch(() => setError("The check-in could not be loaded."))
+      .catch(() => setError("Luna couldn’t load this check-in. Please try again in a moment."))
       .finally(() => setLoading(false));
   }, [requestedDecision]);
 
-  async function submit() {
-    if (!reflection || !postState) return;
-    setLoading(true);
+  async function submit(completed: boolean) {
+    if (!reflection) return;
+    setBusy(true);
     setError("");
+    const elapsed = Math.round((Date.now() - new Date(reflection.created_at).getTime()) / 60_000);
     try {
       await apiRequest<OutcomeRecord>("/v1/outcomes", {
         method: "POST",
@@ -64,50 +71,127 @@ function CheckInWorkspace() {
           client_request_id: requestId.current || (requestId.current = crypto.randomUUID()),
           decision_id: reflection.decision.decision_id,
           completed,
-          post_state: postState,
-          helpfulness,
-          effort,
-          elapsed_minutes: elapsed,
-          note: note || null,
+          post_state: completed && feelings.length ? selfReport(feelings, null) : null,
+          helpfulness: completed ? helpfulness : null,
+          effort: null,
+          elapsed_minutes: Math.min(Math.max(elapsed, 0), 10080),
+          note: note.trim() || null,
         }),
       });
       clearReminder(reflection.decision.decision_id);
       setSaved(true);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "The check-in could not be saved.");
+      setError(reason instanceof Error ? reason.message : "That didn’t save. Please try again.");
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   }
 
-  if (loading && !reflection) return <div className="page-wrap narrow"><section className="paper-card skeleton-card" aria-label="Loading check-in" /></div>;
-  if (error && !reflection) return <div className="page-wrap narrow"><p className="error-note">{error}</p></div>;
-  if (!reflection || !postState) return <div className="page-wrap narrow"><section className="paper-card empty-card"><span className="folio">No pending loop</span><h2>Nothing needs a check-in.</h2><p>Complete a reflection and choose an action first.</p><Link className="button primary" href="/reflect">Start a reflection</Link></section></div>;
-  if (existing || saved) return <div className="page-wrap narrow"><section className="flow-sheet complete-sheet"><span className="folio">Loop closed</span><h2>One observation recorded.</h2><p>This result informs your descriptive patterns. It does not prove that the action caused the change.</p><div className="button-row"><Link className="button primary" href="/patterns">Review patterns</Link><Link className="button secondary" href="/">Return to today</Link></div></section></div>;
+  const title = resource?.title ?? "your small step";
+
+  let body: React.ReactNode;
+  if (loading) {
+    body = <div className="loading-luna" role="status"><Luna mood="checkin" size={110} decorative /><span>Finding your check-in…</span></div>;
+  } else if (!reflection) {
+    body = (
+      <>
+        <Luna mood="idle" size={120} />
+        <h1>Nothing to check in on.</h1>
+        <p>{error || "When you try something Luna suggested, you can tell Luna how it went here."}</p>
+        <Link className="btn btn-primary" href="/talk">Talk with Luna</Link>
+      </>
+    );
+  } else if (saved || alreadyDone) {
+    body = (
+      <>
+        <Luna mood="proud" size={130} />
+        <h1>{saved ? "Thank you!" : "Already checked in"}</h1>
+        <p>{saved ? "Your garden grew a little. Over time you’ll see which small things help you most." : "You already told Luna how this one went."}</p>
+        <div className="row" style={{ justifyContent: "center" }}>
+          <Link className="btn btn-primary" href="/journey">See your garden</Link>
+          <Link className="btn btn-ghost" href="/">Home</Link>
+        </div>
+      </>
+    );
+  } else if (tried === null) {
+    body = (
+      <>
+        <Luna mood="checkin" size={130} />
+        <h1>Did you get to try “{title}”?</h1>
+        <div className="stack">
+          <button className="btn btn-primary btn-big btn-block" type="button" onClick={() => setTried(true)}>Yes, I did</button>
+          <button className="btn btn-soft btn-block" type="button" onClick={() => setTried(false)}>Not yet</button>
+        </div>
+      </>
+    );
+  } else if (!tried) {
+    body = (
+      <>
+        <Luna mood="idle" size={120} />
+        <h1>That’s okay.</h1>
+        <p>Small steps work best when they fit your day. Want Luna to ask again later, or skip this one?</p>
+        <div className="stack">
+          <Link className="btn btn-primary btn-block" href="/">Ask me later</Link>
+          <button className="btn btn-soft btn-block" type="button" disabled={busy} onClick={() => void submit(false)}>{busy ? "Saving…" : "Skip this one"}</button>
+        </div>
+        {error && <p className="note error" role="alert">{error}</p>}
+      </>
+    );
+  } else {
+    body = (
+      <>
+        <Luna mood={helpfulness && helpfulness >= 4 ? "answering" : "checkin"} size={110} />
+        <h1>How much did it help?</h1>
+        <div className="faces" role="group" aria-label="How much did it help?">
+          {HELP_FACES.map((face) => (
+            <button key={face.score} className="face" type="button" aria-pressed={helpfulness === face.score} onClick={() => setHelpfulness(face.score)}>
+              <span aria-hidden="true">{face.emoji}</span>
+              <span>{face.label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="stack" style={{ textAlign: "left" }}>
+          <h2 style={{ fontSize: "1.15rem" }}>How do you feel now? <span className="muted small">(optional)</span></h2>
+          <div className="chips" role="group" aria-label="How you feel now">
+            {FEELINGS.map((item) => (
+              <button
+                key={item.id}
+                className="chip"
+                type="button"
+                aria-pressed={feelings.includes(item.id)}
+                onClick={() => setFeelings((current) => (current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id]))}
+              >
+                <span className="chip-emoji" aria-hidden="true">{item.emoji}</span>{item.label}
+              </button>
+            ))}
+          </div>
+          <label className="text-field">
+            Anything you noticed? <span className="muted small">(optional)</span>
+            <textarea value={note} maxLength={1000} onChange={(event) => setNote(event.target.value)} placeholder="What helped, what didn’t, what surprised you…" />
+          </label>
+        </div>
+        <button className="btn btn-primary btn-big btn-block" type="button" disabled={busy || helpfulness === null} onClick={() => void submit(true)}>
+          {busy ? "Saving…" : "Save my check-in"}
+        </button>
+        {error && <p className="note error" role="alert">{error}</p>}
+      </>
+    );
+  }
 
   return (
-    <div className="page-wrap narrow reveal">
-      <header className="flow-header"><div><span className="kicker">Delayed outcome</span><h1>What changed after the action?</h1></div></header>
-      <section className="flow-sheet">
-        <span className="folio">Action recalled</span>
-        <h2>{resource?.title ?? reflection.decision.action_id}</h2>
-        <p>{reflection.reflection.summary}</p>
-        <div className="check-in-baseline"><span>Before</span><strong>Valence {reflection.state.valence.toFixed(2)}</strong><strong>Activation {reflection.state.arousal.toFixed(2)}</strong><strong>Agency {reflection.state.agency.toFixed(2)}</strong></div>
-        <StateControls state={postState} onChange={setPostState} />
-        <div className="outcome-form">
-          <label>Did you try it?<select value={completed ? "yes" : "no"} onChange={(event) => setCompleted(event.target.value === "yes")}><option value="yes">Yes</option><option value="no">Not yet</option></select></label>
-          <label>Helpfulness, 1–5<input value={helpfulness} onChange={(event) => setHelpfulness(Number(event.target.value))} type="number" min="1" max="5" /></label>
-          <label>Effort, 1–5<input value={effort} onChange={(event) => setEffort(Number(event.target.value))} type="number" min="1" max="5" /></label>
-          <label>Minutes elapsed<input value={elapsed} onChange={(event) => setElapsedOverride(Number(event.target.value))} type="number" min="0" max="10080" /></label>
-        </div>
-        <label className="field-label">Optional observation<input value={note} onChange={(event) => setNote(event.target.value)} placeholder="What helped, resisted, or surprised you?" /></label>
-        <button className="button primary" onClick={submit} disabled={loading}>{loading ? "Recording…" : "Record this outcome"}</button>
-        {error && <p className="error-note" role="alert">{error}</p>}
-      </section>
+    <div className="focus-page">
+      <div style={{ display: "flex", justifyContent: "flex-start" }}>
+        <Link className="icon-btn" href="/" aria-label="Back to home"><Icon name="back" /></Link>
+      </div>
+      {body}
     </div>
   );
 }
 
 export default function CheckInPage() {
-  return <Suspense fallback={<div className="page-wrap narrow"><section className="paper-card skeleton-card" /></div>}><CheckInWorkspace /></Suspense>;
+  return (
+    <Suspense fallback={<div className="loading-luna"><Luna mood="checkin" size={100} decorative /></div>}>
+      <CheckInWorkspace />
+    </Suspense>
+  );
 }

@@ -18,11 +18,15 @@ gates pass.
 
 ## What exists now
 
-- Next.js 16 / TypeScript PWA with onboarding, Today, five-stage Reflect, a short Talk
-  conversation, Action, Check-in, searchable History, trajectory Patterns, and Privacy flows.
-- Responsive scientific-journal interface with an icon-led mobile shell, explicit processing status,
-  encrypted draft recovery, stable offline fallback, and WCAG-focused interaction states.
-- FastAPI contracts for analysis, a bounded Luna conversation, curated-action preview, explicit
+- Next.js 16 / TypeScript PWA built around one chat with Luna, an animated mascot whose mood follows
+  the conversation (listening, thinking, answering, proud, oops, sleepy, check-in, and a calm support
+  pose). Luna asks how you are, confirms your feelings with tap buttons, asks what would help, and
+  offers three reviewed actions. Home, Journey (a garden of check-ins plus plain-language patterns),
+  and Me (privacy, export, deletion) are the only other destinations.
+- Zen visual system: warm sand, sunrise orange, lavender, and sage; rounded Nunito and Inter type;
+  a time-of-day sky; reduced-motion support; and WCAG-focused interaction states.
+- Without AI consent or a configured model, Luna runs in a scripted mode with the same steps.
+- FastAPI contracts for analysis, a bounded Luna conversation, goal-driven catalog cards, explicit
   user overrides, saved reflections, delayed outcomes, trajectories, pending check-ins, resources,
   export, and deletion.
 - Deterministic safety precedence and consent-aware OpenRouter structured extraction.

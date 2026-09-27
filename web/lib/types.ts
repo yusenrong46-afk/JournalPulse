@@ -136,6 +136,7 @@ export type ActionCard = {
   decision_preview: ReflectionRecord["decision"];
   actions: Resource[];
   offered_message_id?: string | null;
+  goal?: "settle" | "move" | "understand" | "connect" | "act" | null;
 };
 
 export type Conversation = {
@@ -153,6 +154,9 @@ export type Conversation = {
   reflection_id?: string | null;
   locale: string;
   prompt_version: string;
+  mode?: "ai" | "guided";
+  feelings?: string[];
+  ready_for_action?: boolean;
 };
 
 export type ConversationDetail = {
