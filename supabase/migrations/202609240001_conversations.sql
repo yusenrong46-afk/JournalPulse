@@ -34,6 +34,8 @@ create policy conversations_owner on public.conversations
 create policy conversation_messages_owner on public.conversation_messages
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- Replaced by 202609270001_fix_conversation_functions.sql. The variable names below
+-- collide with column names, so this body errors on PostgreSQL until that migration.
 create or replace function public.save_conversation_turn(payload jsonb)
 returns jsonb
 language plpgsql
@@ -121,6 +123,8 @@ begin
 end;
 $$;
 
+-- Replaced by 202609270001_fix_conversation_functions.sql. Purging message text
+-- errors on PostgreSQL until that migration, because conversation_id is ambiguous.
 create or replace function public.close_conversation(conversation_id uuid, purge boolean)
 returns jsonb
 language plpgsql
