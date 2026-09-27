@@ -10,6 +10,8 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:3000",
     trace: "on-first-retry",
+    // Today renders the reader's local day, so the runner's zone must not decide it.
+    timezoneId: "UTC",
   },
   projects: [
     { name: "mobile-chromium", use: { ...devices["iPhone 13"], browserName: "chromium" } },
