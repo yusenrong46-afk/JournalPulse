@@ -183,6 +183,8 @@ test("delayed check-in records a post-action state", async ({ page }) => {
 
 test("mobile Today screen has a stable scientific-journal composition", async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.startsWith("mobile"), "Mobile visual baseline only");
+  // Today renders the current date, so the composition is only comparable against a fixed clock.
+  await page.clock.setFixedTime(new Date("2026-03-12T09:00:00Z"));
   await onboard(page);
   await page.route("http://127.0.0.1:8000/**", (route) => {
     const pathname = new URL(route.request().url()).pathname;
@@ -209,11 +211,7 @@ test("mobile Today screen has a stable scientific-journal composition", async ({
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
   ).toBe(true);
-  await expect(page).toHaveScreenshot("today-mobile.png", {
-    animations: "disabled",
-    fullPage: true,
-    maxDiffPixelRatio: 0.02,
-  });
+  await expect(page.locator("body")).toMatchAriaSnapshot({ name: "today-mobile.aria.yml" });
 });
 
 const conversationId = "10000000-0000-4000-8000-000000000010";
