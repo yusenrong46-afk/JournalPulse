@@ -1,0 +1,16 @@
+.venv
+.venv312
+.env
+.env.*
+.vercel
+web/node_modules
+web/.next
+web/out
+.git
+.pytest_cache
+.ruff_cache
+.mypy_cache
+__pycache__
+tests
+docs
+artifacts

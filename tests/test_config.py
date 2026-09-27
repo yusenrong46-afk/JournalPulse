@@ -54,6 +54,10 @@ def test_production_configuration_rejects_local_origins_and_missing_dependencies
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     monkeypatch.delenv("SUPABASE_URL", raising=False)
     monkeypatch.delenv("SUPABASE_ANON_KEY", raising=False)
+    monkeypatch.delenv("RENDER_EXTERNAL_URL", raising=False)
+    monkeypatch.delenv("VERCEL_PROJECT_PRODUCTION_URL", raising=False)
+    monkeypatch.delenv("VERCEL_BRANCH_URL", raising=False)
+    monkeypatch.delenv("VERCEL_URL", raising=False)
 
     settings = config.load_settings()
 
@@ -70,3 +74,40 @@ def test_production_configuration_rejects_local_origins_and_missing_dependencies
         cors_origins=("https://journalpulse.example",),
     )
     assert valid.configuration_issues == []
+
+
+def _ready_production(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(config, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setenv("JOURNALPULSE_ENV", "production")
+    monkeypatch.delenv("JOURNALPULSE_CORS_ORIGINS", raising=False)
+    monkeypatch.delenv("RENDER_EXTERNAL_URL", raising=False)
+    monkeypatch.delenv("VERCEL_PROJECT_PRODUCTION_URL", raising=False)
+    monkeypatch.delenv("VERCEL_BRANCH_URL", raising=False)
+    monkeypatch.delenv("VERCEL_URL", raising=False)
+    monkeypatch.setenv("JOURNALPULSE_LLM_API_KEY", "present")
+    monkeypatch.setenv("SUPABASE_URL", "https://project.supabase.co")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "public-anon-key")
+
+
+def test_production_uses_render_origin_when_cors_is_unset(monkeypatch, tmp_path: Path) -> None:
+    _ready_production(monkeypatch, tmp_path)
+    monkeypatch.setenv("RENDER_EXTERNAL_URL", "https://journalpulse-api.onrender.com/")
+
+    settings = config.load_settings()
+
+    assert settings.cors_origins == ("https://journalpulse-api.onrender.com",)
+    assert settings.configuration_issues == []
+
+
+def test_production_uses_vercel_origins_when_cors_is_unset(monkeypatch, tmp_path: Path) -> None:
+    _ready_production(monkeypatch, tmp_path)
+    monkeypatch.setenv("VERCEL_PROJECT_PRODUCTION_URL", "journalpulse.vercel.app")
+    monkeypatch.setenv("VERCEL_URL", "https://journalpulse-abc.vercel.app/")
+
+    settings = config.load_settings()
+
+    assert settings.cors_origins == (
+        "https://journalpulse.vercel.app",
+        "https://journalpulse-abc.vercel.app",
+    )
+    assert settings.configuration_issues == []

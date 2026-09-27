@@ -2,25 +2,30 @@ services:
   - type: web
     name: journalpulse-api
     runtime: docker
-    plan: starter
+    plan: free
     dockerfilePath: ./Dockerfile.api
     healthCheckPath: /ready
     envVars:
       - key: JOURNALPULSE_ENV
-        value: preview
-      - key: JOURNALPULSE_DB_PATH
-        value: /var/data/journalpulse.db
+        value: production
       - key: JOURNALPULSE_LLM_ENABLED
-        value: "false"
+        value: "true"
       - key: JOURNALPULSE_LLM_ZDR
         value: "true"
+      - key: JOURNALPULSE_LLM_MODEL
+        value: openai/gpt-6-luna
+      - key: JOURNALPULSE_CHAT_MODEL
+        value: openai/gpt-6-luna
+      - key: JOURNALPULSE_CHAT_TIMEOUT_SECONDS
+        value: "45"
       - key: JOURNALPULSE_MEMORY_ENABLED
         value: "false"
       - key: JOURNALPULSE_ADAPTIVE_POLICY_ENABLED
         value: "false"
-      - key: JOURNALPULSE_LLM_MODEL
-        value: openai/gpt-5.4-mini
-    disk:
-      name: journalpulse-data
-      mountPath: /var/data
-      sizeGB: 1
+      - key: SUPABASE_URL
+        value: https://cggixttnyprrbaotmjxj.supabase.co
+      # Paste these in the Render form. They are not stored in this file.
+      - key: JOURNALPULSE_LLM_API_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false

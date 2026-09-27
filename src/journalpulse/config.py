@@ -16,9 +16,43 @@ def _flag(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _http_origin(value: str) -> str:
+    origin = value.strip().rstrip("/")
+    if origin.startswith(("http://", "https://")):
+        return origin
+    return f"https://{origin}"
+
+
+def _platform_origins() -> tuple[str, ...]:
+    """Origins published by the host when CORS is not set explicitly.
+
+    Render sends a full URL. Vercel sends hostnames for the production alias,
+    the branch alias, and the current deployment.
+    """
+    candidates = (
+        os.getenv("RENDER_EXTERNAL_URL", ""),
+        os.getenv("VERCEL_PROJECT_PRODUCTION_URL", ""),
+        os.getenv("VERCEL_BRANCH_URL", ""),
+        os.getenv("VERCEL_URL", ""),
+    )
+    origins: list[str] = []
+    for candidate in candidates:
+        if not candidate.strip():
+            continue
+        origin = _http_origin(candidate)
+        if origin not in origins:
+            origins.append(origin)
+    return tuple(origins)
+
+
 def _origins(name: str) -> tuple[str, ...]:
-    value = os.getenv(name, "http://localhost:3000,http://127.0.0.1:3000")
-    return tuple(origin.strip().rstrip("/") for origin in value.split(",") if origin.strip())
+    value = os.getenv(name)
+    if value is not None and value.strip():
+        return tuple(origin.strip().rstrip("/") for origin in value.split(",") if origin.strip())
+    platform_origins = _platform_origins()
+    if platform_origins:
+        return platform_origins
+    return ("http://localhost:3000", "http://127.0.0.1:3000")
 
 
 @dataclass(frozen=True)

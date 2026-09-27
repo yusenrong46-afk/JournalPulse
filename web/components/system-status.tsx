@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 
 import { apiRequest } from "@/lib/api";
+import { useRoutePath } from "@/lib/route-path";
 import type { SystemStatus as Status } from "@/lib/types";
 
 export function SystemStatus() {
-  const pathname = usePathname();
+  const pathname = useRoutePath();
   const [status, setStatus] = useState<Status | null>(null);
   const [online, setOnline] = useState(true);
 

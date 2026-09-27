@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { AuthBoundary } from "@/components/auth-boundary";
 import { NavIcon } from "@/components/nav-icon";
 import { SystemStatus } from "@/components/system-status";
+import { useRoutePath } from "@/lib/route-path";
 
 const navigation = [
   { href: "/", label: "Today", icon: "today", note: "Current loop" },
@@ -18,7 +18,7 @@ const navigation = [
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname = useRoutePath();
   const immersive = pathname === "/welcome" || pathname === "/login";
   return (
     <div className={immersive ? "app-frame immersive" : "app-frame"}>
