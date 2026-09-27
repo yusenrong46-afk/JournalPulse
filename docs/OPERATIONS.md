@@ -21,7 +21,7 @@ or production-scale availability.
 3. Build `Dockerfile.api`. Its first stage exports the Next.js PWA; the final Python image serves the UI
    and API from one origin with gzip compression.
 4. For a personal preview, deploy `render.yaml`, confirm the persistent disk is mounted at `/var/data`,
-   and verify `/ready` reports `local_sqlite` with AI explicitly disabled.
+   and verify `/ready` reports `server_sqlite` with AI explicitly disabled.
 5. For a multi-user beta, apply Supabase migrations in filename order and confirm both atomic write
    functions are executable only by `authenticated` users.
 6. Add Supabase and rotated OpenRouter values through Render secrets, change the environment to

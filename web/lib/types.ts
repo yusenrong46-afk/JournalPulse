@@ -115,6 +115,6 @@ export type Insights = {
 
 export type SystemStatus = {
   analysis_mode: "ai_configured" | "local_fallback" | "local_only";
-  persistence_mode: "account" | "this_device";
+  persistence_mode: "account" | "server_sqlite";
   message: string;
 };

@@ -6,7 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -30,7 +30,7 @@ from .domain import (
     SafetyMode,
     SelectionSource,
 )
-from .intelligence import OpenRouterReflectionClient, safe_analyze
+from .intelligence import OpenRouterReflectionClient, UnsupportedProviderResponse, safe_analyze
 from .middleware import RequestContextMiddleware, SlidingWindowRateLimiter
 from .persistence import DuplicateOutcomeError, Repository, SQLiteRepository, SupabaseRepository
 from .policy import FixedBaselinePolicy, ReflectionPolicy
@@ -114,6 +114,15 @@ def create_app(
         expose_headers=["X-Request-ID"],
     )
 
+    def enforce_generation_limit(user_id: UUID) -> None:
+        allowed, retry_after = analysis_limiter.check(str(user_id))
+        if not allowed:
+            raise HTTPException(
+                status_code=429,
+                detail="Please wait before requesting another analysis",
+                headers={"Retry-After": str(retry_after)},
+            )
+
     def auth_dependency(
         authorization: str | None = Header(default=None),
         development_user: str | None = Header(default=None, alias="X-JournalPulse-User"),
@@ -129,7 +138,7 @@ def create_app(
         return {"status": "ok"}
 
     @app.get("/ready", response_model=ReadinessResponse)
-    def ready() -> ReadinessResponse:
+    def ready(response: Response) -> ReadinessResponse:
         checks: dict[str, str] = {}
         issues = settings.configuration_issues
         checks["configuration"] = "ready" if not issues else f"not_ready:{','.join(issues)}"
@@ -141,10 +150,10 @@ def create_app(
         if not settings.llm_feature_enabled:
             checks["llm"] = "disabled"
         elif settings.openrouter_enabled:
-            checks["llm"] = "configured:live_check_available"
+            checks["llm"] = "configured:not_probed"
         else:
             checks["llm"] = "not_ready:not_configured"
-        checks["persistence"] = "supabase" if settings.supabase_enabled else "local_sqlite"
+        checks["persistence"] = "supabase" if settings.supabase_enabled else "server_sqlite"
         required_ready = (
             checks["configuration"] == "ready"
             and checks["resources"] == "ready"
@@ -152,7 +161,10 @@ def create_app(
         )
         if settings.environment == "production":
             required_ready = required_ready and settings.supabase_enabled
-        return ReadinessResponse(status="ready" if required_ready else "not_ready", checks=checks)
+        status = "ready" if required_ready else "not_ready"
+        if status != "ready":
+            response.status_code = 503
+        return ReadinessResponse(status=status, checks=checks)
 
     @app.get("/v1/system/status", response_model=SystemStatusResponse)
     def system_status(auth: AuthContext = Depends(auth_dependency)) -> SystemStatusResponse:
@@ -168,7 +180,7 @@ def create_app(
             message = "AI analysis is unavailable, so entries use the local reflection fallback."
         return SystemStatusResponse(
             analysis_mode=analysis_mode,
-            persistence_mode="account" if settings.supabase_enabled else "this_device",
+            persistence_mode="account" if settings.supabase_enabled else "server_sqlite",
             message=message,
         )
 
@@ -215,14 +227,21 @@ def create_app(
         else:
             prepared = payload.prepared_analysis
             if prepared is None:
-                analysis = safe_analyze(
-                    settings,
-                    text=payload.text,
-                    context=payload.context,
-                    consent=payload.llm_consent,
-                    self_report=payload.self_report,
-                    client=intelligence_client,
-                )
+                enforce_generation_limit(auth.user_id)
+                try:
+                    analysis = safe_analyze(
+                        settings,
+                        text=payload.text,
+                        context=payload.context,
+                        consent=payload.llm_consent,
+                        self_report=payload.self_report,
+                        client=intelligence_client,
+                    )
+                except UnsupportedProviderResponse as exc:
+                    raise HTTPException(
+                        status_code=502,
+                        detail="The model response was not a supported text format.",
+                    ) from exc
                 prepared = PreparedAnalysis(
                     state=analysis.state,
                     reflection=analysis.reflection,
@@ -230,9 +249,19 @@ def create_app(
                     model_run=analysis.model_run,
                     resource_intent=analysis.resource_intent,
                 )
+                model_run = analysis.model_run
+            else:
+                # Client echo: keep the corrected copy, but not its model or safety provenance.
+                model_run = ModelRun(
+                    model="unverified-client-analysis",
+                    provider="client",
+                    latency_ms=0,
+                    schema_valid=False,
+                    used_fallback=True,
+                    fallback_reason="unverified_client_analysis",
+                )
             state = payload.self_report or prepared.state
             reflection = prepared.reflection
-            model_run = prepared.model_run
             intent = action_intent(prepared.resource_intent, payload.target.goal)
             actions = approved_actions(settings.resource_catalog_path, intent=intent)
             decision = policy.decide(
@@ -296,13 +325,7 @@ def create_app(
     def analyze_reflection(
         payload: AnalysisRequest, auth: AuthContext = Depends(auth_dependency)
     ) -> PreparedAnalysis:
-        allowed, retry_after = analysis_limiter.check(str(auth.user_id))
-        if not allowed:
-            raise HTTPException(
-                status_code=429,
-                detail="Please wait before requesting another analysis",
-                headers={"Retry-After": str(retry_after)},
-            )
+        enforce_generation_limit(auth.user_id)
         safety = assess_safety(payload.text, payload.locale)
         if safety.mode == SafetyMode.SUPPORT:
             return PreparedAnalysis(
@@ -330,14 +353,20 @@ def create_app(
                 ),
                 resource_intent="pause",
             )
-        analysis = safe_analyze(
-            settings,
-            text=payload.text,
-            context=payload.context,
-            consent=payload.llm_consent,
-            self_report=None,
-            client=intelligence_client,
-        )
+        try:
+            analysis = safe_analyze(
+                settings,
+                text=payload.text,
+                context=payload.context,
+                consent=payload.llm_consent,
+                self_report=None,
+                client=intelligence_client,
+            )
+        except UnsupportedProviderResponse as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="The model response was not a supported text format.",
+            ) from exc
         return PreparedAnalysis(
             state=analysis.state,
             reflection=analysis.reflection,
