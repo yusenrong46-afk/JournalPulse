@@ -1,76 +1,67 @@
-# JournalPulse Operations Runbook
+# Operations Runbook
 
-This runbook covers the research-beta foundation. It does not claim clinical safety, therapeutic effect,
-or production-scale availability.
+This runbook covers running JournalPulse for a small beta. It makes no claim of clinical safety,
+therapeutic effect, or large-scale availability.
 
-## Runtime contract
+## Runtime checks
 
-- `/health` proves only that the API process can answer.
-- `/ready` checks configuration, the curated resource catalog, AI configuration, and persistence mode.
-- Production readiness requires Supabase, an explicitly configured non-local CORS origin, and a rotated
-  OpenRouter key whenever AI processing is enabled.
-- `scripts/verify_openrouter.py` performs the separately controlled live schema-constrained provider call.
-- `scripts/verify_conversation.py` performs one separately authorized two-turn Luna check. It is not
-  part of CI. Run it only when the operator has approved a paid call.
-- Every HTTP response receives `X-Request-ID`. Logs contain method, path, status, latency, and that ID;
-  they must never contain request bodies, authorization headers, credentials, or journal text.
+- `/health` only proves the API process answers.
+- `/ready` checks configuration, the catalog, the model, and storage, and returns 503 when any is not
+  ready. In production it requires Supabase, a model key when AI is on, and a non-local CORS origin.
+- Every response carries `X-Request-ID`. Logs hold method, path, status, latency, and that ID, never
+  request bodies, authorization headers, keys, or journal text.
 
-## Deployment sequence
+## Deploy
 
-1. Rotate any credential exposed outside the deployment secret store.
-2. Run backend tests, frontend unit tests, generated-contract checks, Playwright, static export, and resource
-   validation.
-3. Build `Dockerfile.api`. Its first stage exports the Next.js PWA; the final Python image serves the UI
-   and API from one origin with gzip compression.
-4. For the public site, deploy `render.yaml`. It runs in production, uses Supabase, and calls
-   `openai/gpt-6-luna`. Render asks for `JOURNALPULSE_LLM_API_KEY` and `SUPABASE_ANON_KEY` because those
-   values are not in the file. The Docker build copies the Supabase URL and anon key into the sign-in screen.
-5. Apply Supabase migrations in filename order before that deploy. `scripts/verify_postgres_schema.py`
-   recreates a scratch database, applies those migrations, and checks RLS plus the atomic write functions.
-6. After Render assigns a public URL, set that URL as the Supabase Site URL so sign-in links return to the
-   site. `/ready` must report Supabase and a configured model.
-7. A Vercel deploy is an alternative to Render. `scripts/build_vercel_web.py` exports the PWA into
-   `web-dist/` during the Vercel build, and the FastAPI app serves `/v1`, `/health`, and `/ready`.
-   Set the same production variables on the Vercel project, including `SUPABASE_URL`,
-   `SUPABASE_ANON_KEY`, and `JOURNALPULSE_LLM_API_KEY`. Set `JOURNALPULSE_WEB_DIST=web-dist` so a request
-   that reaches the function can still serve a page. Use the assigned `*.vercel.app` address as the
-   Supabase Site URL.
-7. Complete one disposable-user reflection, outcome, export, single deletion, and bulk deletion.
+1. Rotate any key that has appeared outside a secret store.
+2. Run the checks listed in the README's **Test** section. CI runs them on every push.
+3. Apply `supabase/migrations/` in filename order. `scripts/verify_postgres_schema.py` rebuilds a
+   scratch database from the migrations and checks RLS and the write functions.
+4. Set the production variables on the host: `JOURNALPULSE_ENV=production`, `SUPABASE_URL`,
+   `SUPABASE_ANON_KEY`, `JOURNALPULSE_LLM_API_KEY`, `JOURNALPULSE_LLM_ENABLED=true`, and the model names.
+5. Deploy:
+   - **Vercel (production):** also set `JOURNALPULSE_WEB_DIST=web-dist`, then `vercel deploy --prod`.
+     The build runs `scripts/build_vercel_web.py`, which exports the site with the Supabase values baked
+     in.
+   - **Render (alternative):** create a Blueprint from `render.yaml`; it asks for the two secret values.
+     `Dockerfile.api` builds the site and serves it from FastAPI.
+6. In Supabase, under **Authentication → URL configuration**, set the Site URL to the public address and
+   add `https://<address>/**` as a redirect URL. Without this, sign-in links return to localhost.
+7. Confirm `/ready` reports `persistence: supabase` and a configured model.
+8. Smoke test with a disposable account: sign in, chat to a saved step, check in, view Journey, export,
+   then delete the test entry.
 
-The `preview` identity is a browser-generated UUID carried in `X-JournalPulse-User`. It prevents normal
-browsers from sharing a timeline, but it is intentionally not treated as secure authentication. Never
-invite external testers until Supabase Auth and RLS are enabled.
+`scripts/verify_openrouter.py` and `scripts/verify_conversation.py` make paid live calls. Run them only
+when a live check is intended.
 
-## Failure behavior
+## Failure behaviour
 
-| Failure | Required behavior |
+| Failure | Behaviour |
 |---|---|
-| OpenRouter timeout or transient 5xx | Retry at most the configured bounded attempts, then use the deterministic fallback |
-| Invalid AI schema | Reject the model output and use deterministic fallback; never partially trust fields |
-| Supabase Auth unavailable | Return 503 without accepting a development identity |
-| Expired browser session | Refresh once, then return to private sign-in without discarding an opted-in draft |
-| Lost response after a write | Retry with the same client request UUID and return the original record |
-| Oversized body | Reject before model or persistence work with 413 |
-| Analysis-rate limit | Return 429 and `Retry-After`; ordinary history and privacy operations remain available. The same limiter covers reflection analysis and conversation turns |
-| Conversation timeout, invalid schema, or truncated reply | Save nothing for that turn and return 502 or 503. The browser keeps the unsent text. There is no canned chat reply |
-| Open conversation idle for 24 hours | The next conversation request from that user closes it and clears message text unless they chose to keep it. A user who never returns is not swept until an operator job exists |
-| Browser offline | Keep writing on-page, show offline status, and never claim the entry was saved |
-| First PWA load | Cache only the static offline page; never prefetch every route or cache API responses |
+| Model timeout or transient 5xx | Retry within the configured attempts, then fail the turn with 502 or 503. Nothing is saved and the browser keeps the text for "Try again" |
+| Model reply breaks the schema, is cut off, or names an unknown feeling | Reject the whole reply; save nothing for that turn |
+| Safety check matches | Support mode for the rest of the chat; the model is never called |
+| Supabase Auth unavailable | Return 503; never fall back to a development identity |
+| Expired session | Refresh once, then send the person to sign in |
+| Response lost after a write | The browser retries with the same client UUID and gets the original record |
+| Oversized request | 413 before any model or database work |
+| Rate limit | 429 with `Retry-After`; reading history and privacy actions still work |
+| Chat idle for 24 hours | Closed on the person's next chat request, clearing text unless they chose to keep it |
+| Device offline | A banner says nothing new will be sent; the offline page is the only cached page |
 
 ## Data recovery and deletion
 
-- Supabase backups and point-in-time recovery must be enabled and tested according to the selected plan.
-- Before beta promotion, restore a backup into a non-production project and verify record counts plus RLS.
-- `DELETE /v1/reflections/{id}` removes its dependent decision, outcome, observations, model run, and safety
-  event through foreign-key cascades.
-- `DELETE /v1/account/data` removes user-owned journal records but not the Supabase Auth identity.
-- The Privacy screen also removes the encrypted local draft. Account-identity deletion remains a separate
-  privileged operation and must not be represented as complete until implemented and tested.
+- Enable and test Supabase backups and point-in-time recovery for the chosen plan. Before inviting more
+  people, restore a backup into a separate project and check record counts and RLS.
+- `DELETE /v1/reflections/{id}` removes the decision, outcome, observation, model run, and safety event
+  through foreign-key cascades.
+- `DELETE /v1/account/data` removes every user-owned record and keeps the sign-in identity. Deleting the
+  identity is a separate privileged task and must not be described as done until it is built and tested.
 
 ## Rollback
 
-- Keep the previous API image and PWA deployment available for immediate rollback.
-- Never roll application code back across an incompatible migration. Add a forward repair migration instead.
-- Disable AI with `JOURNALPULSE_LLM_ENABLED=false` if provider behavior is unsafe or unstable.
-- Adaptive policy and memory flags remain independent kill switches and must stay off until their evidence
-  gates are satisfied.
+- Keep the previous deployment available. On Vercel, promote the last good deployment.
+- Never roll code back across an incompatible migration; add a forward repair migration instead.
+- Set `JOURNALPULSE_LLM_ENABLED=false` to stop all model calls. Chats continue with Simple Luna.
+- The adaptive-policy and memory flags are independent kill switches and stay off until their research
+  gates pass.

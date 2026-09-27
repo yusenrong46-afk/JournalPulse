@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - codex/journalpulse-research-beta
   pull_request:
 
 concurrency:

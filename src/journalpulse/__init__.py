@@ -1,4 +1,4 @@
-"""JournalPulse research-beta application package."""
+"""JournalPulse API: Luna's chat, safety, catalog, policy, and storage."""
 
 from .api import create_app
 
