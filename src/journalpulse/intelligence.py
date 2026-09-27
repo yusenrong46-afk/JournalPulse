@@ -144,10 +144,12 @@ class OpenRouterReflectionClient:
                     raise
                 self.sleeper(0.15 * (2**attempt))
                 continue
-            if response.status_code not in {429, 500, 502, 503, 504}:
+            body_error = _openrouter_body_error(response)
+            status = body_error[0] if body_error else response.status_code
+            if status not in {429, 500, 502, 503, 504}:
                 break
             if attempt + 1 < self.settings.openrouter_max_attempts:
-                self.sleeper(0.15 * (2**attempt))
+                self.sleeper(1.5 if status == 429 else 0.15 * (2**attempt))
 
         if response is None:
             raise httpx.ConnectError("OpenRouter did not return a response")
@@ -200,6 +202,27 @@ def _text_from_content_parts(content: list[Any]) -> str:
             raise UnsupportedProviderResponse("Provider content included a non-text part")
         chunks.append(part["text"])
     return "".join(chunks)
+
+
+def _openrouter_body_error(response: httpx.Response) -> tuple[int, str] | None:
+    """OpenRouter sometimes returns HTTP 200 with an error object and no choices."""
+    if response.status_code >= 400:
+        return None
+    try:
+        payload = response.json()
+    except ValueError:
+        return None
+    if not isinstance(payload, dict) or "choices" in payload:
+        return None
+    error = payload.get("error")
+    message = "OpenRouter did not return a completion."
+    code = 502
+    if isinstance(error, dict):
+        if error.get("message"):
+            message = str(error["message"])
+        if isinstance(error.get("code"), int):
+            code = error["code"]
+    return code, message[:500]
 
 
 def _json_text_from_content(content: Any) -> str:
@@ -424,10 +447,18 @@ class OpenRouterConversationClient:
                     ) from exc
                 self.sleeper(0.15 * (2**attempt))
                 continue
-            if response.status_code not in {429, 500, 502, 503, 504}:
+            body_error = _openrouter_body_error(response)
+            status = body_error[0] if body_error else response.status_code
+            if status not in {429, 500, 502, 503, 504}:
                 break
             if attempt + 1 < self.settings.openrouter_max_attempts:
-                self.sleeper(0.15 * (2**attempt))
+                self.sleeper(1.5 if status == 429 else 0.15 * (2**attempt))
+                continue
+            if body_error is not None:
+                raise ConversationProviderError(
+                    f"The model request failed. Nothing was saved. {body_error[1]}".strip(),
+                    status_code=429 if body_error[0] == 429 else 502,
+                )
         if response is None:
             raise ConversationProviderError(
                 "Luna did not respond in time. Nothing was saved.",

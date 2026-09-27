@@ -98,6 +98,46 @@ def test_luna_request_uses_only_documented_parameters(tmp_path: Path):
     assert "another conversation" not in " ".join(contents)
 
 
+def test_http_200_upstream_rate_limit_is_retried(tmp_path: Path):
+    calls = 0
+    delays: list[float] = []
+
+    def handler(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return httpx.Response(
+                200,
+                json={"error": {"message": "rate-limited upstream", "code": 429}},
+            )
+        return _response(json.dumps(_payload()))
+
+    result = OpenRouterConversationClient(
+        settings(tmp_path),
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+        sleeper=delays.append,
+    ).complete([{"role": "user", "content": "Hello."}])
+    assert calls == 2
+    assert delays == [1.5]
+    assert result.reply.startswith("That sounds heavy")
+
+
+def test_upstream_rate_limit_raises_instead_of_crashing(tmp_path: Path):
+    def handler(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={"error": {"message": "rate-limited upstream", "code": 429}},
+        )
+
+    with pytest.raises(ConversationProviderError, match="rate-limited upstream") as caught:
+        OpenRouterConversationClient(
+            settings(tmp_path),
+            client=httpx.Client(transport=httpx.MockTransport(handler)),
+            sleeper=lambda _delay: None,
+        ).complete([{"role": "user", "content": "Hello."}])
+    assert caught.value.status_code == 429
+
+
 def test_conversation_client_refuses_missing_key_or_zdr(tmp_path: Path):
     with pytest.raises(ValueError, match="not configured"):
         OpenRouterConversationClient(settings(tmp_path, openrouter_api_key=None))
