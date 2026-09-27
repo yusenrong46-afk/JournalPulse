@@ -17,8 +17,15 @@ def _flag(name: str, default: bool = False) -> bool:
 
 
 def _origins(name: str) -> tuple[str, ...]:
-    value = os.getenv(name, "http://localhost:3000,http://127.0.0.1:3000")
-    return tuple(origin.strip().rstrip("/") for origin in value.split(",") if origin.strip())
+    value = os.getenv(name)
+    if value is not None and value.strip():
+        return tuple(origin.strip().rstrip("/") for origin in value.split(",") if origin.strip())
+    # Render publishes this for the running service. Production can allow it
+    # without hard-coding a hostname before the first deploy.
+    render_origin = os.getenv("RENDER_EXTERNAL_URL", "").strip().rstrip("/")
+    if render_origin:
+        return (render_origin,)
+    return ("http://localhost:3000", "http://127.0.0.1:3000")
 
 
 @dataclass(frozen=True)

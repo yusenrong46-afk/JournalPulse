@@ -22,13 +22,13 @@ or production-scale availability.
    validation.
 3. Build `Dockerfile.api`. Its first stage exports the Next.js PWA; the final Python image serves the UI
    and API from one origin with gzip compression.
-4. For a personal preview, deploy `render.yaml`, confirm the persistent disk is mounted at `/var/data`,
-   and verify `/ready` reports `server_sqlite` with AI explicitly disabled.
-5. For a multi-user beta, apply Supabase migrations in filename order. `scripts/verify_postgres_schema.py`
+4. For the public site, deploy `render.yaml`. It runs in production, uses Supabase, and calls
+   `openai/gpt-6-luna`. Render asks for `JOURNALPULSE_LLM_API_KEY` and `SUPABASE_ANON_KEY` because those
+   values are not in the file. The Docker build copies the Supabase URL and anon key into the sign-in screen.
+5. Apply Supabase migrations in filename order before that deploy. `scripts/verify_postgres_schema.py`
    recreates a scratch database, applies those migrations, and checks RLS plus the atomic write functions.
-   It is the check to run before pointing the API at a new project.
-6. Add Supabase and rotated OpenRouter values through Render secrets, change the environment to
-   `production`, enable AI, and require every `/ready` dependency to be ready.
+6. After Render assigns a public URL, set that URL as the Supabase Site URL so sign-in links return to the
+   site. `/ready` must report Supabase and a configured model.
 7. Complete one disposable-user reflection, outcome, export, single deletion, and bulk deletion.
 
 The `preview` identity is a browser-generated UUID carried in `X-JournalPulse-User`. It prevents normal
