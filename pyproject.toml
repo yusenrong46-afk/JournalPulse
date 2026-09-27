@@ -72,3 +72,9 @@ branch = true
 [tool.coverage.report]
 show_missing = true
 fail_under = 80
+
+[tool.vercel]
+entrypoint = "journalpulse.api:app"
+
+[tool.vercel.scripts]
+build = "python scripts/build_vercel_web.py"

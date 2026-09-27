@@ -26,6 +26,8 @@ artifacts/models/transformer_model/*
 *.safetensors
 .env
 .env.local
+.vercel
+/public/
 .venv312/
 web/node_modules/
 web/.next/
