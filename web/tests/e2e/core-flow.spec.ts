@@ -216,6 +216,7 @@ test("mobile Today screen has a stable scientific-journal composition", async ({
   await expect(page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link")).toHaveText([
     "Today",
     "Reflect",
+    "Talk",
     "History",
     "Patterns",
     "Privacy",
