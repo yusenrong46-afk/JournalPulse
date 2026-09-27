@@ -28,6 +28,7 @@ artifacts/models/transformer_model/*
 .env.local
 .vercel
 /public/
+/web-dist/
 .venv312/
 web/node_modules/
 web/.next/

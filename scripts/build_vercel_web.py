@@ -1,4 +1,4 @@
-"""Build the Next.js PWA into public/ so Vercel can serve it from the CDN.
+"""Build the Next.js PWA into web-dist/ for the FastAPI static mount.
 
 The Python function keeps the API routes. Pages, the service worker, and the
 manifest are static files. The anon key is public and is copied from the
@@ -14,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / "web"
-PUBLIC = ROOT / "public"
+PUBLIC = ROOT / "web-dist"
 
 
 def main() -> None:

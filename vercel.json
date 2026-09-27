@@ -3,6 +3,7 @@
   "functions": {
     "app.py": {
       "maxDuration": 60,
+      "includeFiles": "web-dist/**",
       "excludeFiles": "{tests/**,web/node_modules/**,web/.next/**,web/out/**,docs/**,.git/**,.venv/**}"
     }
   },

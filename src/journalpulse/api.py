@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from starlette.middleware.gzip import GZipMiddleware
 
 from .auth import AuthContext, resolve_auth
-from .config import Settings, load_settings
+from .config import PROJECT_ROOT, Settings, load_settings
 from .conversations import ConversationClient, register_conversation_routes
 from .domain import (
     ActionPreview,
@@ -488,7 +488,10 @@ def create_app(
 
     web_dist_value = os.getenv("JOURNALPULSE_WEB_DIST", "").strip()
     if web_dist_value:
-        web_dist = Path(web_dist_value).expanduser().resolve()
+        web_dist = Path(web_dist_value).expanduser()
+        if not web_dist.is_absolute():
+            web_dist = PROJECT_ROOT / web_dist
+        web_dist = web_dist.resolve()
         if web_dist.is_dir():
             app.mount("/", StaticFiles(directory=web_dist, html=True), name="journalpulse-web")
 

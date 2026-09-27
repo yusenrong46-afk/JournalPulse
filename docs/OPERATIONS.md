@@ -30,9 +30,9 @@ or production-scale availability.
 6. After Render assigns a public URL, set that URL as the Supabase Site URL so sign-in links return to the
    site. `/ready` must report Supabase and a configured model.
 7. A Vercel deploy is an alternative to Render. `scripts/build_vercel_web.py` exports the PWA into
-   `public/` during the Vercel build, and the FastAPI app serves `/v1`, `/health`, and `/ready`.
+   `web-dist/` during the Vercel build, and the FastAPI app serves `/v1`, `/health`, and `/ready`.
    Set the same production variables on the Vercel project, including `SUPABASE_URL`,
-   `SUPABASE_ANON_KEY`, and `JOURNALPULSE_LLM_API_KEY`. Set `JOURNALPULSE_WEB_DIST=public` so a request
+   `SUPABASE_ANON_KEY`, and `JOURNALPULSE_LLM_API_KEY`. Set `JOURNALPULSE_WEB_DIST=web-dist` so a request
    that reaches the function can still serve a page. Use the assigned `*.vercel.app` address as the
    Supabase Site URL.
 7. Complete one disposable-user reflection, outcome, export, single deletion, and bulk deletion.
