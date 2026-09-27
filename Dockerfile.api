@@ -6,7 +6,14 @@ COPY web/package.json web/package-lock.json ./
 RUN npm ci
 
 COPY web ./
+# Render supplies service env vars as build args. The anon key is the public
+# client key and has to be present while Next compiles the sign-in screen.
+ARG SUPABASE_URL
+ARG SUPABASE_ANON_KEY
 ENV JOURNALPULSE_STATIC_EXPORT=true
+ENV NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_API_BASE_URL=
 RUN npm run build
 
 FROM ghcr.io/astral-sh/uv:0.11.28 AS uv
