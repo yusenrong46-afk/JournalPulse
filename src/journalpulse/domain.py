@@ -176,6 +176,35 @@ class ConversationStatus(StrEnum):
     CLOSED = "closed"
 
 
+class ConversationMode(StrEnum):
+    AI = "ai"
+    GUIDED = "guided"
+
+
+class Goal(StrEnum):
+    SETTLE = "settle"
+    MOVE = "move"
+    UNDERSTAND = "understand"
+    CONNECT = "connect"
+    ACT = "act"
+
+
+FEELINGS: tuple[str, ...] = (
+    "tired",
+    "anxious",
+    "stressed",
+    "sad",
+    "frustrated",
+    "lonely",
+    "overwhelmed",
+    "numb",
+    "calm",
+    "hopeful",
+    "okay",
+    "happy",
+)
+
+
 class MessageRole(StrEnum):
     USER = "user"
     ASSISTANT = "assistant"
@@ -198,6 +227,7 @@ class ActionCard(BaseModel):
     decision_preview: PolicyDecision
     actions: list[dict[str, Any]] = Field(max_length=3)
     offered_message_id: UUID | None = None
+    goal: Goal | None = None
 
 
 class Conversation(BaseModel):
@@ -215,6 +245,11 @@ class Conversation(BaseModel):
     reflection_id: UUID | None = None
     locale: str = Field(min_length=2, max_length=8)
     prompt_version: str = Field(min_length=1, max_length=80)
+    mode: ConversationMode = ConversationMode.AI
+    # Luna's guess at the person's feelings. The person confirms or changes them before
+    # anything is saved; the confirmed set arrives in the accept request.
+    feelings: list[str] = Field(default_factory=list, max_length=3)
+    ready_for_action: bool = False
 
 
 class StartConversationRequest(BaseModel):
@@ -227,6 +262,9 @@ class StartConversationRequest(BaseModel):
 class ConversationTurnRequest(BaseModel):
     client_message_id: UUID
     text: str = Field(min_length=1, max_length=2000)
+    # A goal chosen from Luna's buttons. The reply is built from the reviewed catalog
+    # without a model call.
+    goal: Goal | None = None
 
     @field_validator("text")
     @classmethod

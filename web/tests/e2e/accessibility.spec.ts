@@ -15,35 +15,13 @@ test.beforeEach(async ({ page }) => {
       }),
     );
   });
-  await page.route("http://127.0.0.1:8000/**", (route) => {
-    const pathname = new URL(route.request().url()).pathname;
-    if (pathname === "/v1/system/status") {
-      return route.fulfill({
-        json: { analysis_mode: "ai_configured", persistence_mode: "this_device", message: "Ready." },
-      });
-    }
-    if (pathname === "/v1/insights") {
-      return route.fulfill({
-        json: {
-          reflection_count: 0,
-          completed_outcomes: 0,
-          action_counts: {},
-          average_helpfulness_by_action: {},
-          average_state_change: null,
-          completion_rate: 0,
-          pending_decision_ids: [],
-          state_trajectory: [],
-          note: "Descriptive only.",
-        },
-      });
-    }
-    return route.fulfill({ json: { items: [] } });
-  });
+  await page.route("http://127.0.0.1:8000/**", (route) => route.fulfill({ json: { items: [] } }));
 });
 
-for (const path of ["/", "/reflect", "/talk", "/privacy"]) {
+for (const path of ["/", "/talk", "/journey", "/me", "/welcome", "/login", "/check-in"]) {
   test(`${path} has no serious automated accessibility violations`, async ({ page }) => {
     await page.goto(path);
+    await page.waitForLoadState("networkidle");
     const results = await new AxeBuilder({ page }).analyze();
     const serious = results.violations.filter((item) => ["serious", "critical"].includes(item.impact ?? ""));
     expect(serious).toEqual([]);

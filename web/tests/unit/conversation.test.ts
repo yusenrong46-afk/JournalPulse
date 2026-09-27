@@ -2,8 +2,9 @@ import { describe, expect, test } from "vitest";
 
 import {
   OPEN_CONVERSATION_KEY,
+  chatStage,
   readOpenConversationId,
-  talkView,
+  readyForSomething,
   writeOpenConversationId,
 } from "@/lib/conversation";
 
@@ -28,13 +29,31 @@ describe("open conversation id", () => {
   });
 });
 
-describe("talk view", () => {
-  test("follows availability, support, and a saved choice", () => {
-    expect(talkView({ aiAvailable: false })).toBe("unavailable");
-    expect(talkView({ aiAvailable: null })).toBe("start");
-    expect(talkView({ aiAvailable: true, status: "open" })).toBe("chat");
-    expect(talkView({ aiAvailable: true, status: "open", safetyMode: "support" })).toBe("support");
-    expect(talkView({ aiAvailable: true, status: "closed" })).toBe("start");
-    expect(talkView({ aiAvailable: false, saved: true })).toBe("saved");
+describe("chat stage", () => {
+  const base = { saved: false, status: "open" as const, safetyMode: "normal" as const, hasCard: false, step: null };
+
+  test("starts at the welcome until a conversation is open", () => {
+    expect(chatStage({ ...base, status: null })).toBe("welcome");
+    expect(chatStage({ ...base, status: "closed" })).toBe("welcome");
+    expect(chatStage(base)).toBe("chat");
+  });
+
+  test("walks through feelings, goal, and the offered card", () => {
+    expect(chatStage({ ...base, step: "feelings" })).toBe("feelings");
+    expect(chatStage({ ...base, step: "goal" })).toBe("goal");
+    expect(chatStage({ ...base, hasCard: true })).toBe("offer");
+    expect(chatStage({ ...base, hasCard: true, saved: true })).toBe("saved");
+  });
+
+  test("support mode overrides every other step", () => {
+    expect(chatStage({ ...base, safetyMode: "support", step: "goal", hasCard: true })).toBe("support");
+  });
+});
+
+describe("ready prompt", () => {
+  test("follows Luna or appears after two messages", () => {
+    expect(readyForSomething({ userMessages: 1 })).toBe(false);
+    expect(readyForSomething({ userMessages: 1, readyForAction: true })).toBe(true);
+    expect(readyForSomething({ userMessages: 2 })).toBe(true);
   });
 });

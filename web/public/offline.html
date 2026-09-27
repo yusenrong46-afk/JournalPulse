@@ -3,24 +3,33 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f1ecdf" />
-    <title>Connection paused - JournalPulse</title>
+    <meta name="theme-color" content="#fbf5ec" />
+    <title>You’re offline - JournalPulse</title>
     <style>
-      :root { color-scheme: light; font-family: "Avenir Next", "Gill Sans", sans-serif; color: #132733; background: #f1ecdf; }
+      :root { color-scheme: light; font-family: "Nunito", "Avenir Next", system-ui, sans-serif; color: #2b2540; background: #fbf5ec; }
       * { box-sizing: border-box; }
-      body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 15% 5%, rgba(199,138,49,.12), transparent 28rem), #f1ecdf; }
-      main { width: min(620px, 100%); padding: clamp(28px, 7vw, 58px); border: 1px solid rgba(19,39,51,.2); border-top: 3px solid #a3462e; background: #fbf8ef; box-shadow: 0 24px 70px rgba(69,57,38,.1); }
-      span { color: #a3462e; font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-      h1 { margin: 18px 0 14px; font-family: "Iowan Old Style", Baskerville, serif; font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 500; line-height: .95; }
-      p { color: #56656c; line-height: 1.65; }
-      button { min-height: 48px; margin-top: 14px; padding: 0 20px; border: 1px solid #132733; background: #132733; color: #fbf8ef; font: inherit; font-weight: 600; cursor: pointer; }
+      body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; text-align: center; background: linear-gradient(180deg, #eee6ff 0%, #fbf5ec 60%); }
+      main { width: min(440px, 100%); display: grid; gap: 14px; justify-items: center; }
+      h1 { margin: 0; font-size: 2rem; font-weight: 800; }
+      p { margin: 0; color: #5c5470; line-height: 1.6; }
+      button { min-height: 52px; margin-top: 8px; padding: 0 28px; border: 0; border-radius: 999px; background: #ff9a5a; color: #3a1604; font: inherit; font-weight: 800; cursor: pointer; }
     </style>
   </head>
   <body>
     <main>
-      <span>Connection paused</span>
-      <h1>Your writing stays with you.</h1>
-      <p>JournalPulse cannot reach the reflection service right now. Reconnect before sending or saving a new entry.</p>
+      <svg width="120" height="120" viewBox="0 0 160 160" aria-hidden="true">
+        <ellipse cx="80" cy="148" rx="30" ry="5" fill="#2b2540" opacity=".1" />
+        <path d="M80 46 C80 38 81 33 83 28" stroke="#6fa56f" stroke-width="3" stroke-linecap="round" fill="none" />
+        <path d="M82 30 C73 20 62 22 60 30 C68 34 76 34 82 30 Z" fill="#9fc8a8" />
+        <path d="M83 28 C90 16 102 16 105 23 C98 30 90 31 83 28 Z" fill="#8dbf8b" />
+        <path d="M80 44 C104 44 120 66 122 94 C124 120 104 134 80 134 C56 134 36 120 38 94 C40 66 56 44 80 44 Z" fill="#fcebc0" />
+        <ellipse cx="57" cy="102" rx="8" ry="5" fill="#ffb4a2" opacity=".7" />
+        <ellipse cx="103" cy="102" rx="8" ry="5" fill="#ffb4a2" opacity=".7" />
+        <path d="M60 90 Q66 95 72 90 M88 90 Q94 95 100 90" stroke="#2b2540" stroke-width="3" stroke-linecap="round" fill="none" />
+        <ellipse cx="80" cy="105" rx="2.4" ry="2" fill="#2b2540" />
+      </svg>
+      <h1>You’re offline.</h1>
+      <p>Luna is resting until you’re back online. Nothing new was sent.</p>
       <button type="button" onclick="window.location.reload()">Try again</button>
     </main>
   </body>

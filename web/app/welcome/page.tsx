@@ -3,63 +3,87 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { DEFAULT_PREFERENCES, savePreferences } from "@/lib/preferences";
+import { Luna } from "@/components/luna";
+import { DEFAULT_PREFERENCES, savePreferences, usePreferences } from "@/lib/preferences";
 
 export default function WelcomePage() {
   const router = useRouter();
-  const [llmConsent, setLlmConsent] = useState(false);
+  const [preferences] = usePreferences();
+  const [step, setStep] = useState(0);
+  const [aiChoice, setAiChoice] = useState<boolean | null>(null);
   const [retainText, setRetainText] = useState(false);
-  const [encryptedDrafts, setEncryptedDrafts] = useState(false);
 
-  function continueToReflection() {
+  function finish() {
     savePreferences({
       ...DEFAULT_PREFERENCES,
+      ...preferences,
       onboarded: true,
-      llmConsent,
+      llmConsent: aiChoice === true,
       retainText,
-      encryptedDrafts,
     });
-    router.push("/reflect");
+    router.replace("/talk");
   }
 
   return (
-    <div className="page-wrap narrow welcome-page">
-      <header className="flow-header">
-        <div className="page-heading-copy">
-          <span className="kicker">Before the first entry</span>
-          <h1>A field journal, not a diagnosis.</h1>
-          <p>Set the boundary once. You can change any choice for each individual reflection.</p>
-        </div>
-      </header>
-      <section className="flow-sheet">
-        <span className="folio">Your boundary</span>
-        <h2>You remain the authority on your own state.</h2>
-        <p>
-          JournalPulse proposes a structured reading, lets you correct it, and offers activities from a
-          reviewed catalog. It does not provide therapy, treatment, or emergency care.
-        </p>
-        <div className="boundary-grid">
-          <article><strong>1</strong><span>Write privately</span><small>The original entry is saved only if you choose it. Summaries and situation notes can still be stored on the server.</small></article>
-          <article><strong>2</strong><span>Correct the read</span><small>Automated interpretation is always editable.</small></article>
-          <article><strong>3</strong><span>Test one action</span><small>Outcomes become observations, not clinical claims.</small></article>
-        </div>
-        <div className="consent-box">
-          <label>
-            <input type="checkbox" checked={llmConsent} onChange={(event) => setLlmConsent(event.target.checked)} />
-            <span><strong>Allow private AI analysis</strong><small>Opt in to zero-data-retention processing. You can change this later.</small></span>
-          </label>
-          <label>
-            <input type="checkbox" checked={retainText} onChange={(event) => setRetainText(event.target.checked)} />
-            <span><strong>Keep my original journal text</strong><small>Off by default. Summaries, interpretations, and situation notes can still be saved on the server.</small></span>
-          </label>
-          <label>
-            <input type="checkbox" checked={encryptedDrafts} onChange={(event) => setEncryptedDrafts(event.target.checked)} />
-            <span><strong>Recover unfinished drafts</strong><small>Encrypt one active draft on this device for up to 24 hours.</small></span>
-          </label>
-        </div>
-        <button className="button primary" onClick={continueToReflection}>Set my preferences <span aria-hidden="true">→</span></button>
-        <p className="method-note">If language suggests immediate danger, support mode bypasses AI and experimentation.</p>
-      </section>
+    <div className="focus-page">
+      <div className="dots" aria-hidden="true">
+        {[0, 1, 2].map((index) => <i key={index} className={index === step ? "on" : undefined} />)}
+      </div>
+
+      {step === 0 && (
+        <>
+          <Luna mood="checkin" size={170} />
+          <h1>Hi, I’m Luna.</h1>
+          <p>I’m here for a quick check-in whenever you need one. We’ll talk for a minute, find one small thing that might help, and see how it went.</p>
+          <button className="btn btn-primary btn-big btn-block" type="button" onClick={() => setStep(1)}>Nice to meet you</button>
+        </>
+      )}
+
+      {step === 1 && (
+        <>
+          <Luna mood="listening" size={130} />
+          <h1>Your words stay yours.</h1>
+          <p>How should Luna reply to you?</p>
+          <div className="choice-cards" role="group" aria-label="How Luna replies">
+            <button className="choice-card" type="button" aria-pressed={aiChoice === true} onClick={() => setAiChoice(true)}>
+              <strong>Smart Luna</strong>
+              <small>Uses private AI to understand you better. The AI provider keeps nothing.</small>
+              <span className="radio-dot" aria-hidden="true" />
+            </button>
+            <button className="choice-card" type="button" aria-pressed={aiChoice === false} onClick={() => setAiChoice(false)}>
+              <strong>Simple Luna</strong>
+              <small>No AI. Luna asks a few gentle questions instead.</small>
+              <span className="radio-dot" aria-hidden="true" />
+            </button>
+          </div>
+          <div className="settings" style={{ textAlign: "left" }}>
+            <label className="setting">
+              <span><strong>Keep my messages</strong><small>Off clears the words when a chat ends.</small></span>
+              <span className="switch"><input type="checkbox" checked={retainText} onChange={(event) => setRetainText(event.target.checked)} /><span /></span>
+            </label>
+          </div>
+          <button className="btn btn-primary btn-big btn-block" type="button" disabled={aiChoice === null} onClick={() => setStep(2)}>Continue</button>
+          <p className="small">You can change this anytime on the Me page.</p>
+        </>
+      )}
+
+      {step === 2 && (
+        <>
+          <Luna mood="answering" size={130} />
+          <h1>One small thing at a time.</h1>
+          <ol className="how-steps">
+            <li><span style={{ background: "var(--lav-soft)" }} aria-hidden="true">💬</span><div><strong>Talk</strong><p className="small">Tell Luna how you’re doing, in your own words or with a tap.</p></div></li>
+            <li><span style={{ background: "var(--sun-soft)" }} aria-hidden="true">🌿</span><div><strong>Try</strong><p className="small">Pick one small idea from a reviewed list.</p></div></li>
+            <li><span style={{ background: "var(--sage-soft)" }} aria-hidden="true">🌱</span><div><strong>Check in</strong><p className="small">Tell Luna how it went, and watch your garden grow.</p></div></li>
+          </ol>
+          <button className="btn btn-primary btn-big btn-block" type="button" onClick={finish}>Let’s begin</button>
+          <p className="small">Luna is a companion, not a therapist. In a crisis in Canada, call or text 9-8-8.</p>
+        </>
+      )}
+
+      {step > 0 && (
+        <button className="btn btn-ghost" type="button" onClick={() => setStep(step - 1)}>Back</button>
+      )}
     </div>
   );
 }

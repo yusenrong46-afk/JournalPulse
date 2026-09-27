@@ -1,4 +1,4 @@
-const CACHE = "journalpulse-shell-v4";
+const CACHE = "journalpulse-shell-v5";
 const OFFLINE_FALLBACK = "/offline.html";
 
 self.addEventListener("install", (event) => {

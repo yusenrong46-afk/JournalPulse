@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect } from "react";
 
+import { Luna } from "@/components/luna";
+
 export default function ErrorPage({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     // Keep private entry content out of telemetry; only the error class is retained locally.
@@ -10,16 +12,14 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
   }, [error.name]);
 
   return (
-    <div className="page-wrap narrow">
-      <section className="paper-card empty-card">
-        <span className="folio">Recovery note</span>
-        <h2>This page lost its place.</h2>
-        <p>Your journal text was not included in this error report. Retry the page or return to Today.</p>
-        <div className="button-row">
-          <button className="button primary" type="button" onClick={reset}>Try this page again</button>
-          <Link className="button secondary" href="/">Return to Today</Link>
-        </div>
-      </section>
+    <div className="focus-page">
+      <Luna mood="oops" size={140} />
+      <h1>Oops, Luna tripped.</h1>
+      <p>Something went wrong on this page. Nothing you wrote was included in the error.</p>
+      <div className="stack">
+        <button className="btn btn-primary btn-block" type="button" onClick={reset}>Try again</button>
+        <Link className="btn btn-ghost btn-block" href="/">Go home</Link>
+      </div>
     </div>
   );
 }

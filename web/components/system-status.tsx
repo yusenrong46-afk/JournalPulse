@@ -2,37 +2,28 @@
 
 import { useEffect, useState } from "react";
 
-import { apiRequest } from "@/lib/api";
-import { useRoutePath } from "@/lib/route-path";
-import type { SystemStatus as Status } from "@/lib/types";
+import { Luna } from "@/components/luna";
 
+/** Only speaks up when the device goes offline; everything else is shown where it matters. */
 export function SystemStatus() {
-  const pathname = useRoutePath();
-  const [status, setStatus] = useState<Status | null>(null);
   const [online, setOnline] = useState(true);
 
   useEffect(() => {
-    if (pathname === "/login" || pathname === "/welcome") return;
-    const updateConnection = () => setOnline(navigator.onLine);
-    updateConnection();
-    window.addEventListener("online", updateConnection);
-    window.addEventListener("offline", updateConnection);
-    apiRequest<Status>("/v1/system/status").then(setStatus).catch(() => setOnline(false));
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
     return () => {
-      window.removeEventListener("online", updateConnection);
-      window.removeEventListener("offline", updateConnection);
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
     };
-  }, [pathname]);
+  }, []);
 
-  if (pathname === "/login" || pathname === "/welcome") return null;
-  if (!online) {
-    return <div className="service-strip warning" role="status"><span className="service-indicator" aria-hidden="true" /><span><strong>Connection paused</strong> Unsaved writing stays on this page.</span></div>;
-  }
-  if (!status) {
-    return <div className="service-strip checking" role="status"><span className="service-indicator" aria-hidden="true" /><span><strong>Privacy first</strong> Checking your processing settings.</span></div>;
-  }
-  if (status.analysis_mode === "ai_configured") {
-    return <div className="service-strip ready" role="status"><span className="service-indicator" aria-hidden="true" /><span><strong>Private analysis ready</strong> You approve the final state before anything is saved.</span></div>;
-  }
-  return <div className="service-strip" role="status"><span className="service-indicator" aria-hidden="true" /><span><strong>Local reflection mode</strong> {status.message}</span></div>;
+  if (online) return null;
+  return (
+    <div className="status-banner" role="status">
+      <Luna mood="oops" size={34} decorative />
+      You’re offline. Nothing new will be sent until you reconnect.
+    </div>
+  );
 }

@@ -1,59 +1,49 @@
-type NavIconName = "today" | "reflect" | "talk" | "history" | "patterns" | "privacy";
+export type IconName = "home" | "journey" | "me" | "back" | "send" | "more" | "chat" | "close";
 
-export function NavIcon({ name }: { name: NavIconName }) {
-  if (name === "today") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="7.5" />
-        <path d="M12 7.5v4.8l3.1 1.8" />
-      </svg>
-    );
-  }
+const PATHS: Record<IconName, React.ReactNode> = {
+  home: (
+    <>
+      <path d="M4 11.2 12 4.5l8 6.7V19a1.5 1.5 0 0 1-1.5 1.5H15v-5.2H9v5.2H5.5A1.5 1.5 0 0 1 4 19v-7.8Z" />
+    </>
+  ),
+  journey: (
+    <>
+      <path d="M12 20.5V11" />
+      <path d="M12 12.5c0-4 2.6-6.8 6.5-7-.1 4-2.7 6.9-6.5 7Z" />
+      <path d="M12 15.5c0-3-2.1-5.2-5.4-5.4.1 3.1 2.2 5.3 5.4 5.4Z" />
+    </>
+  ),
+  me: (
+    <>
+      <circle cx="12" cy="8.5" r="3.6" />
+      <path d="M5 20c.8-3.6 3.6-5.6 7-5.6s6.2 2 7 5.6" />
+    </>
+  ),
+  back: <path d="M14.5 5.5 8 12l6.5 6.5" />,
+  send: <path d="M5 12h12M12.5 6.5 18 12l-5.5 5.5" />,
+  more: (
+    <>
+      <circle cx="6" cy="12" r="1.3" />
+      <circle cx="12" cy="12" r="1.3" />
+      <circle cx="18" cy="12" r="1.3" />
+    </>
+  ),
+  chat: <path d="M5 6.5h14v9.2h-7.5L7.5 19v-3.3H5V6.5Z" />,
+  close: <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />,
+};
 
-  if (name === "reflect") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="M5.5 18.5h3.2L18 9.2l-3.2-3.2-9.3 9.3v3.2Z" />
-        <path d="m13.5 7.3 3.2 3.2M5.5 21h13" />
-      </svg>
-    );
-  }
-
-  if (name === "talk") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="M6 7.5h12v8.2H11l-3.6 2.6v-2.6H6v-8.2Z" />
-        <path d="M9 11h6M9 13.4h3.5" />
-      </svg>
-    );
-  }
-
-  if (name === "history") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="M4.8 8.2A8 8 0 1 1 4 14" />
-        <path d="M4.8 4.5v3.7H8.5M12 8v4.5l3 1.7" />
-      </svg>
-    );
-  }
-
-  if (name === "patterns") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="M4 18.5V6M4 18.5h16" />
-        <path d="m7 15 3.2-4 3.1 2.2L18 7.5" />
-        <circle cx="7" cy="15" r=".8" />
-        <circle cx="10.2" cy="11" r=".8" />
-        <circle cx="13.3" cy="13.2" r=".8" />
-        <circle cx="18" cy="7.5" r=".8" />
-      </svg>
-    );
-  }
-
+export function Icon({ name }: { name: IconName }) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="M12 3.5 19 6v5.2c0 4.4-2.9 7.7-7 9.3-4.1-1.6-7-4.9-7-9.3V6l7-2.5Z" />
-      <path d="M9.3 12.1 11 13.8l3.8-4" />
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {PATHS[name]}
     </svg>
   );
 }

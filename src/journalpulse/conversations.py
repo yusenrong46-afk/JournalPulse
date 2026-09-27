@@ -17,8 +17,10 @@ from .domain import (
     AffectiveState,
     Conversation,
     ConversationMessage,
+    ConversationMode,
     ConversationStatus,
     ConversationTurnRequest,
+    Goal,
     MessageRole,
     ModelRun,
     PolicyDecision,
@@ -30,6 +32,14 @@ from .domain import (
     StartConversationRequest,
     TargetState,
 )
+from .guided import (
+    GUIDED_PROMPT_VERSION,
+    GUIDED_SUMMARY,
+    goal_card_reason,
+    goal_reply,
+    guided_completion,
+    guided_model_run,
+)
 from .intelligence import (
     CONVERSATION_PROMPT_VERSION,
     ConversationCompletion,
@@ -39,13 +49,10 @@ from .intelligence import (
 )
 from .persistence import Repository
 from .policy import ReflectionPolicy, apply_user_choice
-from .resources import approved_actions, goal_for_intent
+from .resources import action_intent, approved_actions, goal_for_intent
 from .safety import assess_safety
 
 MAX_USER_MESSAGES = 20
-TALK_REQUIRES_AI = (
-    "Talk needs private AI analysis. The guided reflection is still available."
-)
 PREVIEW_STATE = AffectiveState(
     valence=0.0,
     arousal=0.5,
@@ -117,18 +124,18 @@ def register_conversation_routes(
         auth: AuthContext = Depends(auth_dependency),
     ) -> Conversation:
         repository = sweep(auth)
-        if not payload.llm_consent or not settings.openrouter_enabled:
-            raise HTTPException(status_code=409, detail=TALK_REQUIRES_AI)
+        use_model = payload.llm_consent and settings.openrouter_enabled
         moment = clock()
         conversation = Conversation(
             id=payload.client_request_id or uuid4(),
             user_id=auth.user_id,
             created_at=moment,
             updated_at=moment,
-            llm_consent=True,
+            llm_consent=payload.llm_consent,
+            mode=ConversationMode.AI if use_model else ConversationMode.GUIDED,
             retain_text=payload.retain_text,
             locale=payload.locale.upper(),
-            prompt_version=CONVERSATION_PROMPT_VERSION,
+            prompt_version=CONVERSATION_PROMPT_VERSION if use_model else GUIDED_PROMPT_VERSION,
             safety=SafetyResult(
                 mode=SafetyMode.NORMAL,
                 locale=payload.locale.upper(),
@@ -355,22 +362,42 @@ def _take_turn(
         )
         return _persist_turn(repository, updated, user_message, assistant_message)
 
-    enforce_generation_limit(auth.user_id)
-    history = [
-        {"role": message.role.value, "content": message.content}
-        for message in messages
-        if message.content
-    ]
-    history.append({"role": "user", "content": payload.text})
-    try:
-        completion = _client(settings, conversation_client).complete(history)
-    except UnsupportedProviderResponse as exc:
-        raise HTTPException(
-            status_code=502,
-            detail="The model response was not a supported text format.",
-        ) from exc
-    except ConversationProviderError as exc:
-        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    if payload.goal is not None:
+        return _goal_turn(
+            settings=settings,
+            repository=repository,
+            policy=policy,
+            conversation=conversation,
+            user_message=user_message,
+            goal=payload.goal,
+            safety=safety,
+            created=assistant_created,
+        )
+
+    if conversation.mode == ConversationMode.GUIDED:
+        user_texts = [
+            message.content
+            for message in messages
+            if message.role == MessageRole.USER and message.content
+        ]
+        completion = guided_completion([*user_texts, payload.text])
+    else:
+        enforce_generation_limit(auth.user_id)
+        history = [
+            {"role": message.role.value, "content": message.content}
+            for message in messages
+            if message.content
+        ]
+        history.append({"role": "user", "content": payload.text})
+        try:
+            completion = _client(settings, conversation_client).complete(history)
+        except UnsupportedProviderResponse as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="The model response was not a supported text format.",
+            ) from exc
+        except ConversationProviderError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
     assistant_message = ConversationMessage(
         conversation_id=conversation.id,
         role=MessageRole.ASSISTANT,
@@ -379,22 +406,53 @@ def _take_turn(
         safety_mode=SafetyMode.NORMAL,
         model_run=completion.model_run,
     )
-    offered: ActionCard | None = conversation.card
-    if completion.offer_action:
-        offered = _catalog_card(
-            settings,
-            policy,
-            intent=completion.resource_intent,
-            reason=completion.card_reason,
-            message_id=assistant_message.id,
-            state=PREVIEW_STATE,
-        )
     updated = conversation.model_copy(
         update={
             "updated_at": assistant_created,
             "safety": safety,
             "summary": completion.summary,
-            "card": offered,
+            "feelings": list(completion.feelings) or conversation.feelings,
+            "ready_for_action": conversation.ready_for_action or completion.offer_action,
+        }
+    )
+    return _persist_turn(repository, updated, user_message, assistant_message)
+
+
+def _goal_turn(
+    *,
+    settings: Settings,
+    repository: Repository,
+    policy: ReflectionPolicy,
+    conversation: Conversation,
+    user_message: ConversationMessage,
+    goal: Goal,
+    safety: SafetyResult,
+    created: datetime,
+) -> ConversationTurnResult:
+    assistant_message = ConversationMessage(
+        conversation_id=conversation.id,
+        role=MessageRole.ASSISTANT,
+        content=goal_reply(goal),
+        created_at=created,
+        safety_mode=SafetyMode.NORMAL,
+        model_run=guided_model_run("goal_card"),
+    )
+    card = _catalog_card(
+        settings,
+        policy,
+        intent=action_intent("reflect", goal.value),
+        reason=goal_card_reason(goal),
+        message_id=assistant_message.id,
+        state=PREVIEW_STATE,
+        goal=goal,
+    )
+    updated = conversation.model_copy(
+        update={
+            "updated_at": created,
+            "safety": safety,
+            "summary": conversation.summary or GUIDED_SUMMARY,
+            "card": card,
+            "ready_for_action": True,
         }
     )
     return _persist_turn(repository, updated, user_message, assistant_message)
@@ -471,11 +529,12 @@ def _catalog_card(
     reason: str,
     message_id: UUID,
     state: AffectiveState,
+    goal: Goal | None = None,
 ) -> ActionCard:
     actions = approved_actions(settings.resource_catalog_path, intent=intent)
     decision = policy.decide(
         state=state,
-        target=TargetState(goal=goal_for_intent(intent)),
+        target=TargetState(goal=goal.value if goal else goal_for_intent(intent)),
         actions=actions,
         context={"source": "conversation"},
     )
@@ -490,6 +549,7 @@ def _catalog_card(
         decision_preview=decision,
         actions=visible[:3],
         offered_message_id=message_id,
+        goal=goal,
     )
 
 
@@ -512,13 +572,14 @@ def _reflection_from_card(
     card = conversation.card
     assert card is not None
     context = {"source": "conversation", "conversation_id": str(conversation.id)}
+    target = TargetState(goal=card.goal.value if card.goal else goal_for_intent(card.resource_intent))
     if conversation.safety_mode == SafetyMode.SUPPORT:
         decision = _accept_support_choice(card.decision_preview, payload.action_id)
     else:
         actions = approved_actions(settings.resource_catalog_path, intent=card.resource_intent)
         decision = policy.decide(
             state=payload.self_report,
-            target=TargetState(goal=goal_for_intent(card.resource_intent)),
+            target=target,
             actions=actions,
             context=context,
         )
@@ -528,6 +589,17 @@ def _reflection_from_card(
             raise HTTPException(status_code=422, detail="Chosen action is not in the safe set") from exc
     offered = next((item for item in messages if item.id == card.offered_message_id), None)
     model_run = offered.model_run if offered is not None else None
+    # A goal card is built locally; credit the model that actually heard the person.
+    model_turns = [
+        item.model_run
+        for item in messages
+        if item.role == MessageRole.ASSISTANT
+        and item.model_run is not None
+        and item.model_run.provider != "local"
+        and item.model_run.model != "safety-router"
+    ]
+    if model_run is not None and model_run.provider == "local" and model_turns:
+        model_run = model_turns[-1]
     safety = conversation.safety or SafetyResult(
         mode=conversation.safety_mode,
         locale=conversation.locale,
@@ -541,7 +613,7 @@ def _reflection_from_card(
         text_retained=False,
         context=context,
         state=payload.self_report,
-        target=TargetState(goal=goal_for_intent(card.resource_intent)),
+        target=target,
         reflection=ReflectionCopy(
             summary=conversation.summary or card.card_reason,
             interpretation=card.card_reason,

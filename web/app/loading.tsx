@@ -1,7 +1,10 @@
+import { Luna } from "@/components/luna";
+
 export default function Loading() {
   return (
-    <div className="page-wrap narrow" aria-busy="true">
-      <section className="paper-card skeleton-card" aria-label="Loading your private journal" />
+    <div className="loading-luna" role="status" aria-busy="true">
+      <Luna mood="idle" size={96} decorative />
+      <span>One moment…</span>
     </div>
   );
 }

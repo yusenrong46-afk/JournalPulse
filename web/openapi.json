@@ -52,6 +52,16 @@
           "decision_preview": {
             "$ref": "#/components/schemas/PolicyDecision"
           },
+          "goal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "offered_message_id": {
             "anyOf": [
               {
@@ -238,6 +248,14 @@
             "title": "Created At",
             "type": "string"
           },
+          "feelings": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Feelings",
+            "type": "array"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -253,11 +271,20 @@
             "title": "Locale",
             "type": "string"
           },
+          "mode": {
+            "$ref": "#/components/schemas/ConversationMode",
+            "default": "ai"
+          },
           "prompt_version": {
             "maxLength": 80,
             "minLength": 1,
             "title": "Prompt Version",
             "type": "string"
+          },
+          "ready_for_action": {
+            "default": false,
+            "title": "Ready For Action",
+            "type": "boolean"
           },
           "reflection_id": {
             "anyOf": [
@@ -411,6 +438,14 @@
         "title": "ConversationMessage",
         "type": "object"
       },
+      "ConversationMode": {
+        "enum": [
+          "ai",
+          "guided"
+        ],
+        "title": "ConversationMode",
+        "type": "string"
+      },
       "ConversationStatus": {
         "enum": [
           "open",
@@ -425,6 +460,16 @@
             "format": "uuid",
             "title": "Client Message Id",
             "type": "string"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "text": {
             "maxLength": 2000,
@@ -482,6 +527,17 @@
         ],
         "title": "DeletionResponse",
         "type": "object"
+      },
+      "Goal": {
+        "enum": [
+          "settle",
+          "move",
+          "understand",
+          "connect",
+          "act"
+        ],
+        "title": "Goal",
+        "type": "string"
       },
       "HTTPValidationError": {
         "properties": {
