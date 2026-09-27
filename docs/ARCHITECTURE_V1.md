@@ -39,7 +39,6 @@ event in one database transaction. In local tests, SQLite enforces the same uniq
 - `journalpulse.middleware`: request-size bounds, trace IDs, security headers, redacted request logs, and
   the single-instance analysis rate limiter.
 - `web/`: mobile-first user product; no raw journal content in the service-worker cache.
-- `research/`: internal console and manually authored moat work.
 
 ## Privacy posture
 

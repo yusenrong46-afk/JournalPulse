@@ -19,7 +19,7 @@ gates pass.
 ## What exists now
 
 - Next.js 16 / TypeScript PWA with onboarding, Today, five-stage Reflect, Action, Check-in,
-  searchable History, trajectory Patterns, Memory, and Privacy flows.
+  searchable History, trajectory Patterns, and Privacy flows.
 - Responsive scientific-journal interface with an icon-led mobile shell, explicit processing status,
   encrypted draft recovery, stable offline fallback, and WCAG-focused interaction states.
 - FastAPI contracts for analysis, curated-action preview, explicit user overrides, saved reflections,
@@ -30,8 +30,8 @@ gates pass.
 - Atomic, idempotent reflection and outcome writes through authenticated Postgres functions.
 - Curated HTTPS resource catalog; the model cannot generate destinations.
 - Opt-in AES-GCM encrypted recovery for one unfinished device-local draft, expiring after 24 hours.
-- Internal Streamlit evidence console that never seeds or fabricates experiment results.
-- Manual 16-week adaptive-engine curriculum and a feature-flagged policy boundary.
+- Manual 16-week research curriculum and a feature-flagged policy boundary. The curriculum lives in
+  the research-track document.
 
 ## Architecture
 
@@ -57,7 +57,7 @@ The recoverable pre-rebuild demo is tagged `v0.4-demo`.
 Requires Python 3.12 and Node 22.
 
 ```bash
-uv sync --frozen --extra dev --extra research
+uv sync --frozen --extra dev
 cp .env.example .env
 # Add a newly rotated OpenRouter key to JOURNALPULSE_LLM_API_KEY in .env.
 uv run python scripts/verify_openrouter.py
@@ -79,12 +79,6 @@ environment variables take precedence. `OPENROUTER_API_KEY` is accepted as an al
 in local or deployment secrets. Never reuse a credential exposed in chat or source control.
 `/ready` remains `not_ready` while the LLM feature is enabled without a key; the live verification
 command confirms that the configured provider accepts a real schema-constrained request.
-
-The internal console is separate:
-
-```bash
-uv run streamlit run research/console/app.py --server.port 8890
-```
 
 ## Cloud preview
 
@@ -109,7 +103,7 @@ Never deploy the OpenRouter credential previously exposed in chat.
 ## Verification
 
 ```bash
-uv run ruff check src tests scripts research
+uv run ruff check src tests scripts
 uv run mypy src
 uv run python scripts/export_openapi.py --check
 uv run pytest --cov=journalpulse --cov-report=term-missing
