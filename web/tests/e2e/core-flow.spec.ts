@@ -212,6 +212,14 @@ test("mobile Today screen has a stable scientific-journal composition", async ({
     await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth),
   ).toBe(true);
   await expect(page.locator("body")).toMatchAriaSnapshot({ name: "today-mobile.aria.yml" });
+  // The aria snapshot matches a subset, so destinations have to be pinned separately.
+  await expect(page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link")).toHaveText([
+    "Today",
+    "Reflect",
+    "History",
+    "Patterns",
+    "Privacy",
+  ]);
 });
 
 test("encrypted draft recovery survives a refresh only after opt-in", async ({ page }) => {
