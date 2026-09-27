@@ -1,14 +1,15 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 
+import { useRoutePath } from "@/lib/route-path";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
 const PUBLIC_PATHS = new Set(["/login", "/welcome"]);
 
 export function AuthBoundary({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
+  const pathname = useRoutePath();
   const router = useRouter();
   const configured = isSupabaseConfigured();
   const publicPath = PUBLIC_PATHS.has(pathname);
