@@ -306,7 +306,7 @@ export interface components {
             action_id: string;
             /** Client Request Id */
             client_request_id?: string | null;
-            self_report: components["schemas"]["AffectiveState"];
+            self_report?: components["schemas"]["AffectiveState"] | null;
         };
         /** ActionCard */
         ActionCard: {
@@ -352,7 +352,9 @@ export interface components {
             /** Arousal */
             arousal: number;
             /** Confidence */
-            confidence: number;
+            confidence?: number | null;
+            /** Derivation */
+            derivation?: string | null;
             /** Emotion Tags */
             emotion_tags?: string[];
             /** Uncertainty */
@@ -382,6 +384,8 @@ export interface components {
         /** Conversation */
         Conversation: {
             card?: components["schemas"]["ActionCard"] | null;
+            /** Confirmed Feelings */
+            confirmed_feelings?: string[] | null;
             /**
              * Created At
              * Format: date-time
@@ -409,11 +413,18 @@ export interface components {
             ready_for_action: boolean;
             /** Reflection Id */
             reflection_id?: string | null;
+            /** Reported Mood */
+            reported_mood?: number | null;
             /**
              * Retain Text
              * @default false
              */
             retain_text: boolean;
+            /**
+             * Revision
+             * @default 0
+             */
+            revision: number;
             safety?: components["schemas"]["SafetyResult"] | null;
             /** @default normal */
             safety_mode: components["schemas"]["SafetyMode"];
@@ -480,7 +491,11 @@ export interface components {
              * Format: uuid
              */
             client_message_id: string;
+            /** Confirmed Feelings */
+            confirmed_feelings?: string[] | null;
             goal?: components["schemas"]["Goal"] | null;
+            /** Mood Score */
+            mood_score?: number | null;
             /** Text */
             text: string;
         };
@@ -726,6 +741,7 @@ export interface components {
             model_run?: components["schemas"]["ModelRun"] | null;
             reflection: components["schemas"]["ReflectionCopy"];
             safety: components["schemas"]["SafetyResult"];
+            self_report_input?: components["schemas"]["SelfReportInput"] | null;
             state: components["schemas"]["AffectiveState"];
             target: components["schemas"]["TargetState"];
             /** Text */
@@ -793,6 +809,16 @@ export interface components {
          * @enum {string}
          */
         SelectionSource: "policy" | "policy_accepted" | "user_override";
+        /**
+         * SelfReportInput
+         * @description Exactly what the person tapped. The AffectiveState on a record is derived from it.
+         */
+        SelfReportInput: {
+            /** Feelings */
+            feelings?: string[];
+            /** Mood Score */
+            mood_score?: number | null;
+        };
         /** StartConversationRequest */
         StartConversationRequest: {
             /** Client Request Id */

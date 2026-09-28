@@ -153,7 +153,7 @@ test("a chat goes from a mood tap to one saved small step", async ({ page }) => 
   await page.goto("/talk");
   await page.getByRole("button", { name: /Low/ }).click();
   await expect(page.getByText("What part of that is sitting with you most?")).toBeVisible();
-  expect(turns[0].text).toBe("I'm feeling kind of low.");
+  expect(turns[0]).toMatchObject({ text: "I'm feeling kind of low.", mood_score: 2 });
 
   await page.getByLabel("Message Luna").fill("Work is a lot and I'm worn out.");
   await page.getByRole("button", { name: "Send" }).click();
@@ -166,7 +166,11 @@ test("a chat goes from a mood tap to one saved small step", async ({ page }) => 
   await page.getByRole("button", { name: "That’s it" }).click();
   await page.getByRole("button", { name: /Calm down/ }).click();
 
-  expect(turns.at(-1)).toMatchObject({ goal: "settle", text: "I'm feeling tired. I'd like to calm down." });
+  expect(turns.at(-1)).toMatchObject({
+    goal: "settle",
+    text: "I'm feeling tired. I'd like to calm down.",
+    confirmed_feelings: ["tired"],
+  });
   const pick = page.getByRole("button", { name: /Luna’s pick/ });
   await expect(pick).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: /Walking for Health/ }).click();
@@ -174,10 +178,55 @@ test("a chat goes from a mood tap to one saved small step", async ({ page }) => 
 
   await expect(page.getByRole("heading", { name: "Nice choice." })).toBeVisible();
   expect(accepted).toMatchObject({ action_id: walk.id });
-  const report = (accepted as unknown as { self_report: { emotion_tags: string[]; valence: number; confidence: number } }).self_report;
+  const report = (accepted as unknown as { self_report: { emotion_tags: string[]; valence: number; confidence: number | null } }).self_report;
   expect(report.emotion_tags).toEqual(["tired"]);
   expect(report.valence).toBeLessThan(0);
-  expect(report.confidence).toBeLessThan(1);
+  expect(report.confidence).toBeNull();
+});
+
+test("after a reload the chat keeps the feelings the person confirmed, not Luna's guess", async ({ page }) => {
+  await seed(page);
+  await page.addInitScript((id) => window.localStorage.setItem("journalpulse_open_conversation_v1", id), CONVERSATION_ID);
+  await page.route(`${API}/**`, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === `/v1/conversations/${CONVERSATION_ID}`) {
+      return fulfilJson(route, {
+        conversation: conversation({ feelings: ["anxious"], confirmed_feelings: ["tired", "sad"], reported_mood: 2, ready_for_action: true }),
+        messages: [message("user", "I'm feeling kind of low."), message("assistant", "What part of that is sitting with you most?")],
+      });
+    }
+    return fulfilJson(route, { items: [] });
+  });
+  await page.goto("/talk");
+  await page.getByRole("button", { name: /Yes, let’s find one small thing/ }).click();
+  const feelings = page.getByRole("group", { name: "Feelings" });
+  await expect(feelings.getByRole("button", { name: /Tired/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(feelings.getByRole("button", { name: /Sad/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(feelings.getByRole("button", { name: /Anxious/ })).toHaveAttribute("aria-pressed", "false");
+});
+
+test("a reply to a chat that closed elsewhere is not shown as saved", async ({ page }) => {
+  await seed(page);
+  let closed = false;
+  await page.route(`${API}/**`, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname === "/v1/conversations" && route.request().method() === "POST") return fulfilJson(route, conversation(), 201);
+    if (url.pathname.endsWith("/messages")) {
+      closed = true;
+      return fulfilJson(route, { detail: "This conversation is closed." }, 409);
+    }
+    if (url.pathname === `/v1/conversations/${CONVERSATION_ID}`) {
+      return fulfilJson(route, { conversation: conversation({ status: closed ? "closed" : "open" }), messages: [] });
+    }
+    return fulfilJson(route, { items: [] });
+  });
+  await page.goto("/talk");
+  await page.getByLabel("Message Luna").fill("Are you still there?");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.locator("p[role=alert]")).toHaveText("This conversation is closed.");
+  await expect(page.getByRole("button", { name: "Start a new chat" })).toBeVisible();
+  await expect(page.locator(".msg .bubble", { hasText: "Are you still there?" })).toHaveCount(0);
+  await expect(page.getByLabel("Message Luna")).toHaveValue("Are you still there?");
 });
 
 test("support mode puts people first and hides the chat box", async ({ page }) => {

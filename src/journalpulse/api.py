@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import os
+import threading
+import time
 from collections import Counter, defaultdict
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.gzip import GZipMiddleware
@@ -33,7 +36,14 @@ from .domain import (
 )
 from .intelligence import OpenRouterReflectionClient, UnsupportedProviderResponse, safe_analyze
 from .middleware import RequestContextMiddleware, SlidingWindowRateLimiter
-from .persistence import DuplicateOutcomeError, Repository, SQLiteRepository, SupabaseRepository
+from .persistence import (
+    DuplicateOutcomeError,
+    Repository,
+    SQLiteRepository,
+    StorageUnavailable,
+    SupabaseRepository,
+    supabase_readiness,
+)
 from .policy import FixedBaselinePolicy, ReflectionPolicy, apply_user_choice
 from .resources import action_intent, approved_actions, load_catalog
 from .safety import assess_safety
@@ -94,10 +104,28 @@ def create_app(
     intelligence_client: OpenRouterReflectionClient | None = None,
     conversation_client: ConversationClient | None = None,
     clock: Callable[[], datetime] | None = None,
+    database_probe: Callable[[], dict[str, str]] | None = None,
 ) -> FastAPI:
     settings = settings or load_settings()
     policy = policy or FixedBaselinePolicy()
+    now = clock or (lambda: datetime.now(UTC))
+    # Per-instance burst guard. The shared limit in the database is authoritative.
     analysis_limiter = SlidingWindowRateLimiter(limit=settings.analysis_rate_limit_per_minute)
+    probe_database = database_probe or (lambda: supabase_readiness(settings))
+    probe_cache: dict[str, tuple[float, dict[str, str]]] = {}
+    probe_lock = threading.Lock()
+
+    def database_checks() -> dict[str, str]:
+        if not settings.supabase_enabled:
+            return {"database": "local_sqlite"}
+        with probe_lock:
+            cached = probe_cache.get("database")
+            if cached and time.monotonic() - cached[0] < 30:
+                return cached[1]
+        result = probe_database()
+        with probe_lock:
+            probe_cache["database"] = (time.monotonic(), result)
+        return result
 
     def default_repository_factory(auth: AuthContext) -> Repository:
         if settings.supabase_enabled and auth.access_token:
@@ -117,8 +145,31 @@ def create_app(
         expose_headers=["X-Request-ID"],
     )
 
-    def enforce_generation_limit(user_id: UUID) -> None:
-        allowed, retry_after = analysis_limiter.check(str(user_id))
+    @app.exception_handler(StorageUnavailable)
+    def storage_unavailable(request: Request, exc: StorageUnavailable) -> JSONResponse:
+        del request, exc
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Your journal could not be reached. Nothing new was saved; please try again."},
+        )
+
+    def enforce_generation_limit(auth: AuthContext, repository: Repository) -> None:
+        allowed, retry_after = analysis_limiter.check(str(auth.user_id))
+        if allowed:
+            try:
+                allowed, retry_after = repository.consume_rate_limit(
+                    auth.user_id,
+                    "generation",
+                    limit=settings.analysis_rate_limit_per_minute,
+                    window_seconds=60,
+                    now=now(),
+                )
+            except StorageUnavailable as exc:
+                # Fail closed: without the shared count, a paid call cannot be bounded.
+                raise HTTPException(
+                    status_code=503,
+                    detail="Luna can't check your usage right now. Please try again in a moment.",
+                ) from exc
         if not allowed:
             raise HTTPException(
                 status_code=429,
@@ -153,17 +204,25 @@ def create_app(
         if not settings.llm_feature_enabled:
             checks["llm"] = "disabled"
         elif settings.openrouter_enabled:
+            # Configured only; /ready never spends a paid model call.
             checks["llm"] = "configured:not_probed"
         else:
-            checks["llm"] = "not_ready:not_configured"
-        checks["persistence"] = "supabase" if settings.supabase_enabled else "server_sqlite"
+            checks["llm"] = "not_configured"
+        checks.update(database_checks())
         required_ready = (
             checks["configuration"] == "ready"
             and checks["resources"] == "ready"
-            and checks["llm"] != "not_ready:not_configured"
+            and checks["llm"] != "not_configured"
         )
-        if settings.environment == "production":
-            required_ready = required_ready and settings.supabase_enabled
+        if settings.supabase_enabled:
+            required_ready = (
+                required_ready
+                and checks.get("database") == "reachable"
+                and checks.get("schema") == "schema_ready"
+                and checks.get("signing") == "valid"
+            )
+        elif settings.environment == "production":
+            required_ready = False
         status = "ready" if required_ready else "not_ready"
         if status != "ready":
             response.status_code = 503
@@ -198,7 +257,7 @@ def create_app(
                 arousal=0.8,
                 agency=0.1,
                 emotion_tags=["acute_distress"],
-                confidence=1.0,
+                confidence=None,
                 uncertainty=None,
             )
             reflection = ReflectionCopy(
@@ -230,7 +289,7 @@ def create_app(
         else:
             prepared = payload.prepared_analysis
             if prepared is None:
-                enforce_generation_limit(auth.user_id)
+                enforce_generation_limit(auth, repositories(auth))
                 try:
                     analysis = safe_analyze(
                         settings,
@@ -305,7 +364,7 @@ def create_app(
     def analyze_reflection(
         payload: AnalysisRequest, auth: AuthContext = Depends(auth_dependency)
     ) -> PreparedAnalysis:
-        enforce_generation_limit(auth.user_id)
+        enforce_generation_limit(auth, repositories(auth))
         safety = assess_safety(payload.text, payload.locale)
         if safety.mode == SafetyMode.SUPPORT:
             return PreparedAnalysis(
@@ -314,7 +373,7 @@ def create_app(
                     arousal=0.8,
                     agency=0.1,
                     emotion_tags=["acute_distress"],
-                    confidence=1.0,
+                    confidence=None,
                 ),
                 reflection=ReflectionCopy(
                     summary="This entry triggered support mode.",
@@ -408,7 +467,7 @@ def create_app(
     @app.get("/v1/insights", response_model=InsightsResponse)
     def insights(auth: AuthContext = Depends(auth_dependency)) -> InsightsResponse:
         repository = repositories(auth)
-        reflections = repository.list_reflections(auth.user_id, limit=10000, offset=0)
+        reflections = repository.list_all_reflections(auth.user_id)
         outcomes = repository.list_outcomes(auth.user_id)
         action_by_decision = {str(item.decision.decision_id): item.decision.action_id for item in reflections}
         action_counts = Counter(item.decision.action_id for item in reflections)

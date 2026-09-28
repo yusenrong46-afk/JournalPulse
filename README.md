@@ -113,6 +113,7 @@ Server variables (set on the host; `.env` is only a local fallback):
 | `JOURNALPULSE_LLM_ZDR` | `true` | Zero-data-retention routing; the chat client refuses to run without it |
 | `JOURNALPULSE_ANALYSIS_RATE_LIMIT_PER_MINUTE` | `20` | Per-person AI request limit |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | — | Supabase Auth and database; the anon key is public |
+| `JOURNALPULSE_WRITE_SIGNING_KEY` | — | Signs writes that carry server provenance; the same key goes in `private.server_secrets`. Required in production |
 | `JOURNALPULSE_CORS_ORIGINS` | platform URL | Comma-separated origins; defaults to the Vercel or Render URL |
 | `JOURNALPULSE_WEB_DIST` | — | Folder of the exported site to serve from FastAPI |
 | `JOURNALPULSE_MEMORY_ENABLED`, `JOURNALPULSE_ADAPTIVE_POLICY_ENABLED` | `false` | Research flags; keep off |
@@ -133,8 +134,8 @@ project, then run `vercel deploy --prod`. After the first deploy, add the Vercel
 **Render (alternative).** `render.yaml` defines a free Docker web service from `Dockerfile.api`. Create
 a Blueprint from this repository and paste `JOURNALPULSE_LLM_API_KEY` and `SUPABASE_ANON_KEY` when asked.
 
-Apply `supabase/migrations/` in filename order before the first deploy. The full sequence is in the
-[operations runbook](docs/OPERATIONS.md).
+Apply `supabase/migrations/` in filename order and store the signing key in the database and on the
+host before deploying. The full sequence is in the [operations runbook](docs/OPERATIONS.md).
 
 ## Test
 
@@ -145,13 +146,22 @@ uv run python scripts/export_openapi.py --check
 uv run pytest --cov=journalpulse
 uv run python scripts/validate_resources.py
 
+uv run python scripts/verify_postgres_schema.py
+
 cd web
 npm run lint && npm run typecheck && npm run test:unit
 npm run build && npm run test:e2e
+npm run test:integration
 ```
 
-CI runs all of these on every push and pull request, plus `scripts/verify_postgres_schema.py`, which
-applies the migrations to a real PostgreSQL 16 database and checks RLS and the write functions.
+There are two browser suites. `test:e2e` checks the interface with the API mocked in the browser.
+`test:integration` runs the browser against the real FastAPI app, PostgREST 12, and PostgreSQL with every
+migration applied (`scripts/integration_stack.py`); only the token issuer and the model provider are
+stand-ins.
+
+CI runs all of these on every push and pull request. `scripts/verify_postgres_schema.py` applies the
+migrations to a real PostgreSQL 16 database and checks RLS, signed provenance, lifecycle races between
+two sessions, retention, the shared rate limit, and deletion.
 Two scripts make paid live calls and are run only on purpose: `scripts/verify_openrouter.py` and
 `scripts/verify_conversation.py`.
 
@@ -159,8 +169,12 @@ Two scripts make paid live calls and are run only on purpose: `scripts/verify_op
 
 - The safety check runs on every message before anything else. Support mode never calls the model.
 - AI is opt-in. Requests use zero-data-retention routing, and logs never contain message text or keys.
-- A chat's words are cleared when it ends unless you choose to keep them. A short summary, your
+- A chat's words are cleared when it ends, or after 24 hours idle, unless you choose to keep them. A
+  scheduled database job enforces the 24 hours even if you never come back. A short summary, your
   confirmed feelings, the goal, and your chosen action are saved.
+- A reply that arrives after a chat was closed, accepted, or deleted is refused by the database, so it
+  cannot reopen the chat or bring back cleared words.
+- Records of which model, policy, and safety rule were used can only be written by the server.
 - Download or delete everything from the Me page. Deleting journal data keeps your sign-in.
 
 ## Documentation

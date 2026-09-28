@@ -73,7 +73,9 @@ def test_production_configuration_rejects_local_origins_and_missing_dependencies
         supabase_anon_key="public-anon-key",
         cors_origins=("https://journalpulse.example",),
     )
-    assert valid.configuration_issues == []
+    assert valid.configuration_issues == ["signing_key_missing"]
+    signed = replace(valid, write_signing_key="k" * 32)
+    assert signed.configuration_issues == []
 
 
 def _ready_production(monkeypatch, tmp_path: Path) -> None:
@@ -87,6 +89,7 @@ def _ready_production(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setenv("JOURNALPULSE_LLM_API_KEY", "present")
     monkeypatch.setenv("SUPABASE_URL", "https://project.supabase.co")
     monkeypatch.setenv("SUPABASE_ANON_KEY", "public-anon-key")
+    monkeypatch.setenv("JOURNALPULSE_WRITE_SIGNING_KEY", "k" * 32)
 
 
 def test_production_uses_render_origin_when_cors_is_unset(monkeypatch, tmp_path: Path) -> None:

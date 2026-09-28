@@ -24,8 +24,28 @@ class AffectiveState(BaseModel):
     arousal: float = Field(ge=0.0, le=1.0)
     agency: float = Field(ge=0.0, le=1.0)
     emotion_tags: list[str] = Field(default_factory=list, max_length=6)
-    confidence: float = Field(ge=0.0, le=1.0)
+    # A model's own estimate of how sure it is. Null for states derived from the
+    # person's button taps: no one measured their certainty, so no number is invented.
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     uncertainty: str | None = Field(default=None, max_length=240)
+    # How the numbers were produced, for example "feeling-buttons-v1". Null means a
+    # model estimate or a directly supplied state.
+    derivation: str | None = Field(default=None, max_length=40)
+
+
+class SelfReportInput(BaseModel):
+    """Exactly what the person tapped. The AffectiveState on a record is derived from it."""
+
+    feelings: list[str] = Field(default_factory=list, max_length=6)
+    mood_score: int | None = Field(default=None, ge=1, le=5)
+
+    @field_validator("feelings")
+    @classmethod
+    def known_feelings(cls, value: list[str]) -> list[str]:
+        unknown = [item for item in value if item not in FEELINGS]
+        if unknown:
+            raise ValueError(f"unknown feelings: {unknown}")
+        return list(dict.fromkeys(value))
 
 
 class TargetState(BaseModel):
@@ -89,6 +109,7 @@ class ReflectionRecord(BaseModel):
     safety: SafetyResult
     decision: PolicyDecision
     model_run: ModelRun | None = None
+    self_report_input: SelfReportInput | None = None
 
 
 class PreparedAnalysis(BaseModel):
@@ -246,10 +267,16 @@ class Conversation(BaseModel):
     locale: str = Field(min_length=2, max_length=8)
     prompt_version: str = Field(min_length=1, max_length=80)
     mode: ConversationMode = ConversationMode.AI
-    # Luna's guess at the person's feelings. The person confirms or changes them before
-    # anything is saved; the confirmed set arrives in the accept request.
+    # Luna's guess at the person's feelings. It is only a suggestion and is never saved
+    # as the person's report.
     feelings: list[str] = Field(default_factory=list, max_length=3)
     ready_for_action: bool = False
+    # What the person reported: the opening mood face and the feelings they confirmed.
+    # None means not reported yet; an empty list means they confirmed "not sure".
+    reported_mood: int | None = Field(default=None, ge=1, le=5)
+    confirmed_feelings: list[str] | None = Field(default=None, max_length=6)
+    # Incremented by the database on every committed change.
+    revision: int = Field(default=0, ge=0)
 
 
 class StartConversationRequest(BaseModel):
@@ -265,6 +292,17 @@ class ConversationTurnRequest(BaseModel):
     # A goal chosen from Luna's buttons. The reply is built from the reviewed catalog
     # without a model call.
     goal: Goal | None = None
+    # The opening mood face, sent with the first message it produced.
+    mood_score: int | None = Field(default=None, ge=1, le=5)
+    # The feelings the person confirmed, sent with the goal.
+    confirmed_feelings: list[str] | None = Field(default=None, max_length=6)
+
+    @field_validator("confirmed_feelings")
+    @classmethod
+    def known_confirmed(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        return SelfReportInput(feelings=value).feelings
 
     @field_validator("text")
     @classmethod
@@ -280,4 +318,6 @@ class ConversationTurnRequest(BaseModel):
 class AcceptConversationRequest(BaseModel):
     client_request_id: UUID | None = None
     action_id: str = Field(min_length=1, max_length=120)
-    self_report: AffectiveState
+    # Only used when the conversation holds no confirmed feelings (older clients).
+    # Otherwise the server derives the state from what the person confirmed.
+    self_report: AffectiveState | None = None

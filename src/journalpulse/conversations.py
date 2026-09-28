@@ -29,6 +29,7 @@ from .domain import (
     SafetyMode,
     SafetyResult,
     SelectionSource,
+    SelfReportInput,
     StartConversationRequest,
     TargetState,
 )
@@ -47,10 +48,17 @@ from .intelligence import (
     OpenRouterConversationClient,
     UnsupportedProviderResponse,
 )
-from .persistence import Repository
+from .persistence import (
+    ConversationAlreadyAccepted,
+    ConversationClosed,
+    ConversationNotFound,
+    ConversationStale,
+    Repository,
+)
 from .policy import ReflectionPolicy, apply_user_choice
 from .resources import action_intent, approved_actions, goal_for_intent
-from .safety import assess_safety
+from .safety import SUPPORT_FALLBACK_MESSAGE, assess_safety
+from .self_report import derive_state
 
 MAX_USER_MESSAGES = 20
 PREVIEW_STATE = AffectiveState(
@@ -58,9 +66,13 @@ PREVIEW_STATE = AffectiveState(
     arousal=0.5,
     agency=0.5,
     emotion_tags=[],
-    confidence=0.0,
+    confidence=None,
     uncertainty="A self-report is collected when an action is accepted.",
 )
+STALE_TURN = "This chat changed while Luna was replying, so that reply was not saved. Please send it again."
+STALE_ACCEPT = "This chat changed before your choice was saved. Please look at the options again."
+CLOSED = "This conversation is closed."
+ALREADY_ACCEPTED = "This conversation already has a saved choice."
 
 
 class ConversationClient(Protocol):
@@ -78,28 +90,28 @@ class ConversationTurnResult(BaseModel):
     assistant_message: ConversationMessage
 
 
+GenerationLimit = Callable[[AuthContext, Repository], None]
+
+
 def register_conversation_routes(
     app: FastAPI,
     *,
     settings: Settings,
     repositories: Callable[[AuthContext], Repository],
     policy: ReflectionPolicy,
-    enforce_generation_limit: Callable[[UUID], None],
+    enforce_generation_limit: GenerationLimit,
     auth_dependency: Callable[..., AuthContext],
     conversation_client: ConversationClient | None,
     clock: Callable[[], datetime],
 ) -> None:
+    # Fast rejection of a second concurrent reply within one process. Correctness does
+    # not depend on it: the database commit is conditional on the revision.
     locks: dict[str, threading.Lock] = {}
     lock_guard = threading.Lock()
 
     def sweep(auth: AuthContext) -> Repository:
-        moment = clock()
         repository = repositories(auth)
-        repository.close_stale_conversations(
-            auth.user_id,
-            older_than=moment - timedelta(hours=24),
-            now=moment,
-        )
+        repository.close_stale_conversations(auth.user_id, now=clock())
         return repository
 
     def require_owned(repository: Repository, auth: AuthContext, conversation_id: UUID) -> Conversation:
@@ -143,11 +155,9 @@ def register_conversation_routes(
             ),
         )
         try:
-            return repository.save_conversation(conversation)
+            return repository.create_conversation(conversation)
         except ValueError as exc:
-            raise HTTPException(
-                status_code=409, detail="Conversation request ID is already in use"
-            ) from exc
+            raise HTTPException(status_code=409, detail="Conversation request ID is already in use") from exc
 
     @app.get("/v1/conversations/{conversation_id}", response_model=ConversationDetail)
     def read_conversation(
@@ -168,33 +178,17 @@ def register_conversation_routes(
         auth: AuthContext = Depends(auth_dependency),
     ) -> ConversationTurnResult:
         repository = sweep(auth)
-        conversation = require_owned(repository, auth, conversation_id)
-        if conversation.status != ConversationStatus.OPEN:
-            raise HTTPException(status_code=409, detail="This conversation is closed.")
-        stored = _stored_turn(
-            repository.list_messages(auth.user_id, conversation_id),
-            payload.client_message_id,
-        )
-        if stored is not None:
-            return ConversationTurnResult(
-                conversation=conversation,
-                user_message=stored[0],
-                assistant_message=stored[1],
-            )
-
         lock = acquire(conversation_id)
         try:
             conversation = require_owned(repository, auth, conversation_id)
-            if conversation.status != ConversationStatus.OPEN:
-                raise HTTPException(status_code=409, detail="This conversation is closed.")
             messages = repository.list_messages(auth.user_id, conversation_id)
             stored = _stored_turn(messages, payload.client_message_id)
             if stored is not None:
                 return ConversationTurnResult(
-                    conversation=conversation,
-                    user_message=stored[0],
-                    assistant_message=stored[1],
+                    conversation=conversation, user_message=stored[0], assistant_message=stored[1]
                 )
+            if conversation.status != ConversationStatus.OPEN:
+                raise HTTPException(status_code=409, detail=CLOSED)
             user_count = sum(message.role == MessageRole.USER for message in messages)
             if user_count >= MAX_USER_MESSAGES:
                 raise HTTPException(
@@ -225,9 +219,9 @@ def register_conversation_routes(
         repository = sweep(auth)
         conversation = require_owned(repository, auth, conversation_id)
         if conversation.reflection_id is not None:
-            saved = _reflection_by_id(repository, auth.user_id, conversation.reflection_id)
-            if saved is not None:
-                return saved
+            return _already_accepted(repository, auth, conversation, payload)
+        if conversation.status != ConversationStatus.OPEN:
+            raise HTTPException(status_code=409, detail=CLOSED)
         if conversation.card is None:
             raise HTTPException(status_code=409, detail="There is no action card to accept yet.")
         if payload.action_id not in conversation.card.decision_preview.safe_action_ids:
@@ -242,17 +236,20 @@ def register_conversation_routes(
             user_id=auth.user_id,
         )
         try:
-            saved = repository.save_reflection(record)
+            return repository.accept_conversation(
+                auth.user_id, conversation.id, record, expected_revision=conversation.revision
+            )
+        except ConversationAlreadyAccepted:
+            current = require_owned(repository, auth, conversation_id)
+            return _already_accepted(repository, auth, current, payload)
+        except ConversationStale as exc:
+            raise HTTPException(status_code=409, detail=STALE_ACCEPT) from exc
+        except ConversationClosed as exc:
+            raise HTTPException(status_code=409, detail=CLOSED) from exc
+        except ConversationNotFound as exc:
+            raise HTTPException(status_code=404, detail="Conversation not found") from exc
         except ValueError as exc:
             raise HTTPException(status_code=409, detail="Reflection request ID is already in use") from exc
-        repository.close_conversation(
-            auth.user_id,
-            conversation.id,
-            purge=not conversation.retain_text,
-            reflection_id=saved.id,
-            now=clock(),
-        )
-        return saved
 
     @app.post("/v1/conversations/{conversation_id}/close", response_model=Conversation)
     def close_conversation(
@@ -260,15 +257,7 @@ def register_conversation_routes(
         auth: AuthContext = Depends(auth_dependency),
     ) -> Conversation:
         repository = sweep(auth)
-        conversation = require_owned(repository, auth, conversation_id)
-        if conversation.status == ConversationStatus.CLOSED:
-            return conversation
-        closed = repository.close_conversation(
-            auth.user_id,
-            conversation.id,
-            purge=not conversation.retain_text,
-            now=clock(),
-        )
+        closed = repository.close_conversation(auth.user_id, conversation_id)
         if closed is None:
             raise HTTPException(status_code=404, detail="Conversation not found")
         return closed
@@ -281,6 +270,21 @@ def register_conversation_routes(
         repository = sweep(auth)
         if not repository.delete_conversation(auth.user_id, conversation_id):
             raise HTTPException(status_code=404, detail="Conversation not found")
+
+
+def _already_accepted(
+    repository: Repository,
+    auth: AuthContext,
+    conversation: Conversation,
+    payload: AcceptConversationRequest,
+) -> ReflectionRecord:
+    """Idempotent retry of the same request returns the saved record; any other is refused."""
+    assert conversation.reflection_id is not None
+    if payload.client_request_id is not None and payload.client_request_id == conversation.reflection_id:
+        saved = repository.get_reflection(auth.user_id, conversation.reflection_id)
+        if saved is not None:
+            return saved
+    raise HTTPException(status_code=409, detail=ALREADY_ACCEPTED)
 
 
 def _stored_turn(
@@ -315,9 +319,12 @@ def _take_turn(
     payload: ConversationTurnRequest,
     auth: AuthContext,
     moment: datetime,
-    enforce_generation_limit: Callable[[UUID], None],
+    enforce_generation_limit: GenerationLimit,
     conversation_client: ConversationClient | None,
 ) -> ConversationTurnResult:
+    # The turn is computed against this revision and only committed if it still holds.
+    expected_revision = conversation.revision
+    reported = _with_reported_inputs(conversation, payload)
     assessed = assess_safety(payload.text, conversation.locale)
     already_support = conversation.safety_mode == SafetyMode.SUPPORT
     safety = conversation.safety if already_support and conversation.safety is not None else assessed
@@ -332,7 +339,6 @@ def _take_turn(
     )
     assistant_created = moment + timedelta(microseconds=1)
     if entering_support:
-        assistant_text = _support_text(conversation, messages, safety)
         model_run = ModelRun(
             model="safety-router",
             provider="safety-router",
@@ -345,44 +351,58 @@ def _take_turn(
         assistant_message = ConversationMessage(
             conversation_id=conversation.id,
             role=MessageRole.ASSISTANT,
-            content=assistant_text,
+            content=_support_text(safety),
             created_at=assistant_created,
             safety_mode=SafetyMode.SUPPORT,
             model_run=model_run,
         )
-        card = _support_card(settings, safety, assistant_message.id)
-        updated = conversation.model_copy(
+        updated = reported.model_copy(
             update={
                 "updated_at": assistant_created,
                 "safety_mode": SafetyMode.SUPPORT,
                 "safety": safety,
                 "summary": conversation.summary or "This conversation moved to support mode.",
-                "card": card,
+                "card": _support_card(settings, safety, assistant_message.id),
             }
         )
-        return _persist_turn(repository, updated, user_message, assistant_message)
+        return _commit(repository, updated, user_message, assistant_message, expected_revision)
 
     if payload.goal is not None:
-        return _goal_turn(
-            settings=settings,
-            repository=repository,
-            policy=policy,
-            conversation=conversation,
-            user_message=user_message,
-            goal=payload.goal,
-            safety=safety,
-            created=assistant_created,
+        assistant_message = ConversationMessage(
+            conversation_id=conversation.id,
+            role=MessageRole.ASSISTANT,
+            content=goal_reply(payload.goal),
+            created_at=assistant_created,
+            safety_mode=SafetyMode.NORMAL,
+            model_run=guided_model_run("goal_card"),
         )
+        card = _catalog_card(
+            settings,
+            policy,
+            intent=action_intent("reflect", payload.goal.value),
+            reason=goal_card_reason(payload.goal),
+            message_id=assistant_message.id,
+            state=PREVIEW_STATE,
+            goal=payload.goal,
+        )
+        updated = reported.model_copy(
+            update={
+                "updated_at": assistant_created,
+                "safety": safety,
+                "summary": conversation.summary or GUIDED_SUMMARY,
+                "card": card,
+                "ready_for_action": True,
+            }
+        )
+        return _commit(repository, updated, user_message, assistant_message, expected_revision)
 
     if conversation.mode == ConversationMode.GUIDED:
         user_texts = [
-            message.content
-            for message in messages
-            if message.role == MessageRole.USER and message.content
+            message.content for message in messages if message.role == MessageRole.USER and message.content
         ]
         completion = guided_completion([*user_texts, payload.text])
     else:
-        enforce_generation_limit(auth.user_id)
+        enforce_generation_limit(auth, repository)
         history = [
             {"role": message.role.value, "content": message.content}
             for message in messages
@@ -406,7 +426,7 @@ def _take_turn(
         safety_mode=SafetyMode.NORMAL,
         model_run=completion.model_run,
     )
-    updated = conversation.model_copy(
+    updated = reported.model_copy(
         update={
             "updated_at": assistant_created,
             "safety": safety,
@@ -415,47 +435,17 @@ def _take_turn(
             "ready_for_action": conversation.ready_for_action or completion.offer_action,
         }
     )
-    return _persist_turn(repository, updated, user_message, assistant_message)
+    return _commit(repository, updated, user_message, assistant_message, expected_revision)
 
 
-def _goal_turn(
-    *,
-    settings: Settings,
-    repository: Repository,
-    policy: ReflectionPolicy,
-    conversation: Conversation,
-    user_message: ConversationMessage,
-    goal: Goal,
-    safety: SafetyResult,
-    created: datetime,
-) -> ConversationTurnResult:
-    assistant_message = ConversationMessage(
-        conversation_id=conversation.id,
-        role=MessageRole.ASSISTANT,
-        content=goal_reply(goal),
-        created_at=created,
-        safety_mode=SafetyMode.NORMAL,
-        model_run=guided_model_run("goal_card"),
-    )
-    card = _catalog_card(
-        settings,
-        policy,
-        intent=action_intent("reflect", goal.value),
-        reason=goal_card_reason(goal),
-        message_id=assistant_message.id,
-        state=PREVIEW_STATE,
-        goal=goal,
-    )
-    updated = conversation.model_copy(
-        update={
-            "updated_at": created,
-            "safety": safety,
-            "summary": conversation.summary or GUIDED_SUMMARY,
-            "card": card,
-            "ready_for_action": True,
-        }
-    )
-    return _persist_turn(repository, updated, user_message, assistant_message)
+def _with_reported_inputs(conversation: Conversation, payload: ConversationTurnRequest) -> Conversation:
+    """Store what the person tapped: the first mood face, and feelings confirmed with a goal."""
+    update: dict[str, object] = {}
+    if payload.mood_score is not None and conversation.reported_mood is None:
+        update["reported_mood"] = payload.mood_score
+    if payload.goal is not None and payload.confirmed_feelings is not None:
+        update["confirmed_feelings"] = payload.confirmed_feelings
+    return conversation.model_copy(update=update) if update else conversation
 
 
 def _client(settings: Settings, conversation_client: ConversationClient | None) -> ConversationClient:
@@ -464,15 +454,23 @@ def _client(settings: Settings, conversation_client: ConversationClient | None) 
     return OpenRouterConversationClient(settings)
 
 
-def _persist_turn(
+def _commit(
     repository: Repository,
     conversation: Conversation,
     user_message: ConversationMessage,
     assistant_message: ConversationMessage,
+    expected_revision: int,
 ) -> ConversationTurnResult:
-    stored_conversation, stored_user, stored_assistant = repository.save_turn(
-        conversation, user_message, assistant_message
-    )
+    try:
+        stored_conversation, stored_user, stored_assistant = repository.commit_turn(
+            conversation, user_message, assistant_message, expected_revision=expected_revision
+        )
+    except ConversationStale as exc:
+        raise HTTPException(status_code=409, detail=STALE_TURN) from exc
+    except ConversationClosed as exc:
+        raise HTTPException(status_code=409, detail=CLOSED) from exc
+    except ConversationNotFound as exc:
+        raise HTTPException(status_code=404, detail="Conversation not found") from exc
     return ConversationTurnResult(
         conversation=stored_conversation,
         user_message=stored_user,
@@ -480,20 +478,10 @@ def _persist_turn(
     )
 
 
-def _support_text(
-    conversation: Conversation, messages: list[ConversationMessage], safety: SafetyResult
-) -> str:
-    previous = next(
-        (
-            message.content
-            for message in messages
-            if message.role == MessageRole.ASSISTANT and message.content
-        ),
-        None,
-    )
-    if conversation.safety_mode == SafetyMode.SUPPORT and previous:
-        return previous
-    return safety.support_message or "Contact local emergency support now."
+def _support_text(safety: SafetyResult) -> str:
+    """Every support-mode reply is the support message recorded when the chat entered
+    support mode. It never reuses an earlier ordinary Luna reply."""
+    return safety.support_message or SUPPORT_FALLBACK_MESSAGE
 
 
 def _support_card(settings: Settings, safety: SafetyResult, message_id: UUID) -> ActionCard:
@@ -553,11 +541,20 @@ def _catalog_card(
     )
 
 
-def _reflection_by_id(
-    repository: Repository, user_id: UUID, reflection_id: UUID
-) -> ReflectionRecord | None:
-    records = repository.list_reflections(user_id, limit=10000, offset=0)
-    return next((item for item in records if item.id == reflection_id), None)
+def _self_report(
+    conversation: Conversation, payload: AcceptConversationRequest
+) -> tuple[AffectiveState, SelfReportInput | None]:
+    """The person's confirmed taps win. A client-computed state is only accepted from
+    older clients that never sent confirmed feelings."""
+    if conversation.confirmed_feelings is not None:
+        report = SelfReportInput(
+            feelings=conversation.confirmed_feelings, mood_score=conversation.reported_mood
+        )
+        return derive_state(report), report
+    if payload.self_report is not None:
+        return payload.self_report, None
+    report = SelfReportInput(feelings=[], mood_score=conversation.reported_mood)
+    return derive_state(report), report
 
 
 def _reflection_from_card(
@@ -571,18 +568,14 @@ def _reflection_from_card(
 ) -> ReflectionRecord:
     card = conversation.card
     assert card is not None
+    state, report = _self_report(conversation, payload)
     context = {"source": "conversation", "conversation_id": str(conversation.id)}
     target = TargetState(goal=card.goal.value if card.goal else goal_for_intent(card.resource_intent))
     if conversation.safety_mode == SafetyMode.SUPPORT:
         decision = _accept_support_choice(card.decision_preview, payload.action_id)
     else:
         actions = approved_actions(settings.resource_catalog_path, intent=card.resource_intent)
-        decision = policy.decide(
-            state=payload.self_report,
-            target=target,
-            actions=actions,
-            context=context,
-        )
+        decision = policy.decide(state=state, target=target, actions=actions, context=context)
         try:
             decision = apply_user_choice(decision, payload.action_id)
         except ValueError as exc:
@@ -605,14 +598,13 @@ def _reflection_from_card(
         locale=conversation.locale,
         exploration_allowed=conversation.safety_mode == SafetyMode.NORMAL,
     )
-    record_id = payload.client_request_id or uuid4()
     return ReflectionRecord(
-        id=record_id,
+        id=payload.client_request_id or uuid4(),
         user_id=user_id,
         text=None,
         text_retained=False,
         context=context,
-        state=payload.self_report,
+        state=state,
         target=target,
         reflection=ReflectionCopy(
             summary=conversation.summary or card.card_reason,
@@ -622,6 +614,7 @@ def _reflection_from_card(
         safety=safety,
         decision=decision,
         model_run=model_run,
+        self_report_input=report,
     )
 
 
