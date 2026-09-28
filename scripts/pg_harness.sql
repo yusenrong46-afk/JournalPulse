@@ -19,6 +19,7 @@ end
 $$;
 
 create schema if not exists auth;
+create schema if not exists extensions;
 
 create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
@@ -26,14 +27,24 @@ create table if not exists auth.users (
 );
 
 -- Mirrors Supabase: the subject claim of the request's JWT, null when absent.
+-- PostgREST 11+ sets request.jwt.claims; older setups set request.jwt.claim.sub.
 create or replace function auth.uid()
 returns uuid
 language sql
 stable
 as $$
-  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
+  select coalesce(
+    nullif(current_setting('request.jwt.claim.sub', true), ''),
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'
+  )::uuid;
 $$;
 
 grant usage on schema auth to anon, authenticated, service_role;
 grant select on auth.users to anon, authenticated, service_role;
 grant usage on schema public to anon, authenticated, service_role;
+
+-- Supabase grants these by default on new tables, so the migrations must revoke
+-- what they do not want signed-in users to have.
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
