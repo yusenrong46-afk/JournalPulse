@@ -27,9 +27,11 @@ function wait(milliseconds: number): Promise<void> {
 
 function apiBase(): string {
   if (CONFIGURED_API_BASE) return CONFIGURED_API_BASE;
-  const localFrontend = ["localhost", "127.0.0.1"].includes(window.location.hostname)
-    && window.location.port !== "8000";
-  return localFrontend ? "http://127.0.0.1:8000" : "";
+  // Only the Next.js dev server (port 3000) talks to a separate local API. Every other
+  // origin, including FastAPI serving the exported site, is same-origin.
+  const nextDevServer = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+    && window.location.port === "3000";
+  return nextDevServer ? "http://127.0.0.1:8000" : "";
 }
 
 function previewClientId(): string {

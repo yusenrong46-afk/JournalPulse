@@ -637,8 +637,8 @@ begin
     get diagnostics affected = row_count;
     deleted_count := deleted_count + affected;
   end loop;
-  -- Usage counters are removed too, but they are not journal records, so not counted.
-  delete from public.rate_limit_events where rate_limit_events.user_id = owner_id;
+  -- Usage counters are not journal data and hold no content. They are left for the
+  -- scheduled job to expire, so deleting a journal cannot reset the generation limit.
   return deleted_count;
 end;
 $$;
@@ -733,6 +733,10 @@ begin
     and (only_owner is null or conversations.user_id = only_owner);
   get diagnostics repaired = row_count;
   purged_count := purged_count + repaired;
+
+  delete from public.rate_limit_events
+  where rate_limit_events.created_at < now() - interval '1 day'
+    and (only_owner is null or rate_limit_events.user_id = only_owner);
 
   return jsonb_build_object('closed', closed_count, 'purged_messages', purged_count);
 end;

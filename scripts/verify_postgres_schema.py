@@ -656,11 +656,14 @@ def behavior_sql() -> str:
         union all select count(*) from public.affective_observations where user_id = '{USER_A}'
         union all select count(*) from public.conversations where user_id = '{USER_A}'
         union all select count(*) from public.conversation_messages where user_id = '{USER_A}'
-        union all select count(*) from public.rate_limit_events where user_id = '{USER_A}'
       ) counts) = 0''',
-            "A deletion removes every A row",
+            "A deletion removes every A journal row",
         )
     }
+    {check(f"(select count(*) from public.rate_limit_events where user_id = '{USER_A}') > 0", "deleting a journal does not reset the generation limit")}
+    update public.rate_limit_events set created_at = now() - interval '2 days' where user_id = '{USER_A}';
+    select public.jp_purge_expired_conversations();
+    {check(f"(select count(*) from public.rate_limit_events where user_id = '{USER_A}') = 0", "the scheduled job expires old usage counters")}
     {
         check(
             f"(select count(*) from public.conversations where user_id = '{USER_B}') = 1",

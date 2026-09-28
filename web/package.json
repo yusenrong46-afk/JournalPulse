@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "generate:api": "openapi-typescript openapi.json -o lib/generated-api.ts",
     "test:unit": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:integration": "playwright test -c playwright.integration.config.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.110.2",

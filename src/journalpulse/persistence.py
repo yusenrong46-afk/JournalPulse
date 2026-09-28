@@ -328,7 +328,8 @@ class SQLiteRepository:
             for table in ("outcomes", "conversation_messages", "reflections", "conversations"):
                 cursor = connection.execute(f"DELETE FROM {table} WHERE user_id = ?", (str(user_id),))
                 deleted += cursor.rowcount
-            connection.execute("DELETE FROM rate_limit_events WHERE user_id = ?", (str(user_id),))
+        # Usage counters hold no journal content and are expired by the retention job;
+        # keeping them here stops a journal deletion from resetting the generation limit.
         return deleted
 
     # Conversations --------------------------------------------------------------------
@@ -531,6 +532,14 @@ class SQLiteRepository:
                 conversation = self._conversation(row)
                 if not conversation.retain_text:
                     purged += self._purge_messages(connection, conversation.id)
+            expired = (now - timedelta(days=1)).isoformat()
+            if only_user is None:
+                connection.execute("DELETE FROM rate_limit_events WHERE created_at < ?", (expired,))
+            else:
+                connection.execute(
+                    "DELETE FROM rate_limit_events WHERE created_at < ? AND user_id = ?",
+                    (expired, str(only_user)),
+                )
         return {"closed": closed, "purged_messages": purged}
 
     def _close_locked(
