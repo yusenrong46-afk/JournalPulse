@@ -77,6 +77,8 @@ class Settings:
     openrouter_max_attempts: int = 2
     chat_model: str = "openai/gpt-6-luna"
     chat_timeout_seconds: float = 45.0
+    # Shared with the database (private.server_secrets) to sign provenance writes.
+    write_signing_key: str | None = None
 
     @property
     def openrouter_enabled(self) -> bool:
@@ -98,6 +100,8 @@ class Settings:
         if self.environment == "production":
             if not self.supabase_enabled:
                 issues.append("supabase_missing")
+            elif not self.write_signing_key or len(self.write_signing_key) < 32:
+                issues.append("signing_key_missing")
             if self.llm_feature_enabled and not self.openrouter_enabled:
                 issues.append("llm_missing")
             local_origins = any(
@@ -144,4 +148,5 @@ def load_settings() -> Settings:
         openrouter_max_attempts=int(os.getenv("JOURNALPULSE_LLM_MAX_ATTEMPTS", "2")),
         chat_model=os.getenv("JOURNALPULSE_CHAT_MODEL", "openai/gpt-6-luna").strip(),
         chat_timeout_seconds=float(os.getenv("JOURNALPULSE_CHAT_TIMEOUT_SECONDS", "45")),
+        write_signing_key=os.getenv("JOURNALPULSE_WRITE_SIGNING_KEY") or None,
     )

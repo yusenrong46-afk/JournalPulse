@@ -33,6 +33,11 @@ SUPPORT_BY_LOCALE = {
 }
 
 
+SUPPORT_FALLBACK_MESSAGE = (
+    "If you may be in immediate danger, contact your local emergency service now and reach a trusted "
+    "person nearby. Befrienders Worldwide can help locate crisis support in your country."
+)
+
 _CLAUSE_BREAK = re.compile(r"[.!?]+|;|\s+\bbut\b\s+|,\s*")
 
 
@@ -57,11 +62,7 @@ def assess_safety(text: str, locale: str = "CA") -> SafetyResult:
     locale_key = locale.upper()
     message, resources = SUPPORT_BY_LOCALE.get(
         locale_key,
-        (
-            "If you may be in immediate danger, contact your local emergency service now and reach a trusted "
-            "person nearby. Befrienders Worldwide can help locate crisis support in your country.",
-            ["support_befrienders"],
-        ),
+        (SUPPORT_FALLBACK_MESSAGE, ["support_befrienders"]),
     )
     return SafetyResult(
         mode=SafetyMode.SUPPORT,

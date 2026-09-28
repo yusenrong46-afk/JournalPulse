@@ -136,7 +136,7 @@ def test_health_is_liveness_only_and_readiness_is_explicit(tmp_path: Path):
         readiness = client.get("/ready")
         assert readiness.status_code == 503
         assert readiness.json()["status"] == "not_ready"
-        assert readiness.json()["checks"]["llm"] == "not_ready:not_configured"
+        assert readiness.json()["checks"]["llm"] == "not_configured"
 
 
 def test_static_export_can_share_the_api_origin(tmp_path: Path, monkeypatch):
@@ -370,8 +370,8 @@ def test_ready_returns_503_when_required_configuration_is_missing(tmp_path: Path
         assert response.status_code == 503
         body = response.json()
         assert body["status"] == "not_ready"
-        assert body["checks"]["llm"] == "not_ready:not_configured"
-        assert body["checks"]["persistence"] == "server_sqlite"
+        assert body["checks"]["llm"] == "not_configured"
+        assert body["checks"]["database"] == "local_sqlite"
 
 
 def test_ready_does_not_claim_an_unrun_provider_probe(tmp_path: Path):

@@ -22,12 +22,18 @@
             "title": "Client Request Id"
           },
           "self_report": {
-            "$ref": "#/components/schemas/AffectiveState"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AffectiveState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
-          "action_id",
-          "self_report"
+          "action_id"
         ],
         "title": "AcceptConversationRequest",
         "type": "object"
@@ -156,10 +162,29 @@
             "type": "number"
           },
           "confidence": {
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Confidence",
-            "type": "number"
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "derivation": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derivation"
           },
           "emotion_tags": {
             "items": {
@@ -191,8 +216,7 @@
         "required": [
           "valence",
           "arousal",
-          "agency",
-          "confidence"
+          "agency"
         ],
         "title": "AffectiveState",
         "type": "object"
@@ -242,6 +266,21 @@
                 "type": "null"
               }
             ]
+          },
+          "confirmed_feelings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed Feelings"
           },
           "created_at": {
             "format": "date-time",
@@ -298,10 +337,29 @@
             ],
             "title": "Reflection Id"
           },
+          "reported_mood": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported Mood"
+          },
           "retain_text": {
             "default": false,
             "title": "Retain Text",
             "type": "boolean"
+          },
+          "revision": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Revision",
+            "type": "integer"
           },
           "safety": {
             "anyOf": [
@@ -461,6 +519,21 @@
             "title": "Client Message Id",
             "type": "string"
           },
+          "confirmed_feelings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed Feelings"
+          },
           "goal": {
             "anyOf": [
               {
@@ -470,6 +543,19 @@
                 "type": "null"
               }
             ]
+          },
+          "mood_score": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mood Score"
           },
           "text": {
             "maxLength": 2000,
@@ -1139,6 +1225,16 @@
           "safety": {
             "$ref": "#/components/schemas/SafetyResult"
           },
+          "self_report_input": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SelfReportInput"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "state": {
             "$ref": "#/components/schemas/AffectiveState"
           },
@@ -1335,6 +1431,34 @@
         ],
         "title": "SelectionSource",
         "type": "string"
+      },
+      "SelfReportInput": {
+        "description": "Exactly what the person tapped. The AffectiveState on a record is derived from it.",
+        "properties": {
+          "feelings": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "Feelings",
+            "type": "array"
+          },
+          "mood_score": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mood Score"
+          }
+        },
+        "title": "SelfReportInput",
+        "type": "object"
       },
       "StartConversationRequest": {
         "properties": {
