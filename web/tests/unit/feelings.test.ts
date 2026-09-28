@@ -8,8 +8,8 @@ describe("self-report from feeling buttons", () => {
     expect(state.emotion_tags).toEqual(["tired", "anxious"]);
     expect(state.valence).toBeCloseTo(-0.4);
     expect(state.arousal).toBeCloseTo(0.5);
-    expect(state.confidence).toBeGreaterThan(0.5);
-    expect(state.confidence).toBeLessThan(1);
+    expect(state.confidence).toBeNull();
+    expect(state.derivation).toBe("feeling-buttons-v1");
   });
 
   test("the opening mood face weighs more than the feelings for valence", () => {
@@ -17,8 +17,11 @@ describe("self-report from feeling buttons", () => {
     expect(state.valence).toBeLessThan(0);
   });
 
-  test("an empty choice is low-confidence, not a fake certainty", () => {
-    expect(selfReport([], null).confidence).toBeLessThanOrEqual(0.1);
+  test("an empty choice says so instead of inventing a certainty", () => {
+    const empty = selfReport([], null);
+    expect(empty.confidence).toBeNull();
+    expect(empty.uncertainty).toBe("No feelings were reported.");
+    expect(selfReport([], -0.4).uncertainty).toBe("Only an overall mood was reported.");
     expect(selfReport(["not-a-feeling"], null).emotion_tags).toEqual([]);
   });
 });

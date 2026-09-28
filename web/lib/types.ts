@@ -3,8 +3,15 @@ export type AffectiveState = {
   arousal: number;
   agency: number;
   emotion_tags: string[];
-  confidence: number;
+  /** A model's own estimate. Null for states derived from the person's taps. */
+  confidence?: number | null;
   uncertainty?: string | null;
+  derivation?: string | null;
+};
+
+export type SelfReportInput = {
+  feelings: string[];
+  mood_score?: number | null;
 };
 
 export type TargetState = {
@@ -63,6 +70,7 @@ export type ReflectionRecord = {
     eligible_for_ope: boolean;
   };
   model_run?: PreparedAnalysis["model_run"] | null;
+  self_report_input?: SelfReportInput | null;
 };
 
 export type Resource = {
@@ -155,8 +163,13 @@ export type Conversation = {
   locale: string;
   prompt_version: string;
   mode?: "ai" | "guided";
+  /** Luna's suggestion only. */
   feelings?: string[];
   ready_for_action?: boolean;
+  /** What the person reported. Null until they report it. */
+  reported_mood?: number | null;
+  confirmed_feelings?: string[] | null;
+  revision?: number;
 };
 
 export type ConversationDetail = {

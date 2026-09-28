@@ -45,6 +45,10 @@ export const GOALS: GoalOption[] = [
   { id: "act", label: "Take one small step", emoji: "👣", phrase: "take one small step" },
 ];
 
+export function moodByScore(score: number | null | undefined): Mood | undefined {
+  return MOODS.find((item) => item.score === score);
+}
+
 export function feelingById(id: string): Feeling | undefined {
   return FEELINGS.find((item) => item.id === id);
 }
@@ -57,10 +61,13 @@ function round(value: number) {
   return Math.round(value * 100) / 100;
 }
 
+export const DERIVATION = "feeling-buttons-v1";
+
 /**
- * The person's own report, built from the feelings they tapped and, if they chose one,
- * the mood face they started with. The mood face anchors valence because it is the most
- * direct answer to "how are you?".
+ * A derived state built from the feelings the person tapped and, if they chose one, the
+ * mood face they started with. The mood face anchors valence because it is the most
+ * direct answer to "how are you?". Must match src/journalpulse/self_report.py. No
+ * confidence is claimed: nobody measured how sure the person was.
  */
 export function selfReport(feelingIds: string[], moodValence: number | null): AffectiveState {
   const chosen = feelingIds.map(feelingById).filter((item): item is Feeling => Boolean(item));
@@ -70,8 +77,9 @@ export function selfReport(feelingIds: string[], moodValence: number | null): Af
       arousal: 0.5,
       agency: 0.5,
       emotion_tags: [],
-      confidence: moodValence === null ? 0.1 : 0.35,
-      uncertainty: "Only an overall mood was reported.",
+      confidence: null,
+      uncertainty: moodValence === null ? "No feelings were reported." : "Only an overall mood was reported.",
+      derivation: DERIVATION,
     };
   }
   const average = (key: "valence" | "arousal" | "agency") =>
@@ -83,8 +91,9 @@ export function selfReport(feelingIds: string[], moodValence: number | null): Af
     arousal: round(clamp(average("arousal"), 0, 1)),
     agency: round(clamp(average("agency"), 0, 1)),
     emotion_tags: chosen.map((item) => item.id).slice(0, 6),
-    confidence: round(Math.min(0.5 + chosen.length * 0.1, 0.8)),
-    uncertainty: "Reported with feeling buttons in chat.",
+    confidence: null,
+    uncertainty: "Derived from the feeling buttons the person chose.",
+    derivation: DERIVATION,
   };
 }
 

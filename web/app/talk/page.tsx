@@ -7,7 +7,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { ActionTimer } from "@/components/action-timer";
 import { Luna, type LunaMood } from "@/components/luna";
 import { Icon } from "@/components/nav-icon";
-import { apiRequest } from "@/lib/api";
+import { ApiError, apiRequest } from "@/lib/api";
 import {
   chatStage,
   readOpenConversationId,
@@ -23,6 +23,7 @@ import {
   actionEmoji,
   actionTone,
   goalSentence,
+  moodByScore,
   selfReport,
 } from "@/lib/feelings";
 import { usePreferences } from "@/lib/preferences";
@@ -41,6 +42,7 @@ const CHAT_TIMEOUT_MS = 60_000;
 const THINKING_LINES = ["Luna is thinking…", "Mulling it over…", "Finding the right words…"];
 
 type Busy = "send" | "accept" | "close" | null;
+type Outgoing = { text: string; goal?: GoalOption["id"]; moodScore?: number; feelings?: string[] };
 
 function ChatWorkspace() {
   const router = useRouter();
@@ -53,7 +55,8 @@ function ChatWorkspace() {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
-  const [retryText, setRetryText] = useState<{ text: string; goal?: GoalOption["id"] } | null>(null);
+  const [retryText, setRetryText] = useState<Outgoing | null>(null);
+  const [ended, setEnded] = useState(false);
   const [step, setStep] = useState<"feelings" | "goal" | null>(null);
   const [feelings, setFeelings] = useState<string[]>([]);
   const [moodValence, setMoodValence] = useState<number | null>(null);
@@ -89,10 +92,8 @@ function ChatWorkspace() {
         }
         loadedId.current = detail.conversation.id;
         writeOpenConversationId(window.localStorage, detail.conversation.id);
-        setConversation(detail.conversation);
+        applyServerState(detail.conversation);
         setMessages(detail.messages);
-        setFeelings(detail.conversation.feelings ?? []);
-        if (detail.conversation.card) setSelectedAction(detail.conversation.card.decision_preview.action_id);
       })
       .catch(() => {
         if (!cancelled) writeOpenConversationId(window.localStorage, null);
@@ -147,6 +148,30 @@ function ChatWorkspace() {
     [router, searchParams],
   );
 
+  /** Take the person's own report from the server, never Luna's suggestion, after a reload. */
+  function applyServerState(next: Conversation) {
+    setConversation(next);
+    if (next.confirmed_feelings) setFeelings(next.confirmed_feelings);
+    const mood = moodByScore(next.reported_mood);
+    if (mood) setMoodValence(mood.valence);
+    if (next.card) setSelectedAction(next.card.decision_preview.action_id);
+  }
+
+  async function refreshConversation(id: string) {
+    try {
+      const detail = await apiRequest<ConversationDetail>(`/v1/conversations/${id}`);
+      if (detail.conversation.status !== "open") {
+        writeOpenConversationId(window.localStorage, null);
+        setEnded(true);
+      }
+      applyServerState(detail.conversation);
+      setMessages(detail.messages);
+    } catch {
+      writeOpenConversationId(window.localStorage, null);
+      setEnded(true);
+    }
+  }
+
   async function ensureConversation(): Promise<Conversation> {
     if (conversation && conversation.status === "open") return conversation;
     const created = await apiRequest<Conversation>("/v1/conversations", {
@@ -165,32 +190,45 @@ function ChatWorkspace() {
     return created;
   }
 
-  async function send(text: string, goal?: GoalOption["id"]) {
-    const trimmed = text.trim();
+  async function send(outgoing: Outgoing) {
+    const trimmed = outgoing.text.trim();
     if (!trimmed || busy) return;
     setBusy("send");
     setError(null);
     setRetryText(null);
     const messageId = pendingMessageId.current ?? crypto.randomUUID();
     pendingMessageId.current = messageId;
+    let active: Conversation | null = null;
     try {
-      const active = await ensureConversation();
+      active = await ensureConversation();
       const turn = await apiRequest<ConversationTurn>(`/v1/conversations/${active.id}/messages`, {
         method: "POST",
         retry: true,
         timeoutMs: CHAT_TIMEOUT_MS,
-        body: JSON.stringify({ client_message_id: messageId, text: trimmed, ...(goal ? { goal } : {}) }),
+        body: JSON.stringify({
+          client_message_id: messageId,
+          text: trimmed,
+          ...(outgoing.goal ? { goal: outgoing.goal, confirmed_feelings: outgoing.feelings ?? [] } : {}),
+          ...(outgoing.moodScore ? { mood_score: outgoing.moodScore } : {}),
+        }),
       });
       pendingMessageId.current = null;
       setDraft("");
       setMessages((current) => [...current, turn.user_message, turn.assistant_message]);
       remember(turn.conversation);
-      if (turn.conversation.card) setSelectedAction(turn.conversation.card.decision_preview.action_id);
+      applyServerState(turn.conversation);
       setAnswering(true);
       window.setTimeout(() => setAnswering(false), 2600);
     } catch (reason) {
-      setRetryText({ text: trimmed, goal });
-      setError(reason instanceof Error ? reason.message : "Luna couldn’t reply just now.");
+      const message = reason instanceof Error ? reason.message : "Luna couldn’t reply just now.";
+      if (reason instanceof ApiError && (reason.status === 409 || reason.status === 404) && active) {
+        // The chat moved on elsewhere (closed, deleted, or another reply landed first).
+        // Nothing from this turn was saved; show the server's current state.
+        pendingMessageId.current = null;
+        await refreshConversation(active.id);
+      }
+      setRetryText(outgoing);
+      setError(message);
     } finally {
       setBusy(null);
     }
@@ -198,11 +236,13 @@ function ChatWorkspace() {
 
   function tapMood(choice: Mood) {
     setMoodValence(choice.valence);
-    void send(choice.sentence);
+    void send({ text: choice.sentence, moodScore: choice.score });
   }
 
   function startCheck() {
-    setFeelings(conversation?.feelings?.length ? conversation.feelings : feelings);
+    // Keep what the person already confirmed; only suggest Luna's guess the first time.
+    if (conversation?.confirmed_feelings) setFeelings(conversation.confirmed_feelings);
+    else if (conversation?.feelings?.length) setFeelings(conversation.feelings);
     setStep("feelings");
   }
 
@@ -214,7 +254,7 @@ function ChatWorkspace() {
 
   function chooseGoal(goal: GoalOption) {
     setStep(null);
-    void send(goalSentence(feelings, goal), goal.id);
+    void send({ text: goalSentence(feelings, goal), goal: goal.id, feelings });
   }
 
   async function accept() {
@@ -245,9 +285,18 @@ function ChatWorkspace() {
       setSaved({ record, resource });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Your choice wasn’t saved. Please try again.");
+      if (reason instanceof ApiError && (reason.status === 409 || reason.status === 404)) {
+        acceptRequestId.current = "";
+        await refreshConversation(conversation.id);
+      }
     } finally {
       setBusy(null);
     }
+  }
+
+  function startOver() {
+    writeOpenConversationId(window.localStorage, null);
+    window.location.assign("/talk");
   }
 
   async function endConversation(remove: boolean) {
@@ -478,8 +527,10 @@ function ChatWorkspace() {
         {error && (
           <div className="chat-panel">
             <p className="note error" role="alert">{error}</p>
-            {retryText && (
-              <button className="btn btn-soft" type="button" onClick={() => void send(retryText.text, retryText.goal)}>Try again</button>
+            {ended ? (
+              <button className="btn btn-primary" type="button" onClick={startOver}>Start a new chat</button>
+            ) : retryText && (
+              <button className="btn btn-soft" type="button" onClick={() => void send(retryText)}>Try again</button>
             )}
           </div>
         )}
@@ -490,7 +541,7 @@ function ChatWorkspace() {
           className="composer"
           onSubmit={(event) => {
             event.preventDefault();
-            void send(draft);
+            void send({ text: draft });
           }}
         >
           <label className="sr-only" htmlFor="chat-input">Message Luna</label>
@@ -505,7 +556,7 @@ function ChatWorkspace() {
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
-                void send(draft);
+                void send({ text: draft });
               }
             }}
           />
