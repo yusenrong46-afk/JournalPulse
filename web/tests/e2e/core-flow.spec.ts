@@ -225,7 +225,8 @@ test("a reply to a chat that closed elsewhere is not shown as saved", async ({ p
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.locator("p[role=alert]")).toHaveText("This conversation is closed.");
   await expect(page.getByRole("button", { name: "Start a new chat" })).toBeVisible();
-  await expect(page.getByText("Are you still there?")).toHaveCount(0);
+  await expect(page.locator(".msg .bubble", { hasText: "Are you still there?" })).toHaveCount(0);
+  await expect(page.getByLabel("Message Luna")).toHaveValue("Are you still there?");
 });
 
 test("support mode puts people first and hides the chat box", async ({ page }) => {
