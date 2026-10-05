@@ -240,7 +240,8 @@ test("a chat goes from a mood tap to one saved small step", async ({ page }) => 
   await page.getByRole("button", { name: "That’s it" }).click();
   await page.getByRole("button", { name: /Calm down/ }).click();
 
-  expect(turns.at(-1)).toMatchObject({
+  // The click returns before the stubbed request is recorded; wait for it.
+  await expect.poll(() => turns.at(-1)).toMatchObject({
     goal: "settle",
     text: "I'm feeling tired. I'd like to calm down.",
     confirmed_feelings: ["tired"],

@@ -22,6 +22,11 @@ for (const path of ["/", "/talk", "/journal", "/discover", "/journey", "/me", "/
   test(`${path} has no serious automated accessibility violations`, async ({ page }) => {
     await page.goto(path);
     await page.waitForLoadState("networkidle");
+    // Axe samples colours as rendered. Mid-fade text blends with its background, which made
+    // this check flaky; wait for finite entrance animations so the settled design is tested.
+    await page.evaluate(() => Promise.all(document.getAnimations()
+      .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
+      .map((animation) => animation.finished.catch(() => undefined))));
     const results = await new AxeBuilder({ page }).analyze();
     const serious = results.violations.filter((item) => ["serious", "critical"].includes(item.impact ?? ""));
     expect(serious).toEqual([]);
