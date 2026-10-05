@@ -1,0 +1,12 @@
+{
+  "preview": {
+    "host": "journalpulse-preview-yusenrong46-9212s-projects.vercel.app",
+    "deployment_id": "dpl_Ey6QzvQBWwpXaqwyT64N8rhR9d5n",
+    "unchanged": true
+  },
+  "production": {
+    "host": "journalpulse.vercel.app",
+    "deployment_id": "dpl_57Rut4UoR24LsTRjsA7nEpiBQycU",
+    "unchanged": true
+  }
+}

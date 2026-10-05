@@ -1,0 +1,26 @@
+[
+  {
+    "case": "follow_up_resource_context",
+    "resource_a": "Two-minute quiet meditation",
+    "goal_a": "settle",
+    "resource_b": "Fictional assertive communication workbook",
+    "goal_b": "connect",
+    "requests_identical": false,
+    "resource_b_title_in_request": true,
+    "current_activity_state": "completed"
+  },
+  {
+    "case": "empty_feeling_correction",
+    "statuses": [
+      200,
+      200
+    ],
+    "first_feelings": [
+      "anxious"
+    ],
+    "second_model_feelings": [],
+    "second_stored_feelings": [],
+    "actual_guided_parser_exercised": true,
+    "external_calls": 0
+  }
+]

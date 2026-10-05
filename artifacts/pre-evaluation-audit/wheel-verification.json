@@ -1,0 +1,7 @@
+{
+  "wheel": "journalpulse-1.0.0-py3-none-any.whl",
+  "wheel_sha256": "547a79ca7e702f7d4a8a9cf12594b048070292d1dcfcd0d3db59b73cdda65ea1",
+  "skill_sha256": "abb73f69089a8591e5f30f1ac62e4557cd0a62f45d408d8fdf718f1bd4808270",
+  "source_skill_matches_wheel": true,
+  "skill_version": "version: guided-action-2026-10-05.3"
+}

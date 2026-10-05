@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
   await page.route("http://127.0.0.1:8000/**", (route) => route.fulfill({ json: { items: [] } }));
 });
 
-for (const path of ["/", "/talk", "/journey", "/me", "/welcome", "/login", "/check-in"]) {
+for (const path of ["/", "/talk", "/journal", "/discover", "/journey", "/me", "/welcome", "/login", "/check-in"]) {
   test(`${path} has no serious automated accessibility violations`, async ({ page }) => {
     await page.goto(path);
     await page.waitForLoadState("networkidle");

@@ -1,0 +1,638 @@
+--- a/.gitignore
++++ b/.gitignore
+@@ -37,3 +37,5 @@
+ web/test-results-integration/
+ web/playwright-report/
+ web/*.tsbuildinfo
++/build/
++/dist/
+--- a/.vercelignore
++++ b/.vercelignore
+@@ -14,3 +14,16 @@
+ tests
+ docs
+ artifacts
++.github
++.coverage
++build
++dist
++*.egg-info
++assets/evaluation
++web/tests
++web/test-results
++web/test-results-integration
++web/playwright-report
++web/playwright*.config.ts
++web/vitest.config.ts
++web/*.tsbuildinfo
+--- a/README.md
++++ b/README.md
+@@ -1,27 +1,36 @@
+ # JournalPulse
+ 
+-JournalPulse is a calm check-in companion. You talk with **Luna** for a minute, confirm how you feel,
+-pick one small thing to try from a reviewed list, and later tell Luna whether it helped. Over time your
+-Journey shows which small steps help you most.
++JournalPulse is a journaling and reflection companion. You can write, talk with **Luna**, and choose
++a small activity to try. AI chat and the scripted, no-AI mode are separate choices.
+ 
+ Live site: <https://journalpulse.vercel.app>
+ 
+-> JournalPulse is not therapy, diagnosis, treatment, or crisis care. When a message suggests possible
+-> danger, Luna skips the AI and points to people who can help right away (9-8-8 in Canada).
++**Current workspace:** the guided chat–activity–report slice and pre-evaluation audit fixes are local.
++The existing Preview and production serve earlier versions. The new activity migration has not been
++applied to the shared database, and the model-quality release evaluation is incomplete. See the
++[audit and readiness report](docs/PRE_EVALUATION_AUDIT_2026-10-05.md) before evaluating or deploying.
++
++> JournalPulse is not therapy, diagnosis, treatment, or crisis care. A limited phrase check routes
++> certain explicit risk statements to human support (9-8-8 in Canada). It can miss distress.
+ 
+ ## How it works
+ 
+-1. **Talk.** Luna asks how you're arriving. Tap a mood face or type.
+-2. **Check the feeling.** Luna suggests up to three feelings; you keep, remove, or add your own.
+-3. **Choose what would help.** *Calm down*, *Get some energy back*, *Make sense of it*, *Feel less
+-   alone*, or *Take one small step*.
+-4. **Try one small thing.** Three options from the reviewed catalog, with Luna's pick first. An
+-   optional timer helps you give it a fair go.
+-5. **Check in.** Later, Home asks "Did it help?" with five faces. Each check-in grows a plant in your
+-   Journey garden.
++1. **Write or talk.** A chat can use one explicitly selected journal entry. Unlinked chats cannot
++   read the full journal collection.
++2. **Reflect.** Luna can acknowledge, ask a useful question, or propose an optional activity. You can
++   correct its interpretation, negotiate the suggestion, choose **Just talk**, or stop.
++3. **Choose whether to try it.** The current candidate keeps approved activities inside chat. Only
++   your explicit start begins the activity; the server owns its timer and state.
++4. **Find another resource.** With separate consent, Brave searches general activity words. Results
++   are based on snippets; full pages and their claims are not independently verified. Saving a
++   returned activity is a separate choice from opening its link.
++5. **Report honestly.** The candidate saves whether you tried the activity and any reported change
++   before generating Luna's follow-up. Its inline reports currently stay in chat; Home/Journey
++   still display the legacy check-in flow and do not yet combine both kinds of outcome.
+ 
+ With AI allowed, Luna's replies come from `openai/gpt-6-luna` through OpenRouter with zero data
+-retention. Without AI, a scripted Luna asks the same questions, so the app never dead-ends.
++retention routing. Without AI, a scripted flow supports the existing feelings, goal, catalog and
++check-in steps. It does not provide the AI candidate's conversational capabilities.
+ 
+ ## Screens
+ 
+@@ -45,20 +54,24 @@
+   SAFE -->|support| HUMAN["Human support resources"]
+   SAFE -->|normal + AI allowed| LLM["Luna on OpenRouter (ZDR)"]
+   SAFE -->|normal, no AI| GUIDED["Scripted Luna"]
+-  LLM --> GOAL["Chosen goal"]
+-  GUIDED --> GOAL
+-  GOAL --> CATALOG["Reviewed catalog: three options"]
+-  CATALOG --> POLICY["Fixed baseline pick + your choice"]
+-  POLICY --> DB["Supabase (RLS)"]
+-  DB --> OUTCOME["Check-in"]
++  LLM --> VALIDATE["Server validates structured activity choice"]
++  VALIDATE --> CATALOG["Built-in / reviewed catalog"]
++  VALIDATE -->|separate consent| SEARCH["Brave snippets + Luna selection"]
++  CATALOG --> START["User starts activity"]
++  SEARCH -->|signed save| START
++  START --> DB["Supabase: owner-bound state, timer, report"]
++  DB --> LLM
++  GUIDED --> LEGACY["Feelings, goal, fixed catalog pick, legacy check-in"]
+ ```
+ 
+ - **Frontend:** Next.js 16, React 19, TypeScript, exported as static files.
+ - **Backend:** FastAPI on Python 3.12. The same app serves the API and, in production, the static site.
+ - **Data:** Supabase Auth (email magic link) and Postgres with row-level security. Local development uses
+   SQLite.
+-- **AI:** OpenRouter with a strict JSON schema and zero-data-retention routing. The model never picks
+-  links; every action comes from `assets/resources/catalog.json`.
++- **AI:** OpenRouter with strict response schemas and zero-data-retention routing. The server checks
++  resource IDs and constraints; search selections must refer to actual retrieved candidates.
++- **NLP:** explicit phrase safety rules, structured model output and deterministic policy checks.
++  There is no newly trained custom NLP model in this slice; research flags remain off.
+ 
+ Details are in [the architecture document](docs/ARCHITECTURE.md).
+ 
+@@ -126,13 +139,18 @@
+ 
+ ## Deploy
+ 
++The commands below describe the hosting setup. They do not waive the candidate's evaluation and
++migration gates. Freeze and verify the current source before a release; old benchmark artifacts
++describe older prompts and are not proof that the audited candidate passes.
++
+ **Vercel (current production).** `vercel.json`, `app.py`, and `scripts/build_vercel_web.py` build the
+ site into `web-dist/` and run FastAPI as one function. Set the server variables above on the Vercel
+ project, then run `vercel deploy --prod`. After the first deploy, add the Vercel URL to Supabase under
+ **Authentication → URL configuration** (Site URL and `https://<your-domain>/**` as a redirect URL).
+ 
+ **Render (alternative).** `render.yaml` defines a free Docker web service from `Dockerfile.api`. Create
+-a Blueprint from this repository and paste `JOURNALPULSE_LLM_API_KEY` and `SUPABASE_ANON_KEY` when asked.
++a Blueprint from this repository and supply `JOURNALPULSE_LLM_API_KEY`, `SUPABASE_ANON_KEY`, and
++`JOURNALPULSE_WRITE_SIGNING_KEY` through its secret fields. Use the same signing key stored in the database.
+ 
+ Apply `supabase/migrations/` in filename order and store the signing key in the database and on the
+ host before deploying. The full sequence is in the [operations runbook](docs/OPERATIONS.md).
+--- a/docs/LUNA_GUIDED_ACTION_IMPLEMENTATION.md
++++ b/docs/LUNA_GUIDED_ACTION_IMPLEMENTATION.md
+@@ -7,6 +7,14 @@
+ agent checks are recorded separately. The existing Preview remains unchanged and the new migration has not
+ been applied to the shared database. See the [search-contract fix](LUNA_SEARCH_CONTRACT_FIX.md),
+ original [release evidence](LUNA_GUIDED_ACTION_RELEASE.md) and comparison report.
++
++The subsequent local audit advances the current runtime to `.3`. Outcome requests
++include the actual selected activity, saved goal, and configured duration as
++bounded user data; an empty current feeling list clears prior inferred labels;
++unknown catalog audio/video capabilities no longer satisfy hard preferences;
++and bare unsafe-feeling statements reach the existing safety route. Local
++synthetic regressions cover these corrections. The retained live model comparison
++describes `.2`; it does not validate the changed `.3` prompt/context assembly.
+ 
+ ## What changed
+ 
+@@ -65,8 +73,8 @@
+ Model-run metadata records its version and content hash; a Markdown file in
+ excluded documentation alone would have no runtime effect.
+ 
+-- Current version: `guided-action-2026-10-05.2`.
+-- Current SHA256: `6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49`.
++- Current version: `guided-action-2026-10-05.3`.
++- Current SHA256: `abb73f69089a8591e5f30f1ac62e4557cd0a62f45d408d8fdf718f1bd4808270`.
+ - Research reviews: [reflection evidence](research/REFLECTION_EVIDENCE_2026-10-05.md)
+   and [chat–action evidence](research/CHAT_ACTION_EVIDENCE_2026-10-05.md).
+ 
+--- a/docs/LUNA_SEARCH_CONTRACT_FIX.md
++++ b/docs/LUNA_SEARCH_CONTRACT_FIX.md
+@@ -4,6 +4,15 @@
+ and provider checks verify the fix. The formal release evaluation remains
+ incomplete because of evaluator rate limits; the Preview has not been updated.
+ The failed original v2 result is preserved.
++
++Subsequent local audit fixes advance the current packaged skill and prompt to
++`guided-action-2026-10-05.3`: outcome requests now include the actual selected
++activity, saved goal, and configured duration as bounded untrusted data. The audit
++also corrected bare unsafe-feeling routing, stale inferred feelings, and catalog
++format constraints. These changes have local synthetic regression evidence;
++the live model observations and comparisons below describe `.2` and do not
++validate the current `.3` assembly. No new paid evaluation or product deployment
++was performed for this audit.
+ 
+ ## Before and after
+ 
+@@ -23,7 +32,7 @@
+ phrases are still rejected before search. A proposal still requires the person's
+ explicit consent before the application contacts Brave.
+ 
+-The packaged skill and prompt are version `guided-action-2026-10-05.2`.
++The evaluated packaged skill and prompt were version `guided-action-2026-10-05.2`.
+ 
+ ## Verification
+ 
+--- a/docs/OPERATIONS.md
++++ b/docs/OPERATIONS.md
+@@ -13,6 +13,7 @@
+   | `configuration` | `ready`, or `not_ready:<issues>` (for example `signing_key_missing`) |
+   | `resources` | `ready`, or `not_ready:<error>` |
+   | `llm` | `configured:not_probed`, `not_configured`, or `disabled`. `/ready` never spends a model call |
++  | `web` | When `JOURNALPULSE_WEB_DIST` is set: `ready` or `not_ready:export_missing`. An index page is required; API-only deployments omit this check |
+   | `database` | `reachable`, `unreachable`, `error:<status>`, or `local_sqlite` |
+   | `schema` | `schema_ready`, `schema_missing`, or `schema_outdated:<version>` |
+   | `signing` | `valid`, `invalid` (the API and database keys differ), `missing` (none in the database), or `not_configured` (none in the API) |
+@@ -23,6 +24,8 @@
+   | `retention_overdue` | `true`, `false`, or `unknown`; 30-minute threshold |
+ 
+   The database probe is cached for 30 seconds per instance.
++- Production CORS accepts explicit HTTPS origins, with an optional port. Wildcards,
++  credentials, paths, query strings, fragments, and loopback origins fail readiness.
+ - Every response carries `X-Request-ID`. Logs hold method, path, status, latency, and that ID, never
+   request bodies, authorization headers, keys, or journal text.
+ 
+@@ -47,7 +50,8 @@
+    - **Vercel (production):** also set `JOURNALPULSE_WEB_DIST=web-dist`, then `vercel deploy --prod`.
+      The build runs `scripts/build_vercel_web.py`, which exports the site with the Supabase values baked
+      in.
+-   - **Render (alternative):** create a Blueprint from `render.yaml`; it asks for the secret values.
++   - **Render (alternative):** create a Blueprint from `render.yaml`; it asks for the model key,
++     public Supabase anon key, and signing key. The signing key must match `private.server_secrets`.
+      `Dockerfile.api` builds the site and serves it from FastAPI.
+ 7. In Supabase, under **Authentication → URL configuration**, set the Site URL to the public address and
+    add `https://<address>/**` as a redirect URL. Without this, sign-in links return to localhost.
+--- /dev/null
++++ b/docs/PRE_EVALUATION_AUDIT_2026-10-05.md
+@@ -0,0 +1,167 @@
++# JournalPulse pre-evaluation audit
++
++October 5, 2026 · America/Halifax · current workspace, not a new deployment
++
++**Verdict:** the audited candidate passes the local software checks. Several material
++bugs were repaired. The upgraded product is **not yet ready for release sign-off**:
++its model-quality evaluation is incomplete, and the existing Preview still serves
++the earlier product. Manual evaluation of that Preview will not exercise these fixes.
++
++Start with [the audit-only code changes](../artifacts/pre-evaluation-audit/changes.html)
++or the [combined patch](../artifacts/pre-evaluation-audit/audit-only.patch). The
++[historical response comparison](../artifacts/pre-evaluation-audit/audit-corrected-prior-response-comparison.html)
++contains previously captured responses with corrected evidence checks; it is **not**
++a fresh run of the updated prompt.
++
++## Scope and method
++
++Reviewed frontend flows, API contracts, SQLite and PostgreSQL behavior, ownership
++and deletion, authentication, timers and retries, model requests and output
++validation, journal context, search consent and resource constraints, safety
++routing, evaluation methodology, dependencies, packaging, CI and deployment
++configuration. Parallel reviewers reproduced defects, added focused regressions,
++and checked fixes before the combined application tests.
++
++The starting workspace already contained substantial uncommitted work. A 236-file
++source snapshot and hashes preserve that starting point. The linked patch contains
++only this audit's changes. Earlier benchmark artifacts and the nine previously
++applied migration files remain unchanged. Only the never-deployed activity migration
++was amended. No deployment, hosted migration, user-data inspection, or paid model/search
++call was made. The cloud-environment-onboarding setup skill guided environment and
++verification practices.
++
++## Before and after
++
++P1 means a material user or evidence-integrity failure; P2 means a narrower reliability,
++configuration, or correctness issue. These are engineering priorities, not clinical
++risk ratings. Every repair below is local until a later verified deployment.
++
++| Area | Before | After |
++| --- | --- | --- |
++| P1: inline search | The browser put constraint fields at the request root; the strict API returned 422 before searching. | Correct nested payload; a real browser/API/database test searches, refines, saves a signed result and starts it. |
++| P1: activity replacement | An unstarted old offer could hide a new recommendation and still start with the old duration. | Changed recommendations withdraw only obsolete unstarted offers. Active sessions remain intact unless explicitly stopped. |
++| P1: explicit safety language | Bare “I don't feel safe” and direct “I will/I'll kill myself/end my life” could enter ordinary chat. | Narrow phrase repairs route these cases to support with zero model calls; matched denials do not cancel separate affirmative risk. |
++| P1: evaluation safety evidence | A successful parser check could stand in for an unobserved critical language judgment. | Accepted critical language requires an observed judgment tied to the actual response. Proven provider refusals remain a separate boundary result. |
++| P2: follow-up recovery | An interrupted worker could leave a saved report displaying “generating” indefinitely. | An expired lease becomes visibly retryable; atomic takeover and the three-attempt bound remain enforced. |
++| P2: follow-up context | Identical reports for different selected activities produced identical model requests. | Bounded context identifies the actual activity, goal and configured duration as untrusted data. It includes no owner IDs, receipts or URLs. |
++| P2: stop parity | A follow-up's explicit pause could hide controls while another SQLite session kept running. | SQLite now stops affected sessions consistently with PostgreSQL. |
++| P2: feeling correction | An empty new feelings list restored the previous inferred label. | Empty suggestions clear stale inferences; explicit user-confirmed feelings remain separate. |
++| P2: resource constraints | A website containing videos could be treated as no-audio/no-video merely because its container was a website. | Unknown capabilities fail hard format constraints; explicit reviewed metadata is required. |
++| P2: preference response | PostgreSQL could return a pre-trigger card or retain an old card after a mode switch. | Preference changes return the committed state and clear outdated cards, matching SQLite. |
++| P2: message-count integrity | Direct owner deletion of individual message rows could reset the stored-turn count. | Authenticated partial-message DELETE is revoked. Supported whole-chat, source and account deletion still work. No cross-owner access was demonstrated. |
++| P2: check-in retry | After a lost save response, edited answers could reuse an old receipt and appear saved while the original answers remained stored. | Ambiguous retries preserve the exact submitted answers and explain the retry; definite validation failures remain editable. |
++| P2: input contracts | Search examples could fail validation; input limits differed from the API; validation arrays became `[object Object]`. | Examples and limits match the API; bounded, readable errors exclude submitted private values. |
++| P2: evaluation gates | Nested statuses were silently ignored; naturalness pooled development and holdout cases; adaptive observations could pass without all judgments. | Strict status contract, complete heldout-only release metrics, and complete observed adaptive pairs plus judgments are required. |
++| P2: judgment identity | Old scores could attach to changed responses sharing a case ID. | Judgments bind the scenario, exact outputs/transcripts and model request identities. Old evidence needs a verified adapter. |
++| P2: readiness | Empty chat models and explicitly missing static exports could report ready; malformed production CORS settings passed validation. | These conditions fail readiness/configuration checks. Legitimate backend-only and local HTTP development remain supported. |
++| P2: packaging/setup | Generated duplicate code and test/evaluation files entered Vercel uploads; Render omitted a required signing-key field. | Upload exclusions retain runtime assets while removing those extras; the Render Blueprint declares the required secret. |
++| Dependencies | Optional research dependencies GitPython 3.1.51 and urllib3 2.7.0 had published advisories. | Targeted lock updates to 3.2.0 and 2.8.0; all other package records unchanged. All 79 locked Python registry packages now report zero advisories in the checked source. |
++| Product documentation | Me and README overstated reviewed-only selection and safety detection, and described only the older flow. | Copy distinguishes AI/guided modes, snippet-only search, limited phrase detection, and local versus hosted versions. |
++
++The activity-context correction advances the packaged prompt/skill to
++`guided-action-2026-10-05.3`. Its SHA-256 is
++`abb73f69089a8591e5f30f1ac62e4557cd0a62f45d408d8fdf718f1bd4808270`.
++The built Python wheel contains these exact skill bytes. Existing live response
++evidence was captured with `.2`, so it cannot establish `.3` language quality.
++
++## Verification
++
++| Check | Result |
++| --- | --- |
++| Full Python suite | **700 passed**; one upstream TestClient deprecation warning |
++| Coverage with branch measurement | **90.83%**, above the 80% CI floor; coverage measures exercised code, not answer quality |
++| Frontend unit tests | **108 passed**, 20 files |
++| Desktop/mobile browser tests | **46 passed**, including 18 automated accessibility checks; no retries or skipped tests |
++| Full browser → FastAPI → PostgREST → PostgreSQL tests | **18 passed**, including inline search and obsolete-offer replacement |
++| PostgreSQL verifier suites | **208 passed assertions/checks** across base schema (100), journals (17), integrity (19) and activities (72) |
++| Static checks | Ruff, mypy, ESLint, TypeScript and generated OpenAPI/type consistency pass |
++| Build and resources | Node 22 production static export, Python wheel, packaged skill identity, and all 35 catalog resources pass |
++| Corrected historical HTML | Chromium checks pass for 60 cases, eight adaptive sections, filters, visible evidence disclaimer, review export and mobile layout |
++| Python dependencies | All 79 locked registry versions queried successfully: zero reported advisories after repair |
++| JavaScript production dependencies | Zero reported advisories in `npm audit --omit=dev` |
++
++The prior recorded backend run had 617 passing tests and 90.67% coverage; the
++frontend audit baseline had 103 unit tests, and the prior integration run had 16.
++These are different source versions, not a claim that a larger test count alone
++proves better quality. The new tests reproduce specific failures.
++
++Integration uses real local PostgreSQL, PostgREST, migrations and the API, with
++named stand-ins for auth token issuance, Luna and Brave. It establishes application
++behavior, not live provider quality. Retention SQL checks use cron metadata
++stand-ins; hosted scheduled-job health was separately observed. Automated
++accessibility checks do not establish full WCAG conformance. The optional research
++app was not run; patched package APIs were smoke-tested in isolation and all-extras
++resolution was checked without changing the project environment.
++
++## Hosted state observed
++
++Read-only checks at **15:25 Halifax / 18:25 UTC** found both existing sites READY,
++with `/health` and `/ready` returning 200. Model status is explicitly
++`configured:not_probed`; no paid generation was performed.
++
++- Preview: `dpl_Ey6QzvQBWwpXaqwyT64N8rhR9d5n`,
++  <https://journalpulse-preview-yusenrong46-9212s-projects.vercel.app>.
++  Retention was scheduled and healthy, with a successful 18:15 UTC run.
++- Production: `dpl_57Rut4UoR24LsTRjsA7nEpiBQycU`,
++  <https://journalpulse.vercel.app>. Its older readiness response lacks the newer
++  retention diagnostics.
++- The shared Supabase project has the older working schema. The candidate activity
++  tables, RPCs and triggers are absent: **the new migration is not applied**.
++
++These observations do not mean the hosted sites contain this audit's fixes.
++
++## Remaining issues and explicit limits
++
++1. **Model evaluation is incomplete and historical.** The `.2` comparison has
++   15/20 judged quality pairs, one accepted critical case without a language
++   judgment, 7/8 baseline and 5/8 candidate adaptive trajectories, and zero fresh
++   adaptive judgments. Partial gains cannot pass the release gate. `.3` needs
++   appropriately frozen, current evidence and a holdout policy that accounts for
++   cases already inspected. A browser test cannot replace the missing judgments.
++2. **No fresh release freeze.** Audit fixes intentionally invalidate the previous
++   candidate/upload hashes. Generate a new source and migration freeze as part of
++   a later release; preserve the old evidence as history.
++3. **Budget reconciliation.** The retained ledger records $22.40 reserved; current
++   attempt rates imply $22.75. The $0.35 difference is inherited from the opening
++   balance. Both are below $25, but the basis needs reconciliation before more paid
++   work. Counts remain Luna 219/600, teacher 171/180 and Brave 2/6. No cap was raised.
++4. **Safety remains a limited English phrase router.** Indirect distress can be
++   missed and quoted/historical risk can be overdetected. The repaired explicit
++   phrases do not create a clinical classifier or establish therapeutic efficacy.
++5. **Outcome history is split.** New inline reports are saved in chat but do not
++   populate the legacy Home/Journey garden. Journal-to-chat context selection and
++   multiple discovery entry points still deserve a focused usability review.
++6. **One unresolved JavaScript development-tool advisory.** `braces` 3.0.3 has a
++   high-severity nested-pattern denial-of-service advisory, GHSA-vfj7-8cjw-p6xm,
++   propagated through five lint-tool dependency records. The registry offers no
++   patched version. This is one root advisory, not five distinct production bugs.
++7. **Operational hardening remains.** Allowed retry/timeout combinations can exceed
++   Vercel's 120-second function limit; an absolute end-to-end request budget needs
++   separate work. The local PostgREST downloader lacks artifact/version verification;
++   the official required x86-64 release asset exposes no checksum. Packaging tools,
++   CI/container tags, network-fetched build fonts, Docker context exclusions and
++   shell signal forwarding also limit reproducibility and need targeted follow-up.
++
++No load/soak test, independent penetration test, fresh paid model/search run,
++live Render deployment, or clinical evaluation is claimed. Dependency scans cover
++published package advisories, not unknown vulnerabilities or the host OS.
++
++## Evaluation handoff
++
++You can review the historical side-by-side responses now, keeping the visible
++version caveat. For hands-on evaluation of the **upgraded** flow, first complete
++the remaining evidence/release work and deploy the verified candidate to Preview.
++Do not treat testing the current older Preview as testing the local fixes.
++
++Once that candidate is available, start with: quiet two-minute activity → change
++to one minute → start/pause/reload → report unchanged/not tried; consented search →
++refine → save → start; Just talk/stop; selected journal then current-state correction;
++lost-response retry; and fictional safety cases. The implementation guide has the
++[full manual checklist](LUNA_GUIDED_ACTION_IMPLEMENTATION.md#easiest-manual-review).
++
++Detailed reviewer evidence is retained under
++`/workspace/journalpulse-planning/pre-evaluation-audit-2026-10-05/`:
++`ai.md`, `resource-safety.md`, `backend.md`, `backend-persistence.md`, `frontend.md`,
++`evaluation.md`, `operations.md`, and `python-dependency-repairs.md`.
++The repository review bundle includes the diffs, hashes, selected logs, dependency
++results and corrected historical comparison in `artifacts/pre-evaluation-audit/`.
+--- a/render.yaml
++++ b/render.yaml
+@@ -29,3 +29,5 @@
+         sync: false
+       - key: SUPABASE_ANON_KEY
+         sync: false
++      - key: JOURNALPULSE_WRITE_SIGNING_KEY
++        sync: false
+--- a/src/journalpulse/api.py
++++ b/src/journalpulse/api.py
+@@ -140,6 +140,15 @@
+         return SQLiteRepository(settings.database_path)
+ 
+     repositories = repository_factory or default_repository_factory
++    # Resolve once so readiness checks the same export that the app will serve.
++    # An unset path deliberately supports API-only development/deployments.
++    web_dist_value = os.getenv("JOURNALPULSE_WEB_DIST", "").strip()
++    web_dist: Path | None = None
++    if web_dist_value:
++        web_dist = Path(web_dist_value).expanduser()
++        if not web_dist.is_absolute():
++            web_dist = PROJECT_ROOT / web_dist
++        web_dist = web_dist.resolve()
+     app = FastAPI(title="JournalPulse Research Beta API", version="1.0.0")
+     app.add_middleware(RequestContextMiddleware, max_request_bytes=settings.max_request_bytes)
+     app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
+@@ -214,16 +223,19 @@
+             checks["resources"] = f"not_ready:{exc.__class__.__name__}"
+         if not settings.llm_feature_enabled:
+             checks["llm"] = "disabled"
+-        elif settings.openrouter_enabled and settings.openrouter_zdr:
++        elif settings.openrouter_enabled and settings.chat_model.strip() and settings.openrouter_zdr:
+             # Configured only; /ready never spends a paid model call.
+             checks["llm"] = "configured:not_probed"
+         else:
+             checks["llm"] = "not_configured"
++        if web_dist is not None:
++            checks["web"] = "ready" if (web_dist / "index.html").is_file() else "not_ready:export_missing"
+         checks.update(database_checks())
+         required_ready = (
+             checks["configuration"] == "ready"
+             and checks["resources"] == "ready"
+             and checks["llm"] != "not_configured"
++            and checks.get("web", "ready") == "ready"
+         )
+         if settings.supabase_enabled:
+             required_ready = (
+@@ -591,14 +603,8 @@
+         clock=clock or (lambda: datetime.now(UTC)),
+     )
+ 
+-    web_dist_value = os.getenv("JOURNALPULSE_WEB_DIST", "").strip()
+-    if web_dist_value:
+-        web_dist = Path(web_dist_value).expanduser()
+-        if not web_dist.is_absolute():
+-            web_dist = PROJECT_ROOT / web_dist
+-        web_dist = web_dist.resolve()
+-        if web_dist.is_dir():
+-            app.mount("/", StaticFiles(directory=web_dist, html=True), name="journalpulse-web")
++    if web_dist is not None and web_dist.is_dir():
++        app.mount("/", StaticFiles(directory=web_dist, html=True), name="journalpulse-web")
+ 
+     return app
+ 
+--- a/src/journalpulse/config.py
++++ b/src/journalpulse/config.py
+@@ -1,9 +1,12 @@
+ from __future__ import annotations
+ 
+ import os
++import re
+ from dataclasses import dataclass
++from ipaddress import ip_address
+ from math import isfinite
+ from pathlib import Path
++from urllib.parse import urlsplit
+ 
+ from dotenv import load_dotenv
+ 
+@@ -54,6 +57,34 @@
+     if platform_origins:
+         return platform_origins
+     return ("http://localhost:3000", "http://127.0.0.1:3000")
++
++
++def _production_origin_valid(origin: str) -> bool:
++    """Production CORS entries are explicit HTTPS origins, not URLs or patterns."""
++    if any(character.isspace() for character in origin) or any(c in origin for c in "\\?#"):
++        return False
++    try:
++        parsed = urlsplit(origin)
++        host = parsed.hostname
++        port = parsed.port
++        if (
++            parsed.scheme != "https" or not host or parsed.username is not None
++            or parsed.password is not None or parsed.path or parsed.query or parsed.fragment
++            or parsed.netloc.endswith(":") or (port is not None and not 1 <= port <= 65535)
++        ):
++            return False
++    except ValueError:
++        return False
++    if host == "localhost" or host.endswith(".localhost"):
++        return False
++    try:
++        address = ip_address(host)
++    except ValueError:
++        return bool(re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", host)) and all(
++            label and len(label) <= 63 and not label.startswith("-") and not label.endswith("-")
++            for label in host.split(".")
++        )
++    return not address.is_loopback and not address.is_unspecified
+ 
+ 
+ @dataclass(frozen=True)
+@@ -118,6 +149,8 @@
+             issues.append("llm_timeout_invalid")
+         if not isfinite(self.chat_timeout_seconds) or self.chat_timeout_seconds <= 0:
+             issues.append("chat_timeout_invalid")
++        if self.llm_feature_enabled and not self.chat_model.strip():
++            issues.append("chat_model_missing")
+         if self.search_feature_enabled and not self.discovery_enabled:
+             issues.append("discovery_missing")
+         if not 1 <= self.search_timeout_seconds <= 20:
+@@ -129,10 +162,7 @@
+                 issues.append("signing_key_missing")
+             if self.llm_feature_enabled and not self.openrouter_enabled:
+                 issues.append("llm_missing")
+-            local_origins = any(
+-                "localhost" in item or "127.0.0.1" in item for item in self.cors_origins
+-            )
+-            if not self.cors_origins or local_origins:
++            if not self.cors_origins or any(not _production_origin_valid(item) for item in self.cors_origins):
+                 issues.append("production_cors_invalid")
+         return issues
+ 
+--- a/tests/test_config.py
++++ b/tests/test_config.py
+@@ -118,6 +118,35 @@
+     assert settings.configuration_issues == []
+ 
+ 
++@pytest.mark.parametrize("origin", [
++    "*", "https://*.example.com", "http://journalpulse.example", "https://localhost",
++    "https://127.0.0.2", "https://[::1]", "https://0.0.0.0", "https://app.localhost",
++    "https://journalpulse.example/path", "https://journalpulse.example?", "https://journalpulse.example#",
++    "https://user:password@journalpulse.example", "https://journalpulse.example:bad",
++    "https://journalpulse.example:70000", "https://journalpulse.example:",
++    "https://journal pulse.example", "https://journalpulse.example\\other",
++])
++def test_production_rejects_unsafe_or_malformed_cors_origins(monkeypatch, tmp_path: Path, origin: str):
++    _ready_production(monkeypatch, tmp_path)
++    monkeypatch.setenv("JOURNALPULSE_CORS_ORIGINS", origin)
++    assert "production_cors_invalid" in config.load_settings().configuration_issues
++
++
++def test_local_development_still_accepts_http_origins(monkeypatch, tmp_path: Path):
++    _ready_production(monkeypatch, tmp_path)
++    monkeypatch.setenv("JOURNALPULSE_ENV", "local")
++    monkeypatch.setenv("JOURNALPULSE_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
++    settings = config.load_settings()
++    assert settings.configuration_issues == []
++    assert settings.cors_origins == ("http://localhost:3000", "http://127.0.0.1:3000")
++
++
++def test_production_accepts_explicit_https_custom_port_origins(monkeypatch, tmp_path: Path):
++    _ready_production(monkeypatch, tmp_path)
++    monkeypatch.setenv("JOURNALPULSE_CORS_ORIGINS", "https://journalpulse.example:8443")
++    assert config.load_settings().configuration_issues == []
++
++
+ @pytest.mark.parametrize("value", [0.0, -1.0, float("nan"), float("inf"), float("-inf")])
+ @pytest.mark.parametrize(
+     ("field", "issue"),
+--- a/tests/test_readiness.py
++++ b/tests/test_readiness.py
+@@ -13,6 +13,11 @@
+     "signing": "valid",
+     "retention_job": "scheduled",
+ }
++
++
++@pytest.fixture(autouse=True)
++def backend_only_unless_explicitly_configured(monkeypatch):
++    monkeypatch.delenv("JOURNALPULSE_WEB_DIST", raising=False)
+ 
+ 
+ def settings(tmp_path: Path, **overrides: object) -> Settings:
+@@ -109,6 +114,52 @@
+     assert response.json()["checks"]["llm"] == "disabled"
+ 
+ 
++@pytest.mark.parametrize("chat_model", ["", "   "])
++def test_missing_chat_model_cannot_report_ai_ready(tmp_path: Path, chat_model: str):
++    response, _ = ready(settings(tmp_path, chat_model=chat_model), READY_DATABASE)
++    assert response.status_code == 503
++    checks = response.json()["checks"]
++    assert checks["configuration"] == "not_ready:chat_model_missing"
++    assert checks["llm"] == "not_configured"
++
++
++def test_disabled_ai_does_not_require_a_chat_model(tmp_path: Path):
++    response, _ = ready(settings(tmp_path, llm_feature_enabled=False, chat_model=""), READY_DATABASE)
++    assert response.status_code == 200
++    assert response.json()["checks"]["llm"] == "disabled"
++
++
++@pytest.mark.parametrize("export_kind", ["missing", "file", "empty_directory"])
++def test_explicit_static_export_must_include_a_homepage(tmp_path: Path, monkeypatch, export_kind: str):
++    export = tmp_path / "web-out"
++    if export_kind == "file":
++        export.write_text("not an export directory")
++    elif export_kind == "empty_directory":
++        export.mkdir()
++    monkeypatch.setenv("JOURNALPULSE_WEB_DIST", str(export))
++    response, _ = ready(settings(tmp_path), READY_DATABASE)
++    assert response.status_code == 503
++    assert response.json()["checks"]["web"] == "not_ready:export_missing"
++
++
++def test_valid_configured_static_export_is_ready_and_served(tmp_path: Path, monkeypatch):
++    export = tmp_path / "web-out"
++    export.mkdir()
++    (export / "index.html").write_text("<h1>JournalPulse</h1>")
++    monkeypatch.setenv("JOURNALPULSE_WEB_DIST", str(export))
++    with TestClient(create_app(settings=settings(tmp_path), database_probe=lambda: READY_DATABASE)) as client:
++        response = client.get("/ready")
++        assert response.status_code == 200
++        assert response.json()["checks"]["web"] == "ready"
++        assert client.get("/").text == "<h1>JournalPulse</h1>"
++
++
++def test_backend_only_deployment_needs_no_static_export(tmp_path: Path):
++    response, _ = ready(settings(tmp_path), READY_DATABASE)
++    assert response.status_code == 200
++    assert "web" not in response.json()["checks"]
++
++
+ def test_local_sqlite_is_labelled_and_needs_no_database_probe(tmp_path: Path):
+     local = settings(
+         tmp_path, environment="local", supabase_url=None, supabase_anon_key=None, cors_origins=()
+--- a/vercel.json
++++ b/vercel.json
+@@ -4,7 +4,7 @@
+     "app.py": {
+       "maxDuration": 120,
+       "includeFiles": "web-dist/**",
+-      "excludeFiles": "{tests/**,web/node_modules/**,web/.next/**,web/out/**,docs/**,.git/**,.venv/**}"
++      "excludeFiles": "{tests/**,web/tests/**,web/test-results/**,web/test-results-integration/**,web/playwright-report/**,web/playwright*.config.ts,web/vitest.config.ts,web/*.tsbuildinfo,web/node_modules/**,web/.next/**,web/out/**,docs/**,artifacts/**,assets/evaluation/**,build/**,dist/**,*.egg-info/**,.github/**,.git/**,.venv/**}"
+     }
+   },
+   "headers": [

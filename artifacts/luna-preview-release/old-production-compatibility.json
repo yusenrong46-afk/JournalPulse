@@ -1,0 +1,10 @@
+{
+  "candidate_sha256": "58b2b5d5d6eed98eacf220643820e50f0bd2178246d1f871a775d3f368140d3f",
+  "clinical_release_approval": false,
+  "deployment_id": "dpl_9xFz5u928LMBgsiJuFQYecw7gV35",
+  "legacy_readiness_ready": true,
+  "owned_disposable_export_parsed": true,
+  "owned_disposable_new_chat_read": true,
+  "production_deployment_id": "dpl_57Rut4UoR24LsTRjsA7nEpiBQycU",
+  "status": "pass"
+}

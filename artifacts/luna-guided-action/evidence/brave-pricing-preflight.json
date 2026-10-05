@@ -1,0 +1,10 @@
+{
+  "source": "https://brave.com/search/api/",
+  "status": "unverified",
+  "reason": "Workspace outbound proxy rejected public pricing URL (403)",
+  "reserved_estimate_per_call_usd": 0.02,
+  "actual_calls": 1,
+  "call_ceiling": 6,
+  "invoice_not_retrieved": true,
+  "limitation": "Search dollar estimate is not a verified advertised or invoiced price; call cap enforced."
+}

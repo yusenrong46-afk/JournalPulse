@@ -1,0 +1,6 @@
+{
+  "issue": "Evaluation runner initially used /v1/journal-entries instead of /v1/journal/entries; HTTP404 before any journal provider call. Fixed runner and resumed remaining cases without replaying completed paid turns.",
+  "follow_up_display": "Session intentionally stores message ID, not duplicate reply. Verified actual saved conversation message and render that.",
+  "first_pass_preserved": "results-first-pass.json",
+  "product_source_changes": false
+}

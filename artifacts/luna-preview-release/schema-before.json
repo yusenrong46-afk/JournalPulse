@@ -1,0 +1,176 @@
+{
+  "aggregate_counts": [
+    {
+      "conversations": 8,
+      "journal_entries": 2,
+      "messages": 80,
+      "reflections": 4
+    }
+  ],
+  "applied_migrations": [],
+  "compatibility_columns": [
+    {
+      "column_name": "id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "table_name": "conversations"
+    },
+    {
+      "column_name": "record",
+      "data_type": "jsonb",
+      "is_nullable": "NO",
+      "table_name": "conversations"
+    },
+    {
+      "column_name": "revision",
+      "data_type": "integer",
+      "is_nullable": "NO",
+      "table_name": "conversations"
+    },
+    {
+      "column_name": "source_entry_created_at",
+      "data_type": "timestamp with time zone",
+      "is_nullable": "YES",
+      "table_name": "conversations"
+    },
+    {
+      "column_name": "source_entry_id",
+      "data_type": "uuid",
+      "is_nullable": "YES",
+      "table_name": "conversations"
+    },
+    {
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "is_nullable": "NO",
+      "table_name": "conversations"
+    },
+    {
+      "column_name": "eligible_for_ope",
+      "data_type": "boolean",
+      "is_nullable": "NO",
+      "table_name": "policy_decisions"
+    },
+    {
+      "column_name": "propensity",
+      "data_type": "double precision",
+      "is_nullable": "NO",
+      "table_name": "policy_decisions"
+    }
+  ],
+  "existing_indexes": [
+    {
+      "indexdef": "CREATE INDEX conversations_journal_source_idx ON public.conversations USING btree (user_id, source_entry_id) WHERE (source_entry_id IS NOT NULL)",
+      "indexname": "conversations_journal_source_idx",
+      "schemaname": "public",
+      "tablename": "conversations"
+    },
+    {
+      "indexdef": "CREATE INDEX conversations_open_updated_idx ON public.conversations USING btree (updated_at) WHERE (status = 'open'::text)",
+      "indexname": "conversations_open_updated_idx",
+      "schemaname": "public",
+      "tablename": "conversations"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX conversations_pkey ON public.conversations USING btree (id)",
+      "indexname": "conversations_pkey",
+      "schemaname": "public",
+      "tablename": "conversations"
+    },
+    {
+      "indexdef": "CREATE INDEX conversations_user_updated_idx ON public.conversations USING btree (user_id, status, updated_at)",
+      "indexname": "conversations_user_updated_idx",
+      "schemaname": "public",
+      "tablename": "conversations"
+    },
+    {
+      "indexdef": "CREATE INDEX journal_entries_owner_created_idx ON public.journal_entries USING btree (user_id, created_at DESC, id DESC)",
+      "indexname": "journal_entries_owner_created_idx",
+      "schemaname": "public",
+      "tablename": "journal_entries"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX journal_entries_pkey ON public.journal_entries USING btree (id)",
+      "indexname": "journal_entries_pkey",
+      "schemaname": "public",
+      "tablename": "journal_entries"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX journal_entries_user_id_id_created_at_key ON public.journal_entries USING btree (user_id, id, created_at)",
+      "indexname": "journal_entries_user_id_id_created_at_key",
+      "schemaname": "public",
+      "tablename": "journal_entries"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX journal_entries_user_id_id_key ON public.journal_entries USING btree (user_id, id)",
+      "indexname": "journal_entries_user_id_id_key",
+      "schemaname": "public",
+      "tablename": "journal_entries"
+    },
+    {
+      "indexdef": "CREATE INDEX decisions_user_created_idx ON public.policy_decisions USING btree (user_id, created_at DESC)",
+      "indexname": "decisions_user_created_idx",
+      "schemaname": "public",
+      "tablename": "policy_decisions"
+    },
+    {
+      "indexdef": "CREATE UNIQUE INDEX policy_decisions_pkey ON public.policy_decisions USING btree (id)",
+      "indexname": "policy_decisions_pkey",
+      "schemaname": "public",
+      "tablename": "policy_decisions"
+    }
+  ],
+  "existing_owner_policies": [
+    {
+      "cmd": "ALL",
+      "policyname": "conversations_owner",
+      "qual": "(auth.uid() = user_id)",
+      "roles": "{public}",
+      "schemaname": "public",
+      "tablename": "conversations",
+      "with_check": "(auth.uid() = user_id)"
+    },
+    {
+      "cmd": "SELECT",
+      "policyname": "journal_entries_owner",
+      "qual": "(auth.uid() = user_id)",
+      "roles": "{public}",
+      "schemaname": "public",
+      "tablename": "journal_entries",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "policyname": "policy_decisions_owner",
+      "qual": "(auth.uid() = user_id)",
+      "roles": "{public}",
+      "schemaname": "public",
+      "tablename": "policy_decisions",
+      "with_check": "(auth.uid() = user_id)"
+    }
+  ],
+  "new_migration_history_present": false,
+  "new_migration_must_not_replay": false,
+  "new_migration_objects_present": false,
+  "retrieved_at": "2026-10-05T20:54:49.855057+00:00",
+  "state": {
+    "activity_owner_index": null,
+    "activity_receipts": null,
+    "activity_sessions": null,
+    "claim_followup_rpc": null,
+    "command_rpc": null,
+    "compatibility_trigger": false,
+    "finish_followup_rpc": null,
+    "integrity_v2": "jp_consume_rate_limit_v2(text,text)",
+    "journal_entries": "journal_entries",
+    "journal_save_rpc": "jp_save_journal_entry(text,text)",
+    "lifecycle_trigger": false,
+    "migration_history": null,
+    "offer_rpc": null,
+    "preference_rpc": "jp_change_preference(text,text)",
+    "readiness_v2": "jp_readiness_v2(text,text)",
+    "readiness_v3": null,
+    "report_rpc": null,
+    "retention_state": "private.retention_state"
+  }
+}

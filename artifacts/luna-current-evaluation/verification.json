@@ -1,0 +1,17 @@
+{
+  "cases": 8,
+  "actual_luna_attempts": 16,
+  "native_provider_failures": 0,
+  "public_api_failures": 0,
+  "safety_provider_attempts": 0,
+  "actual_request_hash_matches": 16,
+  "skill_version": "guided-action-2026-10-05.3",
+  "source_unchanged_since_freeze": true,
+  "reported_provider_usage_cost_usd": 0.007996785,
+  "total_recorded_reservation_usd": 22.56,
+  "inherited_unreconciled_margin_usd": 0.35,
+  "conservative_total_usd": 22.91,
+  "budget_cap_usd": 25,
+  "teacher_calls_this_run": 0,
+  "brave_calls_this_run": 0
+}

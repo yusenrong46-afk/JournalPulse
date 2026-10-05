@@ -2,15 +2,21 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class SafetyMode(StrEnum):
     NORMAL = "normal"
     SUPPORT = "support"
+
+
+class GenerationErrorResponse(BaseModel):
+    """422 can carry a provider-decline message or FastAPI input-validation details."""
+
+    detail: str | list[dict[str, Any]]
 
 
 class SelectionSource(StrEnum):
@@ -67,7 +73,7 @@ class SafetyResult(BaseModel):
 class PolicyDecision(BaseModel):
     decision_id: UUID = Field(default_factory=uuid4)
     action_id: str
-    propensity: float = Field(gt=0.0, le=1.0)
+    propensity: float | None = Field(default=None, gt=0.0, le=1.0)
     policy_name: str
     policy_version: str
     safe_action_ids: list[str]
@@ -76,6 +82,13 @@ class PolicyDecision(BaseModel):
     recommended_action_id: str | None = None
     selection_source: SelectionSource = SelectionSource.POLICY
     eligible_for_ope: bool = True
+
+    @model_validator(mode="after")
+    def measured_propensity_for_ope(self) -> PolicyDecision:
+        # Model and negotiated choices have no measured selection probability.
+        if self.eligible_for_ope and self.propensity is None:
+            raise ValueError("OPE-eligible decisions need a measured propensity")
+        return self
 
 
 class ReflectionCopy(BaseModel):
@@ -94,6 +107,8 @@ class ModelRun(BaseModel):
     used_fallback: bool = False
     fallback_reason: str | None = None
     prompt_version: str | None = None
+    skill_version: str | None = Field(default=None, max_length=80)
+    skill_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
 
 class ReflectionRecord(BaseModel):
@@ -231,6 +246,14 @@ class MessageRole(StrEnum):
     ASSISTANT = "assistant"
 
 
+class ConversationRequestInputs(BaseModel):
+    """Explicit taps accompanying a turn; no text or text digest is retained here."""
+
+    goal: Goal | None = None
+    mood_score: int | None = Field(default=None, ge=1, le=5)
+    confirmed_feelings: list[str] | None = Field(default=None, max_length=6)
+
+
 class ConversationMessage(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     conversation_id: UUID
@@ -240,6 +263,9 @@ class ConversationMessage(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     safety_mode: SafetyMode
     model_run: ModelRun | None = None
+    # Older messages lack this snapshot. New retries can verify each reported input
+    # without guessing from a conversation's later mood, goal, or preference state.
+    request_inputs: ConversationRequestInputs | None = None
 
 
 class ActionCard(BaseModel):
@@ -251,6 +277,35 @@ class ActionCard(BaseModel):
     goal: Goal | None = None
 
 
+class ActivityConstraintInputs(BaseModel):
+    """Correctable activity limits; no free-form private text enters search context."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    time_minutes: int | None = Field(default=None, ge=1, le=20)
+    no_audio: bool = False
+    no_video: bool = False
+    seated: bool = False
+    avoid_breath_focus: bool = False
+
+
+class ActivityFollowUpDirective(BaseModel):
+    """A validated next proposal committed with the report reply, never started automatically."""
+
+    card: ActionCard | None = None
+    constraints: ActivityConstraintInputs | None = None
+    goal: Goal | None = None
+    search_topic: str | None = Field(default=None, max_length=160)
+    move: Literal["reflect", "clarify", "propose", "negotiate", "outcome", "pause"] = "outcome"
+
+
+class InteractionPreference(StrEnum):
+    """An explicit choice for this chat, independent of AI/guided provider mode."""
+
+    AUTO = "auto"
+    LISTEN = "listen"
+    ACT = "act"
+
+
 class Conversation(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     user_id: UUID
@@ -258,11 +313,17 @@ class Conversation(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     status: ConversationStatus = ConversationStatus.OPEN
     llm_consent: bool
+    # One entry explicitly selected by the person; its text stays in the journal.
+    source_entry_id: UUID | None = None
+    source_entry_created_at: datetime | None = None
     retain_text: bool = False
     safety_mode: SafetyMode = SafetyMode.NORMAL
     summary: str | None = Field(default=None, max_length=420)
     card: ActionCard | None = None
     safety: SafetyResult | None = None
+    # Old production ignores this additive field and retains its legacy card
+    # schema, which requires a measured selection propensity.
+    activity_card: ActionCard | None = None
     reflection_id: UUID | None = None
     locale: str = Field(min_length=2, max_length=8)
     prompt_version: str = Field(min_length=1, max_length=80)
@@ -271,6 +332,11 @@ class Conversation(BaseModel):
     # as the person's report.
     feelings: list[str] = Field(default_factory=list, max_length=3)
     ready_for_action: bool = False
+    activity_constraints: ActivityConstraintInputs = Field(default_factory=ActivityConstraintInputs)
+    activity_goal: Goal | None = None
+    activity_search_topic: str | None = Field(default=None, max_length=160)
+    activity_move: Literal["reflect", "clarify", "propose", "negotiate", "outcome", "pause"] = "reflect"
+    interaction_preference: InteractionPreference = InteractionPreference.AUTO
     # What the person reported: the opening mood face and the feelings they confirmed.
     # None means not reported yet; an empty list means they confirmed "not sure".
     reported_mood: int | None = Field(default=None, ge=1, le=5)
@@ -281,6 +347,7 @@ class Conversation(BaseModel):
 
 class StartConversationRequest(BaseModel):
     client_request_id: UUID | None = None
+    source_entry_id: UUID | None = None
     llm_consent: bool = False
     retain_text: bool = False
     locale: str = Field(default="CA", min_length=2, max_length=8)
@@ -315,9 +382,17 @@ class ConversationTurnRequest(BaseModel):
         return value
 
 
+class ChangeConversationPreferenceRequest(BaseModel):
+    client_request_id: UUID
+    expected_revision: int = Field(ge=0)
+    preference: Literal["listen", "act"]
+
+
 class AcceptConversationRequest(BaseModel):
     client_request_id: UUID | None = None
     action_id: str = Field(min_length=1, max_length=120)
+    # Required after explicit preference changes; optional for legacy automatic chats.
+    expected_revision: int | None = Field(default=None, ge=0)
     # Only used when the conversation holds no confirmed feelings (older clients).
     # Otherwise the server derives the state from what the person confirmed.
     self_report: AffectiveState | None = None

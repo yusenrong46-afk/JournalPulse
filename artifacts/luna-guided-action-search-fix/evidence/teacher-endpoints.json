@@ -1,0 +1,143 @@
+{
+  "url": "https://openrouter.ai/api/v1/models/openai/gpt-6.1-sol/endpoints",
+  "http_status": 200,
+  "endpoints": [
+    {
+      "provider_name": "OpenAI",
+      "name": "OpenAI | openai/gpt-6.1-sol-20260929",
+      "tag": "openai/flex",
+      "status": -2,
+      "uptime_last_30m": 85.76429404900817,
+      "quantization": "unknown",
+      "supported_parameters": [
+        "reasoning",
+        "include_reasoning",
+        "seed",
+        "max_tokens",
+        "response_format",
+        "structured_outputs",
+        "tools",
+        "tool_choice",
+        "verbosity",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "provider_name": "Azure",
+      "name": "Azure | openai/gpt-6.1-sol-20260929",
+      "tag": "azure",
+      "status": 0,
+      "uptime_last_30m": 99.99081894968785,
+      "quantization": "unknown",
+      "supported_parameters": [
+        "reasoning",
+        "include_reasoning",
+        "max_completion_tokens",
+        "tools",
+        "tool_choice",
+        "verbosity",
+        "response_format",
+        "seed",
+        "structured_outputs",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "provider_name": "OpenAI",
+      "name": "OpenAI | openai/gpt-6.1-sol-20260929",
+      "tag": "openai",
+      "status": 0,
+      "uptime_last_30m": 99.9842893894464,
+      "quantization": "unknown",
+      "supported_parameters": [
+        "reasoning",
+        "include_reasoning",
+        "seed",
+        "max_tokens",
+        "response_format",
+        "structured_outputs",
+        "tools",
+        "tool_choice",
+        "verbosity",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "provider_name": "Amazon Bedrock",
+      "name": "Amazon Bedrock | openai/gpt-6.1-sol-20260929",
+      "tag": "amazon-bedrock/us-east-1",
+      "status": 0,
+      "uptime_last_30m": null,
+      "quantization": "unknown",
+      "supported_parameters": [
+        "reasoning",
+        "include_reasoning",
+        "max_tokens",
+        "tools",
+        "tool_choice",
+        "verbosity",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "provider_name": "Azure",
+      "name": "Azure | openai/gpt-6.1-sol-20260929",
+      "tag": "azure/eu",
+      "status": 0,
+      "uptime_last_30m": 100,
+      "quantization": "unknown",
+      "supported_parameters": [
+        "reasoning",
+        "include_reasoning",
+        "max_completion_tokens",
+        "tools",
+        "tool_choice",
+        "verbosity",
+        "response_format",
+        "seed",
+        "structured_outputs",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "provider_name": "Azure",
+      "name": "Azure | openai/gpt-6.1-sol-20260929",
+      "tag": "azure/us",
+      "status": 0,
+      "uptime_last_30m": 100,
+      "quantization": "unknown",
+      "supported_parameters": [
+        "reasoning",
+        "include_reasoning",
+        "max_completion_tokens",
+        "tools",
+        "tool_choice",
+        "verbosity",
+        "response_format",
+        "seed",
+        "structured_outputs",
+        "reasoning_effort"
+      ]
+    },
+    {
+      "provider_name": "OpenAI",
+      "name": "OpenAI | openai/gpt-6.1-sol-20260929",
+      "tag": "openai/fast",
+      "status": 0,
+      "uptime_last_30m": 100,
+      "quantization": "unknown",
+      "supported_parameters": [
+        "reasoning",
+        "include_reasoning",
+        "seed",
+        "max_tokens",
+        "response_format",
+        "structured_outputs",
+        "tools",
+        "tool_choice",
+        "verbosity",
+        "reasoning_effort"
+      ]
+    }
+  ]
+}

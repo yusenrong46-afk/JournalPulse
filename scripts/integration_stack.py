@@ -34,13 +34,26 @@ from uuid import UUID
 import httpx
 import uvicorn
 
+from scratch_postgres import require_local_postgres_dsn
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from journalpulse.api import create_app  # noqa: E402
 from journalpulse.config import Settings  # noqa: E402
-from journalpulse.domain import ModelRun  # noqa: E402
+from journalpulse.discovery_models import (  # noqa: E402
+    DiscoveryCandidate,
+    DiscoveryProvenance,
+    DiscoveryRequest,
+    DiscoveryResponse,
+)
+from journalpulse.discovery_prompts import DISCOVERY_PROMPT_VERSION  # noqa: E402
+from journalpulse.domain import (  # noqa: E402
+    ActivityConstraintInputs,
+    ModelRun,
+)
 from journalpulse.guided import guess_feelings  # noqa: E402
+from journalpulse.guided_action import ActivityDirective, GuidedActionContext  # noqa: E402
 from journalpulse.intelligence import ConversationCompletion  # noqa: E402
 
 DATABASE = "jp_integration"
@@ -58,6 +71,9 @@ USERS = {
     "blair": UUID("b2b2b2b2-0000-4000-8000-000000000002"),
     "casey": UUID("c3c3c3c3-0000-4000-8000-000000000003"),
     "dana": UUID("d4d4d4d4-0000-4000-8000-000000000004"),
+    "erin": UUID("e5e5e5e5-0000-4000-8000-000000000005"),
+    "frank": UUID("f6f6f6f6-0000-4000-8000-000000000006"),
+    "grace": UUID("a7a7a7a7-0000-4000-8000-000000000007"),
 }
 
 
@@ -98,6 +114,7 @@ def session_token(user: UUID) -> str:
 
 def dsn(database: str, *, user: str | None = None, password: str | None = None) -> str | None:
     raw = os.environ.get("JOURNALPULSE_PG_DSN")
+    require_local_postgres_dsn(raw)
     if not raw:
         if user is None:
             return None
@@ -137,6 +154,7 @@ def psql(database: str, sql: str) -> str:
 
 
 def prepare_database() -> None:
+    require_local_postgres_dsn(os.getenv("JOURNALPULSE_PG_DSN"))
     psql(
         "postgres",
         f"""
@@ -320,17 +338,25 @@ def build_web() -> None:
 
 
 class DeterministicLuna:
-    """Stands in for OpenRouter: fixed replies, keyword feelings, and an offer on turn two."""
+    """A named fake for legacy provider flags and the new quiet-activity contract."""
 
     def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
         user_texts = [message["content"] for message in messages if message["role"] == "user"]
-        turn = len(user_texts)
+        # A selected entry is a separate untrusted background message, not a turn
+        # the person typed. Counting it would offer action one message too early.
+        turn = sum(not text.startswith("Selected journal entry ") for text in user_texts)
+        listening = any(
+            message["role"] == "system" and "Just talk" in message["content"] for message in messages
+        )
         return ConversationCompletion(
             reply=(
-                "Thank you for telling me. What feels heaviest right now?"
+                "I’m listening. What else is on your mind?"
+                if listening
+                else "Thank you for telling me. What feels heaviest right now?"
                 if turn < 2
                 else "That sounds like a lot. Would you like to find one small thing together?"
             ),
+            # Keep an adversarial offer flag while listening: server state must win.
             offer_action=turn >= 2,
             resource_intent="ground",
             card_reason="A reviewed option." if turn >= 2 else "",
@@ -339,6 +365,91 @@ class DeterministicLuna:
             model_run=ModelRun(
                 model="integration-fake-luna", provider="fake", latency_ms=1, schema_valid=True
             ),
+        )
+
+    def complete_guided(
+        self,
+        messages: list[dict[str, str]],
+        context: GuidedActionContext,
+    ) -> ConversationCompletion:
+        latest = next((item["content"] for item in reversed(messages) if item["role"] == "user"), "")
+        # This stand-in proves the real session path, never model quality. Other
+        # provider scenarios retain the old six-field schema to exercise backwards
+        # compatibility and adversarial readiness flags. The manual UI loop itself
+        # is tested explicitly in no-AI guided mode, rather than faking an AI flow.
+        if "participant_report" in latest:
+            return ConversationCompletion(
+                reply="You reported what happened. We can leave it here or keep talking.",
+                offer_action=False,
+                resource_intent="ground",
+                card_reason="",
+                summary="A saved fictional activity check-in.",
+                model_run=ModelRun(
+                    model="integration-fake-luna", provider="fake", latency_ms=1, schema_valid=True
+                ),
+                activity=ActivityDirective(
+                    move="outcome",
+                    goal=None,
+                    selected_resource_id=None,
+                    constraints=context.constraints,
+                    search_topic=None,
+                ),
+            )
+        if "two minutes" in latest.lower() and "quiet" in latest.lower() and context.action_allowed:
+            return ConversationCompletion(
+                reply=("A short quiet pause could fit the two minutes you have. "
+                       "You can try it or keep talking."),
+                offer_action=True,
+                resource_intent="ground",
+                card_reason="A silent seated option for two minutes.",
+                summary="A fictional request for a quiet pause.",
+                model_run=ModelRun(
+                    model="integration-fake-luna", provider="fake", latency_ms=1, schema_valid=True
+                ),
+                activity=ActivityDirective(
+                    move="propose",
+                    goal="settle",
+                    selected_resource_id="guided_meditation_2m",
+                    constraints=ActivityConstraintInputs(time_minutes=2, no_audio=True, seated=True),
+                    search_topic=None,
+                ),
+            )
+        return self.complete(messages)
+
+
+class DeterministicDiscovery:
+    """Local test double; no Brave queries or paid model calls are made."""
+
+    def search(self, payload: DiscoveryRequest) -> DiscoveryResponse:
+        candidates = [
+            DiscoveryCandidate(
+                title=f"Fictional reflection resource {index}",
+                url=f"https://example.org/reflection-{index}",
+                description="A synthetic search snippet for the browser integration fixture.",
+                why_selected="This fixture snippet addresses the approved reflection topic.",
+            )
+            for index in range(1, 7)
+            if f"https://example.org/reflection-{index}" not in payload.excluded_urls
+        ][:2]
+        return DiscoveryResponse(
+            original_query=payload.original_query,
+            updated_query=f"{payload.original_query} {payload.feedback or ''}".strip(),
+            candidates=candidates,
+            provenance=DiscoveryProvenance(
+                prompt_version=DISCOVERY_PROMPT_VERSION,
+                retrieved_at="2026-10-04T12:00:00+00:00",
+                candidate_count=len(candidates),
+                model_runs=[
+                    ModelRun(
+                        model="integration-fake-discovery",
+                        provider="test-double",
+                        latency_ms=0,
+                        schema_valid=True,
+                        prompt_version=DISCOVERY_PROMPT_VERSION,
+                    )
+                ],
+            ),
+            limitations=["Synthetic integration fixtures; no live pages or search providers were consulted."],
         )
 
 
@@ -359,6 +470,8 @@ def api_settings() -> Settings:
         analysis_rate_limit_per_minute=int(os.getenv("JP_RATE_LIMIT", "12")),
         chat_model="integration-fake-luna",
         write_signing_key=SIGNING_KEY,
+        search_feature_enabled=True,
+        search_api_key="integration-fake-search-key",
     )
 
 
@@ -368,7 +481,11 @@ def main() -> None:
     start_gateway()
     build_web()
     os.environ["JOURNALPULSE_WEB_DIST"] = str(WEB_DIST)
-    app = create_app(settings=api_settings(), conversation_client=DeterministicLuna())
+    app = create_app(
+        settings=api_settings(),
+        conversation_client=DeterministicLuna(),
+        discovery_client=DeterministicDiscovery(),
+    )
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     print(f"integration stack ready: api http://127.0.0.1:{API_PORT}, gateway {GATEWAY_URL}", flush=True)
     uvicorn.run(app, host="127.0.0.1", port=API_PORT, log_level="warning")

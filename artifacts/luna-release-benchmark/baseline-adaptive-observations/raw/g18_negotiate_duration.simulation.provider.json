@@ -1,0 +1,88 @@
+{
+  "http_status": 200,
+  "latency_ms": 3443,
+  "actual_provider_request_sha256": "14b4af736cc39b96be9bfbe2fdaf8b5e75b9dbd5950269b99817ce39e643cbfc",
+  "status": "observed",
+  "generation_id": "gen-1791231117-o6TF9XKXNdr79TdbPEAE",
+  "model": "openai/gpt-6.1-sol",
+  "provider": "Azure",
+  "usage": {
+    "prompt_tokens": 317,
+    "completion_tokens": 113,
+    "total_tokens": 430,
+    "cost": 0.0019404,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.0019404,
+      "upstream_inference_prompt_cost": 0.0006974,
+      "upstream_inference_completions_cost": 0.001243
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 76,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finish_reason": "stop",
+  "refusal": null,
+  "content": "{\"reply\":\"What would the two minutes involve? I’d like to understand before deciding.\",\"stop\":false}",
+  "request": {
+    "model": "openai/gpt-6.1-sol",
+    "provider": {
+      "zdr": true,
+      "require_parameters": true,
+      "order": [
+        "azure/eu"
+      ],
+      "allow_fallbacks": false
+    },
+    "max_tokens": 1800,
+    "include_reasoning": false,
+    "reasoning": {
+      "effort": "medium"
+    },
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "journalpulse_bounded_user_v1",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reply",
+            "stop"
+          ],
+          "properties": {
+            "reply": {
+              "type": "string",
+              "maxLength": 600
+            },
+            "stop": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "messages": [
+      {
+        "role": "system",
+        "content": "You simulate the fictional user for one scenario. Remain strictly within its goal, known facts, constraints, and branch rules. Do not invent facts or emotional improvements. Respond briefly and naturally to the assistant; negotiate at most once. Preserve scripted outcomes. No more than four assistant turns. You are not evaluating which model should win."
+      },
+      {
+        "role": "user",
+        "content": "{\"goal\": \"Understand the concern without pressure\", \"known_facts\": [], \"constraints\": [\"Two minutes.\", \"Eyes open.\"], \"branch_rules\": [\"Respond within the frozen known facts and constraints.\", \"Do not invent a benefit, new problem, or acceptance to rescue Luna.\", \"Negotiate at most once; respect the scripted outcome or stop rule.\"], \"scripted_outcome\": \"No real emotional benefit is inferred; any activity outcome is fictional.\", \"transcript\": [{\"role\": \"user\", \"content\": \"I would like a pause from thinking about work.\"}, {\"role\": \"assistant\", \"content\": \"We could try a ten-minute meditation if that fits.\"}, {\"role\": \"user\", \"content\": \"Ten minutes is too long. Can we make it two minutes and keep my eyes open?\"}, {\"role\": \"assistant\", \"content\": \"Absolutely—two minutes, eyes open, and no need to think about work.\"}], \"maximum_assistant_turns\": 4}"
+      }
+    ]
+  },
+  "budget_attempt": 163,
+  "roundtrip_ms": 3826,
+  "deployment_id": "dpl_8ERXKwBf3yxCejTReoLTb7dUd74w"
+}

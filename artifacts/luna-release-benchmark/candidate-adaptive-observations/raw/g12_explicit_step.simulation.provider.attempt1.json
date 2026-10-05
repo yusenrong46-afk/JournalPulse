@@ -1,0 +1,88 @@
+{
+  "http_status": 200,
+  "latency_ms": 4564,
+  "actual_provider_request_sha256": "e60b1e551abb7a6242b561867a0848dfe5bc7da217e2c4f256fa1b2df4c6ebac",
+  "status": "observed",
+  "generation_id": "gen-1791231154-DbyepL8AOGcJnasi406k",
+  "model": "openai/gpt-6.1-sol",
+  "provider": "Azure",
+  "usage": {
+    "prompt_tokens": 307,
+    "completion_tokens": 172,
+    "total_tokens": 479,
+    "cost": 0.0025674,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.0025674,
+      "upstream_inference_prompt_cost": 0.0006754,
+      "upstream_inference_completions_cost": 0.001892
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 133,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  },
+  "finish_reason": "stop",
+  "refusal": null,
+  "content": "{\"reply\":\"Could you make that one specific thing to do for three minutes at my desk?\",\"stop\":false}",
+  "request": {
+    "model": "openai/gpt-6.1-sol",
+    "provider": {
+      "zdr": true,
+      "require_parameters": true,
+      "order": [
+        "azure/eu"
+      ],
+      "allow_fallbacks": false
+    },
+    "max_tokens": 1800,
+    "include_reasoning": false,
+    "reasoning": {
+      "effort": "medium"
+    },
+    "response_format": {
+      "type": "json_schema",
+      "json_schema": {
+        "name": "journalpulse_bounded_user_v1",
+        "strict": true,
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reply",
+            "stop"
+          ],
+          "properties": {
+            "reply": {
+              "type": "string",
+              "maxLength": 600
+            },
+            "stop": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "messages": [
+      {
+        "role": "system",
+        "content": "You simulate the fictional user for one scenario. Remain strictly within its goal, known facts, constraints, and branch rules. Do not invent facts or emotional improvements. Respond briefly and naturally to the assistant; negotiate at most once. Preserve scripted outcomes. No more than four assistant turns. You are not evaluating which model should win."
+      },
+      {
+        "role": "user",
+        "content": "{\"goal\": \"Settle before returning to study\", \"known_facts\": [\"Wound up after study.\"], \"constraints\": [\"Three minutes.\", \"Stay at desk.\"], \"branch_rules\": [\"Respond within the frozen known facts and constraints.\", \"Do not invent a benefit, new problem, or acceptance to rescue Luna.\", \"Negotiate at most once; respect the scripted outcome or stop rule.\"], \"scripted_outcome\": \"No real emotional benefit is inferred; any activity outcome is fictional.\", \"transcript\": [{\"role\": \"user\", \"content\": \"I feel wound up after studying. I would like one small thing to settle, with three minutes at my desk.\"}, {\"role\": \"assistant\", \"content\": \"A two-minute quiet pause at your desk could fit. If you’d like, try noticing the chair beneath you or a sound nearby—no need to force anything to change.\"}], \"maximum_assistant_turns\": 4}"
+      }
+    ]
+  },
+  "budget_attempt": 173,
+  "roundtrip_ms": 4955,
+  "deployment_id": "dpl_8ERXKwBf3yxCejTReoLTb7dUd74w"
+}

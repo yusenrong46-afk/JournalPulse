@@ -1,0 +1,64 @@
+{
+  "scope": "unchanged shared Preview discovery provider smoke, not candidate inline session acceptance",
+  "request": {
+    "original_query": "gentle movement gentle walking 6 minute",
+    "llm_consent": true,
+    "locale": "CA"
+  },
+  "http_status": 200,
+  "latency_ms": 6295,
+  "reserved_max_luna_attempts": 1,
+  "reserved_brave_attempts": 1,
+  "response": {
+    "original_query": "gentle movement gentle walking 6 minute",
+    "updated_query": "gentle movement gentle walking 6 minute",
+    "candidates": [
+      {
+        "title": "What Exactly Is the 6 6 6 Walking Rule?",
+        "url": "https://www.indiaherald.com/Health/Read/994882895/What-Exactly-Is-the--Walking-Rule",
+        "description": "Begin with a 6-minute warm-up: slow walking or gentle dynamic stretches.",
+        "why_selected": "The snippet specifically mentions a 6-minute warm-up with slow walking or gentle stretches, though it may be part of a longer routine.",
+        "evidence_kind": "search_snippet"
+      },
+      {
+        "title": "Gentle Walking Workout at Home | Low Impact Beginner-Friendly Indoor Walk \u2014 More Life Health - Seniors Health & Fitness",
+        "url": "https://morelifehealth.com/articles/gentle-walking-exercise",
+        "description": "I also spend time in some beautiful ... this latest video. It\u2019s a gentle, simple walking session where you march or walk on the spot at home while following a peaceful nature walk here in Australia....",
+        "why_selected": "The snippet describes a gentle, simple indoor walking session, but does not state its length.",
+        "evidence_kind": "search_snippet"
+      },
+      {
+        "title": "Self-Care Videos: Gentle Yoga, Mindful Movement, and Indoor Walking \u2014 Mindful Teachers",
+        "url": "https://www.mindfulteachers.org/blog/mindful-movement-videos",
+        "description": "Mindful Movement \u00b7 Indoor Walking \u00b7 \u2026 and there are many more self-care resources here at MindfulTeachers.org. Videos are listed by length, from 5 minutes to 30 minutes. We all have different levels of flexibility, so listen to your own body. Even if the instructor claims a pose is \u2018gentle\u2019 or \u2018easy,\u2019 that might not be true for you or me! Yoga for Beginners \u00b7 Rodney Yee \u00b7 (5 minutes) Yoga at Your Desk \u00b7 Yoga with Adriene \u00b7 (6 minutes) If you like this video, check out the Chair-Based Yoga and Stretching Routines and the Silent (and Sound-Optional) Videos.",
+        "why_selected": "The snippet lists indoor walking and movement videos in several lengths, including 5 minutes, but doesn't confirm a 6-minute walking video.",
+        "evidence_kind": "search_snippet"
+      }
+    ],
+    "provenance": {
+      "search_provider": "brave",
+      "prompt_version": "discovery-snippets-v1-2026-10-04",
+      "retrieved_at": "2026-10-05T17:39:02.113342+00:00",
+      "candidate_count": 6,
+      "search_calls": 1,
+      "model_runs": [
+        {
+          "model": "openai/gpt-6-luna",
+          "provider": "Azure",
+          "latency_ms": 3214,
+          "prompt_tokens": 1232,
+          "completion_tokens": 361,
+          "schema_valid": true,
+          "used_fallback": false,
+          "fallback_reason": null,
+          "prompt_version": "discovery-snippets-v1-2026-10-04"
+        }
+      ],
+      "page_fetches": 0
+    },
+    "limitations": [
+      "Suggestions use search-provider snippets; full pages were not read.",
+      "Links were returned by Brave and structurally checked. Their availability and claims are not verified."
+    ]
+  }
+}

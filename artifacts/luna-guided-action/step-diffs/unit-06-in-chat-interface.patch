@@ -1,0 +1,1253 @@
+--- a/web/app/talk/page.tsx
++++ b/web/app/talk/page.tsx
+@@ -5,9 +5,11 @@
+ import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+ 
+ import { ActionTimer } from "@/components/action-timer";
++import { ActivitySessionWorkspace } from "@/components/activity-session-workspace";
+ import { Luna, type LunaMood } from "@/components/luna";
+ import { Icon } from "@/components/nav-icon";
+ import { ApiError, apiRequest } from "@/lib/api";
++import { currentActivityCard } from "@/lib/activity-card";
+ import { discoveryHref } from "@/lib/discovery";
+ import {
+   canApplyConversation,
+@@ -46,6 +48,7 @@
+ } from "@/lib/types";
+ 
+ const CHAT_TIMEOUT_MS = 60_000;
++const CHAT_MESSAGE_LIMIT = 20;
+ const THINKING_LINES = ["Luna is thinking…", "Mulling it over…", "Finding the right words…"];
+ 
+ type Busy = "send" | "accept" | "close" | null;
+@@ -88,6 +91,7 @@
+   const [resumeFailure, setResumeFailure] = useState<string | null>(null);
+   const [resumeAttempt, setResumeAttempt] = useState(0);
+   const [pendingSend, setPendingSend] = useState<PendingSend | null>(null);
++  const [activityBusy, setActivityBusy] = useState(false);
+ 
+   const pendingMessage = useRef<PendingCommand | null>(null);
+   const pendingByChat = useRef(new Map<string, PendingCommand>());
+@@ -329,18 +333,19 @@
+   useEffect(() => {
+     const log = logRef.current;
+     if (log) log.scrollTop = log.scrollHeight;
+-  }, [messages, pendingSend, step, busy, error, saved]);
++  }, [messages, pendingSend, step, busy, activityBusy, error, saved]);
+ 
+   const userMessages = messages.filter((message) => message.role === "user").length;
+   const stage = chatStage({
+     saved: Boolean(saved),
+     status: conversation?.status,
+     safetyMode: conversation?.safety_mode,
+-    hasCard: Boolean(conversation?.card),
++    // AI activities remain in the open chat; the guided path keeps its legacy accept flow.
++    hasCard: Boolean(currentActivityCard(conversation)) && conversation?.mode !== "ai",
+     step,
+   });
+   const showReady =
+-    stage === "chat" &&
++    stage === "chat" && conversation?.mode !== "ai" &&
+     busy === null &&
+     readyForSomething({
+       readyForAction: conversation?.ready_for_action, userMessages,
+@@ -381,7 +386,7 @@
+     if (next.confirmed_feelings) setFeelings(next.confirmed_feelings);
+     const mood = moodByScore(next.reported_mood);
+     if (mood) setMoodValence(mood.valence);
+-    setSelectedAction(next.card?.decision_preview.action_id ?? "");
++    setSelectedAction(currentActivityCard(next)?.decision_preview.action_id ?? "");
+     if (next.interaction_preference === "listen" || next.safety_mode === "support") setStep(null);
+     return true;
+   }
+@@ -443,7 +448,7 @@
+ 
+   async function send(outgoing: Outgoing) {
+     const trimmed = outgoing.text.trim();
+-    if (!trimmed || busy || sendInFlight.current || preferenceInFlight.current || resuming || resumeFailure || sourcePending || linkedSourceUnavailable
++    if (!trimmed || userMessages >= CHAT_MESSAGE_LIMIT || busy || activityBusy || sendInFlight.current || preferenceInFlight.current || resuming || resumeFailure || sourcePending || linkedSourceUnavailable
+       || (activeSourceId && (!sourceEntry || sourceError))) return;
+     const generation = workspaceGeneration.current;
+     const sendingComposerDraft = draft.trim() === trimmed;
+@@ -602,7 +607,7 @@
+       if (remember(next)) {
+         applyServerState(next);
+         acceptRequestId.current = "";
+-        if (next.interaction_preference === "act" && next.status === "open" && next.safety_mode !== "support") {
++        if (next.mode !== "ai" && next.interaction_preference === "act" && next.status === "open" && next.safety_mode !== "support") {
+           setFeelings(next.confirmed_feelings ?? next.feelings ?? []);
+           setStep("feelings");
+         } else {
+@@ -683,7 +688,7 @@
+     }
+   }
+ 
+-  async function startSelectedChat(withSource: boolean) {
++  async function startSelectedChat(withSource: boolean, aiWithoutSource = false) {
+     if (resuming || preferenceInFlight.current || busy === "accept" || busy === "close") return;
+     if (withSource && (!sourceEntry || !useAi || aiAvailable === false)) return;
+     const current = latestConversation.current;
+@@ -730,8 +735,8 @@
+       setEnded(false);
+       setAnswering(false);
+       setSelectedSourceId(withSource ? sourceEntry!.id : null);
+-      setGuidedNotice(!withSource);
+-      if (!withSource) setConsent(false);
++      setGuidedNotice(!withSource && !aiWithoutSource);
++      if (!withSource) setConsent(aiWithoutSource);
+       router.replace(withSource ? `/talk?entry=${sourceEntry!.id}` : "/talk");
+       inputRef.current?.focus();
+     } catch (reason) {
+@@ -796,7 +801,7 @@
+               ? "Private chat"
+               : "Simple mode · no AI";
+ 
+-  const card = conversation?.card ?? null;
++  const card = currentActivityCard(conversation);
+   const lastLunaIndex = messages.map((message) => message.role).lastIndexOf("assistant");
+ 
+   return (
+@@ -828,6 +833,8 @@
+           Using your selected journal entry
+           {sourceEntry?.id === activeSourceId && ` · ${new Date(sourceEntry.created_at).toLocaleDateString()}`}
+           {" · "}<Link href={`/journal?entry=${activeSourceId}`}>Open entry</Link>
++          {" · "}<button type="button" className="link-btn" disabled={busy !== null || preferenceBusy}
++            onClick={() => void startSelectedChat(false, true)}>Start AI chat without the entry</button>
+         </div>
+       )}
+ 
+@@ -960,6 +967,25 @@
+           </div>
+         )}
+ 
++        {conversation?.mode === "ai" && conversation.status === "open" && conversation.safety_mode !== "support"
++          && (conversation as Conversation & { activity_move?: string }).activity_move !== "pause"
++          && conversation.interaction_preference !== "listen" && !sourcePending && !sourceNeedsNewChat
++          && !linkedSourceUnavailable && !sourceError && (
++          <div className="chat-panel">
++            <ActivitySessionWorkspace key={conversation.id} conversation={conversation}
++              ordinaryMessages={userMessages}
++              disabled={busy !== null || preferenceBusy || resuming || Boolean(resumeFailure)}
++              onBusyChange={setActivityBusy}
++              onRefresh={() => refreshConversation(conversation.id)} />
++          </div>
++        )}
++
++        {conversation?.status === "open" && userMessages >= CHAT_MESSAGE_LIMIT && (
++          <div className="chat-panel"><p className="note" role="status">This chat has reached its 20-message limit.
++            You can still finish a started activity and save its check-in.</p>
++            <button className="btn btn-soft" type="button" onClick={startOver}>Start a new chat</button></div>
++        )}
++
+         {showReady && !preferenceBusy && (
+           <div className="chat-panel">
+             <div className="chips">
+@@ -1112,7 +1138,7 @@
+             ref={inputRef}
+             rows={1}
+             value={draft}
+-            disabled={busy !== null || preferenceBusy || resuming || Boolean(resumeFailure) || sourcePending || linkedSourceUnavailable || Boolean(activeSourceId && sourceError)}
++            disabled={userMessages >= CHAT_MESSAGE_LIMIT || busy !== null || activityBusy || preferenceBusy || resuming || Boolean(resumeFailure) || sourcePending || linkedSourceUnavailable || Boolean(activeSourceId && sourceError)}
+             placeholder={stage === "welcome" ? "Or tell Luna what’s going on…" : "Type something…"}
+             onChange={(event) => {
+               setDraft(event.target.value);
+@@ -1126,12 +1152,12 @@
+             }}
+           />
+           <button className="send-btn" type="submit" aria-label="Send"
+-            disabled={busy !== null || preferenceBusy || resuming || Boolean(resumeFailure) || sourcePending || linkedSourceUnavailable || Boolean(activeSourceId && sourceError) || !draft.trim()}>
++            disabled={userMessages >= CHAT_MESSAGE_LIMIT || busy !== null || activityBusy || preferenceBusy || resuming || Boolean(resumeFailure) || sourcePending || linkedSourceUnavailable || Boolean(activeSourceId && sourceError) || !draft.trim()}>
+             <Icon name="send" />
+           </button>
+         </form>
+       )}
+-      {stage === "chat" && conversation?.interaction_preference !== "listen"
++      {stage === "chat" && conversation?.mode !== "ai" && conversation?.interaction_preference !== "listen"
+         && userMessages >= 1 && !showReady && busy === null && !preferenceBusy && (
+         <div className="chat-hint" style={{ paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}>
+           <button className="link-btn" type="button" onClick={startCheck}>Skip ahead: find one small thing to try</button>
+--- a/web/components/action-timer.tsx
++++ b/web/components/action-timer.tsx
+@@ -1,6 +1,6 @@
+ "use client";
+ 
+-import { useEffect, useState } from "react";
++import { useEffect, useRef, useState } from "react";
+ 
+ const RADIUS = 64;
+ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+@@ -9,22 +9,56 @@
+   const total = Math.max(1, Math.round(minutes)) * 60;
+   const [left, setLeft] = useState(total);
+   const [running, setRunning] = useState(false);
++  const remainingMillis = useRef(total * 1000);
++  const deadline = useRef<number | null>(null);
++  const completed = useRef(false);
++  const onDoneRef = useRef(onDone);
++  useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
++
++  useEffect(() => {
++    remainingMillis.current = total * 1000;
++    deadline.current = null;
++    completed.current = false;
++    queueMicrotask(() => { setLeft(total); setRunning(false); });
++  }, [total]);
+ 
+   useEffect(() => {
+     if (!running) return;
+-    const interval = window.setInterval(() => {
+-      setLeft((value) => {
+-        if (value <= 1) {
+-          window.clearInterval(interval);
+-          setRunning(false);
+-          onDone?.();
+-          return 0;
+-        }
+-        return value - 1;
+-      });
+-    }, 1000);
+-    return () => window.clearInterval(interval);
+-  }, [onDone, running]);
++    function repaint() {
++      if (deadline.current === null) return;
++      remainingMillis.current = Math.max(0, deadline.current - performance.now());
++      const next = Math.ceil(remainingMillis.current / 1000);
++      setLeft(next);
++      if (next === 0 && !completed.current) {
++        completed.current = true;
++        deadline.current = null;
++        setRunning(false);
++        // A side effect never runs inside a React state updater, including StrictMode replay.
++        onDoneRef.current?.();
++      }
++    }
++    const interval = window.setInterval(repaint, 250);
++    const wake = () => { if (document.visibilityState !== "hidden") repaint(); };
++    window.addEventListener("focus", wake);
++    document.addEventListener("visibilitychange", wake);
++    return () => {
++      window.clearInterval(interval);
++      window.removeEventListener("focus", wake);
++      document.removeEventListener("visibilitychange", wake);
++    };
++  }, [running]);
++
++  function toggle() {
++    if (running) {
++      remainingMillis.current = Math.max(0, (deadline.current ?? performance.now()) - performance.now());
++      deadline.current = null;
++      setLeft(Math.ceil(remainingMillis.current / 1000));
++      setRunning(false);
++    } else {
++      deadline.current = performance.now() + remainingMillis.current;
++      setRunning(true);
++    }
++  }
+ 
+   const progress = 1 - left / total;
+   const label = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+@@ -49,14 +83,19 @@
+       <div className="timer-text" role="timer" aria-live="off">{label}</div>
+       <div className="row">
+         {left === 0 ? (
+-          <span className="tag sage">Time’s up. Nice work.</span>
++          <span className="tag sage" role="status">Time’s up. You can check in when you’re ready.</span>
+         ) : (
+-          <button className="btn btn-soft" type="button" onClick={() => setRunning((value) => !value)}>
++          <button className="btn btn-soft" type="button" onClick={toggle}>
+             {running ? "Pause" : left === total ? `Start a ${Math.round(total / 60)}-minute timer` : "Keep going"}
+           </button>
+         )}
+         {left !== total && (
+-          <button className="btn btn-ghost" type="button" onClick={() => { setRunning(false); setLeft(total); }}>
++          <button className="btn btn-ghost" type="button" onClick={() => {
++            remainingMillis.current = total * 1000;
++            deadline.current = null;
++            completed.current = false;
++            setRunning(false); setLeft(total);
++          }}>
+             Reset
+           </button>
+         )}
+--- /dev/null
++++ b/web/components/activity-session-discovery.tsx
+@@ -0,0 +1,136 @@
++"use client";
++
++import { useEffect, useRef, useState, type FormEvent } from "react";
++
++import { ApiError, apiRequest } from "@/lib/api";
++import { currentActivityCard } from "@/lib/activity-card";
++import type { ActivityResource } from "@/lib/activity-session";
++import { DISCOVERY_TIMEOUT_MS, MAX_EXCLUDED_SOURCES, type DiscoveryResponse } from "@/lib/discovery";
++import type { Conversation } from "@/lib/types";
++
++type InlineDiscoveryResult = DiscoveryResponse & {
++  offers: { resource: ActivityResource; resource_token: string }[];
++  conversation_revision: number;
++};
++type Props = { conversation: Conversation; disabled: boolean; onSave(resource: ActivityResource, token: string): Promise<void> };
++type ActivityConversation = Conversation & {
++  activity_goal?: "settle" | "move" | "understand" | "connect" | "act" | null;
++  activity_search_topic?: string | null;
++  activity_constraints?: { time_minutes?: number | null; no_audio?: boolean; no_video?: boolean;
++    seated?: boolean; avoid_breath_focus?: boolean };
++};
++
++/** Only the dedicated general-topic fields leave this panel; the composer and journal never do. */
++export function ActivitySessionDiscovery({ conversation, disabled, onSave }: Props) {
++  const [approved, setApproved] = useState(false);
++  const [topic, setTopic] = useState(() => (conversation as ActivityConversation).activity_search_topic ?? "");
++  const [feedback, setFeedback] = useState("");
++  const [result, setResult] = useState<InlineDiscoveryResult | null>(null);
++  const [seen, setSeen] = useState<string[]>([]);
++  const [busy, setBusy] = useState(false);
++  const [error, setError] = useState<string | null>(null);
++  const pending = useRef<AbortController | null>(null);
++  const chat = useRef(conversation);
++  useEffect(() => { chat.current = conversation; }, [conversation]);
++
++  useEffect(() => () => pending.current?.abort(), []);
++  useEffect(() => {
++    // An intervening preference/support/source decision invalidates in-flight retrieval.
++    pending.current?.abort();
++    pending.current = null;
++    queueMicrotask(() => { setBusy(false); setResult(null); setFeedback(""); });
++  }, [conversation.revision, disabled]);
++
++  useEffect(() => {
++    const suggested = (conversation as ActivityConversation).activity_search_topic;
++    if (suggested) queueMicrotask(() => setTopic(suggested));
++  }, [conversation]);
++
++  async function search(event: FormEvent<HTMLFormElement>) {
++    event.preventDefault();
++    if (!approved || busy || disabled) return;
++    const current = chat.current;
++    const controller = new AbortController();
++    pending.current?.abort();
++    pending.current = controller;
++    setBusy(true);
++    setError(null);
++    try {
++      if (seen.length > MAX_EXCLUDED_SOURCES) throw new Error("Start a new search after skipping 30 sources.");
++      const activityChat = current as ActivityConversation;
++      const card = currentActivityCard(current);
++      const payload = {
++        goal: activityChat.activity_goal ?? card?.goal ?? "settle",
++        style: card?.resource_intent ?? "ground",
++        ...activityChat.activity_constraints,
++        llm_consent: true,
++        expected_revision: current.revision ?? 0,
++        ...(result ? { original_query: result.original_query } : topic.trim() ? { original_query: topic.trim() } : {}),
++        ...(result ? { previous_query: result.updated_query, feedback: feedback.trim() } : {}),
++        excluded_urls: seen,
++      };
++      const response = await apiRequest<InlineDiscoveryResult>(`/v1/conversations/${current.id}/discover`, {
++        method: "POST", body: JSON.stringify(payload), timeoutMs: DISCOVERY_TIMEOUT_MS,
++        retry: false, signal: controller.signal,
++      });
++      if (pending.current !== controller || chat.current.id !== current.id || chat.current.revision !== current.revision) return;
++      setResult(response);
++      setSeen((values) => [...new Set([...values, ...response.candidates.map((candidate) => candidate.url)])]);
++      setFeedback("");
++    } catch (reason) {
++      if (pending.current !== controller) return;
++      setError(reason instanceof Error ? reason.message : "Search could not finish. You can keep talking or try a catalog activity.");
++    } finally {
++      if (pending.current === controller) { pending.current = null; setBusy(false); }
++    }
++  }
++
++  async function save(resource: ActivityResource, token: string) {
++    if (busy || disabled) return;
++    setBusy(true);
++    setError(null);
++    try { await onSave(resource, token); }
++    catch (reason) { setError(reason instanceof ApiError || reason instanceof Error ? reason.message : "The resource could not be saved."); }
++    finally { setBusy(false); }
++  }
++
++  return (
++    <section className="card stack" aria-label="Find another activity">
++      <h2>Find something that fits better</h2>
++      <p className="small muted">Brave receives a general activity topic. Your chat and journal are not included. Luna selects search snippets; full pages are not reviewed.</p>
++      <label className="row"><input type="checkbox" checked={approved} disabled={disabled}
++        onChange={(event) => {
++          setApproved(event.target.checked);
++          if (!event.target.checked) { pending.current?.abort(); pending.current = null; setBusy(false); }
++        }} />Allow this general activity search with Brave and Luna</label>
++      <form className="stack" onSubmit={search}>
++        <label className="text-field">General activity topic (optional)
++          <input value={topic} onChange={(event) => setTopic(event.target.value)} maxLength={160}
++            placeholder="Leave blank for a general topic based on your goal" disabled={busy || disabled || Boolean(result)} />
++        </label>
++        {result && <label className="text-field">What would fit better? Keep it general.
++          <textarea value={feedback} onChange={(event) => setFeedback(event.target.value)} maxLength={600}
++            placeholder="For example: shorter, seated, no video" disabled={busy || disabled} required />
++        </label>}
++        <button className="btn btn-soft" type="submit" disabled={!approved || busy || disabled || Boolean(result && !feedback.trim())}>
++          {busy ? "Searching…" : result ? "Find different sources" : "Search activities"}
++        </button>
++      </form>
++      {busy && <p role="status">Finding a fitting activity…</p>}
++      {error && <p className="note error" role="alert">{error}</p>}
++      {result && <>
++        {!result.offers.length && <p>No fitting sources this time. You can change the format or keep talking.</p>}
++        {result.offers.map(({ resource, resource_token }) => <article className="stack" key={resource.id}>
++          <h3>{resource.title}</h3><p className="small muted">{resource.provider} · Search snippet</p>
++          {resource.url && <a href={resource.url} target="_blank" rel="noopener noreferrer">Open link</a>}
++          <button className="btn btn-soft" type="button" disabled={busy || disabled}
++            onClick={() => void save(resource, resource_token)}>Save this activity</button>
++        </article>)}
++        <p className="small muted">Opening a link does not save it or mark it completed. Refinement skips all sources already shown.</p>
++        <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => {
++          pending.current?.abort(); pending.current = null; setResult(null); setSeen([]); setFeedback(""); setError(null);
++        }}>Start a new search</button>
++      </>}
++    </section>
++  );
++}
+--- /dev/null
++++ b/web/components/activity-session-panel.tsx
+@@ -0,0 +1,132 @@
++"use client";
++
++import { useState, type FormEvent } from "react";
++
++import type { ActivityCommand, ActivityReport, ActivitySession } from "@/lib/activity-session";
++
++type Props = {
++  session: ActivitySession; secondsLeft: number; busy: boolean; expiryPending: boolean;
++  canStart?: boolean;
++  suppressQuestions?: boolean;
++  onCommand(command: ActivityCommand): void; onReport(report: ActivityReport): void; onFollowUp(): void;
++};
++
++function CheckIn({ session, busy, onReport }: Pick<Props, "session" | "busy" | "onReport">) {
++  const [participation, setParticipation] = useState<ActivityReport["participation"] | "">("");
++  const [fit, setFit] = useState("");
++  const [change, setChange] = useState("");
++  const [progress, setProgress] = useState("");
++  const [note, setNote] = useState("");
++
++  function submit(event: FormEvent<HTMLFormElement>) {
++    event.preventDefault();
++    if (!participation || busy) return;
++    onReport({ participation,
++      ...(fit ? { fit: fit as ActivityReport["fit"] } : {}),
++      ...(change ? { state_change: change as ActivityReport["state_change"] } : {}),
++      ...(progress ? { goal_progress: progress as ActivityReport["goal_progress"] } : {}),
++      ...(note.trim() ? { note: note.trim() } : {}),
++    });
++  }
++
++  return (
++    <form className="stack" aria-label="Activity check-in" onSubmit={submit}>
++      <fieldset disabled={busy} className="stack" style={{ border: 0, padding: 0, margin: 0 }}>
++        <legend><strong>Did you try it?</strong></legend>
++        <p className="small muted">The timer cannot tell whether you participated or how you feel.</p>
++        <div className="chips">
++          {([
++            ["completed", "Completed"], ["partial", "Partly tried"], ["not_tried", "Not tried"], ["stopped", "Stopped"],
++          ] as const).map(([value, label]) => (
++            <label className="chip" key={value}>
++              <input type="radio" name={`participation-${session.id}`} value={value}
++                checked={participation === value} onChange={() => setParticipation(value)} /> {label}
++            </label>
++          ))}
++        </div>
++        <label className="text-field">How well did this fit? (optional)
++          <select value={fit} onChange={(event) => setFit(event.target.value)}>
++            <option value="">Choose if you want</option><option value="good">Good fit</option>
++            <option value="mixed">Mixed fit</option><option value="poor">Poor fit</option><option value="unsure">Unsure</option>
++          </select>
++        </label>
++        <label className="text-field">What changed? (optional)
++          <select value={change} onChange={(event) => setChange(event.target.value)}>
++            <option value="">Choose if you want</option><option value="toward_target">More like I hoped</option>
++            <option value="same">About the same</option><option value="away_from_target">Less like I hoped</option>
++            <option value="unsure">Unsure</option>
++          </select>
++        </label>
++        <label className="text-field">Progress toward your goal (optional)
++          <select value={progress} onChange={(event) => setProgress(event.target.value)}>
++            <option value="">Choose if you want</option><option value="closer">A little closer</option>
++            <option value="same">About the same</option><option value="further">Further away</option><option value="unsure">Unsure</option>
++          </select>
++        </label>
++        <label className="text-field">Anything you want Luna to know? (optional)
++          <textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={1000} rows={2} />
++        </label>
++        <button className="btn btn-primary" type="submit" disabled={!participation || busy}>
++          {busy ? "Saving…" : "Save check-in"}
++        </button>
++      </fieldset>
++    </form>
++  );
++}
++
++export function ActivitySessionPanel({ session, secondsLeft, busy, expiryPending, canStart = true, suppressQuestions = false, onCommand, onReport, onFollowUp }: Props) {
++  const waiting = !suppressQuestions && (session.status === "awaiting_report" || expiryPending
++    || (session.status === "stopped" && session.check_in_issued && Boolean(session.started_at) && !session.report));
++  const running = session.status === "active" || session.status === "paused";
++  const label = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
++
++  return (
++    <section className="card stack" aria-label="Activity with Luna" aria-busy={busy}>
++      <h2>{session.resource.title}</h2>
++      {session.recommendation_reason && <p>{session.recommendation_reason}</p>}
++      {session.resource.instructions.length > 0 && (
++        <ol>{session.resource.instructions.map((instruction) => <li key={instruction}>{instruction}</li>)}</ol>
++      )}
++      {session.resource.provenance === "search_snippet" && <p className="small muted">Chosen from a search snippet. The full page was not reviewed.</p>}
++      {session.resource.url && <a className="btn btn-soft" href={session.resource.url} target="_blank" rel="noopener noreferrer">
++        Open resource
++      </a>}
++      {(session.status === "offered" || running) && session.resource.format === "timer" && (
++        <div role="timer" aria-live="off" aria-label="Activity time remaining" className="display center">{label}</div>
++      )}
++      {session.status === "offered" && <div className="row">
++        <button className="btn btn-primary" type="button" disabled={busy || !canStart} onClick={() => onCommand("start")}>Start activity</button>
++        <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => onCommand("decline")}>Not now</button>
++      </div>}
++      {running && !expiryPending && <div className="row">
++        {session.resource.format === "timer" && <button className="btn btn-soft" type="button" disabled={busy}
++          onClick={() => onCommand(session.status === "paused" ? "resume" : "pause")}>
++          {session.status === "paused" ? "Resume" : "Pause"}
++        </button>}
++        <button className="btn btn-primary" type="button" disabled={busy} onClick={() => onCommand("finish_early")}>
++          {session.resource.format === "timer" ? "Finish early" : "Done / check in"}
++        </button>
++        <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => onCommand("stop")}>Stop activity</button>
++      </div>}
++      {waiting && <>
++        <p role="status">{expiryPending ? "Time is up. Confirming your check-in…" : "Your activity is ready for a check-in."}</p>
++        <CheckIn key={session.id} session={session} busy={busy || expiryPending} onReport={onReport} />
++      </>}
++      {session.report && <>
++        <p role="status">Check-in saved. {session.report.participation === "not_tried" ? "You reported that you did not try it." :
++          session.report.participation === "partial" ? "You reported partly trying it." :
++          session.report.participation === "stopped" ? "You reported stopping." : "You reported completing it."}</p>
++        {session.follow_up_status === "pending" || session.follow_up_status === "generating"
++          ? <p role="status">Your report is saved; Luna’s follow-up is pending.</p> : null}
++        {(session.follow_up_status === "failed" || session.follow_up_status === "pending") && session.follow_up_attempts < 3 && <button className="btn btn-soft" type="button"
++          disabled={busy} onClick={onFollowUp}>Retry Luna’s follow-up</button>}
++        {session.follow_up_status === "ready" && session.follow_up_reply && !session.follow_up_message_id && <p>{session.follow_up_reply}</p>}
++        {session.final_follow_up && <p className="small muted">This chat has reached its message limit. Your check-in is saved; start a new chat when you want to continue.</p>}
++      </>}
++      {(session.status === "declined" || (session.status === "stopped" && !session.started_at)) && <p className="note">No activity started. You can keep talking.</p>}
++      {session.status === "stopped" && session.started_at && !session.check_in_issued && !session.report
++        && <p className="note">Activity stopped. You can keep talking.</p>}
++      {running && <p className="small muted">You can pause or stop. If the browser closes, we’ll sync the activity when you return.</p>}
++    </section>
++  );
++}
+--- /dev/null
++++ b/web/components/activity-session-workspace.tsx
+@@ -0,0 +1,316 @@
++"use client";
++
++import { useCallback, useEffect, useRef, useState } from "react";
++
++import { ApiError } from "@/lib/api";
++import { currentActivityCard } from "@/lib/activity-card";
++import Link from "next/link";
++import { discoveryHref } from "@/lib/discovery";
++import {
++  activityClock, activityReceipt, activitySecondsLeft, canApplyActivity, commandActivity,
++  createActivity, followUpActivity, readCurrentActivity, reportActivity,
++  type ActivityClock, type ActivityCommand, type ActivityReport, type ActivityResource, type ActivitySession,
++} from "@/lib/activity-session";
++import type { Conversation } from "@/lib/types";
++import { ActivitySessionDiscovery } from "./activity-session-discovery";
++import { ActivitySessionPanel } from "./activity-session-panel";
++
++type Props = {
++  conversation: Conversation; disabled: boolean; onRefresh(): Promise<unknown>; onBusyChange(value: boolean): void;
++  ordinaryMessages?: number;
++};
++type PendingOperation = { key: string; payload: string };
++
++/** All authoritative state lives on the server. This component keeps only display clocks and retry receipts. */
++export function ActivitySessionWorkspace({ conversation, disabled, onRefresh, onBusyChange, ordinaryMessages = 0 }: Props) {
++  const pausedByConversation = (conversation as Conversation & { activity_move?: string }).activity_move === "pause";
++  const [session, setSession] = useState<ActivitySession | null>(null);
++  const [secondsLeft, setSecondsLeft] = useState(0);
++  const [busy, setBusy] = useState(false);
++  const [error, setError] = useState<string | null>(null);
++  const [loading, setLoading] = useState(true);
++  const [searchOpen, setSearchOpen] = useState(false);
++  const [retryOperation, setRetryOperation] = useState<(() => Promise<void>) | null>(null);
++  const current = useRef<ActivitySession | null>(null);
++  const chat = useRef(conversation);
++  const clock = useRef<ActivityClock | null>(null);
++  const mounted = useRef(true);
++  const generation = useRef(0);
++  const pending = useRef<AbortController | null>(null);
++  const readPending = useRef<AbortController | null>(null);
++  const receipts = useRef(new Map<string, PendingOperation>());
++  const expiryAttempt = useRef<string | null>(null);
++  const refreshedFollowUp = useRef<string | null>(null);
++  const inFlight = useRef(false);
++  const busyCallback = useRef(onBusyChange);
++  const refreshCallback = useRef(onRefresh);
++  useEffect(() => {
++    chat.current = conversation;
++    busyCallback.current = onBusyChange;
++    refreshCallback.current = onRefresh;
++  }, [conversation, onBusyChange, onRefresh]);
++
++  const apply = useCallback((next: ActivitySession | null) => {
++    if (!mounted.current) return false;
++    if (next && !canApplyActivity(current.current, next, chat.current.id)) return false;
++    // A latest read may legitimately be empty after source/chat deletion.
++    current.current = next;
++    clock.current = next ? activityClock(next, performance.now()) : null;
++    setSession(next);
++    setSecondsLeft(next && clock.current ? activitySecondsLeft(next, clock.current, performance.now()) : 0);
++    if (next?.follow_up_status === "ready" && next.follow_up_message_id
++      && refreshedFollowUp.current !== next.follow_up_message_id) {
++      const messageId = next.follow_up_message_id;
++      refreshedFollowUp.current = messageId;
++      // A different tab can finish generation after our HTTP 202. The saved message
++      // must also appear when a later sync discovers it, without another model call.
++      void refreshCallback.current().then((result) => {
++        if (result === null && refreshedFollowUp.current === messageId) refreshedFollowUp.current = null;
++      }).catch(() => { if (refreshedFollowUp.current === messageId) refreshedFollowUp.current = null; });
++    }
++    return true;
++  }, []);
++
++  const sync = useCallback(async () => {
++    const started = generation.current;
++    const controller = new AbortController();
++    readPending.current?.abort();
++    readPending.current = controller;
++    try {
++      const next = await readCurrentActivity(chat.current.id, controller.signal);
++      if (!mounted.current || generation.current !== started || readPending.current !== controller) return;
++      if (apply(next)) setLoading(false);
++    } catch (reason) {
++      if (!mounted.current || generation.current !== started || readPending.current !== controller) return;
++      setLoading(false);
++      if (reason instanceof ApiError && reason.status === 404) {
++        apply(null);
++        await refreshCallback.current();
++      } else setError("We couldn’t sync your activity. Your chat is still available; try syncing again.");
++    } finally {
++      if (readPending.current === controller) readPending.current = null;
++    }
++  }, [apply]);
++
++  useEffect(() => {
++    mounted.current = true;
++    queueMicrotask(() => { if (mounted.current) void sync(); });
++    const resume = () => { if (document.visibilityState !== "hidden") void sync(); };
++    window.addEventListener("focus", resume);
++    document.addEventListener("visibilitychange", resume);
++    const poll = window.setInterval(resume, 15_000);
++    return () => {
++      mounted.current = false;
++      generation.current += 1;
++      pending.current?.abort();
++      readPending.current?.abort();
++      busyCallback.current(false);
++      window.clearInterval(poll);
++      window.removeEventListener("focus", resume);
++      document.removeEventListener("visibilitychange", resume);
++    };
++  }, [sync]);
++
++  useEffect(() => {
++    // A chat revision may revoke an offer/source or switch to support while a response is delayed.
++    generation.current += 1;
++    pending.current?.abort();
++    pending.current = null;
++    inFlight.current = false;
++    queueMicrotask(() => {
++      if (mounted.current) { busyCallback.current(false); setBusy(false); setRetryOperation(null); void sync(); }
++    });
++  }, [conversation.revision, sync]);
++
++  useEffect(() => {
++    const topic = (conversation as Conversation & { activity_search_topic?: string | null }).activity_search_topic;
++    if (topic) queueMicrotask(() => { if (mounted.current) setSearchOpen(true); });
++  }, [conversation]);
++
++  useEffect(() => {
++    const repaint = () => {
++      const value = current.current;
++      const anchor = clock.current;
++      if (value && anchor) setSecondsLeft(activitySecondsLeft(value, anchor, performance.now()));
++    };
++    const interval = window.setInterval(repaint, 250);
++    return () => window.clearInterval(interval);
++  }, []);
++
++  function receipt<T>(key: string, build: (requestId: string) => T): T {
++    const existing = receipts.current.get(key);
++    // A lost HTTP response may hide a committed write. Preserve its complete command,
++    // including the old revision, so the server can recover the original receipt.
++    if (existing) return JSON.parse(existing.payload) as T;
++    const payload = build(crypto.randomUUID());
++    receipts.current.set(key, { key, payload: JSON.stringify(payload) });
++    return payload;
++  }
++
++  async function operation(action: (signal: AbortSignal) => Promise<void>, retry?: () => Promise<void>) {
++    if (inFlight.current || disabled || pausedByConversation) return;
++    const started = generation.current;
++    const controller = new AbortController();
++    readPending.current?.abort();
++    readPending.current = null;
++    pending.current?.abort();
++    pending.current = controller;
++    inFlight.current = true;
++    setBusy(true);
++    busyCallback.current(true);
++    setError(null);
++    setRetryOperation(null);
++    try { await action(controller.signal); }
++    catch (reason) {
++      if (!mounted.current || generation.current !== started || pending.current !== controller) return;
++      setError(reason instanceof Error ? reason.message : "This activity change could not be confirmed.");
++      if (reason instanceof ApiError && (reason.status === 409 || reason.status === 404)) {
++        receipts.current.clear();
++        await sync();
++        await refreshCallback.current();
++      } else if (retry) setRetryOperation(() => retry);
++    } finally {
++      if (mounted.current && generation.current === started && pending.current === controller) {
++        pending.current = null;
++        inFlight.current = false;
++        setBusy(false);
++        busyCallback.current(false);
++      }
++    }
++  }
++
++  async function control(command: ActivityCommand) {
++    const value = current.current;
++    if (!value) return;
++    const started = generation.current;
++    const key = `command:${value.id}:${command}`;
++    const payload = receipt(key, (requestId) => ({ ...activityReceipt(value, chat.current, requestId), command }));
++    await operation(async (signal) => {
++      const next = await commandActivity(value.id, payload, signal);
++      if (generation.current === started && !signal.aborted) {
++        receipts.current.delete(key);
++        if (command === "start") receipts.current.delete(`create:${next.resource.id}`);
++        apply(next);
++      }
++    }, () => control(command));
++  }
++
++  async function saveOffer(resourceId: string, resourceToken?: string, start = false) {
++    const started = generation.current;
++    const expected = chat.current.revision ?? 0;
++    const key = `create:${resourceId}`;
++    const payload = receipt(key, (requestId) => ({
++      client_request_id: requestId, expected_conversation_revision: expected, resource_id: resourceId,
++      ...(resourceToken ? { resource_token: resourceToken } : {}),
++    }));
++    let confirmed = false;
++    await operation(async (signal) => {
++      const offered = await createActivity(chat.current.id, payload, signal);
++      if (generation.current !== started || signal.aborted) return;
++      apply(offered);
++      confirmed = true;
++      if (start) {
++        const startKey = `command:${offered.id}:start`;
++        const startPayload = receipt(startKey, (requestId) => ({
++          ...activityReceipt(offered, chat.current, requestId), command: "start" as const,
++        }));
++        const active = await commandActivity(offered.id, startPayload, signal);
++        if (generation.current === started && !signal.aborted) { receipts.current.delete(startKey); apply(active); }
++      }
++      receipts.current.delete(key);
++    }, async () => { await saveOffer(resourceId, resourceToken, start); });
++    return confirmed;
++  }
++
++  async function followUp(value = current.current) {
++    if (!value?.report || value.follow_up_status === "ready") return;
++    const started = generation.current;
++    const key = `followup:${value.id}`;
++    const payload = receipt(key, (requestId) => activityReceipt(value, chat.current, requestId));
++    const run = async (signal: AbortSignal) => {
++      const next = await followUpActivity(value.id, payload, signal);
++      if (generation.current !== started || signal.aborted) return;
++      receipts.current.delete(key);
++      apply(next);
++    };
++    await operation(run, () => followUp());
++  }
++
++  async function saveReport(report: ActivityReport) {
++    const value = current.current;
++    if (!value) return;
++    const started = generation.current;
++    const key = `report:${value.id}:${JSON.stringify(report)}`;
++    const payload = receipt(key, (requestId) => ({ ...activityReceipt(value, chat.current, requestId), ...report }));
++    let saved: ActivitySession | null = null;
++    await operation(async (signal) => {
++      const next = await reportActivity(value.id, payload, signal);
++      if (generation.current === started && !signal.aborted) {
++        receipts.current.delete(key); apply(next); saved = next;
++        // A concerning report may atomically move the chat to support. Show that
++        // authoritative route immediately, before attempting a normal follow-up.
++        if ((next.conversation_revision ?? 0) > (chat.current.revision ?? 0)) await refreshCallback.current();
++      }
++    }, () => saveReport(report));
++    // Only the independently confirmed report triggers a model response. Failed generation leaves it intact.
++    if (saved && mounted.current && generation.current === started) await followUp(saved);
++  }
++
++  // A newer chat can invalidate the timer before its canonical session read arrives.
++  // Never revive an old completion question during that synchronization window.
++  const sessionNeedsSync = Boolean(session && (session.conversation_revision ?? 0) < (conversation.revision ?? 0));
++  const expiryPending = !disabled && !pausedByConversation && !sessionNeedsSync
++    && Boolean(session?.status === "active" && session.resource.format === "timer" && secondsLeft === 0);
++  useEffect(() => {
++    if (!expiryPending || !session || disabled || busy) return;
++    const key = `${session.id}:${session.revision}`;
++    if (expiryAttempt.current === key) return;
++    expiryAttempt.current = key;
++    // One deterministic question is rendered locally; the server receipt makes tabs/retries converge.
++    void control("expire");
++  });
++
++  const terminal = session && ["completed", "stopped", "declined"].includes(session.status);
++  const card = currentActivityCard(conversation);
++  const primary = card?.actions.find((resource) => resource.id === card.decision_preview.action_id) ?? card?.actions[0];
++  const consumedOffer = (session as (ActivitySession & { offered_message_id?: string | null }) | null)?.offered_message_id;
++  const freshOffer = card?.offered_message_id && consumedOffer && card.offered_message_id !== consumedOffer;
++  const canStart = ordinaryMessages < 20 && !pausedByConversation;
++  const showOffer = Boolean(canStart && primary && (!session || (terminal && (freshOffer || primary.id !== session.resource.id))));
++
++  async function saveSearch(resource: ActivityResource, token: string) {
++    const saved = await saveOffer(resource.id, token);
++    if (!saved) throw new Error("The resource save is not confirmed. Check the activity status and retry.");
++  }
++
++  return (
++    <div className="stack">
++      {loading && <p className="small muted" role="status">Syncing your activity…</p>}
++      {showOffer && primary && <section className="card stack" aria-label="Activity with Luna">
++        <h2>{primary.title}</h2><p>{card?.card_reason ?? primary.summary}</p>
++        {!primary.id.startsWith("guided_") && <p className="small muted">Saved resource collection</p>}
++        {primary.duration_minutes && <p className="small muted">About {primary.duration_minutes} minutes</p>}
++        <div className="row"><button className="btn btn-primary" type="button" disabled={busy || disabled || loading}
++          onClick={() => void saveOffer(primary.id, undefined, true)}>Start activity</button>
++          <button className="btn btn-ghost" type="button" disabled={busy || disabled || loading}
++            onClick={() => void saveOffer(primary.id).then((saved) => { if (saved) void control("decline"); })}>Not now</button></div>
++        <p className="small muted">You can tell Luna what would fit better in the chat.</p>
++        <Link className="small muted" href={discoveryHref(card?.goal)}>Search for other resources</Link>
++      </section>}
++      {session && <ActivitySessionPanel session={session} secondsLeft={secondsLeft} busy={busy || disabled || pausedByConversation || sessionNeedsSync}
++        suppressQuestions={disabled || pausedByConversation || sessionNeedsSync}
++        canStart={canStart}
++        expiryPending={expiryPending} onCommand={(command) => void control(command)}
++        onReport={(report) => void saveReport(report)} onFollowUp={() => void followUp()} />}
++      <button className="chip" type="button" disabled={busy || disabled || !canStart} onClick={() => setSearchOpen((value) => !value)}>
++        {searchOpen ? "Close activity search" : "Find another resource"}
++      </button>
++      {searchOpen && <ActivitySessionDiscovery conversation={conversation} disabled={busy || disabled || !canStart} onSave={saveSearch} />}
++      {error && <div className="stack"><p role="alert" className="note error">{error}</p>
++        {retryOperation && <button className="btn btn-soft" type="button" disabled={busy || disabled}
++          onClick={() => void retryOperation()}>Retry activity change</button>}
++        <button className="btn btn-ghost" type="button" disabled={busy || disabled} onClick={() => void sync()}>Sync activity</button>
++      </div>}
++    </div>
++  );
++}
+--- /dev/null
++++ b/web/lib/activity-card.ts
+@@ -0,0 +1,7 @@
++import type { ActionCard, Conversation } from "./types";
++
++/** New activity recommendations are separate so older production clients can still parse legacy cards. */
++export function currentActivityCard(conversation: Conversation | null | undefined): ActionCard | null {
++  const current = conversation as (Conversation & { activity_card?: ActionCard | null }) | null | undefined;
++  return current?.activity_card ?? current?.card ?? null;
++}
+--- /dev/null
++++ b/web/lib/activity-session.ts
+@@ -0,0 +1,99 @@
++import { apiRequest } from "./api";
++import type { Conversation } from "./types";
++
++export type ActivityStatus = "offered" | "active" | "paused" | "awaiting_report" | "completed" | "stopped" | "declined";
++export type ActivityCommand = "start" | "pause" | "resume" | "finish_early" | "expire" | "stop" | "decline";
++export type ActivityResource = {
++  id: string; title: string; url: string | null; provider: string; resource_type: string;
++  format: "timer" | "external" | "manual";
++  kind: "meditation" | "movement" | "reflection" | "connection" | "focus" | "video" | "reading" | "other";
++  duration_seconds: number | null; instructions: string[];
++  provenance: "builtin" | "catalog" | "search_snippet";
++};
++export type ActivityReport = {
++  participation: "completed" | "partial" | "not_tried" | "stopped";
++  fit?: "good" | "mixed" | "poor" | "unsure" | null;
++  state_change?: "toward_target" | "same" | "away_from_target" | "unsure" | null;
++  goal_progress?: "closer" | "same" | "further" | "unsure" | null;
++  before_rating?: number | null; after_rating?: number | null;
++  helpfulness?: number | null; effort?: number | null; note?: string | null;
++};
++export type ActivitySession = {
++  id: string; user_id: string; conversation_id: string; source_entry_id: string | null;
++  offered_message_id?: string | null;
++  revision: number; status: ActivityStatus; resource: ActivityResource;
++  goal?: "settle" | "move" | "understand" | "connect" | "act" | null;
++  recommendation_reason: string | null;
++  selection: { selection_source: "llm" | "guided" | "user" | "search"; recommended_resource_id: string;
++    selected_resource_id: string; eligible_for_ope: false; propensity: null };
++  duration_seconds: number; remaining_seconds: number; expires_at: string | null;
++  created_at: string; updated_at: string; started_at: string | null;
++  check_in_issued: boolean; report: ActivityReport | null; reported_at: string | null;
++  follow_up_status: "none" | "pending" | "generating" | "ready" | "failed";
++  follow_up_reply: string | null; follow_up_message_id?: string | null;
++  follow_up_attempts: number; final_follow_up: boolean;
++  server_now: string | null; conversation_revision: number | null;
++};
++export type ActivityReceipt = {
++  client_request_id: string; expected_revision: number; expected_conversation_revision: number;
++};
++
++export function readCurrentActivity(conversationId: string, signal?: AbortSignal): Promise<ActivitySession | null> {
++  return apiRequest(`/v1/conversations/${conversationId}/activity-sessions`, { signal });
++}
++
++export function createActivity(conversationId: string, payload: {
++  client_request_id: string; expected_conversation_revision: number; resource_id: string; resource_token?: string;
++}, signal?: AbortSignal): Promise<ActivitySession> {
++  return apiRequest(`/v1/conversations/${conversationId}/activity-sessions`, {
++    method: "POST", body: JSON.stringify(payload), retry: true, signal,
++  });
++}
++
++export function commandActivity(sessionId: string, payload: ActivityReceipt & { command: ActivityCommand }, signal?: AbortSignal): Promise<ActivitySession> {
++  return apiRequest(`/v1/activity-sessions/${sessionId}/commands`, {
++    method: "POST", body: JSON.stringify(payload), retry: true, signal,
++  });
++}
++
++export function reportActivity(sessionId: string, payload: ActivityReceipt & ActivityReport, signal?: AbortSignal): Promise<ActivitySession> {
++  return apiRequest(`/v1/activity-sessions/${sessionId}/report`, {
++    method: "POST", body: JSON.stringify(payload), retry: true, signal,
++  });
++}
++
++/** Saving a report is separate from a paid follow-up; a timeout cannot erase the report. */
++export function followUpActivity(sessionId: string, payload: ActivityReceipt, signal?: AbortSignal): Promise<ActivitySession> {
++  return apiRequest(`/v1/activity-sessions/${sessionId}/follow-up`, {
++    method: "POST", body: JSON.stringify(payload), timeoutMs: 60_000, retry: false, signal,
++  });
++}
++
++export function activityReceipt(session: ActivitySession, conversation: Conversation, requestId: string): ActivityReceipt {
++  return {
++    client_request_id: requestId,
++    expected_revision: session.revision,
++    expected_conversation_revision: Math.max(session.conversation_revision ?? 0, conversation.revision ?? 0),
++  };
++}
++
++/** Responses from another chat or an older tab must not rewind a canonical session. */
++export function canApplyActivity(current: ActivitySession | null, next: ActivitySession, conversationId: string): boolean {
++  if (next.conversation_id !== conversationId) return false;
++  if (!current) return true;
++  if (current.id === next.id) return next.revision >= current.revision;
++  return Date.parse(next.created_at) >= Date.parse(current.created_at);
++}
++
++export type ActivityClock = { serverMillis: number; monotonicMillis: number };
++
++export function activityClock(session: ActivitySession, monotonicMillis: number): ActivityClock {
++  return { serverMillis: Date.parse(session.server_now ?? session.updated_at), monotonicMillis };
++}
++
++/** The interval only repaints. A server deadline and monotonic elapsed time decide expiry. */
++export function activitySecondsLeft(session: ActivitySession, clock: ActivityClock, monotonicMillis: number): number {
++  if (session.status !== "active" || !session.expires_at) return session.remaining_seconds;
++  const estimatedServerNow = clock.serverMillis + Math.max(0, monotonicMillis - clock.monotonicMillis);
++  return Math.max(0, Math.ceil((Date.parse(session.expires_at) - estimatedServerNow) / 1000));
++}
+--- /dev/null
++++ b/web/tests/unit/activity-session.test.tsx
+@@ -0,0 +1,255 @@
++import { act, createElement, StrictMode } from "react";
++import { createRoot, type Root } from "react-dom/client";
++import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
++
++vi.mock("@/lib/api", async (original) => ({
++  ...await original<typeof import("@/lib/api")>(), apiRequest: vi.fn(),
++}));
++
++import { ActionTimer } from "@/components/action-timer";
++import { ActivitySessionPanel } from "@/components/activity-session-panel";
++import { ActivitySessionWorkspace } from "@/components/activity-session-workspace";
++import { ApiError, apiRequest } from "@/lib/api";
++import { activityClock, activitySecondsLeft, canApplyActivity, type ActivitySession } from "@/lib/activity-session";
++import type { Conversation } from "@/lib/types";
++
++const CHAT = "10000000-0000-4000-8000-000000000001";
++const SESSION = "20000000-0000-4000-8000-000000000001";
++const SERVER = Date.parse("2026-10-05T12:00:00Z");
++const chat: Conversation = {
++  id: CHAT, user_id: "owner", created_at: new Date(SERVER).toISOString(), updated_at: new Date(SERVER).toISOString(),
++  status: "open", mode: "ai", llm_consent: true, retain_text: false, safety_mode: "normal", locale: "CA",
++  prompt_version: "test", revision: 2,
++  card: {
++    resource_intent: "ground", card_reason: "A quiet pause fits the two minutes you have.",
++    goal: "settle", actions: [{ id: "guided_meditation_2m", title: "Two-minute quiet meditation", url: "",
++      summary: "A quiet pause.", provider: "JournalPulse", resource_type: "activity", coping_style: "ground", duration_minutes: 2 }],
++    decision_preview: { decision_id: "test", action_id: "guided_meditation_2m", propensity: 1, policy_name: "mock",
++      policy_version: "test", safe_action_ids: ["guided_meditation_2m"], explanation: "fits", selection_source: "policy", eligible_for_ope: false },
++  },
++};
++
++function session(status: ActivitySession["status"] = "offered", revision = 0): ActivitySession {
++  return {
++    id: SESSION, user_id: "owner", conversation_id: CHAT, source_entry_id: null, revision, status,
++    resource: { id: "guided_meditation_2m", title: "Two-minute quiet meditation", url: null, provider: "JournalPulse",
++      resource_type: "activity", format: "timer", kind: "meditation", duration_seconds: 120,
++      instructions: ["Sit comfortably.", "Notice where you are, without changing your breathing."], provenance: "builtin" },
++    recommendation_reason: "A quiet pause fits the two minutes you have.",
++    selection: { selection_source: "llm", recommended_resource_id: "guided_meditation_2m", selected_resource_id: "guided_meditation_2m", eligible_for_ope: false, propensity: null },
++    goal: "settle", duration_seconds: 120, remaining_seconds: 120,
++    expires_at: status === "active" ? new Date(SERVER + 120_000).toISOString() : null,
++    created_at: new Date(SERVER).toISOString(), updated_at: new Date(SERVER).toISOString(),
++    started_at: status === "offered" ? null : new Date(SERVER).toISOString(), check_in_issued: false,
++    report: null, reported_at: null, follow_up_status: "none", follow_up_reply: null,
++    follow_up_attempts: 0, final_follow_up: false, server_now: new Date(SERVER).toISOString(), conversation_revision: 2,
++  };
++}
++
++let root: Root;
++let container: HTMLDivElement;
++const requested = vi.mocked(apiRequest);
++
++beforeEach(() => {
++  (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
++  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "setTimeout", "clearTimeout", "performance"] });
++  requested.mockReset();
++  container = document.createElement("div"); document.body.appendChild(container); root = createRoot(container);
++});
++afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.useRealTimers(); vi.restoreAllMocks(); });
++
++function button(label: string): HTMLButtonElement {
++  const found = [...container.querySelectorAll("button")].find((item) => item.textContent?.trim() === label);
++  expect(found, label).toBeTruthy(); return found!;
++}
++async function click(label: string) { await act(async () => button(label).click()); }
++
++describe("authoritative activity clock", () => {
++  test("server deadline ignores local wall-clock changes and interval count", () => {
++    const active = session("active", 1); const anchor = activityClock(active, 1000);
++    vi.setSystemTime(new Date("2040-01-01"));
++    expect(activitySecondsLeft(active, anchor, 46_000)).toBe(75);
++    expect(activitySecondsLeft(active, anchor, 121_000)).toBe(0);
++  });
++  test("paused duration survives a long interruption and old tab state cannot rewind a session", () => {
++    const paused = { ...session("paused", 3), remaining_seconds: 71 };
++    expect(activitySecondsLeft(paused, activityClock(paused, 0), 500_000)).toBe(71);
++    expect(canApplyActivity(paused, session("active", 2), CHAT)).toBe(false);
++    expect(canApplyActivity(paused, { ...paused, conversation_id: "other" }, CHAT)).toBe(false);
++  });
++});
++
++describe("legacy timer", () => {
++  test("StrictMode completion calls the hook once and does not infer participation", async () => {
++    const done = vi.fn();
++    await act(async () => root.render(createElement(StrictMode, null, createElement(ActionTimer, { minutes: 1, onDone: done }))));
++    await click("Start a 1-minute timer");
++    await act(async () => vi.advanceTimersByTime(60_000));
++    expect(done).toHaveBeenCalledOnce();
++    await act(async () => vi.advanceTimersByTime(10_000));
++    expect(done).toHaveBeenCalledOnce(); expect(container.textContent).not.toContain("Nice work");
++  });
++  test("pause time does not consume the remaining activity duration", async () => {
++    await act(async () => root.render(createElement(ActionTimer, { minutes: 1 })));
++    await click("Start a 1-minute timer"); await act(async () => vi.advanceTimersByTime(10_000)); await click("Pause");
++    await act(async () => vi.advanceTimersByTime(40_000)); expect(container.querySelector('[role="timer"]')?.textContent).toBe("0:50");
++    await click("Keep going"); await act(async () => vi.advanceTimersByTime(15_000));
++    expect(container.querySelector('[role="timer"]')?.textContent).toBe("0:35");
++  });
++});
++
++describe("inline activity lifecycle", () => {
++  let stored: ActivitySession | null;
++  let followupFails: boolean;
++  const refresh = vi.fn(async () => undefined);
++  beforeEach(() => {
++    stored = null; followupFails = false; refresh.mockClear();
++    requested.mockImplementation(async (path, init) => {
++      if (path === `/v1/conversations/${CHAT}/activity-sessions` && !init?.method) return stored
++        ? { ...stored, server_now: new Date(SERVER + performance.now()).toISOString() } : null;
++      if (path === `/v1/conversations/${CHAT}/activity-sessions` && init?.method === "POST") { stored = session(); return stored; }
++      const body = init?.body ? JSON.parse(String(init.body)) : null;
++      if (path === `/v1/activity-sessions/${SESSION}/commands`) {
++        const value = stored!;
++        const status = body.command === "start" || body.command === "resume" ? "active" : body.command === "pause" ? "paused" :
++          body.command === "stop" ? "stopped" : body.command === "decline" ? "declined" : "awaiting_report";
++        stored = { ...value, status, revision: value.revision + 1,
++          started_at: body.command === "start" ? new Date(SERVER).toISOString() : value.started_at,
++          expires_at: status === "active" ? new Date(SERVER + performance.now() + value.remaining_seconds * 1000).toISOString() : null,
++          server_now: new Date(SERVER + performance.now()).toISOString(), check_in_issued: status === "awaiting_report" };
++        return stored;
++      }
++      if (path === `/v1/activity-sessions/${SESSION}/report`) {
++        stored = { ...stored!, status: "completed", revision: stored!.revision + 1,
++          report: { participation: body.participation, state_change: body.state_change ?? null }, follow_up_status: "pending" };
++        return stored;
++      }
++      if (path === `/v1/activity-sessions/${SESSION}/follow-up`) {
++        if (followupFails) throw new ApiError("Temporary follow-up outage", 503);
++        stored = { ...stored!, revision: stored!.revision + 1, follow_up_status: "ready", follow_up_reply: "Thanks for telling me you did not try it.",
++          follow_up_message_id: "assistant-outcome" }; return stored;
++      }
++      throw new Error(`Unexpected ${path}`);
++    });
++  });
++  async function mount() { await act(async () => root.render(createElement(ActivitySessionWorkspace, {
++    conversation: chat, disabled: false, onRefresh: refresh, onBusyChange: vi.fn(),
++  }))); }
++
++  test("starting creates a separate activity without accepting or clearing the chat", async () => {
++    await mount(); await click("Start activity");
++    expect(stored?.status).toBe("active"); expect(button("Pause")).toBeTruthy();
++    expect(requested.mock.calls.some(([path]) => path.endsWith("/accept"))).toBe(false);
++    expect(refresh).not.toHaveBeenCalled();
++  });
++
++  test("an additive activity card starts in chat while the legacy card stays empty", async () => {
++    const compatible = { ...chat, card: null, activity_card: chat.card } as Conversation;
++    await act(async () => root.render(createElement(ActivitySessionWorkspace, {
++      conversation: compatible, disabled: false, onRefresh: refresh, onBusyChange: vi.fn(),
++    })));
++    await click("Start activity");
++    expect(stored?.resource.id).toBe("guided_meditation_2m");
++    expect(stored?.status).toBe("active");
++    expect(compatible.card).toBeNull();
++    expect(requested.mock.calls.some(([path]) => path.endsWith("/accept"))).toBe(false);
++  });
++
++  test("expiry renders one participation check and no paid generation before a report", async () => {
++    await mount(); await click("Start activity");
++    await act(async () => vi.advanceTimersByTime(120_000));
++    expect(container.textContent?.match(/Did you try it\?/g)).toHaveLength(1);
++    expect(stored?.report).toBeNull();
++    const expiry = requested.mock.calls.filter(([path, init]) => path.endsWith("/commands") && JSON.parse(String(init?.body)).command === "expire");
++    expect(expiry.length).toBeLessThanOrEqual(1);
++    expect(requested.mock.calls.some(([path]) => path.endsWith("/follow-up"))).toBe(false);
++  });
++
++  test("a saved not-tried report survives a follow-up outage and retry does not submit it twice", async () => {
++    followupFails = true;
++    await mount(); await click("Start activity"); await click("Finish early");
++    const choice = container.querySelector<HTMLInputElement>('input[value="not_tried"]')!;
++    await act(async () => choice.click()); await click("Save check-in");
++    expect(stored?.report?.participation).toBe("not_tried"); expect(container.textContent).toContain("Check-in saved");
++    const failed = requested.mock.calls.find(([path]) => path.endsWith("/follow-up"))!;
++    followupFails = false; await click("Retry Luna’s follow-up");
++    expect(requested.mock.calls.filter(([path]) => path.endsWith("/report"))).toHaveLength(1);
++    const retries = requested.mock.calls.filter(([path]) => path.endsWith("/follow-up"));
++    expect(retries[1][1]?.body).toBe(failed[1]?.body); expect(refresh).toHaveBeenCalledOnce();
++  });
++
++  test("a follow-up completed by another tab after 202 appears after one canonical refresh", async () => {
++    stored = { ...session("completed", 3), report: { participation: "partial" }, follow_up_status: "pending" };
++    const fallback = requested.getMockImplementation()!;
++    requested.mockImplementation(async (path, init) => {
++      if (path.endsWith("/follow-up")) { stored = { ...stored!, revision: 4, follow_up_status: "generating" }; return stored; }
++      return fallback(path, init);
++    });
++    await mount(); await click("Retry Luna’s follow-up");
++    expect(refresh).not.toHaveBeenCalled();
++    stored = { ...stored!, revision: 5, follow_up_status: "ready", follow_up_message_id: "other-tab-message" };
++    await act(async () => window.dispatchEvent(new Event("focus")));
++    await act(async () => window.dispatchEvent(new Event("focus")));
++    expect(refresh).toHaveBeenCalledOnce();
++    expect(requested.mock.calls.filter(([path]) => path.endsWith("/follow-up"))).toHaveLength(1);
++  });
++
++  test("a fresh same-resource offer appears after a completed session, but the consumed offer does not", async () => {
++    stored = { ...session("completed", 4), offered_message_id: "old-offer", report: { participation: "completed" }, follow_up_status: "ready" };
++    await act(async () => root.render(createElement(ActivitySessionWorkspace, { conversation: {
++      ...chat, card: { ...chat.card!, offered_message_id: "old-offer" },
++    }, disabled: false, onRefresh: refresh, onBusyChange: vi.fn() })));
++    expect([...container.querySelectorAll("button")].some((item) => item.textContent === "Start activity")).toBe(false);
++    await act(async () => root.render(createElement(ActivitySessionWorkspace, { conversation: {
++      ...chat, revision: 3, card: { ...chat.card!, offered_message_id: "new-offer" },
++    }, disabled: false, onRefresh: refresh, onBusyChange: vi.fn() })));
++    expect(button("Start activity")).toBeTruthy();
++  });
++
++  test("started-session controls and check-in remain usable at the ordinary message limit", async () => {
++    stored = session("paused", 2);
++    await act(async () => root.render(createElement(ActivitySessionWorkspace, {
++      conversation: chat, ordinaryMessages: 20, disabled: false, onRefresh: refresh, onBusyChange: vi.fn(),
++    })));
++    expect(button("Finish early").disabled).toBe(false); await click("Finish early");
++    expect(container.querySelector<HTMLInputElement>('input[value="not_tried"]')?.disabled).toBe(false);
++    expect(button("Find another resource").disabled).toBe(true);
++  });
++
++  test("a stop conversation suppresses a stale expired timer and later cannot restore its old question", async () => {
++    stored = { ...session("active", 2), expires_at: new Date(SERVER).toISOString(), remaining_seconds: 0 };
++    const paused = { ...chat, activity_move: "pause" } as Conversation;
++    await act(async () => root.render(createElement(ActivitySessionWorkspace, {
++      conversation: paused, disabled: false, onRefresh: refresh, onBusyChange: vi.fn(),
++    })));
++    await act(async () => vi.advanceTimersByTime(1000));
++    expect(container.textContent).not.toContain("Did you try it?");
++    expect(requested.mock.calls.some(([path]) => path.endsWith("/commands") || path.endsWith("/follow-up"))).toBe(false);
++    stored = { ...stored, status: "stopped", revision: 3, check_in_issued: false, expires_at: null };
++    await act(async () => root.render(createElement(ActivitySessionWorkspace, {
++      conversation: { ...chat, revision: 3 }, disabled: false, onRefresh: refresh, onBusyChange: vi.fn(),
++    })));
++    expect(container.textContent).not.toContain("Did you try it?");
++    expect(container.textContent).toContain("Activity stopped");
++  });
++});
++
++test("an invalidated unstarted offer cannot invite a participant report", async () => {
++  const stopped = { ...session("stopped"), started_at: null };
++  await act(async () => root.render(createElement(ActivitySessionPanel, { session: stopped, secondsLeft: 120,
++    busy: false, expiryPending: false, onCommand: vi.fn(), onReport: vi.fn(), onFollowUp: vi.fn() })));
++  expect(container.textContent).not.toContain("Did you try it?"); expect(container.textContent).toContain("No activity started");
++});
++
++test("a conversation stop is silent while explicit activity Stop can offer an honest report", async () => {
++  const stopped = { ...session("stopped", 3), check_in_issued: false };
++  const props = { session: stopped, secondsLeft: 0, busy: false, expiryPending: false,
++    onCommand: vi.fn(), onReport: vi.fn(), onFollowUp: vi.fn() };
++  await act(async () => root.render(createElement(ActivitySessionPanel, props)));
++  expect(container.textContent).not.toContain("Did you try it?");
++  await act(async () => root.render(createElement(ActivitySessionPanel, {
++    ...props, session: { ...stopped, check_in_issued: true },
++  })));
++  expect(container.textContent?.match(/Did you try it\?/g)).toHaveLength(1);
++  expect(container.querySelector<HTMLInputElement>('input[value="stopped"]')?.checked).toBe(false);
++});
+--- a/web/tests/unit/journal-chat.test.tsx
++++ b/web/tests/unit/journal-chat.test.tsx
+@@ -526,6 +526,8 @@
+     requested.mockImplementation(async (path, options) => {
+       if (path === `/v1/conversations/${OLD_CHAT_ID}` || path === `/v1/conversations/${NEW_CHAT_ID}`) {
+         const chat = conversation(path.endsWith(OLD_CHAT_ID) ? OLD_CHAT_ID : NEW_CHAT_ID);
++        // Legacy guided acceptance still closes/saves; AI now uses an open activity session.
++        chat.mode = "guided";
+         chat.card = {
+           resource_intent: "ground", card_reason: "A small step.", actions: [],
+           decision_preview: {
+@@ -621,6 +623,7 @@
+     requested.mockImplementation(async (path, options) => {
+       if (path === `/v1/conversations/${OLD_CHAT_ID}`) {
+         const existing = conversation(OLD_CHAT_ID, ENTRY_ID);
++        existing.mode = "guided";
+         existing.card = {
+           resource_intent: "ground", card_reason: "A private explanation.", goal: "settle", actions: [],
+           decision_preview: {

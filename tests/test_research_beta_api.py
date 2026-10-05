@@ -207,10 +207,14 @@ def test_export_and_delete_all_user_data_are_isolated(tmp_path: Path):
         assert deleted.json()["deleted_records"] == 2
         assert deleted.json()["auth_identity_deleted"] is False
         assert client.get("/v1/export", headers={"X-JournalPulse-User": USER_A}).json() == {
+            "journal_entries": [],
             "reflections": [],
             "outcomes": [],
             "conversations": [],
             "conversation_messages": [],
+            "conversation_preference_requests": [],
+            "activity_sessions": [],
+            "activity_receipts": [],
         }
         assert len(
             client.get("/v1/reflections", headers={"X-JournalPulse-User": USER_B}).json()["items"]

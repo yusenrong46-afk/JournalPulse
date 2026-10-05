@@ -1,0 +1,49 @@
+{
+  "reason": "Default Sol route returned three 429 errors; stop repeat failures and pin the standard-price Azure endpoint used successfully in previous evaluation.",
+  "model_unchanged": "openai/gpt-6.1-sol",
+  "provider": {
+    "zdr": true,
+    "require_parameters": true,
+    "order": [
+      "azure"
+    ],
+    "allow_fallbacks": false
+  },
+  "prompt_and_case_content_unchanged": true,
+  "prior_attempts_preserved": true,
+  "teacher_minimum_start_interval_seconds": 35,
+  "second_route": {
+    "reason": "Standard route remains intermittently limited after pacing. Test faster endpoint for identical Sol model without changing scoring instructions.",
+    "provider": {
+      "zdr": true,
+      "require_parameters": true,
+      "order": [
+        "openai/fast"
+      ],
+      "allow_fallbacks": false
+    },
+    "pricing_usd_per_million": {
+      "input": 4,
+      "output": 20,
+      "cache_write": 5
+    },
+    "budget_unchanged_usd": 7,
+    "attempts_for_old_routes_preserved": true
+  },
+  "regional_route_test": {
+    "provider": {
+      "zdr": true,
+      "require_parameters": true,
+      "order": [
+        "azure/eu"
+      ],
+      "allow_fallbacks": false
+    },
+    "pricing_usd_per_million": {
+      "input": 2.2,
+      "output": 11,
+      "cache_write": 2.75
+    },
+    "reason": "Try explicit regional endpoint selection while preserving ZDR. Stop the entire teacher stage if the route rejects a bounded operation."
+  }
+}

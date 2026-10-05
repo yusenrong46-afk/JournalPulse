@@ -1,0 +1,12 @@
+{
+  "verified_at": "2026-10-05T18:07:46.220255+00:00",
+  "read_only": true,
+  "preview_deployment": "dpl_Ey6QzvQBWwpXaqwyT64N8rhR9d5n",
+  "production_deployment": "dpl_57Rut4UoR24LsTRjsA7nEpiBQycU",
+  "aliases_unchanged": true,
+  "new_migration_applied": false,
+  "new_activity_objects_present": false,
+  "previous_local_migration_hashes_unchanged": 9,
+  "candidate_source_unchanged": true,
+  "candidate_sha256": "ae6190eddee289292fa9e899193cfbf37bf432479f967de881a2ba54c5de6318"
+}

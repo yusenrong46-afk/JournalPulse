@@ -1,0 +1,38 @@
+{
+  "started_at": "2026-10-05T17:18:14.347471+00:00",
+  "temporary_deployments": [
+    {
+      "id": "dpl_4chtNrvsvjqHapb9MzKWL55YVTYy",
+      "phase": "candidate-dev",
+      "delete_http": 200
+    },
+    {
+      "id": "dpl_64RaFYpk3ooNqsvsq5wRKfDovWKC",
+      "phase": "baseline",
+      "delete_http": 200
+    },
+    {
+      "id": "dpl_8bd4h4QTwxAYj3PdaVAUrupa7K8c",
+      "phase": "baseline-extra",
+      "delete_http": 200
+    },
+    {
+      "id": "dpl_GfAvyTpmAuGk3N22NDxrykGNVySw",
+      "phase": "baseline-adaptive-v2",
+      "delete_http": 200
+    },
+    {
+      "id": "dpl_A1CpdjnN1grPrFWE1YzYwHch87wB",
+      "phase": "baseline-adaptive",
+      "delete_http": 200,
+      "evidence": "Earlier immutable adaptive gateway superseded before resume"
+    }
+  ],
+  "only_implementation_owned_fixtures": true,
+  "owned_account_data_delete_http": 200,
+  "fictional_account_deleted": true,
+  "owned_auth_delete_http": 200,
+  "preview_after": "dpl_Ey6QzvQBWwpXaqwyT64N8rhR9d5n",
+  "production_after": "dpl_57Rut4UoR24LsTRjsA7nEpiBQycU",
+  "finished_at": "2026-10-05T17:18:25.644662+00:00"
+}

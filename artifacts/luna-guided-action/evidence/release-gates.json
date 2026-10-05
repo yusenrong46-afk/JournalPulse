@@ -1,0 +1,205 @@
+{
+  "created_at": "2026-10-05T17:26:43.705493+00:00",
+  "overall_status": "fail",
+  "candidate_sha256": "d1959359e0ff6f0a55abcf0ebbac644a376ddd4927363a7948abfcaa1057251d",
+  "migration_sha256": "737a2de145a257a48bdf94b5ce946bbb22ca3fe1604a4c0ed51aaf1f150469f6",
+  "deployment_performed": false,
+  "migration_applied": false,
+  "stable_alias_changed": false,
+  "gates": {
+    "critical_safety_privacy_lifecycle": {
+      "status": "fail",
+      "note": "No severe language failure was observed, but held-out g29 was rejected by the real delivery parser; its turn was not saved.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/candidate-pipeline-replay.json",
+          "sha256": "2c35f744f617ff960614a5fd529979ebc10011ea6cdee29ca8121f504308a302"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/candidate-deterministic-evidence.json",
+          "sha256": "835facf0f1196ef62bfe133ede368fc032a2630e22847e13c8a26561288f6934"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-comparison-summary.json",
+          "sha256": "0b5f329ab74fdba822eb2160734655cbd99c75a7622a19c4a32851bde5f5d157"
+        }
+      ]
+    },
+    "heldout_primary_gain": {
+      "status": "incomplete",
+      "note": "13 of 14 expected eligible pairs delivered and judged; the missing case stays in the denominator.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-comparison-summary.json",
+          "sha256": "0b5f329ab74fdba822eb2160734655cbd99c75a7622a19c4a32851bde5f5d157"
+        }
+      ]
+    },
+    "heldout_candidate_win_rate": {
+      "status": "incomplete",
+      "note": "5/7 non-tied deliverable pairs favor the candidate; complete held-out delivery did not pass.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-comparison-summary.json",
+          "sha256": "0b5f329ab74fdba822eb2160734655cbd99c75a7622a19c4a32851bde5f5d157"
+        }
+      ]
+    },
+    "naturalness_non_regression": {
+      "status": "incomplete",
+      "note": "Descriptive paired gain is +0.25/5, but the benchmark has an unresolved held-out delivery failure.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-comparison-summary.json",
+          "sha256": "0b5f329ab74fdba822eb2160734655cbd99c75a7622a19c4a32851bde5f5d157"
+        }
+      ]
+    },
+    "adaptive_before_after_complete": {
+      "status": "incomplete",
+      "note": "All eight bounded paired trajectories were captured; seven received a teacher judgment. One judgment exhausted four rate-limited attempts.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-comparison-summary.json",
+          "sha256": "0b5f329ab74fdba822eb2160734655cbd99c75a7622a19c4a32851bde5f5d157"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/candidate-adaptive-development-judge-summary.json",
+          "sha256": "62a2d3325603272236af7b198212629b982654d71214e0e4c29d848b7bd44e4e"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/candidate-adaptive-holdout-judge-summary.json",
+          "sha256": "8cc95e4217546ffdb46e05278cb2208ae85ccaaaa5db2ef0b84316a24c027d59"
+        }
+      ]
+    },
+    "new_functionality_acceptance": {
+      "status": "fail",
+      "note": "Local session, privacy and persistence checks pass, but the walking-search case failed delivery. Hosted candidate smoke checks were not run.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-integration.log",
+          "sha256": "174c867c71037c7018a87158b2f636f29ad106966acb6754673d419c6ca77c37"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/candidate-deterministic-evidence.json",
+          "sha256": "835facf0f1196ef62bfe133ede368fc032a2630e22847e13c8a26561288f6934"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-comparison-summary.json",
+          "sha256": "0b5f329ab74fdba822eb2160734655cbd99c75a7622a19c4a32851bde5f5d157"
+        }
+      ]
+    },
+    "required_software_checks": {
+      "status": "pass",
+      "note": "609 backend, 103 frontend unit, 16 real-stack integration tests, static checks and build passed. The 44 mobile/desktop checks are a separate earlier run.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-backend.log",
+          "sha256": "9b46e77bf920440fd587044a7b056dbe410f2591293c3eeb12017f7c9d3d6402"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-backend-coverage.xml",
+          "sha256": "4b377894c6f60cee891b5dc6ef8137ec1db0629a4d7f2825d5158447689cbb09"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-web-unit.log",
+          "sha256": "4abb75278ee454804a4a80e37342ab3b4e087fce7b6ebe5df171dc216d86c597"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-integration.log",
+          "sha256": "174c867c71037c7018a87158b2f636f29ad106966acb6754673d419c6ca77c37"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-ruff.log",
+          "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-mypy.log",
+          "sha256": "522d7b3a15704213950b7053c882b6ddd0c41149631300ce6c1933d21b5971c3"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-openapi.log",
+          "sha256": "d9f5be39f6afb81bfaee0f88c490e590347e03944ef33536980c67424a918191"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-catalog.log",
+          "sha256": "14824ba53752936acbfbcd46fb4a93714846290eca8a2877945855bfd7cce3d1"
+        }
+      ]
+    },
+    "bounded_live_model_search_evidence": {
+      "status": "incomplete",
+      "note": "Actual Luna and teacher calls were captured; one consented fictional Brave query succeeded on the unchanged Preview. This does not establish hosted candidate inline-flow acceptance.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/model-preflight.json",
+          "sha256": "baeb404466b20f95607ba7d554cb5075d3fb0ff2b68c0a5f5e9cf3d4e6e24f93"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/shared-preview-live-search.json",
+          "sha256": "ba1d88741248e5cb3be85db757cf43ac546313851014cc602817c18d434de2bc"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/budget.json",
+          "sha256": "44224f85d9351fa6278a635c4379d8b6e6caa7e86635fa897c0a7a920d2e7cbc"
+        }
+      ]
+    },
+    "old_new_parser_compatibility": {
+      "status": "pass",
+      "note": "Frozen old-parser compatibility and signed PostgreSQL checks pass locally; post-migration hosted checks remain unrun because release is blocked.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/backend-old-parser-compatibility.json",
+          "sha256": "ed8061ef1d7b1d5c96cca2dc1cfc57a99683c93150fe73490791463c45b4d170"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/release/migration-impact.md",
+          "sha256": "bfd64cabc65605dbd0de7204c012679fde0044d1ef14745450f613629fe44371"
+        }
+      ]
+    },
+    "inspectable_report_and_patches": {
+      "status": "pass",
+      "note": "Exact final offline report passed Chromium checks; upgrade-only combined patch reverse-checks against the complete dirty baseline. Ordered patches are review groups, not individually validated build checkpoints.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/final-report-browser-verification.json",
+          "sha256": "3b9968d42accd9c629ce4f2ccaf5799ecd1b175d3e21226ee2b95c67e5aff617"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/combined-upgrade.patch",
+          "sha256": "b89ec93995d8b218d02732d587664dffdbf69337bcd3639c3cb6c5b3d8c01598"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/upgrade-files.json",
+          "sha256": "9d2630ec0c0770195b1a2efa166051b4d36484362142c33c55abb1f8c64f3b3c"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/UNIT_NOTES.md",
+          "sha256": "1ca0dae017bc764e0fc8e9e29c3d4a2470db4b155fe49985123db33a99f3d952"
+        }
+      ]
+    },
+    "spend_within_budget": {
+      "status": "incomplete",
+      "note": "All attempt ceilings and the conservative $14.37 reservation stayed within the declared cap. Reported model cost is not a full invoice; public Brave pricing was unavailable.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/budget.json",
+          "sha256": "44224f85d9351fa6278a635c4379d8b6e6caa7e86635fa897c0a7a920d2e7cbc"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/reported-usage-costs.json",
+          "sha256": "4f117cced7429ab83d937f68f757d25974b0ab84f57d4346e453a9ce0c12543b"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-2026-10-05/brave-pricing-preflight.json",
+          "sha256": "e7c95f17cb8f21cb42afdb46370f84fd6f0b376e193d8de9ed25152944df1e58"
+        }
+      ]
+    }
+  }
+}

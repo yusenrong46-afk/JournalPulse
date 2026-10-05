@@ -1,4 +1,4 @@
-"""The safety gate is a small set of phrase patterns with clause-scoped negation. It routes
+"""The safety gate is a small set of phrase patterns with phrase-scoped negation. It routes
 clear, explicit risk language to human support before any model call. It is not a
 classifier and does not understand meaning; the cases below pin its intended behaviour,
 including where it deliberately errs toward support and where it is known to miss."""
@@ -27,6 +27,16 @@ def test_safety_matches_lowercased_risk_phrases():
     assert plan.mode == SafetyMode.SUPPORT
     thoughts = assess_safety("I might act on these thoughts", "US")
     assert thoughts.mode == SafetyMode.SUPPORT
+
+
+@pytest.mark.parametrize("text", [
+    "I don't feel safe", "I don't feel safe.", "I don’t feel safe.",
+    "I do not feel safe.", "I do not feel safe; please help.",
+])
+def test_unsafe_feeling_without_a_time_suffix_routes_to_support(text: str):
+    result = assess_safety(text, "CA")
+    assert result.mode == SafetyMode.SUPPORT
+    assert result.exploration_allowed is False
 
 
 def test_safety_negation_does_not_clear_risk_in_another_clause():

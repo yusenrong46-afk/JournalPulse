@@ -4,6 +4,8 @@ import os
 from dataclasses import replace
 from pathlib import Path
 
+import pytest
+
 from journalpulse import config
 
 
@@ -113,4 +115,55 @@ def test_production_uses_vercel_origins_when_cors_is_unset(monkeypatch, tmp_path
         "https://journalpulse.vercel.app",
         "https://journalpulse-abc.vercel.app",
     )
+    assert settings.configuration_issues == []
+
+
+@pytest.mark.parametrize("origin", [
+    "*", "https://*.example.com", "http://journalpulse.example", "https://localhost",
+    "https://127.0.0.2", "https://[::1]", "https://0.0.0.0", "https://app.localhost",
+    "https://journalpulse.example/path", "https://journalpulse.example?", "https://journalpulse.example#",
+    "https://user:password@journalpulse.example", "https://journalpulse.example:bad",
+    "https://journalpulse.example:70000", "https://journalpulse.example:",
+    "https://journal pulse.example", "https://journalpulse.example\\other",
+])
+def test_production_rejects_unsafe_or_malformed_cors_origins(monkeypatch, tmp_path: Path, origin: str):
+    _ready_production(monkeypatch, tmp_path)
+    monkeypatch.setenv("JOURNALPULSE_CORS_ORIGINS", origin)
+    assert "production_cors_invalid" in config.load_settings().configuration_issues
+
+
+def test_local_development_still_accepts_http_origins(monkeypatch, tmp_path: Path):
+    _ready_production(monkeypatch, tmp_path)
+    monkeypatch.setenv("JOURNALPULSE_ENV", "local")
+    monkeypatch.setenv("JOURNALPULSE_CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+    settings = config.load_settings()
+    assert settings.configuration_issues == []
+    assert settings.cors_origins == ("http://localhost:3000", "http://127.0.0.1:3000")
+
+
+def test_production_accepts_explicit_https_custom_port_origins(monkeypatch, tmp_path: Path):
+    _ready_production(monkeypatch, tmp_path)
+    monkeypatch.setenv("JOURNALPULSE_CORS_ORIGINS", "https://journalpulse.example:8443")
+    assert config.load_settings().configuration_issues == []
+
+
+@pytest.mark.parametrize("value", [0.0, -1.0, float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize(
+    ("field", "issue"),
+    [("openrouter_timeout_seconds", "llm_timeout_invalid"), ("chat_timeout_seconds", "chat_timeout_invalid")],
+)
+def test_invalid_provider_deadlines_are_not_ready(
+    monkeypatch, tmp_path: Path, field: str, issue: str, value: float,
+):
+    _ready_production(monkeypatch, tmp_path)
+    monkeypatch.setenv("VERCEL_URL", "journalpulse-preview.vercel.app")
+    settings = replace(config.load_settings(), **{field: value})
+    assert issue in settings.configuration_issues
+
+
+@pytest.mark.parametrize("value", [0.1, 45.0, 120.0])
+def test_positive_finite_provider_deadlines_remain_valid(monkeypatch, tmp_path: Path, value: float):
+    _ready_production(monkeypatch, tmp_path)
+    monkeypatch.setenv("VERCEL_URL", "journalpulse-preview.vercel.app")
+    settings = replace(config.load_settings(), openrouter_timeout_seconds=value, chat_timeout_seconds=value)
     assert settings.configuration_issues == []

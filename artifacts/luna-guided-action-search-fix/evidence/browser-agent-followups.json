@@ -1,0 +1,12 @@
+{
+  "kind": "supplemental_agent_written_followups",
+  "method": "Codex assistant writes one fictional follow-up per case, then captures actual Luna responses for both versions. Same follow-up wording in each pair. This is post-hoc qualitative verification, not the predeclared GPT-6.1 Sol simulator or blinded teacher benchmark. Formal adaptive failures remain unchanged.",
+  "provider_calls_planned": 8,
+  "teacher_calls": 0,
+  "followups": {
+    "g16_no_breath_focus": "Can you keep it to two minutes and use something I can notice without focusing on breathing?",
+    "g18_negotiate_duration": "Can I keep my eyes open for the whole two minutes, and stop early if I want?",
+    "r07_tiny_start": "The whole chapter still feels too big. Can the first step be smaller than a paragraph?",
+    "r21_past_present": "I feel relieved now. What can we learn from last Tuesday’s entry without treating that fear as current?"
+  }
+}

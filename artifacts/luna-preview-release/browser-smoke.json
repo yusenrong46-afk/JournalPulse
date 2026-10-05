@@ -1,0 +1,14 @@
+{
+  "status": "pass",
+  "checks": [
+    "real signed-in chat and approved meditation render",
+    "start/pause/reload/resume preserve timer",
+    "finish early gives participation check-in",
+    "not-tried report persists",
+    "real Luna follow-up reaches ready",
+    "chat remains open",
+    "no JavaScript errors or mobile overflow"
+  ],
+  "javascript_errors": [],
+  "mobile_overflow": false
+}

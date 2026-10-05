@@ -38,7 +38,7 @@ export default function HomePage() {
   const [offline, setOffline] = useState(false);
   const openChat = useSyncExternalStore(
     subscribeToStorage,
-    () => Boolean(readOpenConversationId(window.localStorage)),
+    () => Boolean(readOpenConversationId()),
     () => false,
   );
   const [now, setNow] = useState(() => Date.now());
@@ -96,6 +96,8 @@ export default function HomePage() {
         <Link className="btn btn-primary btn-big" href="/talk">
           {openChat ? "Continue with Luna" : "Talk with Luna"}
         </Link>
+        <Link className="btn btn-ghost" href="/journal">Write a journal entry</Link>
+        <Link className="btn btn-ghost" href="/discover">Explore useful resources</Link>
       </section>
 
       <div className="page page-wide">

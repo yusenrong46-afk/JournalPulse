@@ -1,0 +1,217 @@
+{
+  "created_at": "2026-10-05T18:11:12.528471+00:00",
+  "overall_status": "incomplete",
+  "candidate_sha256": "ae6190eddee289292fa9e899193cfbf37bf432479f967de881a2ba54c5de6318",
+  "migration_sha256": "737a2de145a257a48bdf94b5ce946bbb22ca3fe1604a4c0ed51aaf1f150469f6",
+  "deployment_performed": false,
+  "migration_applied": false,
+  "stable_alias_changed": false,
+  "gates": {
+    "critical_safety_privacy_lifecycle": {
+      "status": "uncertain",
+      "note": "617 backend and 16 browser integrations pass; no observed severe language failure. Four development critical cases remain formally unresolved, separate from passed fail-closed parser checks.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/comparison-summary.json",
+          "sha256": "ee63970a2d5e0721347639c32116c28f569af6fcf22796030bfa969118fa9553"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/candidate-pipeline-replay.json",
+          "sha256": "e04d089cf8e1249132fd76ebc446796648b99c0f334f8e31039e7fe4f5ad2b1e"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/backend.log",
+          "sha256": "4b0d8e62c27a289a950851b5d96f3f75310914d25072d68d85e15ec10d21e101"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/integration.log",
+          "sha256": "0f8fb2c60b1f72798252a9b2e39678d3ef0cbeb44c7371aa024ceff54cea3a72"
+        }
+      ]
+    },
+    "heldout_primary_gain": {
+      "status": "incomplete",
+      "note": "15 of 20 expected quality pairs scored. Descriptive mean +1.067/5 on those pairs is partial, not a passed release gate.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/comparison-summary.json",
+          "sha256": "ee63970a2d5e0721347639c32116c28f569af6fcf22796030bfa969118fa9553"
+        }
+      ]
+    },
+    "heldout_candidate_win_rate": {
+      "status": "incomplete",
+      "note": "Eight candidate preferences and seven ties among 15 scored quality pairs; five expected pairs remain missing.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/comparison-summary.json",
+          "sha256": "ee63970a2d5e0721347639c32116c28f569af6fcf22796030bfa969118fa9553"
+        }
+      ]
+    },
+    "naturalness_non_regression": {
+      "status": "incomplete",
+      "note": "Descriptive mean +0.2/5 on 15 eligible pairs; incomplete controlled and adaptive evidence remains.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/comparison-summary.json",
+          "sha256": "ee63970a2d5e0721347639c32116c28f569af6fcf22796030bfa969118fa9553"
+        }
+      ]
+    },
+    "adaptive_before_after_complete": {
+      "status": "incomplete",
+      "note": "Formal trajectories observed for seven baseline and five candidate scenarios of eight; zero fresh paired teacher judgments. Four supplemental paired Codex-written follow-ups have eight actual Luna responses, but do not replace the declared teacher method.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/comparison-summary.json",
+          "sha256": "ee63970a2d5e0721347639c32116c28f569af6fcf22796030bfa969118fa9553"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/agent-review.json",
+          "sha256": "a1777996b844f616daacd0f4c5ec71cb08190151dc565680f41ad534a4bb12a4"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/browser-agent-capture-normalization.json",
+          "sha256": "95226a48a1f5090b826b09c3c22fb49a8fc2c1ec98da6b7ebbcbf483b8c90596"
+        }
+      ]
+    },
+    "new_functionality_acceptance": {
+      "status": "incomplete",
+      "note": "The original walking bug is fixed: actual Luna category output saves through HTTP200, and local session/UI integration checks pass. Hosted new-session migration and acceptance remain unrun because release is gated.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/regression-pipeline-replay.json",
+          "sha256": "a15dd85efc0aef8f0954defe9dca10a7bd98ab266c752d7b4fecbb83b6573ac2"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/integration.log",
+          "sha256": "0f8fb2c60b1f72798252a9b2e39678d3ef0cbeb44c7371aa024ceff54cea3a72"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/release/unchanged-hosted-state.json",
+          "sha256": "2162371171f1c5f93f23ea2e136b9b58b5a8776865bfca08a71e40315f665466"
+        }
+      ]
+    },
+    "required_software_checks": {
+      "status": "pass",
+      "note": "617 backend tests, 90.67% coverage with branch measurement, 16 fresh real-stack browser integrations, Ruff/mypy/OpenAPI and actual wheel validation pass. Frontend source is unchanged by this fix; prior 103 frontend units and build are historical evidence.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/backend.log",
+          "sha256": "4b0d8e62c27a289a950851b5d96f3f75310914d25072d68d85e15ec10d21e101"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/backend-coverage.xml",
+          "sha256": "107ed894432d3548f4cb0ba257c5c41486064c8f95ec0b01c38c7a9772a4dbde"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/integration.log",
+          "sha256": "0f8fb2c60b1f72798252a9b2e39678d3ef0cbeb44c7371aa024ceff54cea3a72"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/ruff.log",
+          "sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/mypy.log",
+          "sha256": "9161fdbf6e938dc0ff27d5d15bbad888b3e60ce4592d74a684cd5ae4231d8a4b"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/openapi.log",
+          "sha256": "d9f5be39f6afb81bfaee0f88c490e590347e03944ef33536980c67424a918191"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/wheel-verification.json",
+          "sha256": "c03cf00b6abbcfb12c03f98ab9354045c507e543ef14d3f0a40f8850affd815d"
+        }
+      ]
+    },
+    "bounded_live_model_search_evidence": {
+      "status": "incomplete",
+      "note": "54 actual candidate completions/refusals match production replay; walking regression and consented public Brave query succeed. Hosted candidate inline acceptance and the full teacher benchmark are incomplete.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/candidate-pipeline-replay.json",
+          "sha256": "e04d089cf8e1249132fd76ebc446796648b99c0f334f8e31039e7fe4f5ad2b1e"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/regression-pipeline-replay.json",
+          "sha256": "a15dd85efc0aef8f0954defe9dca10a7bd98ab266c752d7b4fecbb83b6573ac2"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/shared-preview-live-search.json",
+          "sha256": "eb061f8643dd7c2ba719b1a23a78f77120d200c273e9d2acddc6bed57e72ebce"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/comparison-summary.json",
+          "sha256": "ee63970a2d5e0721347639c32116c28f569af6fcf22796030bfa969118fa9553"
+        }
+      ]
+    },
+    "old_new_parser_compatibility": {
+      "status": "pass",
+      "note": "Frozen old parser and new signed local PostgreSQL paths pass; nine inherited SQL migration hashes are unchanged. This does not claim hosted post-migration compatibility.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/backend-old-parser-compatibility.json",
+          "sha256": "ed8061ef1d7b1d5c96cca2dc1cfc57a99683c93150fe73490791463c45b4d170"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/release/unchanged-hosted-state.json",
+          "sha256": "2162371171f1c5f93f23ea2e136b9b58b5a8776865bfca08a71e40315f665466"
+        }
+      ]
+    },
+    "inspectable_report_and_patches": {
+      "status": "pass",
+      "note": "Final comparison and supplemental HTML pass exact-byte Chromium checks. Fix-only and complete upgrade patches reverse-check against the dirty workspace and forward application reconstructs the frozen prior candidate.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/final-report-browser-verification.json",
+          "sha256": "8a4500431bd19eb226fd1d62254d239ee6c2b7f137e25a2c79a0d753ff2fefc9"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/supplemental-report-browser-verification.json",
+          "sha256": "b81b14808dc9f537aeea0193770425d800efc166016448e4d436bae45db80f8a"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/search-contract-fix.patch",
+          "sha256": "62fe59b65b864583608165d013333455e7422693938375ca458a31745257a316"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/combined-upgrade.patch",
+          "sha256": "fed575c967aa79218b2dc021854778248ef540825b849ff27b61cef4f78590ad"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/patch-verification.json",
+          "sha256": "414924d46206adb09d0118d8a71f39d1913d0428e949548ab0f44ce2d7e41dad"
+        }
+      ]
+    },
+    "spend_within_budget": {
+      "status": "pass",
+      "note": "Original ceilings unchanged: 219/600 Luna, 171/180 teacher and 2/6 Brave calls; conservative reservation $22.40/$25. Reported model usage is not an invoice; search pricing remains unverified, so the dollar cap is a reservation estimate and call caps are the enforceable limits.",
+      "evidence": [
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/reported-usage-costs.json",
+          "sha256": "897a2b6d6120999be76b07dc26b5dc18afff1efdab8f0ef758daab09b91c9cb4"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/protocol.json",
+          "sha256": "27ae760ddbffde866a6c15548b998b0209d90ca87061ecc2e99e53002cc39aaf"
+        },
+        {
+          "path": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/teacher-pause.json",
+          "sha256": "600367890a81f55ffab547a5fede0e6c071dc9516148089573c8010374383f2a"
+        }
+      ]
+    }
+  },
+  "remaining_teacher_capacity": 9,
+  "additional_teacher_operations_minimum_without_errors": 17,
+  "retry_bound_exhausted_case": "r15_uncertain_effect",
+  "browser_or_agent_review_overrides_formal_scores": false
+}

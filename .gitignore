@@ -34,5 +34,8 @@ web/node_modules/
 web/.next/
 web/out/
 web/test-results/
+web/test-results-integration/
 web/playwright-report/
 web/*.tsbuildinfo
+/build/
+/dist/

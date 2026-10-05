@@ -375,6 +375,41 @@ button {
   gap: 12px;
 }
 
+/* Saved writing keeps line breaks; long pasted words must fit mobile screens. */
+.journal-entry-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.journal-entry-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.journal-entry-link {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--plum-soft);
+  border-radius: var(--radius-lg);
+  overflow-wrap: anywhere;
+}
+
+.journal-entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.journal-reflect {
+  margin-top: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--plum-soft);
+}
+
 .center {
   text-align: center;
   justify-items: center;

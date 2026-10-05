@@ -1,5 +1,10 @@
 # Release Evidence
 
+For the follow-on implementation measured locally on 2026-10-04, see
+[Persistent preference and retention evidence](PHASE_A_PREFERENCE_EVIDENCE.md).
+The production observations below are historical records from 2026-09-28; they have not been
+reverified for the new code or migrations.
+
 Phase A (reliability and data integrity), measured on 2026-09-28. These are engineering checks, not
 claims that the product improves anyone's wellbeing.
 

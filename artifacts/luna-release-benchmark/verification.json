@@ -1,0 +1,22 @@
+{
+  "source_freeze_unchanged": true,
+  "dataset_unchanged": true,
+  "actual_provider_request_identity_errors": [],
+  "verified_provider_records": 207,
+  "exact_bound_judgments": 75,
+  "recorded_model_usd_this_run": 1.47982027,
+  "accounted_total_with_historical_allowance_usd": 4.461164965,
+  "authorized_total_usd": 7,
+  "counts": {
+    "teacher": 111,
+    "luna": 103,
+    "brave": 1
+  },
+  "failed_or_unknown_attempts": 20,
+  "no_prompt_tuning": true,
+  "limitations": [
+    "Historical provider response costs are not an invoice.",
+    "Model judgments do not prove human comfort or clinical benefit.",
+    "Adaptive turn budget is two per version; simulator paths are fictional."
+  ]
+}

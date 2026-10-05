@@ -1,0 +1,7 @@
+{
+  "initial_error": "Chromium did not trust the cloud proxy certificate",
+  "persistent_trust_change": "Rejected by automatic approval review; no trust-store changes made",
+  "safer_alternative": "Browser receives actual hosted HTTPS responses through existing certificate-verifying httpx client, confined to loopback and the two test hosts",
+  "tls_verification_disabled": false,
+  "user_accounts_from_initial_attempt_deleted": true
+}

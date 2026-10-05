@@ -1,0 +1,11 @@
+{
+  "name": "rate-limits",
+  "url": "https://openrouter.ai/docs/api/reference/limits",
+  "final_url": "https://openrouter.ai/docs/api/reference/limits",
+  "status": 200,
+  "title": "API Credit & Rate Limits - Handle 402 and 429 Errors",
+  "checked_at": "2026-10-05T18:02:05.761Z",
+  "characters": 11600,
+  "browser": "/usr/bin/chromium",
+  "retrieval_method": "Playwright request with configured Node CA validation; exact HTML rendered in Chromium, assets blocked"
+}

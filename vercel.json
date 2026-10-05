@@ -2,9 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
     "app.py": {
-      "maxDuration": 60,
+      "maxDuration": 120,
       "includeFiles": "web-dist/**",
-      "excludeFiles": "{tests/**,web/node_modules/**,web/.next/**,web/out/**,docs/**,.git/**,.venv/**}"
+      "excludeFiles": "{tests/**,web/{tests,test-results*,playwright-report,node_modules,.next,out}/**,web/{playwright*.config.ts,vitest.config.ts,*.tsbuildinfo},docs/**,artifacts/**,assets/evaluation/**,{build,dist,*.egg-info,.github,.git,.venv}/**}"
     }
   },
   "headers": [

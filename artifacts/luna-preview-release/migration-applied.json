@@ -1,0 +1,49 @@
+{
+  "aggregate_counts_after": [
+    {
+      "conversations": 8,
+      "journal_entries": 2,
+      "messages": 80,
+      "reflections": 4
+    }
+  ],
+  "aggregate_counts_before": [
+    {
+      "conversations": 8,
+      "journal_entries": 2,
+      "messages": 80,
+      "reflections": 4
+    }
+  ],
+  "created_at": "2026-10-05T20:55:12.878670+00:00",
+  "migration": "202610050001_guided_activity_sessions.sql",
+  "migration_history_recorded": false,
+  "schema_after": {
+    "activity_owner_index": "conversations_owner_id_activity_idx",
+    "activity_receipts": "activity_receipts",
+    "activity_sessions": "activity_sessions",
+    "claim_followup_rpc": "jp_claim_activity_followup_v1(text,text)",
+    "command_rpc": "jp_activity_command_v1(text,text)",
+    "compatibility_trigger": true,
+    "finish_followup_rpc": "jp_finish_activity_followup_v1(text,text)",
+    "integrity_v2": "jp_consume_rate_limit_v2(text,text)",
+    "journal_entries": "journal_entries",
+    "journal_save_rpc": "jp_save_journal_entry(text,text)",
+    "lifecycle_trigger": true,
+    "migration_history": null,
+    "offer_rpc": "jp_offer_activity_v1(text,text)",
+    "preference_rpc": "jp_change_preference(text,text)",
+    "readiness_v2": "jp_readiness_v2(text,text)",
+    "readiness_v3": "jp_readiness_v3(text,text)",
+    "report_rpc": "jp_report_activity_v1(text,text)",
+    "retention_state": "private.retention_state"
+  },
+  "security_checks": {
+    "client_write_grants": 0,
+    "owner_select_policies": 2,
+    "receipt_rls": true,
+    "session_rls": true
+  },
+  "sha256": "42c52f43dce346fabdf4751f29c94abe06bd2ad41e8c923233c31dc57f5f205f",
+  "transaction_committed": true
+}

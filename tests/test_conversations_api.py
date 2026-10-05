@@ -236,6 +236,21 @@ def test_support_mode_never_calls_the_model_and_stays_there(tmp_path: Path):
         assert model.calls == []
 
 
+def test_unsafe_feeling_without_a_time_suffix_bypasses_the_model(tmp_path: Path):
+    model = ScriptedClient(offers=[True])
+    app = create_app(settings=chat_settings(tmp_path), conversation_client=model)
+    with TestClient(app) as client:
+        for sentence in ("I don't feel safe.", "I don’t feel safe."):
+            conversation = start(client)
+            response = say(client, conversation["id"], sentence)
+            assert response.status_code == 200, response.text
+            body = response.json()
+            assert body["conversation"]["safety_mode"] == "support"
+            assert body["conversation"]["ready_for_action"] is False
+            assert body["assistant_message"]["model_run"]["model"] == "safety-router"
+            assert model.calls == []
+
+
 def test_analysis_and_conversation_share_one_limiter(tmp_path: Path):
     class Counting:
         def __init__(self) -> None:
@@ -353,7 +368,9 @@ def test_guided_luna_runs_without_consent_or_a_model(tmp_path: Path, monkeypatch
         assert body["conversation"]["ready_for_action"] is False
         say(client, conversation["id"], "Mostly in my chest.")
         third = say(client, conversation["id"], "I just want it to go well.")
-        assert third.json()["conversation"]["ready_for_action"] is True
+        assert third.json()["conversation"]["ready_for_action"] is False
+        requested = say(client, conversation["id"], "I'd like to find one small thing.")
+        assert requested.json()["conversation"]["ready_for_action"] is True
         turn = choose_goal(client, conversation["id"], "settle")
         card = turn["conversation"]["card"]
         assert card["goal"] == "settle"

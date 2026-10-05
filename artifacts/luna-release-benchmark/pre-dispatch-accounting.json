@@ -1,0 +1,17 @@
+{
+  "attempts": [
+    105,
+    104,
+    107,
+    110,
+    113,
+    111,
+    106,
+    108,
+    112,
+    102,
+    109,
+    103
+  ],
+  "evidence": "Retained HTTP404 routing messages state every endpoint was removed before dispatch. Attempts still count; original reservation retained in records. Uncertain/in-flight attempts retain reservations."
+}

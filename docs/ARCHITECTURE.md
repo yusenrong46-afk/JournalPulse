@@ -13,7 +13,8 @@ Next.js PWA ─► request guard ─► auth ─► safety gate ─┬─ suppor
                                                    person's choice ─► saved reflection ─► check-in
 ```
 
-Everything a person does happens in one conversation. The server owns the parts that must be trusted:
+Chat follows this loop. Standalone journals and discovery are described in
+[CONNECTED_LUNA_ARCHITECTURE.md](CONNECTED_LUNA_ARCHITECTURE.md). The server owns the parts that must be trusted:
 the safety check, the model call, the catalog, the policy, and what gets saved. The browser owns the
 gentle prompts in between (the feelings and goal buttons) and sends only their result.
 
@@ -41,11 +42,22 @@ A conversation records its `mode` when it starts:
   `OpenRouterConversationClient` (`JOURNALPULSE_CHAT_MODEL`, default `openai/gpt-6-luna`) with a strict
   JSON schema, zero-data-retention routing, and bounded retries. There is no canned reply when the
   provider fails; nothing is saved for that turn.
-- `guided`: no AI. `journalpulse.guided` returns fixed questions, guesses feelings by keyword, and marks
-  the chat ready after the third message. It never copies the person's words into the summary.
+- `guided`: no AI. `journalpulse.guided` returns fixed questions and guesses feelings by keyword.
+  Current-turn intent and the saved interaction preference govern activity invitations.
+  It never copies the person's words into the summary.
 
 When a record is saved, its `model_run` names the model that actually held the conversation, not the
 local goal step.
+
+## Browser account boundaries
+
+Authenticated workspaces remount when their owner changes. Preferences, resume IDs,
+and reminders use account-specific browser keys; only actual boolean values enable
+AI consent or retention. Legacy shared-device consent is not assigned to an account.
+API requests validate the resolved token's owner and capture an account revision,
+so switching away and back cannot revive an obsolete request or retry.
+Backend RLS and ownership checks remain authoritative. Client cancellation does
+not undo a transaction already committed by the server.
 
 ## Conversation lifecycle
 
@@ -72,6 +84,35 @@ text unless the person chose to keep it. A unique index allows one reflection pe
 request ID returns the saved record; a different one gets 409. Any failure rolls the whole step back.
 
 `jp_delete_conversation` removes the chat, its messages, and its linked reflection in one transaction.
+
+### Persistent conversation choice
+
+`interaction_preference` is separate from AI/guided `mode`: `auto` preserves the existing flow,
+`listen` means Just talk, and `act` follows an explicit Find a small step request. Older JSON records
+without this field default to `auto`.
+
+`POST /v1/conversations/{id}/preference` takes `client_request_id`, `expected_revision`, and
+`preference` (`listen` or `act`). The repository checks ownership, receipts, lifecycle, and revision
+inside one transaction. It clears the card, sets readiness for the new choice, advances the revision,
+and stores a small command receipt. It does not call a model or save a reflection. Receipts last for
+the conversation's lifetime, contain no journal text, and are exported and deleted with it.
+
+A duplicate command returns **current** state; replaying Listen cannot undo a later Act choice.
+Reusing its ID with another preference or revision is a conflict. This route does not acquire the
+model-generation lock: its revision change invalidates a reply still being computed. Browser response
+handling also rejects older revisions, other conversation IDs, and attempts to undo close/support.
+
+While listening, model offer flags and message counts cannot restore readiness or an ordinary card.
+Guided replies stay conversational. AI turns include a trusted system instruction derived only from
+the validated preference (`CONVERSATION_PROMPT_VERSION=2026-10-04.2`). Live prompt adherence remains
+a language-quality question; these controls do not prove that every generated sentence avoids advice.
+Support routing takes precedence and its resource cards remain usable.
+
+Act clears any old card and reopens feelings/goal selection. The next goal builds a fresh card.
+The browser sends `expected_revision` when accepting. The API rejects an obsolete revision; after an
+explicit preference change, acceptance without a client revision is rejected too. Legacy `auto`
+chats retain acceptance without a client revision, so that older contract has no guarantee about an
+obsolete displayed card. Preference-aware chats require the updated client and API; see the runbook.
 
 ## Trusted provenance
 
@@ -111,7 +152,7 @@ never returns keeps their open-chat text until the job runs again.
 
 ## Rate limiting
 
-AI-backed requests consume `jp_consume_rate_limit`, a per-person sliding window in Postgres guarded by an
+AI-backed requests consume signed `jp_consume_rate_limit_v2`, a per-person sliding window in Postgres guarded by an
 advisory lock, so every server instance sees the same count. A refusal returns 429 with `Retry-After`
 (seconds until the oldest counted request leaves the window). If the counter cannot be reached, the
 request fails closed with 503 and no model call is made. A small in-memory limiter still rejects bursts
@@ -125,6 +166,7 @@ Supabase Postgres, with row-level security on every table (`auth.uid() = user_id
 | Table | Holds |
 |---|---|
 | `conversations`, `conversation_messages` | Open chats and their messages as JSON records, plus the `revision` |
+| `conversation_preference_requests` | Owner-scoped command receipts: ID, preference, expected revision, timestamp; no text |
 | `reflections` | One saved check-in: derived state, the person's report, target goal, summary, safety result, decision, and the source conversation |
 | `policy_decisions` | The action offered, the person's choice, propensity, and policy version |
 | `outcomes` | The later check-in for a decision |
@@ -134,6 +176,11 @@ Supabase Postgres, with row-level security on every table (`auth.uid() = user_id
 
 Local development and tests use `SQLiteRepository`, which enforces the same revision checks,
 single-accept rule, idempotency, retention, and rate limit inside serialized transactions.
+SQLite connections close after commit/rollback. HTTP operations close transports
+they create while preserving caller-owned injected transports. An in-process set
+tracks only active conversation turns; idle rate-limit identities are periodically
+removed. See [FOUNDATION_AUDIT_2026-10-05.md](FOUNDATION_AUDIT_2026-10-05.md) for
+the regressions and measured local optimizations.
 
 ## Policy
 
@@ -145,7 +192,7 @@ exist only behind flags that stay off until the gates in the [research track](RE
 ## Safety gate
 
 `journalpulse.safety` matches a short list of explicit risk phrases, with negation that applies only
-inside the same clause. It routes clear risk language to human support before any model call, and errs
+to the matched phrase it contains. It routes clear risk language to human support before any model call, and errs
 toward support when negation is phrased in a way it does not recognise. It is not a classifier and does
 not understand meaning: indirect language such as "ending it all" is not detected. The tests in
 `tests/test_research_beta_safety.py` pin both the intended behaviour and these known gaps.
@@ -159,6 +206,7 @@ not understand meaning: indirect language such as "ending it all" is not detecte
 | `GET /v1/system/status` | Whether AI is configured and where data is stored |
 | `POST /v1/conversations` | Start a chat (`llm_consent`, `retain_text`, `locale`) |
 | `GET /v1/conversations/{id}` | Restore a chat, including the person's confirmed feelings and mood |
+| `POST /v1/conversations/{id}/preference` | Persist an explicit listening/action choice and invalidate older work |
 | `POST /v1/conversations/{id}/messages` | Send a message, optionally with `mood_score`, or `goal` and `confirmed_feelings` |
 | `POST /v1/conversations/{id}/accept` | Save the chosen action; the state is derived from what the person confirmed |
 | `POST /v1/conversations/{id}/close`, `DELETE /v1/conversations/{id}` | End or delete a chat |

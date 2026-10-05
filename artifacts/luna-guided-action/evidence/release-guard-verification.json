@@ -1,0 +1,43 @@
+{
+  "status": "pass",
+  "external_calls": 0,
+  "checks": [
+    {
+      "check": "missing gate artifact blocks migrate before network",
+      "status": "pass"
+    },
+    {
+      "check": "all exact evidence hashes pass local gate verification",
+      "status": "pass"
+    },
+    {
+      "check": "uncertain critical gate blocks migrate before network",
+      "status": "pass"
+    },
+    {
+      "check": "gate for different source blocks deploy before network",
+      "status": "pass"
+    },
+    {
+      "check": "changed evidence blocks alias before network",
+      "status": "pass"
+    },
+    {
+      "check": "source drift blocks migrate before network",
+      "status": "pass"
+    },
+    {
+      "check": "missing migration verification blocks deploy before network",
+      "status": "pass"
+    },
+    {
+      "check": "non-ready deployment blocks alias before network",
+      "status": "pass"
+    },
+    {
+      "check": "missing candidate smoke blocks alias before network",
+      "status": "pass"
+    }
+  ],
+  "scope": "Local helper guards only; not hosted migration or deployment evidence."
+}

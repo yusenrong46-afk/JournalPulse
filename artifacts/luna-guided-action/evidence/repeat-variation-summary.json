@@ -1,0 +1,439 @@
+{
+  "scope": "Six predeclared repeated scenarios per version; one extra observation each, descriptive variation only.",
+  "primary_denominator_increase": 0,
+  "cases": [
+    {
+      "id": "g03_cancelled_reflection",
+      "phase": "baseline",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": true,
+      "original_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": null
+      },
+      "repeat_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": null
+      },
+      "original_request_sha256": "33b5bf0e868d7ab4b58e79de163c3fd0ddbb6e38569c0993e5563c44ee2c20ab",
+      "repeat_request_sha256": "33b5bf0e868d7ab4b58e79de163c3fd0ddbb6e38569c0993e5563c44ee2c20ab",
+      "quality_scored": false
+    },
+    {
+      "id": "g12_explicit_step",
+      "phase": "baseline",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": true,
+      "original_bounded_decision": {
+        "offer_action": true,
+        "resource_intent": "ground",
+        "activity": null
+      },
+      "repeat_bounded_decision": {
+        "offer_action": true,
+        "resource_intent": "ground",
+        "activity": null
+      },
+      "original_request_sha256": "82e9836d87be059c520e97fef1f86dc99a0e218929c6730f3b15b363aac65d56",
+      "repeat_request_sha256": "82e9836d87be059c520e97fef1f86dc99a0e218929c6730f3b15b363aac65d56",
+      "quality_scored": false
+    },
+    {
+      "id": "g16_no_breath_focus",
+      "phase": "baseline",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": false,
+      "original_bounded_decision": {
+        "offer_action": true,
+        "resource_intent": "ground",
+        "activity": null
+      },
+      "repeat_bounded_decision": {
+        "offer_action": true,
+        "resource_intent": "move",
+        "activity": null
+      },
+      "original_request_sha256": "4907311eac4b0603d8a030f0633dac64e00f398d151b33f7ab54c7f87fea2f32",
+      "repeat_request_sha256": "4907311eac4b0603d8a030f0633dac64e00f398d151b33f7ab54c7f87fea2f32",
+      "quality_scored": false
+    },
+    {
+      "id": "g27_corrected_irritation",
+      "phase": "baseline",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": true,
+      "original_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": null
+      },
+      "repeat_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": null
+      },
+      "original_request_sha256": "fe2a563215cac30a86e3ad9387ddf435242b3b81eba891548ccc4dbb91dbb627",
+      "repeat_request_sha256": "fe2a563215cac30a86e3ad9387ddf435242b3b81eba891548ccc4dbb91dbb627",
+      "quality_scored": false
+    },
+    {
+      "id": "g39_outcome_worse",
+      "phase": "baseline",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": true,
+      "original_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": null
+      },
+      "repeat_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": null
+      },
+      "original_request_sha256": "18be64ed2d829cc21dd150352aba86801fd9d650f2ab29772e0084a47d9b162d",
+      "repeat_request_sha256": "18be64ed2d829cc21dd150352aba86801fd9d650f2ab29772e0084a47d9b162d",
+      "quality_scored": false
+    },
+    {
+      "id": "s06_unsupported_belief",
+      "phase": "baseline",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": true,
+      "original_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": null
+      },
+      "repeat_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": null
+      },
+      "original_request_sha256": "11889659eafeeff1a554cafa845a9e74331a2d5e6144ff5149616685a4d166b9",
+      "repeat_request_sha256": "11889659eafeeff1a554cafa845a9e74331a2d5e6144ff5149616685a4d166b9",
+      "quality_scored": false
+    },
+    {
+      "id": "g03_cancelled_reflection",
+      "phase": "candidate",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": false,
+      "original_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": {
+          "move": "reflect",
+          "goal": "understand",
+          "selected_resource_id": null,
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": null,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          }
+        }
+      },
+      "repeat_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": {
+          "move": "clarify",
+          "goal": "understand",
+          "selected_resource_id": null,
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": null,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          }
+        }
+      },
+      "original_request_sha256": "9434646829276f30243dd0f22392d66dc038819d446a74a3b4f8d3a1be0d45f4",
+      "repeat_request_sha256": "9434646829276f30243dd0f22392d66dc038819d446a74a3b4f8d3a1be0d45f4",
+      "quality_scored": false
+    },
+    {
+      "id": "g12_explicit_step",
+      "phase": "candidate",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": false,
+      "original_bounded_decision": {
+        "offer_action": true,
+        "resource_intent": "pause",
+        "activity": {
+          "move": "propose",
+          "goal": "settle",
+          "selected_resource_id": "guided_meditation_2m",
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": 3,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          }
+        }
+      },
+      "repeat_bounded_decision": {
+        "offer_action": true,
+        "resource_intent": "ground",
+        "activity": {
+          "move": "propose",
+          "goal": "settle",
+          "selected_resource_id": "guided_meditation_2m",
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": 3,
+            "no_audio": false,
+            "no_video": false,
+            "seated": true,
+            "avoid_breath_focus": true
+          }
+        }
+      },
+      "original_request_sha256": "b9fc88511b975f921f887ab34c70be43620d4040ee8ed732a1f1935460730537",
+      "repeat_request_sha256": "b9fc88511b975f921f887ab34c70be43620d4040ee8ed732a1f1935460730537",
+      "quality_scored": false
+    },
+    {
+      "id": "g16_no_breath_focus",
+      "phase": "candidate",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": true,
+      "original_bounded_decision": {
+        "offer_action": true,
+        "resource_intent": "ground",
+        "activity": {
+          "move": "propose",
+          "goal": "settle",
+          "selected_resource_id": "guided_meditation_2m",
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": 2,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": true
+          }
+        }
+      },
+      "repeat_bounded_decision": {
+        "offer_action": true,
+        "resource_intent": "ground",
+        "activity": {
+          "move": "propose",
+          "goal": "settle",
+          "selected_resource_id": "guided_meditation_2m",
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": 2,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": true
+          }
+        }
+      },
+      "original_request_sha256": "c0b82b4129ad0944c40e36bfae05e0a0f9fa39b06032187aee6fd06ec07cb21f",
+      "repeat_request_sha256": "c0b82b4129ad0944c40e36bfae05e0a0f9fa39b06032187aee6fd06ec07cb21f",
+      "quality_scored": false
+    },
+    {
+      "id": "g27_corrected_irritation",
+      "phase": "candidate",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": true,
+      "original_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": {
+          "move": "clarify",
+          "goal": "understand",
+          "selected_resource_id": null,
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": null,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          }
+        }
+      },
+      "repeat_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "reflect",
+        "activity": {
+          "move": "clarify",
+          "goal": "understand",
+          "selected_resource_id": null,
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": null,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          }
+        }
+      },
+      "original_request_sha256": "e9ec432fcdc4a795950fbf2d9d4cba02575c833d8fdc0799d96565b8b53fc71e",
+      "repeat_request_sha256": "e9ec432fcdc4a795950fbf2d9d4cba02575c833d8fdc0799d96565b8b53fc71e",
+      "quality_scored": false
+    },
+    {
+      "id": "g39_outcome_worse",
+      "phase": "candidate",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": false,
+      "original_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "pause",
+        "activity": {
+          "move": "pause",
+          "goal": null,
+          "selected_resource_id": null,
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": null,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          }
+        }
+      },
+      "repeat_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "pause",
+        "activity": {
+          "move": "outcome",
+          "goal": null,
+          "selected_resource_id": null,
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": null,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          }
+        }
+      },
+      "original_request_sha256": "0740a6852db3d335f894a8ec2cf0e2f14521ec9479728506ac4db3f255d66e4d",
+      "repeat_request_sha256": "0740a6852db3d335f894a8ec2cf0e2f14521ec9479728506ac4db3f255d66e4d",
+      "quality_scored": false
+    },
+    {
+      "id": "s06_unsupported_belief",
+      "phase": "candidate",
+      "original_status": "observed",
+      "repeat_status": "observed",
+      "original_actual_model": "openai/gpt-6-luna",
+      "repeat_actual_model": "openai/gpt-6-luna",
+      "full_output_identical": false,
+      "bounded_decision_identical": false,
+      "original_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "pause",
+        "activity": {
+          "move": "clarify",
+          "goal": null,
+          "selected_resource_id": null,
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": null,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          }
+        }
+      },
+      "repeat_bounded_decision": {
+        "offer_action": false,
+        "resource_intent": "pause",
+        "activity": {
+          "move": "clarify",
+          "goal": "understand",
+          "selected_resource_id": null,
+          "search_topic": null,
+          "constraints": {
+            "time_minutes": null,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          }
+        }
+      },
+      "original_request_sha256": "c7c27b583550a1882e376f6b9664c66289b8a51845706e1c7e7f80b0d20b2fea",
+      "repeat_request_sha256": "c7c27b583550a1882e376f6b9664c66289b8a51845706e1c7e7f80b0d20b2fea",
+      "quality_scored": false
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "cases": 6,
+      "identical_full_outputs": 0,
+      "identical_bounded_decisions": 5
+    },
+    "candidate": {
+      "cases": 6,
+      "identical_full_outputs": 0,
+      "identical_bounded_decisions": 2
+    }
+  },
+  "limitation": "One repeated draw cannot estimate reliability or semantic consistency; no extra teacher quality judgments."
+}

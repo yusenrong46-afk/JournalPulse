@@ -1,0 +1,30 @@
+{
+  "by_actual_model": {
+    "openai/gpt-6-luna": {
+      "reported_response_envelopes": 125,
+      "prompt_tokens": 261651,
+      "completion_tokens": 30826,
+      "reported_cost_usd": 0.03207141000000001
+    },
+    "openai/gpt-6.1-sol": {
+      "reported_response_envelopes": 85,
+      "prompt_tokens": 291394,
+      "completion_tokens": 64176,
+      "reported_cost_usd": 1.3583090000000002
+    }
+  },
+  "reported_model_cost_usd": 1.3903804100000001,
+  "method": "Unique retained provider response envelopes; failed attempts without usage have no reported cost.",
+  "live_shared_search_usage_not_included": true,
+  "search_price": {
+    "source": "https://brave.com/search/api/",
+    "status": "unverified",
+    "reason": "Workspace outbound proxy rejected public pricing URL (403)",
+    "reserved_estimate_per_call_usd": 0.02,
+    "actual_calls": 1,
+    "call_ceiling": 6,
+    "invoice_not_retrieved": true,
+    "limitation": "Search dollar estimate is not a verified advertised or invoiced price; call cap enforced."
+  },
+  "invoice_reconciliation": false
+}

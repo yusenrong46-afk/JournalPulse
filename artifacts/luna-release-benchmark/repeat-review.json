@@ -1,0 +1,502 @@
+{
+  "cases": [
+    {
+      "id": "f01_bookshop_connection",
+      "baseline": {
+        "first_output": {
+          "reply": "It sounds like the pleasure may have come from more than the novel itself: you got to linger in a small bookshop after work and share your interest with someone who knew the book. What felt best—the conversation, discovering something about the novel, or having an unhurried moment?",
+          "offer_action": false,
+          "resource_intent": "reflect",
+          "card_reason": "You asked to reflect on what made the bookshop visit enjoyable.",
+          "summary": "Stopped at a small bookshop after work and enjoyed talking with the owner about a novel.",
+          "feelings": [
+            "happy",
+            "calm"
+          ]
+        },
+        "repeat_output": {
+          "reply": "Maybe it was the mix of discovering a novel and having an easy, personal conversation with the owner after work. The small bookshop may have made the moment feel different from the rest of your day, too. What part do you find yourself enjoying most when you think back on it?",
+          "offer_action": false,
+          "resource_intent": "reflect",
+          "card_reason": "You asked to explore what made the bookshop visit enjoyable.",
+          "summary": "Stopped at a small bookshop after work and enjoyed talking with the owner about a novel.",
+          "feelings": [
+            "happy"
+          ]
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229929-9AZXFuuxoT5cUoqkAWBA",
+        "repeat_provider": "Azure",
+        "same_feelings": false,
+        "same_activity_decision": null,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      },
+      "candidate": {
+        "first_output": {
+          "reply": "Maybe it was the mix of discovering a novel and sharing your interest with someone who knew the shop well. The conversation may have felt especially good because it was unhurried and happened naturally after work. What part of talking with the owner stayed with you most?",
+          "offer_action": false,
+          "resource_intent": "reflect",
+          "card_reason": "",
+          "summary": "Reflecting on what made a pleasant bookshop conversation enjoyable.",
+          "feelings": [
+            "happy",
+            "okay"
+          ],
+          "activity": {
+            "move": "reflect",
+            "goal": "understand",
+            "selected_resource_id": null,
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": false,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_output": {
+          "reply": "Maybe it was the combination of finding a novel that caught your interest and sharing an easy conversation with someone who knew it well. Which part felt most satisfying—the book itself, the connection, or the chance to linger after work?",
+          "offer_action": false,
+          "resource_intent": "reflect",
+          "card_reason": "",
+          "summary": "Enjoyed a bookshop visit and conversation with the owner about a novel; exploring what made it enjoyable.",
+          "feelings": [
+            "happy"
+          ],
+          "activity": {
+            "move": "reflect",
+            "goal": "understand",
+            "selected_resource_id": null,
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": false,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229949-chqip0FknMAjYTLAF1os",
+        "repeat_provider": "Azure",
+        "same_feelings": false,
+        "same_activity_decision": true,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      }
+    },
+    {
+      "id": "f03_lunch_logistics",
+      "baseline": {
+        "first_output": {
+          "reply": "Thanks for correcting me. The upsetting part was getting through a long shift without lunch—not feeling disrespected by your roommate.",
+          "offer_action": false,
+          "resource_intent": "reflect",
+          "card_reason": "You clarified what made the situation upsetting.",
+          "summary": "They were upset because they had no lunch during a long shift.",
+          "feelings": [
+            "frustrated"
+          ]
+        },
+        "repeat_output": {
+          "reply": "Thanks for correcting me. You were upset because your roommate ate the lunch you were counting on, leaving you without food during a long shift—not because you felt disrespected.",
+          "offer_action": false,
+          "resource_intent": "reflect",
+          "card_reason": "You’re clarifying what made the situation upsetting.",
+          "summary": "Your labelled lunch was gone, and you had no lunch during a long shift.",
+          "feelings": [
+            "frustrated",
+            "stressed"
+          ]
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229932-cyZ6VPTqwEMVeHq1nIWZ",
+        "repeat_provider": "Azure",
+        "same_feelings": false,
+        "same_activity_decision": null,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      },
+      "candidate": {
+        "first_output": {
+          "reply": "That makes sense—I misread what was upsetting you. You were left without food during a long shift, which is a real practical hardship.",
+          "offer_action": false,
+          "resource_intent": "pause",
+          "card_reason": "",
+          "summary": "Roommate ate their labelled lunch, leaving them without food during a long shift; the distress is about the practical impact, not disrespect.",
+          "feelings": [
+            "frustrated",
+            "stressed"
+          ],
+          "activity": {
+            "move": "reflect",
+            "goal": null,
+            "selected_resource_id": null,
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": false,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_output": {
+          "reply": "That makes sense—the immediate problem was getting through a long shift without lunch, not what your roommate’s choice meant. That sounds really frustrating. Would it help more to talk through the upset or figure out a practical next step with your roommate?",
+          "offer_action": false,
+          "resource_intent": "reflect",
+          "card_reason": "",
+          "summary": "Upset about having no lunch during a long shift; clarified it wasn’t about feeling disrespected.",
+          "feelings": [
+            "frustrated",
+            "stressed"
+          ],
+          "activity": {
+            "move": "clarify",
+            "goal": "understand",
+            "selected_resource_id": null,
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": false,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229953-Bea8kWqZRiCnkeWUnrbg",
+        "repeat_provider": "Azure",
+        "same_feelings": true,
+        "same_activity_decision": false,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      }
+    },
+    {
+      "id": "f07_form_start",
+      "baseline": {
+        "first_output": {
+          "reply": "With little energy and dinner in two minutes, make one “sort later” stack. No decisions or sorting yet—just gather the forms in one place.",
+          "offer_action": true,
+          "resource_intent": "move",
+          "card_reason": "A tiny, low-effort first step fits your short window.",
+          "summary": "You have forms to sort, little energy, and two minutes before dinner.",
+          "feelings": [
+            "tired"
+          ]
+        },
+        "repeat_output": {
+          "reply": "Two minutes and little energy—that calls for one small starting point, not sorting the whole pile. We can keep the first step very small.",
+          "offer_action": true,
+          "resource_intent": "move",
+          "card_reason": "A tiny first step may fit the limited time and energy.",
+          "summary": "Has forms to sort, little energy, and two minutes before dinner; wants one manageable starting point.",
+          "feelings": [
+            "tired",
+            "overwhelmed"
+          ]
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229934-KPnwi8asOv7xpbHD4TSV",
+        "repeat_provider": "Azure",
+        "same_feelings": false,
+        "same_activity_decision": null,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      },
+      "candidate": {
+        "first_output": {
+          "reply": "You could spend two minutes sorting just one small group of forms—perhaps make a keep / recycle / unsure pile, without needing to finish. The two-minute task step fits your time and gives you a manageable place to begin; would you like to try it?",
+          "offer_action": true,
+          "resource_intent": "move",
+          "card_reason": "A brief, seated task step fits your two-minute window and goal of getting started.",
+          "summary": "Little energy, a pile of forms, and two minutes before dinner; wants one manageable starting point.",
+          "feelings": [
+            "tired",
+            "overwhelmed"
+          ],
+          "activity": {
+            "move": "propose",
+            "goal": "act",
+            "selected_resource_id": "guided_focus_2m",
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": false,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_output": {
+          "reply": "You could use two minutes to start with just one small part of the pile—no need to finish. The optional “Two minutes on one small task” activity fits your short window and helps keep the starting point manageable.",
+          "offer_action": true,
+          "resource_intent": "move",
+          "card_reason": "A brief, task-focused step fits your two-minute window and goal of getting started.",
+          "summary": "A pile of forms to sort, little energy, and two minutes before dinner; wants one manageable starting point.",
+          "feelings": [
+            "tired"
+          ],
+          "activity": {
+            "move": "propose",
+            "goal": "act",
+            "selected_resource_id": "guided_focus_2m",
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": false,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229957-mEu9dtNN9Th7oDxW0pPM",
+        "repeat_provider": "Azure",
+        "same_feelings": false,
+        "same_activity_decision": true,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      }
+    },
+    {
+      "id": "f09_grounded_duration",
+      "baseline": {
+        "first_output": {
+          "reply": "Yes—one quiet minute, seated, with no audio or focus on your breathing.",
+          "offer_action": true,
+          "resource_intent": "pause",
+          "card_reason": "A brief, silent seated pause tailored to your preferences.",
+          "summary": "Wants a one-minute silent seated pause without breath focus.",
+          "feelings": []
+        },
+        "repeat_output": {
+          "reply": "Of course—one quiet minute, seated, with no audio or focus on your breathing.",
+          "offer_action": false,
+          "resource_intent": "pause",
+          "card_reason": "Matches your preference for a short, silent seated pause without breath focus.",
+          "summary": "Prefers a one-minute silent seated pause without focusing on breathing.",
+          "feelings": []
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229938-xRs7gr4bTBN9VzwNWQA2",
+        "repeat_provider": "Azure",
+        "same_feelings": true,
+        "same_activity_decision": null,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      },
+      "candidate": {
+        "first_output": {
+          "reply": "Yes—there’s a one-minute quiet option that’s silent, seated, and doesn’t ask you to focus on breathing. It’s optional; you can stop whenever you like.",
+          "offer_action": true,
+          "resource_intent": "pause",
+          "card_reason": "Fits your one-minute limit and preference for a silent, seated pause without breath focus.",
+          "summary": "You’d like a shorter quiet pause with those constraints.",
+          "feelings": [],
+          "activity": {
+            "move": "negotiate",
+            "goal": "settle",
+            "selected_resource_id": "guided_meditation_1m",
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": 1,
+              "no_audio": true,
+              "no_video": false,
+              "seated": true,
+              "avoid_breath_focus": true
+            }
+          }
+        },
+        "repeat_output": {
+          "reply": "Absolutely—there’s a one-minute quiet pause that’s silent, seated, and doesn’t ask you to focus on your breathing. It’s optional; you can stop sooner if you like.",
+          "offer_action": true,
+          "resource_intent": "pause",
+          "card_reason": "A shorter option that fits your silent, seated, no-breath-focus preferences.",
+          "summary": "Asked to shorten a quiet pause to one minute.",
+          "feelings": [],
+          "activity": {
+            "move": "negotiate",
+            "goal": "settle",
+            "selected_resource_id": "guided_meditation_1m",
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": 1,
+              "no_audio": true,
+              "no_video": false,
+              "seated": true,
+              "avoid_breath_focus": true
+            }
+          }
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229961-9rdjitEcuuEQlMIb7RjN",
+        "repeat_provider": "Azure",
+        "same_feelings": true,
+        "same_activity_decision": true,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      }
+    },
+    {
+      "id": "f16_written_resource",
+      "baseline": {
+        "first_output": {
+          "reply": "Sure—I’ll keep it to a general written reflection activity, with no videos.",
+          "offer_action": true,
+          "resource_intent": "reflect",
+          "card_reason": "A written reflection activity, excluding videos.",
+          "summary": "Asked for help finding another general written reflection activity; no videos.",
+          "feelings": []
+        },
+        "repeat_output": {
+          "reply": "Of course—a general written reflection activity, with no videos. I’ll keep it focused on writing.",
+          "offer_action": true,
+          "resource_intent": "reflect",
+          "card_reason": "They explicitly asked to find a general written reflection activity and said they do not want videos.",
+          "summary": "Wants help finding a general written reflection activity; no videos.",
+          "feelings": []
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229944-rEuFgUAO33sR74gujYGB",
+        "repeat_provider": "Azure",
+        "same_feelings": true,
+        "same_activity_decision": null,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      },
+      "candidate": {
+        "first_output": {
+          "reply": "Yes—there’s a quiet, two-minute written reflection you can try. It invites you to separate what happened from what you think it might mean, and note what matters to you; no video involved.",
+          "offer_action": true,
+          "resource_intent": "reflect",
+          "card_reason": "A brief, seated written reflection fits your request and avoids video.",
+          "summary": "You’re looking for a general written reflection activity, with no videos.",
+          "feelings": [],
+          "activity": {
+            "move": "propose",
+            "goal": "understand",
+            "selected_resource_id": "guided_reflection_2m",
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": true,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_output": {
+          "reply": "Sure—there’s a two-minute written reflection you can try. It invites you to note what happened, what you think it might mean, and what matters to you, without needing to solve it right away. It’s optional; no video involved.",
+          "offer_action": true,
+          "resource_intent": "reflect",
+          "card_reason": "A brief written reflection matches the request to understand a concern and avoids video.",
+          "summary": "Would like another general written reflection activity; no videos.",
+          "feelings": [],
+          "activity": {
+            "move": "propose",
+            "goal": "understand",
+            "selected_resource_id": "guided_reflection_2m",
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": true,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229965-bD5N4XDw2mShZal6Ksmd",
+        "repeat_provider": "Azure",
+        "same_feelings": true,
+        "same_activity_decision": true,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      }
+    },
+    {
+      "id": "f21_present_relief",
+      "baseline": {
+        "first_output": {
+          "reply": "Thanks for clarifying—the presentation was yesterday, and today it’s over. You feel relieved now, not anxious.",
+          "offer_action": false,
+          "resource_intent": "pause",
+          "card_reason": "",
+          "summary": "The presentation is over, and today you feel relieved rather than anxious.",
+          "feelings": [
+            "calm"
+          ]
+        },
+        "repeat_output": {
+          "reply": "Got it—the anxious feeling was yesterday, before the presentation. Today it’s over, and you feel relieved. I’ll keep that distinction in view.",
+          "offer_action": false,
+          "resource_intent": "reflect",
+          "card_reason": "You clarified how your feelings changed after the presentation.",
+          "summary": "The presentation is over; today you feel relieved, not anxious.",
+          "feelings": []
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229946-44c9FlS5jm1c4WDlr4xp",
+        "repeat_provider": "Azure",
+        "same_feelings": false,
+        "same_activity_decision": null,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      },
+      "candidate": {
+        "first_output": {
+          "reply": "Thanks for clarifying—the anxiety was yesterday, before the presentation. Now that it’s over, you feel relieved.",
+          "offer_action": false,
+          "resource_intent": "pause",
+          "card_reason": "",
+          "summary": "The presentation is over; the user feels relieved today, not anxious.",
+          "feelings": [
+            "okay"
+          ],
+          "activity": {
+            "move": "reflect",
+            "goal": null,
+            "selected_resource_id": null,
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": false,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_output": {
+          "reply": "Thanks for clarifying—the anxiety was yesterday, and now that the presentation is over, you feel relieved. I’ll follow your sense of today rather than the older entry.",
+          "offer_action": false,
+          "resource_intent": "reflect",
+          "card_reason": "",
+          "summary": "The presentation is over, and the user feels relieved today, not anxious.",
+          "feelings": [],
+          "activity": {
+            "move": "reflect",
+            "goal": null,
+            "selected_resource_id": null,
+            "search_topic": null,
+            "constraints": {
+              "time_minutes": null,
+              "no_audio": false,
+              "no_video": false,
+              "seated": false,
+              "avoid_breath_focus": false
+            }
+          }
+        },
+        "repeat_status": "observed",
+        "repeat_generation_id": "gen-1791229968-v3vK1VOZO3ptS6x3oEAV",
+        "repeat_provider": "Azure",
+        "same_feelings": false,
+        "same_activity_decision": true,
+        "limit": "Two samples per version cannot establish response reliability or an emotional benefit."
+      }
+    }
+  ],
+  "extra_quality_samples": 0
+}

@@ -50,6 +50,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
           <Link className="btn btn-primary side-talk" href="/talk">Talk with Luna</Link>
+          <Link className="btn btn-ghost" href="/journal">Write in your journal</Link>
+          <Link className="btn btn-ghost" href="/discover">Explore resources</Link>
           <p className="side-note">Luna is a companion, not a therapist.</p>
         </aside>
       )}

@@ -1,0 +1,732 @@
+{
+  "config": {
+    "argv": [
+      "/workspace/.tools/node22/node_modules/node/bin/node",
+      "/workspace/JournalPulse/web/node_modules/.bin/playwright",
+      "test",
+      "-c",
+      "playwright.integration.config.ts",
+      "--config",
+      "/workspace/journalpulse-planning/pre-evaluation-audit-2026-10-05/playwright.integration.config.ts"
+    ],
+    "configFile": "/workspace/journalpulse-planning/pre-evaluation-audit-2026-10-05/playwright.integration.config.ts",
+    "rootDir": "/workspace/JournalPulse/web/tests/integration",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/workspace/journalpulse-planning/pre-evaluation-audit-2026-10-05/playwright-integration-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "integration-chromium",
+        "name": "integration-chromium",
+        "testDir": "/workspace/JournalPulse/web/tests/integration",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/workspace/journalpulse-planning/pre-evaluation-audit-2026-10-05/playwright-integration.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": {
+      "command": "uv run python ../scripts/integration_stack.py",
+      "url": "http://127.0.0.1:8100/ready",
+      "reuseExistingServer": false,
+      "timeout": 300000,
+      "stdout": "pipe",
+      "cwd": "/workspace/JournalPulse/web"
+    }
+  },
+  "suites": [
+    {
+      "title": "audit-upgrade.spec.ts",
+      "file": "audit-upgrade.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "an account change on the same chat URL discards private replies, drafts and inherited consent",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4175,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:04.285Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "64d03adfc84ff46440e6-eb6f9de50c16a8fccb66",
+          "file": "audit-upgrade.spec.ts",
+          "line": 4,
+          "column": 5
+        },
+        {
+          "title": "a linked chat opens an editable general search and returns with its source",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3835,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:09.040Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "64d03adfc84ff46440e6-4fdfac64207904b0ac4c",
+          "file": "audit-upgrade.spec.ts",
+          "line": 64,
+          "column": 5
+        },
+        {
+          "title": "retry after a committed turn loses its response keeps one stored turn",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3961,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:12.888Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "64d03adfc84ff46440e6-3f6b4eb4da60896cf5b2",
+          "file": "audit-upgrade.spec.ts",
+          "line": 110,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "connected-luna.spec.ts",
+      "file": "connected-luna.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "slice 1: save, reopen, reflect and delete standalone writing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6328,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:16.870Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ecd5747f4983059bd16a-f50f7f649204d9669d8a",
+          "file": "connected-luna.spec.ts",
+          "line": 28,
+          "column": 5
+        },
+        {
+          "title": "slice 2: selected journal context survives chat reload and source deletion invalidates it",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4870,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:23.210Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ecd5747f4983059bd16a-fcb0621e37d1ade2189e",
+          "file": "connected-luna.spec.ts",
+          "line": 63,
+          "column": 5
+        },
+        {
+          "title": "slice 3: approve a topic and refine results without repeating sources",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2186,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:28.095Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ecd5747f4983059bd16a-d0308fd1b382f7e50439",
+          "file": "connected-luna.spec.ts",
+          "line": 92,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "guided-action.spec.ts",
+      "file": "guided-action.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "meditation stays in chat and a paused session survives reload before an honest check-in",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9222,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:30.304Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c080454c12a0b3ecdb53-7a2bd573991637c1c317",
+          "file": "guided-action.spec.ts",
+          "line": 62,
+          "column": 5
+        },
+        {
+          "title": "changing account while an activity is running removes its private panel and controls",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4190,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:39.540Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c080454c12a0b3ecdb53-34e2c873032df29e663f",
+          "file": "guided-action.spec.ts",
+          "line": 116,
+          "column": 5
+        },
+        {
+          "title": "inline search uses the real request contract and saves a refined signed offer in chat",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5197,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:43.747Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c080454c12a0b3ecdb53-bf5926d24eafbf03afb7",
+          "file": "guided-action.spec.ts",
+          "line": 153,
+          "column": 5
+        },
+        {
+          "title": "a newer recommendation replaces an unstarted saved search offer",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4748,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:48.959Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c080454c12a0b3ecdb53-b33d3b1e07f69202baea",
+          "file": "guided-action.spec.ts",
+          "line": 207,
+          "column": 5
+        }
+      ]
+    },
+    {
+      "title": "loop.spec.ts",
+      "file": "loop.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "the legacy guided loop runs against the real API and database",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 12595,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:36:53.733Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6383f60f67017b31e9d8-9f0b849e6c6b984231c6",
+          "file": "loop.spec.ts",
+          "line": 49,
+          "column": 5
+        },
+        {
+          "title": "each person sees only their own journal and cannot write provenance directly",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1622,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:37:06.338Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6383f60f67017b31e9d8-8b55204f13e6a3b44ec9",
+          "file": "loop.spec.ts",
+          "line": 130,
+          "column": 5
+        },
+        {
+          "title": "Just talk survives reload and later AI flags, then resumes with a fresh activity offer",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7414,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:37:07.967Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6383f60f67017b31e9d8-217bee447823a59f7813",
+          "file": "loop.spec.ts",
+          "line": 157,
+          "column": 5
+        },
+        {
+          "title": "a lost choice response can be retried without losing the draft or applying twice",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4451,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:37:15.394Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6383f60f67017b31e9d8-96e4bce898e01db0b3b9",
+          "file": "loop.spec.ts",
+          "line": 215,
+          "column": 5
+        },
+        {
+          "title": "a delayed browser response cannot replace a newer listening choice",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3959,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:37:19.861Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6383f60f67017b31e9d8-d9aebb0d64c57fe91a2b",
+          "file": "loop.spec.ts",
+          "line": 251,
+          "column": 5
+        },
+        {
+          "title": "idle chat text is purged by the scheduled job even if the person never returns",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 929,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:37:23.838Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6383f60f67017b31e9d8-94ea712372d2b2489885",
+          "file": "loop.spec.ts",
+          "line": 296,
+          "column": 5
+        },
+        {
+          "title": "a reply to a chat closed in another tab is refused by the database",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2681,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:37:24.775Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6383f60f67017b31e9d8-40b12a0ba842e86d70e5",
+          "file": "loop.spec.ts",
+          "line": 311,
+          "column": 5
+        },
+        {
+          "title": "the generation limit is enforced by the database, not the browser",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "integration-chromium",
+              "projectName": "integration-chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4752,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-05T18:37:27.465Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "6383f60f67017b31e9d8-0ae118af9bb76eb09bb8",
+          "file": "loop.spec.ts",
+          "line": 329,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-05T18:35:55.788Z",
+    "duration": 96597.352,
+    "expected": 18,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

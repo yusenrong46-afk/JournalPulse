@@ -1,0 +1,29 @@
+{
+  "by_actual_model": {
+    "openai/gpt-6.1-sol": {
+      "retained_response_envelopes": 108,
+      "prompt_tokens": 393622,
+      "completion_tokens": 85535,
+      "reported_cost_usd": 1.8253905000000006
+    },
+    "openai/gpt-6-luna": {
+      "retained_response_envelopes": 217,
+      "prompt_tokens": 535392,
+      "completion_tokens": 54640,
+      "reported_cost_usd": 0.061785629999999994
+    }
+  },
+  "reported_model_cost_usd": 1.8871761300000005,
+  "method": "Deduplicate identical retained provider-response envelopes across original and fix run. Cache copies and replay metadata do not create new costs. Gateway envelopes omit upstream generation IDs, so this is a response-evidence estimate, not exact billing reconciliation.",
+  "global_attempts": {
+    "luna_attempts": 219,
+    "teacher_attempts": 171,
+    "brave_calls": 2
+  },
+  "estimated_reserved_usd": 22.4,
+  "estimated_spend_ceiling_usd": 25,
+  "search_price_verified": false,
+  "live_shared_search_model_usage_not_included": true,
+  "failed_attempts_without_usage_not_costed": true,
+  "invoice_reconciliation": false
+}

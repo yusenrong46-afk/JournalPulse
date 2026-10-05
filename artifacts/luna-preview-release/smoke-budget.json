@@ -1,0 +1,21 @@
+{
+  "additional_model_allowance_usd": 1.0,
+  "brave_calls": 0,
+  "combined_accounting_ceiling_usd": 5.461164965,
+  "maximum_luna_generations_this_run": 2,
+  "previous_benchmark_accounted_usd": 4.461164965,
+  "provider_invoice_reconciled": false,
+  "run_allowances": [
+    {
+      "allowance_usd": 0.5,
+      "maximum_luna_generations": 2,
+      "observed_luna_generations": 1,
+      "result": "Browser certificate failure before activity controls; accounts deleted"
+    },
+    {
+      "allowance_usd": 0.5,
+      "maximum_luna_generations": 2
+    }
+  ],
+  "teacher_calls": 0
+}

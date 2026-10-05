@@ -1,0 +1,85 @@
+{
+  "captured_at": "2026-10-05T15:25:06.842021-03:00",
+  "read_only": true,
+  "sites": {
+    "preview": {
+      "host": "journalpulse-preview-yusenrong46-9212s-projects.vercel.app",
+      "deployment_id": "dpl_Ey6QzvQBWwpXaqwyT64N8rhR9d5n",
+      "ready_state": "READY",
+      "target": null,
+      "checks": {
+        "/health": {
+          "http_status": 200,
+          "body": {
+            "status": "ok"
+          }
+        },
+        "/ready": {
+          "http_status": 200,
+          "body": {
+            "status": "ready",
+            "checks": {
+              "configuration": "ready",
+              "resources": "ready",
+              "llm": "configured:not_probed",
+              "database": "reachable",
+              "schema": "schema_ready",
+              "signing": "valid",
+              "retention_job": "scheduled",
+              "retention_state": "healthy",
+              "retention_last_success": "2026-10-05 18:15:00.167052+00",
+              "retention_last_run_status": "succeeded",
+              "retention_overdue": "false"
+            }
+          }
+        }
+      }
+    },
+    "production": {
+      "host": "journalpulse.vercel.app",
+      "deployment_id": "dpl_57Rut4UoR24LsTRjsA7nEpiBQycU",
+      "ready_state": "READY",
+      "target": "production",
+      "checks": {
+        "/health": {
+          "http_status": 200,
+          "body": {
+            "status": "ok"
+          }
+        },
+        "/ready": {
+          "http_status": 200,
+          "body": {
+            "status": "ready",
+            "checks": {
+              "configuration": "ready",
+              "resources": "ready",
+              "llm": "configured:not_probed",
+              "database": "reachable",
+              "schema": "schema_ready",
+              "signing": "valid",
+              "retention_job": "scheduled"
+            }
+          }
+        }
+      }
+    }
+  },
+  "schema": {
+    "new_activity_objects": {
+      "activity_sessions": null,
+      "activity_receipts": null,
+      "readiness_v3": null,
+      "lifecycle_trigger": false,
+      "compatibility_trigger": false,
+      "activity_owner_index": null,
+      "offer_rpc": null,
+      "command_rpc": null,
+      "report_rpc": null,
+      "claim_followup_rpc": null,
+      "finish_followup_rpc": null
+    },
+    "new_migration_applied": false,
+    "migration_versions": []
+  }
+}

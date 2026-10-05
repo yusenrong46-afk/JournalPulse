@@ -19,11 +19,11 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
-    "pytest>=8.3,<9",
+    "pytest>=9.0.3,<10",
     "pytest-cov>=5,<7",
 ]
 dev = [
-    "pytest>=8.3,<9",
+    "pytest>=9.0.3,<10",
     "pytest-cov>=5,<7",
     "ruff>=0.9,<1",
     "mypy>=1.14,<2",
@@ -45,6 +45,9 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+journalpulse = ["skills/**/*.md"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
@@ -61,6 +64,7 @@ ignore = ["B008"]  # FastAPI uses callables (Query/Depends) in argument defaults
 [tool.ruff.lint.per-file-ignores]
 # Long SQL predicates read better on one line than split across f-string fragments.
 "scripts/verify_postgres_schema.py" = ["E501"]
+"scripts/verify_journal_schema.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"

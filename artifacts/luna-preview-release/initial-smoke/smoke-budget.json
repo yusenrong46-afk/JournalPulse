@@ -1,0 +1,9 @@
+{
+  "additional_model_allowance_usd": 0.5,
+  "brave_calls": 0,
+  "combined_accounting_ceiling_usd": 4.961164965,
+  "maximum_luna_generations": 2,
+  "previous_benchmark_accounted_usd": 4.461164965,
+  "provider_invoice_reconciled": false,
+  "teacher_calls": 0
+}

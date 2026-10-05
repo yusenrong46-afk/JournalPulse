@@ -1,0 +1,368 @@
+{
+  "captured_at": "2026-10-05T15:40:07.772852-03:00",
+  "scope": "Audit-only difference from the captured dirty workspace; not a diff against main or an upload/release freeze.",
+  "baseline_files": 236,
+  "changed_files": 45,
+  "files": [
+    {
+      "path": ".gitignore",
+      "unit": "05-operations-docs",
+      "before_sha256": "374535e5ebc719f23f3119b8638aab94e223f457eb83b740b9dcea34b633d457",
+      "after_sha256": "d2c6b701a52f472db7d9f80bf25e93d54621d42a3e78bf70c907030f70459763",
+      "added_lines": 2,
+      "removed_lines": 0
+    },
+    {
+      "path": ".vercelignore",
+      "unit": "05-operations-docs",
+      "before_sha256": "d3f2fd22d0c78abb1884c6e647374c04963d4a3902ddf3b6e960d3eb34b7094f",
+      "after_sha256": "cd76eabe9d0ea9e7b8ee5a831ba3d4bcbe769fa5b76408feb4232499d7d19306",
+      "added_lines": 13,
+      "removed_lines": 0
+    },
+    {
+      "path": "README.md",
+      "unit": "05-operations-docs",
+      "before_sha256": "fa1e91cdc643a7792da545178c81334390fd71070e83630b97281170dd27e2ae",
+      "after_sha256": "11e3778027e6ddd137f72b72c724de53080dcc87672b7848d52adbae16964c27",
+      "added_lines": 41,
+      "removed_lines": 23
+    },
+    {
+      "path": "docs/LUNA_GUIDED_ACTION_IMPLEMENTATION.md",
+      "unit": "05-operations-docs",
+      "before_sha256": "e2603677214d30a60d7e5180e8567512a4165275e2b80c26d397762e77edf6d9",
+      "after_sha256": "a652ab4dbdaf3d64ca61d5602162c2b4f3536c72f6b9aaae08222d6d6230300f",
+      "added_lines": 10,
+      "removed_lines": 2
+    },
+    {
+      "path": "docs/LUNA_SEARCH_CONTRACT_FIX.md",
+      "unit": "05-operations-docs",
+      "before_sha256": "21e6fc37077cc74ecbdafe4692ff6ad68c633b6d6d929e2562471cfea779143a",
+      "after_sha256": "4f9e4d6a77da3ad7206364ff9ea8c64bd4eb1f2af3743f2fe2af9b2a3a649ab0",
+      "added_lines": 10,
+      "removed_lines": 1
+    },
+    {
+      "path": "docs/OPERATIONS.md",
+      "unit": "05-operations-docs",
+      "before_sha256": "6d3548af20795ada372fc7665d021b975b1aff647d3beedf132782eef13c1252",
+      "after_sha256": "5fc03992ccc38aeffcadcff8162584c06a939f35d41a6e72ae0db42ba9cf328a",
+      "added_lines": 5,
+      "removed_lines": 1
+    },
+    {
+      "path": "docs/PRE_EVALUATION_AUDIT_2026-10-05.md",
+      "unit": "05-operations-docs",
+      "before_sha256": null,
+      "after_sha256": "312f5915f0bd0a5fb2dca6e3d8d75c48347c6ba3df1b97950431b01fd9d2f39b",
+      "added_lines": 167,
+      "removed_lines": 0
+    },
+    {
+      "path": "render.yaml",
+      "unit": "05-operations-docs",
+      "before_sha256": "c6b3c6719a0beaa700d37a92276c992f88677dc49b5ede024b3e3792c9af4b5c",
+      "after_sha256": "07d199951800c41da31f5dbad50e71434b36b1f75691d6f1e90c65b417d16cfc",
+      "added_lines": 2,
+      "removed_lines": 0
+    },
+    {
+      "path": "scripts/verify_activity_schema.py",
+      "unit": "02-lifecycle-database",
+      "before_sha256": "8e5126247fbf78720a00294e16bd65699b3c3655ddba793c8577f0777c85b55e",
+      "after_sha256": "9399a776975168b6027ee0ba69ef7af56216500edb3cb937a140515056016870",
+      "added_lines": 158,
+      "removed_lines": 2
+    },
+    {
+      "path": "src/journalpulse/activity_chat.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "ab4e59bdcbe048b1bb67b861f3d6b6571f30bac91316d2e007427b42b7d93785",
+      "after_sha256": "c3c09e68577750cffc323d141370371a51b4175445284f8bd988b10d4db66bdf",
+      "added_lines": 11,
+      "removed_lines": 1
+    },
+    {
+      "path": "src/journalpulse/activity_resources.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "04915b3cd97826a7468f5aeb5738565de07c81da6a6c6a7ede28bb34e2d73add",
+      "after_sha256": "00157dad03485b64109b3f48053c7a554e8800bac59c4ea83f462c33b4ac3926",
+      "added_lines": 3,
+      "removed_lines": 1
+    },
+    {
+      "path": "src/journalpulse/activity_sessions.py",
+      "unit": "02-lifecycle-database",
+      "before_sha256": "83090fdee26d0bcef38cdaaa23fac5877f2acd3edb1929827e83fc65ef32cdc9",
+      "after_sha256": "cef30513f595a1cb41cea8c260792b0e63e7e5a7fd27cef26bc543facba53e91",
+      "added_lines": 14,
+      "removed_lines": 1
+    },
+    {
+      "path": "src/journalpulse/api.py",
+      "unit": "05-operations-docs",
+      "before_sha256": "85808dc265d58445c96739ad0e30c7333d61d760d21453f0df2f1022d6467557",
+      "after_sha256": "da2532d3f1928db1265a1ddccd48daa60c6cc0724647afe9c5f463e43a6153b1",
+      "added_lines": 15,
+      "removed_lines": 9
+    },
+    {
+      "path": "src/journalpulse/config.py",
+      "unit": "05-operations-docs",
+      "before_sha256": "899dffb4de85d22f8fddf83d24556534c0991c13a47a3ba0d59d58d227bec4c7",
+      "after_sha256": "0b7d1816bbc1612427e86d8f96bbb515c3587b7af1f93fd7ef8058fd6fb226c5",
+      "added_lines": 34,
+      "removed_lines": 4
+    },
+    {
+      "path": "src/journalpulse/conversations.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "fc28deb7e87edb3250ae7fa5ed9e6b257aba9ca59945e65f1dad554557996cea",
+      "after_sha256": "4fc084cda979775e37f4844a7cb4f12d1730ce6022d7384be6ce694180e2210f",
+      "added_lines": 1,
+      "removed_lines": 1
+    },
+    {
+      "path": "src/journalpulse/guided_action.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "f25582d361f3b02c8ddca57b9f1bf96181b3cdd1ac77ff140a15bfb55d3e8da9",
+      "after_sha256": "02caba00d74e39aef855af25ffeee1f90afa4717fc413ea3c856044bdac45326",
+      "added_lines": 27,
+      "removed_lines": 1
+    },
+    {
+      "path": "src/journalpulse/guided_evaluation.py",
+      "unit": "04-evaluation",
+      "before_sha256": "72c0bc2181f55e0132a0b39ab3c693b1538b220355ba0ea861711fcf1839f40e",
+      "after_sha256": "168f6d7f70bfb3bf5c56039b9f5cd48ab4756fdb8dafec80372b483483889e5e",
+      "added_lines": 122,
+      "removed_lines": 11
+    },
+    {
+      "path": "src/journalpulse/persistence.py",
+      "unit": "02-lifecycle-database",
+      "before_sha256": "a370d9848748d3839a15c7392640a41a0a979f95d3751c92d9dcbbf867be6b7d",
+      "after_sha256": "ec2c063abc660814e0f95b4f0b3b60ee90e85ede7213f38e520fd0c32298802a",
+      "added_lines": 39,
+      "removed_lines": 0
+    },
+    {
+      "path": "src/journalpulse/safety.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "2b8d7d6741900dd20e771e46721f4b57592b3adb2189e9d892e57666fade473a",
+      "after_sha256": "dc503009396c3499a843916bdb9db37c7be9ffbc285b0e9c64d7fa77c84b6f8c",
+      "added_lines": 3,
+      "removed_lines": 3
+    },
+    {
+      "path": "src/journalpulse/skills/guided_action/SKILL.md",
+      "unit": "01-ai-safety",
+      "before_sha256": "6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49",
+      "after_sha256": "abb73f69089a8591e5f30f1ac62e4557cd0a62f45d408d8fdf718f1bd4808270",
+      "added_lines": 4,
+      "removed_lines": 1
+    },
+    {
+      "path": "supabase/migrations/202610050001_guided_activity_sessions.sql",
+      "unit": "02-lifecycle-database",
+      "before_sha256": "737a2de145a257a48bdf94b5ce946bbb22ca3fe1604a4c0ed51aaf1f150469f6",
+      "after_sha256": "42c52f43dce346fabdf4751f29c94abe06bd2ad41e8c923233c31dc57f5f205f",
+      "added_lines": 79,
+      "removed_lines": 0
+    },
+    {
+      "path": "tests/test_action_readiness_current_turn.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "d4b50ff0e0013d370da31dd60aa6e1e793cf94c832e25abad72ec7d7e5a8b2f8",
+      "after_sha256": "1c5e49d05a26bf6916240c1b5937752d88b8622d73e6796c2f498894fe68f886",
+      "added_lines": 37,
+      "removed_lines": 0
+    },
+    {
+      "path": "tests/test_activity_chat.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "4641737995fbaf003954a2c3d56dbd334a2dcba19d6c72bffd436400d0b6bc0d",
+      "after_sha256": "537304448c2d7866a73e65974c17a930ea204af4b596d85235c24e0141808e41",
+      "added_lines": 44,
+      "removed_lines": 1
+    },
+    {
+      "path": "tests/test_activity_follow_up_recovery.py",
+      "unit": "02-lifecycle-database",
+      "before_sha256": null,
+      "after_sha256": "4995368c54f862e57f57ef24d732590d5a422c9e1572c76bfa38ff4e1ec17bb9",
+      "added_lines": 101,
+      "removed_lines": 0
+    },
+    {
+      "path": "tests/test_activity_offer_supersession.py",
+      "unit": "02-lifecycle-database",
+      "before_sha256": null,
+      "after_sha256": "f9ca7ee7332a500778d2a3639a18fed43befb05c4e1bc2023cb882adecc02603",
+      "added_lines": 145,
+      "removed_lines": 0
+    },
+    {
+      "path": "tests/test_activity_resources.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "e4991f71f1ee7459fb42e885a2773eb85ed3ccb651e5d8ff3a27796fc837237f",
+      "after_sha256": "4cd53d0f46eecf8414aa145fe4a3e2d99b307368995c004ee52c529bfff7c61f",
+      "added_lines": 13,
+      "removed_lines": 0
+    },
+    {
+      "path": "tests/test_config.py",
+      "unit": "05-operations-docs",
+      "before_sha256": "2e450c52f5e4fc76bd6e35f49910d3577d8c21ae5a619ee773fb45c7ed656cb3",
+      "after_sha256": "18fd607b7bc33b16e42a91e2f19b9c41ce5f9d062d642076c6853cecf3d30a8c",
+      "added_lines": 29,
+      "removed_lines": 0
+    },
+    {
+      "path": "tests/test_conversations_api.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "d284fcf10531487c2e2ecf56c32d8472fd9c1038c21510b4f94ca9b675c6299b",
+      "after_sha256": "29327b7519fad530204cd4212984e3c3d6fdf29aafb11d4ebff7728f39414bdd",
+      "added_lines": 15,
+      "removed_lines": 0
+    },
+    {
+      "path": "tests/test_guided_action_prompt.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "e3f6adb5603dab467b3ef08c59e6c22aeb2cdcae1eb4f71a7e93514b535a71a6",
+      "after_sha256": "a4a173142f30938315b3463d692a55c6c2cc0ec7f23b19e4efb1971ef25b39d6",
+      "added_lines": 1,
+      "removed_lines": 1
+    },
+    {
+      "path": "tests/test_guided_evaluation.py",
+      "unit": "04-evaluation",
+      "before_sha256": "b56aa52e7332e7a0491650cdca1e75e4c761756fa2cb3e262192c21ee9aba8cb",
+      "after_sha256": "4df59c5c5b3d5ddcab90e563397887bad7de05549a5ce45cf6e87e7d89657c93",
+      "added_lines": 225,
+      "removed_lines": 9
+    },
+    {
+      "path": "tests/test_readiness.py",
+      "unit": "05-operations-docs",
+      "before_sha256": "1448e2b65c0dd273ce5bf00bb61a0fcabb158cf230033fd5d62d9d10cfaa5ba6",
+      "after_sha256": "bf3e3b5aaff358137dd5f81cea157d35533ab6c5d6e36db5eea996bf3ff8adde",
+      "added_lines": 51,
+      "removed_lines": 0
+    },
+    {
+      "path": "tests/test_research_beta_safety.py",
+      "unit": "01-ai-safety",
+      "before_sha256": "4aa6d201bbc1108d859137a464891f5864bb3f9be12f988decef5f3c82cdca25",
+      "after_sha256": "248c54d4d9004db431629d6d0d9910c57d20b01f3c0d87938611bbacd3090bef",
+      "added_lines": 10,
+      "removed_lines": 0
+    },
+    {
+      "path": "tests/test_safety_direct_intent.py",
+      "unit": "01-ai-safety",
+      "before_sha256": null,
+      "after_sha256": "da43f52dbce318585dae8c0144f954b4155a3591bd6a1df8c87355097cc3a078",
+      "added_lines": 64,
+      "removed_lines": 0
+    },
+    {
+      "path": "uv.lock",
+      "unit": "06-dependencies",
+      "before_sha256": "c081ec8e6b1c412f4bde845b382a4f7435604d49b1e23a28f19c25ab3043f9bb",
+      "after_sha256": "e3009894d32011ddade889a5d5cb18522b4a6b5025d23e77c4af0ff70a00d958",
+      "added_lines": 9,
+      "removed_lines": 9
+    },
+    {
+      "path": "vercel.json",
+      "unit": "05-operations-docs",
+      "before_sha256": "d838e22ff4cbf246827e98c57b690ca3ac51cdb67cf3f6a8d656c33ad5151881",
+      "after_sha256": "23039c2f9e5d480164eba2372680557a6c304fef9ea724a0069ccdb4146a08a7",
+      "added_lines": 1,
+      "removed_lines": 1
+    },
+    {
+      "path": "web/app/check-in/page.tsx",
+      "unit": "03-frontend",
+      "before_sha256": "24f780d1b88029e983442d79c1f6d4d3e89b55ab231d1cbde5c4196d0836592f",
+      "after_sha256": "b2f30383ee113613e3783691c1bdea8fac379e629a57758124ba1da46c98ca57",
+      "added_lines": 35,
+      "removed_lines": 18
+    },
+    {
+      "path": "web/app/me/page.tsx",
+      "unit": "03-frontend",
+      "before_sha256": "a8437f54e510315ae2b260fb52ca754d734382d3f183b719d632c18ff4979361",
+      "after_sha256": "893cfc3d69cb6552e70d11376fe3b5cf61f793cba53a49863d52d1646cfe2f44",
+      "added_lines": 4,
+      "removed_lines": 3
+    },
+    {
+      "path": "web/app/talk/page.tsx",
+      "unit": "03-frontend",
+      "before_sha256": "af27030b3e37fb4c6bd6b702be801ce79e870f0eac5f2265fdbfd22d1bf17207",
+      "after_sha256": "3972089f6b7a173e562608df741799cb6f45873ebd6c7dc1dbeb99663740bc71",
+      "added_lines": 1,
+      "removed_lines": 0
+    },
+    {
+      "path": "web/components/activity-session-discovery.tsx",
+      "unit": "03-frontend",
+      "before_sha256": "51315e186c53d038bbbc45a8bbb17a8e6276ea695af0812b2f49f2ebbde5d904",
+      "after_sha256": "1cd2a8ebaa8699e6824a00ffbdca2c3ba4638a8e46ae62714230ae702a6d6431",
+      "added_lines": 3,
+      "removed_lines": 3
+    },
+    {
+      "path": "web/lib/api.ts",
+      "unit": "03-frontend",
+      "before_sha256": "9fc256a8119dee4545da7c17e301a94c9f0d5ae14ce1672c5384483da13b6597",
+      "after_sha256": "04b9875ee51cfe8c1e7f69f8e95a720d13650b4b644b743599072f4ef354cd5d",
+      "added_lines": 20,
+      "removed_lines": 1
+    },
+    {
+      "path": "web/tests/e2e/core-flow.spec.ts",
+      "unit": "03-frontend",
+      "before_sha256": "5e1d70cd9c484d6487db41de0585f225acd743a6e7f56c4b09c07574a52fdaff",
+      "after_sha256": "31da9f2fb3c38cb20743fef7bae870a1556cbfd8d759ea626206a5a334f18f6e",
+      "added_lines": 28,
+      "removed_lines": 0
+    },
+    {
+      "path": "web/tests/integration/guided-action.spec.ts",
+      "unit": "03-frontend",
+      "before_sha256": "83edda9bd2de77f0fcf957e5e1091e9fa43569f7580cd11549561aaa9bf2c866",
+      "after_sha256": "704a712f837c29afbdf4f1b3f3ddc4a407a25f65fa6b68a1288568e9cf21663d",
+      "added_lines": 103,
+      "removed_lines": 0
+    },
+    {
+      "path": "web/tests/unit/activity-discovery.test.tsx",
+      "unit": "03-frontend",
+      "before_sha256": null,
+      "after_sha256": "ac9e4752c216488be4283e2d8b4c8947c7d90ac86780aab97393fc0581166af1",
+      "added_lines": 53,
+      "removed_lines": 0
+    },
+    {
+      "path": "web/tests/unit/api.test.ts",
+      "unit": "03-frontend",
+      "before_sha256": "c322d46fa4d9d47e46931aa0e6a1df6b82301fb10805f8720f71d91fe3159198",
+      "after_sha256": "9c3cde9b4effc7cf48c588afa85aa88e5b975dee782f24456b5c84d0e92d39e7",
+      "added_lines": 28,
+      "removed_lines": 0
+    },
+    {
+      "path": "web/tests/unit/check-in-workspace.test.tsx",
+      "unit": "03-frontend",
+      "before_sha256": "c3740547b3e53ddac29bad692c1c61f307db0da91ebcdedb1cba4d21dcca9417",
+      "after_sha256": "38faa00e4d013655db85edf2cc8f4d754e2ba2985988c531c418ef64bf8ae079",
+      "added_lines": 47,
+      "removed_lines": 2
+    }
+  ]
+}

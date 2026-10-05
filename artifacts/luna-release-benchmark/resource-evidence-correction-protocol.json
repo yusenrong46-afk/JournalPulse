@@ -1,0 +1,81 @@
+{
+  "selection_rule": "All completed pairs in which either version selects a resource ID in any structured turn. Includes wins, losses and ties; no selection by grade or preference.",
+  "cohort": [
+    {
+      "track": "controlled",
+      "id": "g12_explicit_step"
+    },
+    {
+      "track": "controlled",
+      "id": "g13_enough_context"
+    },
+    {
+      "track": "controlled",
+      "id": "g16_no_breath_focus"
+    },
+    {
+      "track": "controlled",
+      "id": "g17_unavailable_format"
+    },
+    {
+      "track": "controlled",
+      "id": "g18_negotiate_duration"
+    },
+    {
+      "track": "controlled",
+      "id": "g19_single_fitting_option"
+    },
+    {
+      "track": "controlled",
+      "id": "f06_unspecified_help"
+    },
+    {
+      "track": "controlled",
+      "id": "f07_form_start"
+    },
+    {
+      "track": "controlled",
+      "id": "f08_cousin_text"
+    },
+    {
+      "track": "controlled",
+      "id": "f09_grounded_duration"
+    },
+    {
+      "track": "controlled",
+      "id": "f10_comfortable_movement"
+    },
+    {
+      "track": "controlled",
+      "id": "f11_playful_break"
+    },
+    {
+      "track": "controlled",
+      "id": "f16_written_resource"
+    },
+    {
+      "track": "adaptive",
+      "id": "g12_explicit_step"
+    },
+    {
+      "track": "adaptive",
+      "id": "g16_no_breath_focus"
+    },
+    {
+      "track": "adaptive",
+      "id": "g18_negotiate_duration"
+    },
+    {
+      "track": "adaptive",
+      "id": "f07_form_start"
+    },
+    {
+      "track": "adaptive",
+      "id": "f09_grounded_duration"
+    }
+  ],
+  "count": 18,
+  "candidate_requests_and_responses_unchanged": true,
+  "rubric_and_thresholds_unchanged": true,
+  "reason": "Initial grader lacked approved activity descriptors. This made at least one valid selected ID appear unsupported. Correct evidence for every structurally affected pair, retain all original grades."
+}

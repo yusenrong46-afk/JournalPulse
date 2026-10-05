@@ -1,0 +1,23 @@
+{
+  "base_for_fix": "/workspace/journalpulse-planning/guided-action-2026-10-05/review-state",
+  "base_for_combined_upgrade": "/workspace/journalpulse-planning/guided-action-2026-10-05/unit-00-before",
+  "not_against_clean_git_head": true,
+  "inherited_audit_changes_preserved": true,
+  "fix_changed_files": 11,
+  "combined_upgrade_changed_files": 54,
+  "checks": [
+    {
+      "patch": "search-contract-fix.patch",
+      "reverse_check_against_current_workspace": "pass"
+    },
+    {
+      "patch": "combined-upgrade.patch",
+      "reverse_check_against_current_workspace": "pass"
+    },
+    {
+      "patch": "search-contract-fix.patch",
+      "forward_application_from_prior_frozen_candidate": "pass",
+      "changed_files_reconstructed": 11
+    }
+  ]
+}

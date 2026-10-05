@@ -1,0 +1,89 @@
+{
+  "existing_readiness": {
+    "preview": {
+      "checks": {
+        "configuration": "ready",
+        "database": "reachable",
+        "llm": "configured:not_probed",
+        "resources": "ready",
+        "retention_job": "scheduled",
+        "retention_last_run_status": "succeeded",
+        "retention_last_success": "2026-10-05 20:45:00.105993+00",
+        "retention_overdue": "false",
+        "retention_state": "healthy",
+        "schema": "schema_ready",
+        "signing": "valid"
+      },
+      "http_status": 200,
+      "status": "ready"
+    },
+    "production": {
+      "checks": {
+        "configuration": "ready",
+        "database": "reachable",
+        "llm": "configured:not_probed",
+        "resources": "ready",
+        "retention_job": "scheduled",
+        "schema": "schema_ready",
+        "signing": "valid"
+      },
+      "http_status": 200,
+      "status": "ready"
+    }
+  },
+  "missing_required_preview_bindings": [],
+  "new_migration_sha256_at_inspection": "42c52f43dce346fabdf4751f29c94abe06bd2ad41e8c923233c31dc57f5f205f",
+  "old_migrations_unchanged": {
+    "supabase/migrations/202607120001_research_beta.sql": "61a6c60712c421e2a350cdf0f25f6730dcf2738851c1cedc2e4411cc445748ae",
+    "supabase/migrations/202607120002_foundation_hardening.sql": "4d5e07bfa1d008cfb48349f902bd9b2c89a460b613c2354bacc38eb13e4efacb",
+    "supabase/migrations/202609240001_conversations.sql": "69008690c82499360ef1d9b29033cf8d6fdebd0ae2c80588cd6c74af6b453eee",
+    "supabase/migrations/202609270001_fix_conversation_functions.sql": "7f69ee5f4ccecc4f69b3f1f41f9f0da1fb6347d35d251c70b5e76fde11212b9e",
+    "supabase/migrations/202609280001_phase_a_integrity.sql": "15be97784432e53ae008236846db57166cd3952d7ce078ca9b3a7969826e2d4f",
+    "supabase/migrations/202610040001_conversation_preference.sql": "6c7c66766aefaa9f60a262e94264da6edf25a2a520cc8e78d2a1a190519e73ed",
+    "supabase/migrations/202610040002_retention_diagnostics.sql": "8ae8660a6efe9a31b51b29a55221abdfa5557ae1e8e1198fa44cc69aeabd81b9",
+    "supabase/migrations/202610040003_journal_entries.sql": "fb886641aaed77a140caf71fb3144a0d37f043d478f3d8e6247757ede6e2f578",
+    "supabase/migrations/202610040004_audit_integrity.sql": "ac08f65784ef09628c09108818ebf2cfd6df19977c496534bc93510cd83d0535"
+  },
+  "preview_alias": "journalpulse-preview-yusenrong46-9212s-projects.vercel.app",
+  "preview_before": "dpl_Ey6QzvQBWwpXaqwyT64N8rhR9d5n",
+  "preview_binding_names": [
+    "JOURNALPULSE_ADAPTIVE_POLICY_ENABLED",
+    "JOURNALPULSE_CHAT_MODEL",
+    "JOURNALPULSE_CHAT_TIMEOUT_SECONDS",
+    "JOURNALPULSE_ENV",
+    "JOURNALPULSE_LLM_API_KEY",
+    "JOURNALPULSE_LLM_ENABLED",
+    "JOURNALPULSE_LLM_MAX_ATTEMPTS",
+    "JOURNALPULSE_LLM_MODEL",
+    "JOURNALPULSE_LLM_ZDR",
+    "JOURNALPULSE_MEMORY_ENABLED",
+    "JOURNALPULSE_SEARCH_API_KEY",
+    "JOURNALPULSE_SEARCH_ENABLED",
+    "JOURNALPULSE_WEB_DIST",
+    "JOURNALPULSE_WRITE_SIGNING_KEY",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_URL"
+  ],
+  "production_alias": "journalpulse.vercel.app",
+  "production_before": "dpl_57Rut4UoR24LsTRjsA7nEpiBQycU",
+  "project_build_settings": {
+    "buildCommand": null,
+    "framework": "fastapi",
+    "installCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null
+  },
+  "project_id": "prj_EOSYVlo1KjkdnOAT8Smm72LdgFrV",
+  "protection_configuration_present": true,
+  "required_preview_binding_names": [
+    "JOURNALPULSE_LLM_API_KEY",
+    "JOURNALPULSE_SEARCH_API_KEY",
+    "JOURNALPULSE_WRITE_SIGNING_KEY",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_URL"
+  ],
+  "retrieved_at": "2026-10-05T20:54:33.285315+00:00",
+  "schema_migration_absent": true,
+  "supabase_project_ref": "cggixttnyprrbaotmjxj",
+  "team_id": "team_AewB0gNEwKvTOeGFr3718mnG"
+}

@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
+from ipaddress import ip_address
+from math import isfinite
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from dotenv import load_dotenv
 
@@ -55,6 +59,34 @@ def _origins(name: str) -> tuple[str, ...]:
     return ("http://localhost:3000", "http://127.0.0.1:3000")
 
 
+def _production_origin_valid(origin: str) -> bool:
+    """Production CORS entries are explicit HTTPS origins, not URLs or patterns."""
+    if any(character.isspace() for character in origin) or any(c in origin for c in "\\?#"):
+        return False
+    try:
+        parsed = urlsplit(origin)
+        host = parsed.hostname
+        port = parsed.port
+        if (
+            parsed.scheme != "https" or not host or parsed.username is not None
+            or parsed.password is not None or parsed.path or parsed.query or parsed.fragment
+            or parsed.netloc.endswith(":") or (port is not None and not 1 <= port <= 65535)
+        ):
+            return False
+    except ValueError:
+        return False
+    if host == "localhost" or host.endswith(".localhost"):
+        return False
+    try:
+        address = ip_address(host)
+    except ValueError:
+        return bool(re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", host)) and all(
+            label and len(label) <= 63 and not label.startswith("-") and not label.endswith("-")
+            for label in host.split(".")
+        )
+    return not address.is_loopback and not address.is_unspecified
+
+
 @dataclass(frozen=True)
 class Settings:
     environment: str
@@ -79,6 +111,20 @@ class Settings:
     chat_timeout_seconds: float = 45.0
     # Shared with the database (private.server_secrets) to sign provenance writes.
     write_signing_key: str | None = None
+    # Open-web discovery is an explicit opt-in; the existing resource catalog remains separate.
+    search_feature_enabled: bool = False
+    search_api_key: str | None = None
+    search_timeout_seconds: float = 8.0
+
+    @property
+    def discovery_enabled(self) -> bool:
+        return bool(
+            self.search_feature_enabled
+            and self.search_api_key
+            and self.openrouter_enabled
+            and self.chat_model
+            and self.openrouter_zdr
+        )
 
     @property
     def openrouter_enabled(self) -> bool:
@@ -97,6 +143,18 @@ class Settings:
             issues.append("analysis_rate_limit_invalid")
         if not 1 <= self.openrouter_max_attempts <= 3:
             issues.append("openrouter_attempts_invalid")
+        # The streaming deadline relies on finite positive values; NaN would make
+        # every elapsed-time comparison false and silently disable that boundary.
+        if not isfinite(self.openrouter_timeout_seconds) or self.openrouter_timeout_seconds <= 0:
+            issues.append("llm_timeout_invalid")
+        if not isfinite(self.chat_timeout_seconds) or self.chat_timeout_seconds <= 0:
+            issues.append("chat_timeout_invalid")
+        if self.llm_feature_enabled and not self.chat_model.strip():
+            issues.append("chat_model_missing")
+        if self.search_feature_enabled and not self.discovery_enabled:
+            issues.append("discovery_missing")
+        if not 1 <= self.search_timeout_seconds <= 20:
+            issues.append("search_timeout_invalid")
         if self.environment == "production":
             if not self.supabase_enabled:
                 issues.append("supabase_missing")
@@ -104,10 +162,7 @@ class Settings:
                 issues.append("signing_key_missing")
             if self.llm_feature_enabled and not self.openrouter_enabled:
                 issues.append("llm_missing")
-            local_origins = any(
-                "localhost" in item or "127.0.0.1" in item for item in self.cors_origins
-            )
-            if not self.cors_origins or local_origins:
+            if not self.cors_origins or any(not _production_origin_valid(item) for item in self.cors_origins):
                 issues.append("production_cors_invalid")
         return issues
 
@@ -149,4 +204,7 @@ def load_settings() -> Settings:
         chat_model=os.getenv("JOURNALPULSE_CHAT_MODEL", "openai/gpt-6-luna").strip(),
         chat_timeout_seconds=float(os.getenv("JOURNALPULSE_CHAT_TIMEOUT_SECONDS", "45")),
         write_signing_key=os.getenv("JOURNALPULSE_WRITE_SIGNING_KEY") or None,
+        search_feature_enabled=_flag("JOURNALPULSE_SEARCH_ENABLED", False),
+        search_api_key=os.getenv("JOURNALPULSE_SEARCH_API_KEY") or None,
+        search_timeout_seconds=float(os.getenv("JOURNALPULSE_SEARCH_TIMEOUT_SECONDS", "8")),
     )

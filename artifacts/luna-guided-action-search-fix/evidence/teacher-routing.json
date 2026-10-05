@@ -1,0 +1,14 @@
+{
+  "reason": "Reduce unavailable-provider retries using a published compatible endpoint; no model or judge instructions changed.",
+  "model": "openai/gpt-6.1-sol",
+  "provider_order": [
+    "azure"
+  ],
+  "allow_fallbacks": false,
+  "zdr": true,
+  "require_parameters": true,
+  "reasoning_effort": "high",
+  "max_tokens": 4000,
+  "published_endpoint_evidence": "teacher-endpoints.json",
+  "existing_judgments": "Retained under their original complete request hashes and actual Azure provenance; new routing applies only to uncached calls."
+}

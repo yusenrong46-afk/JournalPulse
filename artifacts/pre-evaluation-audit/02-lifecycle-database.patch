@@ -1,0 +1,652 @@
+--- a/scripts/verify_activity_schema.py
++++ b/scripts/verify_activity_schema.py
+@@ -26,7 +26,15 @@
+     ActivitySelectionProvenance,
+     ActivitySession,
+ )
+-from journalpulse.domain import ActionCard, ActivityFollowUpDirective, Conversation, ModelRun, PolicyDecision
++from journalpulse.domain import (
++    ActionCard,
++    ActivityConstraintInputs,
++    ActivityFollowUpDirective,
++    Conversation,
++    InteractionPreference,
++    ModelRun,
++    PolicyDecision,
++)
+ from journalpulse.journal_models import JournalEntry
+ from journalpulse.signing import readiness_probe
+ 
+@@ -153,6 +161,147 @@
+             print(line.split("NOTICE:", 1)[-1].strip())
+             checks += 1
+     return checks
++
++
++def preference_and_message_bound_checks(card: ActionCard) -> int:
++    """Use real owner privileges for card withdrawal and supported privacy deletion."""
++    count = 0
++    now = datetime.now(UTC)
++    for wanted in (InteractionPreference.LISTEN, InteractionPreference.ACT):
++        chat = base.conversation(base.USER_A).model_copy(
++            update={"created_at": now, "updated_at": now, "activity_card": card, "ready_for_action": True}
++        )
++        activity = session(chat)
++        preference = base.preference(chat, wanted, 0, uuid4())
++        expected_status = "stopped" if wanted == InteractionPreference.LISTEN else "active"
++        count += notices(base.psql(base.DATABASE, f"""
++        {base.as_user(base.USER_A)}
++        select {base.create(chat)};select {offer(activity)};select {command(activity, "start", 0)};
++        do $test$ declare response jsonb; current_record jsonb; begin
++          response := {preference};
++          select record into current_record from public.conversations where id='{chat.id}';
++          if response is distinct from current_record or response->>'activity_card' is not null
++             or response->>'card' is not null then
++            raise exception 'Preference response differs from committed withdrawal';
++          end if;
++          raise notice 'ok: {wanted} preference returns the committed card withdrawal';
++        end $test$;
++        {base.check(f"({preference})=(select record from public.conversations where id='{chat.id}')", f"{wanted} retry returns current state")}
++        {base.check(f"(select status from public.activity_sessions where id='{activity.id}')='{expected_status}'", f"{wanted} preserves the intended active-session lifecycle")}
++        """))
++
++    bounded = base.conversation(base.USER_A).model_copy(update={"created_at": now, "updated_at": now})
++    commands = [base.as_user(base.USER_A), f"select {base.create(bounded)};"]
++    for index in range(20):
++        user, assistant = base.pair(bounded, f"Fictional bounded turn {index}", index)
++        commands.append(f"select {base.commit(bounded, user, assistant, index)};")
++    commands.extend([
++        base.expect_denied(
++            f"delete from public.conversation_messages where conversation_id='{bounded.id}'",
++            "owner cannot reset the turn bound through partial message deletion",
++        ),
++        base.check(
++            f"(select count(*) from public.conversation_messages where conversation_id='{bounded.id}' and role='user')=20",
++            "denied partial deletion preserves all twenty turn records",
++        ),
++        base.expect_error(offer(session(bounded), revision=20), "This chat has reached its activity limit",
++                          "activity offer remains blocked at the preserved turn bound"),
++        f"select {base.captured(lambda repo: repo.delete_conversation(base.USER_A, bounded.id))};",
++        base.check(f"not exists(select 1 from public.conversation_messages where conversation_id='{bounded.id}')",
++                   "existing full-conversation RPC still deletes all owned messages"),
++    ])
++    count += notices(base.psql(base.DATABASE, "\n".join(commands)))
++    return count
++
++
++def superseded_offer_checks(card: ActionCard) -> int:
++    """A newer recommendation withdraws only an activity that has not started."""
++    count = 0
++    now = datetime.now(UTC)
++    for label, change in (
++        ("new recommendation", {"activity_card": card.model_copy(update={"offered_message_id": uuid4()})}),
++        ("shorter requested duration", {"activity_constraints": ActivityConstraintInputs(time_minutes=1)}),
++        ("changed goal", {"activity_goal": "move"}),
++        ("new public search topic", {"activity_search_topic": "gentle walking"}),
++        ("withdrawn recommendation", {"activity_card": None}),
++    ):
++        chat = base.conversation(base.USER_A).model_copy(
++            update={"created_at": now, "updated_at": now, "activity_card": card}
++        )
++        activity = session(chat)
++        user, assistant = base.pair(chat, "A fictional clarification.", 0)
++        updated = chat.model_copy(update={"updated_at": now, **change})
++        count += notices(base.psql(base.DATABASE, f"""
++        {base.as_user(base.USER_A)}
++        select {base.create(chat)};select {offer(activity)};
++        select {base.commit(updated, user, assistant, 0)};
++        {base.check(f"(select status='stopped' and revision=1 and record->>'expires_at' is null and not (record->>'check_in_issued')::boolean from public.activity_sessions where id='{activity.id}')", f"{label} atomically withdraws the unstarted offer")}
++        {base.expect_error(command(activity, "start", 1, chat_revision=1), "This activity changed; refresh before trying again", f"{label} cannot start the withdrawn offer")}
++        select {offer(session(updated), revision=1)};
++        """))
++    for state in ("offered", "active", "paused", "awaiting_report"):
++        chat = base.conversation(base.USER_A).model_copy(
++            update={"created_at": now, "updated_at": now, "activity_card": card}
++        )
++        activity = session(chat)
++        setup = [base.as_user(base.USER_A), f"select {base.create(chat)};select {offer(activity)};"]
++        if state != "offered":
++            setup.append(f"select {command(activity, 'start', 0)};")
++        if state == "paused":
++            setup.append(f"select {command(activity, 'pause', 1)};")
++        elif state == "awaiting_report":
++            setup.append(f"select {command(activity, 'finish_early', 1)};")
++        user, assistant = base.pair(chat, "A fictional next turn.", 0)
++        updated = chat.model_copy(update={"updated_at": now, "summary": "A new summary."})
++        if state != "offered":
++            updated = updated.model_copy(update={"activity_card": None})
++        setup.append(f"select {base.commit(updated, user, assistant, 0)};")
++        setup.append(base.check(
++            f"(select status from public.activity_sessions where id='{activity.id}')='{state}'",
++            f"ordinary updates preserve {state} activity when withdrawal is not required",
++        ))
++        count += notices(base.psql(base.DATABASE, "\n".join(setup)))
++    return count
++
++
++def followup_pause_checks() -> int:
++    """A completed check-in can pause a second activity without losing its own reply."""
++    now = datetime.now(UTC)
++    chat = base.conversation(base.USER_A).model_copy(update={"created_at": now, "updated_at": now})
++    completed = session(chat)
++    active = session(chat)
++    report_request = ActivityReportRequest(
++        client_request_id=uuid4(), expected_revision=2, expected_conversation_revision=0,
++        participation="partial", note="Fictional report before another activity.",
++    )
++    follow = ActivityFollowUpRequest(
++        client_request_id=uuid4(), expected_revision=3, expected_conversation_revision=0
++    )
++    base.psql(base.DATABASE, f"""
++    {base.as_user(base.USER_A)}
++    select {base.create(chat)};select {offer(completed)};
++    select {command(completed, "start", 0)};select {command(completed, "finish_early", 1)};
++    select {report(completed, report_request)};select {claim(completed, follow)};
++    select {offer(active)};select {command(active, "start", 0)};
++    """)
++    claimed = stored(completed)
++    pause = finish(claimed, chat, follow, ActivityFollowUpDirective(move="pause"))
++    return notices(base.psql(base.DATABASE, f"""
++    {base.as_user(base.USER_A)}
++    do $test$ declare response jsonb; current_record jsonb; begin
++      response := {pause};
++      select record into current_record from public.activity_sessions where id='{completed.id}';
++      if response is distinct from current_record or response->>'follow_up_status' <> 'ready'
++         or response->'report'->>'participation' <> 'partial' then
++        raise exception 'Pause follow-up differs from its saved report and reply';
++      end if;
++      raise notice 'ok: pause follow-up returns its actual saved report and successful reply';
++    end $test$;
++    {base.check(f"(select record->>'activity_move' from public.conversations where id='{chat.id}')='pause'", "outcome reply persists the pause directive")}
++    {base.check(f"(select status='stopped' and record->>'expires_at' is null and not (record->>'check_in_issued')::boolean from public.activity_sessions where id='{active.id}')", "outcome pause atomically stops a second active timer without a check-in")}
++    select {pause};
++    {base.check(f"(select count(*) from public.conversation_messages where conversation_id='{chat.id}' and role='assistant')=1", "pause follow-up remains idempotent after activity invalidation")}
++    """))
+ 
+ 
+ def main() -> None:
+@@ -239,6 +388,9 @@
+             explanation="A user-welcomed alternative.",
+         ),
+     )
++    count += preference_and_message_bound_checks(next_card)
++    count += superseded_offer_checks(next_card)
++    count += followup_pause_checks()
+     finish_sql = finish(claimed, chat, follow, ActivityFollowUpDirective(card=next_card))
+     stop_user, stop_assistant = base.pair(chat, "Stop. Please do not ask any more questions.", 0)
+     stop_user = stop_user.model_copy(update={"created_at": now})
+@@ -302,6 +454,7 @@
+         }
+     )
+     linked_activity = session(linked)
++    linked_user, linked_assistant = base.pair(linked, "Fictional source discussion.", 0)
+     save_source = base.captured(lambda repo: repo.save_journal_entry(source))
+     delete_source = base.captured(lambda repo: repo.delete_journal_entry(source.user_id, source.id))
+     probe = readiness_probe(base.SIGNING_KEY)
+@@ -311,16 +464,19 @@
+             base.DATABASE,
+             f"""
+     {base.as_user(base.USER_A)}
+-    select {save_source};select {base.create(linked)};select {offer(linked_activity)};
++    select {save_source};select {base.create(linked)};
++    select {base.commit(linked, linked_user, linked_assistant, 0)};select {offer(linked_activity, revision=1)};
+     select {delete_source};
+     {check(f"not exists(select 1 from public.activity_sessions where id='{linked_activity.id}')", "source deletion cascades activity sessions")}
+     {check(f"not exists(select 1 from public.activity_receipts where session_id='{linked_activity.id}')", "source deletion cascades activity receipts")}
++    {check(f"not exists(select 1 from public.conversation_messages where conversation_id='{linked.id}')", "signed source deletion still cascades its message metadata")}
+     {base.expect_error(command(linked_activity, "start", 0), "Activity not found", "deleted source cannot be revived by an old command")}
+     {check(f"({readiness}->>'schema')='guided-action-1'", "new preview requires its additive readiness version")}
+     {check(f"({readiness}->>'activities')='ready'", "readiness verifies activity RPCs and retention integration")}
+     select public.delete_my_journalpulse_data();
+     {check("not exists(select 1 from public.activity_sessions)", "account data deletion includes activity sessions")}
+     {check("not exists(select 1 from public.activity_receipts)", "account data deletion includes activity receipts")}
++    {check("not exists(select 1 from public.conversation_messages)", "existing account deletion still removes owned message metadata")}
+     """,
+         )
+     )
+--- a/src/journalpulse/activity_sessions.py
++++ b/src/journalpulse/activity_sessions.py
+@@ -138,8 +138,21 @@
+ 
+     def view(repository: Repository, auth: AuthContext, session: ActivitySession) -> ActivitySession:
+         conversation = owned_chat(repository, auth, session.conversation_id, open_only=False)
++        moment = clock()
++        # A worker can disappear after claiming a follow-up. Expose an expired
++        # lease as retryable without changing the stored claim: the explicit retry
++        # still uses the repository's atomic takeover and three-attempt bound.
++        expired_claim = (
++            session.follow_up_status == "generating"
++            and session.follow_up_lease_until is not None
++            and moment >= session.follow_up_lease_until
++        )
+         return session.model_copy(
+-            update={"server_now": clock(), "conversation_revision": conversation.revision}
++            update={
++                "server_now": moment,
++                "conversation_revision": conversation.revision,
++                "follow_up_status": "failed" if expired_claim else session.follow_up_status,
++            }
+         )
+ 
+     def translated(operation: Callable[[], Any]) -> Any:
+--- a/src/journalpulse/persistence.py
++++ b/src/journalpulse/persistence.py
+@@ -871,6 +871,10 @@
+                 "UPDATE conversations SET payload_json=?,revision=?,updated_at=? WHERE id=?",
+                 (committed.model_dump_json(), committed.revision, now.isoformat(), str(committed.id)),
+             )
++            if committed.activity_move == "pause" and conversation.activity_move != "pause":
++                self._invalidate_activity_sessions(connection, committed, now=now, clear_text=False)
++            else:
++                self._supersede_activity_offers(connection, conversation, committed, now=now)
+             finished = session.model_copy(
+                 update={
+                     "follow_up_status": "ready",
+@@ -914,6 +918,37 @@
+                 (str(user_id),),
+             ).fetchall()
+         return [dict(row) for row in rows]
++
++    def _supersede_activity_offers(
++        self,
++        connection: sqlite3.Connection,
++        previous: Conversation,
++        current: Conversation,
++        *,
++        now: datetime,
++    ) -> None:
++        recommendation_fields = (
++            "card", "activity_card", "activity_constraints", "activity_goal", "activity_search_topic"
++        )
++        if all(getattr(previous, field) == getattr(current, field) for field in recommendation_fields):
++            return
++        rows = connection.execute(
++            "SELECT * FROM activity_sessions WHERE user_id=? AND conversation_id=? AND status='offered'",
++            (str(current.user_id), str(current.id)),
++        ).fetchall()
++        for row in rows:
++            session = self._activity_row(row)
++            if session.started_at is not None:
++                continue
++            # Negotiation withdraws the old unstarted offer; it is not a user's
++            # rejection and must not exclude that resource from future choices.
++            self._write_activity(connection, session.model_copy(update={
++                "status": ActivityStatus.STOPPED,
++                "revision": session.revision + 1,
++                "updated_at": now,
++                "expires_at": None,
++                "check_in_issued": False,
++            }))
+ 
+     # Standalone writing -------------------------------------------------------------
+ 
+@@ -1216,6 +1251,8 @@
+             )
+             if preference == InteractionPreference.LISTEN:
+                 self._invalidate_activity_sessions(connection, changed, now=now, clear_text=False)
++            else:
++                self._supersede_activity_offers(connection, current, changed, now=now)
+             connection.execute(
+                 "INSERT INTO conversation_preference_requests VALUES (?, ?, ?, ?, ?, ?)",
+                 (
+@@ -1389,6 +1426,8 @@
+                 self._invalidate_activity_sessions(
+                     connection, committed, now=committed.updated_at, clear_text=False
+                 )
++            else:
++                self._supersede_activity_offers(connection, current, committed, now=committed.updated_at)
+         return committed, user_message, assistant_message
+ 
+     def accept_conversation(
+--- a/supabase/migrations/202610050001_guided_activity_sessions.sql
++++ b/supabase/migrations/202610050001_guided_activity_sessions.sql
+@@ -44,6 +44,11 @@
+ revoke all on public.activity_sessions,public.activity_receipts from public,anon,authenticated;
+ grant select on public.activity_sessions,public.activity_receipts to authenticated;
+ 
++-- Turn and final-check-in bounds depend on retained message metadata. Individual
++-- message deletion would reset those bounds without ending the conversation.
++-- Owned conversation/account RPCs and source cascades still delete the full chat.
++revoke delete on public.conversation_messages from authenticated;
++
+ create function private.activity_receipt(owner_id uuid,target_id uuid,request_id uuid,operation_name text,request_digest text)
+ returns boolean language plpgsql security definer set search_path=private,public as $$
+ declare saved public.activity_receipts%rowtype; used integer;
+@@ -365,11 +370,85 @@
+       update public.activity_sessions set status=changed->>'status',revision=target.revision+1,updated_at=now(),record=changed where id=target.id;
+     end loop;
+     if clear_text then delete from public.activity_receipts where session_id in(select id from public.activity_sessions where conversation_id=new.id); end if;
++  elsif coalesce(old.record->'card','null'::jsonb) is distinct from coalesce(new.record->'card','null'::jsonb)
++     or coalesce(old.record->'activity_card','null'::jsonb) is distinct from coalesce(new.record->'activity_card','null'::jsonb)
++     or coalesce(old.record->'activity_constraints','null'::jsonb) is distinct from coalesce(new.record->'activity_constraints','null'::jsonb)
++     or coalesce(old.record->'activity_goal','null'::jsonb) is distinct from coalesce(new.record->'activity_goal','null'::jsonb)
++     or coalesce(old.record->'activity_search_topic','null'::jsonb) is distinct from coalesce(new.record->'activity_search_topic','null'::jsonb) then
++    -- A newer recommendation or constraints withdraw an unstarted offer. This
++    -- is supersession, not a participant decline; ongoing activities stay intact.
++    update public.activity_sessions set status='stopped',revision=revision+1,updated_at=now(),
++      record=record||jsonb_build_object('status','stopped','revision',revision+1,'updated_at',now(),
++        'expires_at',null,'check_in_issued',false)
++    where conversation_id=new.id and user_id=new.user_id and status='offered'
++      and record->>'started_at' is null;
+   end if;
+   return new;
+ end; $$;
+ create trigger conversation_activity_lifecycle after update on public.conversations
+   for each row execute function private.invalidate_conversation_activities();
++
++-- Preference changes withdraw either generation of recommendation. Return the
++-- database row after BEFORE triggers, so mutation responses match later reads.
++create or replace function public.jp_change_preference(payload text, signature text)
++returns jsonb
++language plpgsql
++security definer
++set search_path = private, public
++as $$
++declare
++  body jsonb := private.verified_payload(payload, signature, 'change_preference');
++  owner_id uuid := auth.uid();
++  target_id uuid := (body->>'conversation_id')::uuid;
++  request_id uuid := (body->>'client_request_id')::uuid;
++  wanted text := body->>'preference';
++  expected integer := (body->>'expected_revision')::integer;
++  current_row public.conversations%rowtype;
++  receipt public.conversation_preference_requests%rowtype;
++  changed jsonb;
++  moment timestamptz := now();
++begin
++  if request_id is null or expected is null or expected < 0
++     or wanted is null or wanted not in ('listen', 'act') then
++    raise exception 'Invalid preference command' using errcode = 'PT400';
++  end if;
++  select * into current_row from public.conversations
++  where id = target_id and user_id = owner_id for update;
++  if not found then
++    raise exception 'Conversation not found' using errcode = 'PT404';
++  end if;
++  select * into receipt from public.conversation_preference_requests
++  where conversation_id = target_id and id = request_id;
++  if found then
++    if receipt.preference <> wanted or receipt.expected_revision <> expected then
++      raise exception 'Preference request ID is already in use' using errcode = 'PT409';
++    end if;
++    return current_row.record || jsonb_build_object('revision', current_row.revision);
++  end if;
++  if current_row.status <> 'open' then
++    raise exception 'Conversation is closed' using errcode = 'PT409';
++  end if;
++  if current_row.revision <> expected then
++    raise exception 'Conversation changed' using errcode = 'PT409';
++  end if;
++  if current_row.record->>'safety_mode' = 'support' then
++    raise exception 'Support mode cannot be changed' using errcode = 'PT409';
++  end if;
++  changed := current_row.record || jsonb_build_object(
++    'interaction_preference', wanted, 'card', null, 'activity_card', null,
++    'ready_for_action', wanted = 'act', 'revision', current_row.revision + 1, 'updated_at', moment
++  );
++  update public.conversations set record = changed,
++    revision = current_row.revision + 1, updated_at = moment where id = target_id
++    returning record into changed;
++  insert into public.conversation_preference_requests
++    (id, conversation_id, user_id, preference, expected_revision, created_at)
++  values (request_id, target_id, owner_id, wanted, expected, moment);
++  return changed;
++end;
++$$;
++revoke all on function public.jp_change_preference(text, text) from public, anon, authenticated;
++grant execute on function public.jp_change_preference(text, text) to authenticated;
+ 
+ create or replace function public.delete_my_journalpulse_data()
+ returns integer language plpgsql security definer set search_path=private,public as $$
+--- /dev/null
++++ b/tests/test_activity_follow_up_recovery.py
+@@ -0,0 +1,101 @@
++"""An interrupted worker's expired lease permits a bounded, explicit retry."""
++
++from datetime import timedelta
++from pathlib import Path
++from uuid import UUID
++
++import pytest
++from fastapi.testclient import TestClient
++
++from journalpulse.activity_models import ActivityFollowUpRequest
++from journalpulse.api import create_app
++from journalpulse.persistence import SQLiteRepository
++from test_guided_action_boundaries import (
++    OWNER,
++    OWNER_HEADERS,
++    Clock,
++    FollowUpDouble,
++    command,
++    follow_up_body,
++    offered,
++    reported,
++    seed_conversation,
++    settings,
++)
++
++
++@pytest.mark.parametrize("elapsed,visible_status", [(89, "generating"), (90, "failed")])
++def test_reads_expose_expired_claim_for_retry_without_mutating_storage(
++    tmp_path: Path, elapsed: int, visible_status: str
++) -> None:
++    configured, clock, model = settings(tmp_path), Clock(), FollowUpDouble()
++    repository = SQLiteRepository(configured.database_path)
++    chat = seed_conversation(configured, clock)
++    with TestClient(
++        create_app(settings=configured, clock=clock, activity_follow_up_generator=model)
++    ) as client:
++        session = reported(client, command(client, command(client, offered(client, chat), "start"), "stop"))
++        body = follow_up_body(session)
++        claimed, owns = repository.claim_activity_follow_up(
++            OWNER, UUID(session["id"]), ActivityFollowUpRequest.model_validate(body), now=clock()
++        )
++        assert owns
++        # Simulate a worker exiting after acquiring the claim, before saving a reply.
++        clock.now += timedelta(seconds=elapsed)
++        for endpoint in (
++            f"/v1/activity-sessions/{session['id']}",
++            f"/v1/conversations/{chat.id}/activity-sessions",
++        ):
++            read = client.get(endpoint, headers=OWNER_HEADERS)
++            assert read.status_code == 200, read.text
++            assert read.json()["follow_up_status"] == visible_status
++            assert read.json()["revision"] == claimed.revision
++            assert read.json()["report"] == session["report"]
++        stored = repository.get_activity_session(OWNER, claimed.id)
++        assert stored == claimed, "Reading an expired lease must not rewrite the canonical claim"
++
++        retry = client.post(
++            f"/v1/activity-sessions/{session['id']}/follow-up", headers=OWNER_HEADERS, json=body
++        )
++        if visible_status == "generating":
++            assert retry.status_code == 202
++            assert model.calls == 0
++        else:
++            assert retry.status_code == 200, retry.text
++            assert retry.json()["follow_up_status"] == "ready"
++            assert retry.json()["follow_up_attempts"] == 2
++            assert model.calls == 1
++            replay = client.post(
++                f"/v1/activity-sessions/{session['id']}/follow-up", headers=OWNER_HEADERS, json=body
++            )
++            assert replay.status_code == 200
++            assert model.calls == 1
++            assert len(repository.list_messages(OWNER, chat.id)) == 1
++
++
++def test_expired_claim_recovery_preserves_the_three_attempt_limit(tmp_path: Path) -> None:
++    configured, clock, model = settings(tmp_path), Clock(), FollowUpDouble()
++    repository = SQLiteRepository(configured.database_path)
++    chat = seed_conversation(configured, clock)
++    with TestClient(
++        create_app(settings=configured, clock=clock, activity_follow_up_generator=model)
++    ) as client:
++        session = reported(client, command(client, command(client, offered(client, chat), "start"), "stop"))
++        body = follow_up_body(session)
++        request = ActivityFollowUpRequest.model_validate(body)
++        for expected_attempts in range(1, 4):
++            claimed, owns = repository.claim_activity_follow_up(
++                OWNER, UUID(session["id"]), request, now=clock()
++            )
++            assert owns and claimed.follow_up_attempts == expected_attempts
++            clock.now += timedelta(seconds=90)
++        read = client.get(f"/v1/activity-sessions/{session['id']}", headers=OWNER_HEADERS)
++        assert read.json()["follow_up_status"] == "failed"
++        assert read.json()["follow_up_attempts"] == 3
++        retry = client.post(
++            f"/v1/activity-sessions/{session['id']}/follow-up", headers=OWNER_HEADERS, json=body
++        )
++        assert retry.status_code == 409
++        assert model.calls == 0
++        assert repository.get_activity_session(OWNER, claimed.id) == claimed
++        assert repository.list_messages(OWNER, chat.id) == []
+--- /dev/null
++++ b/tests/test_activity_offer_supersession.py
+@@ -0,0 +1,145 @@
++"""New recommendations cannot leave an obsolete unstarted activity actionable."""
++
++import json
++from datetime import timedelta
++from pathlib import Path
++from uuid import uuid4
++
++import httpx
++import pytest
++from fastapi.testclient import TestClient
++
++from journalpulse.api import create_app
++from journalpulse.intelligence import OpenRouterConversationClient
++from test_guided_action_boundaries import (
++    OWNER_HEADERS,
++    Clock,
++    command,
++    follow_up_body,
++    offered,
++    reported,
++    seed_conversation,
++    settings,
++)
++
++
++def provider_reply(minutes: int, *, choosing: bool = True, stop: bool = False) -> httpx.Response:
++    content = {
++        "reply": f"A {minutes}-minute option is available." if choosing else "You can finish when you want.",
++        "offer_action": choosing,
++        "resource_intent": "ground",
++        "card_reason": "This fits your available time." if choosing else "",
++        "summary": "A fictional quiet pause.",
++        "feelings": [],
++        "activity": {
++            "move": "pause" if stop else "negotiate" if choosing else "reflect",
++            "goal": "settle",
++            "selected_resource_id": f"guided_meditation_{minutes}m" if choosing else None,
++            "search_topic": None,
++            "constraints": {
++                "time_minutes": minutes,
++                "no_audio": True,
++                "no_video": True,
++                "seated": True,
++                "avoid_breath_focus": False,
++            },
++        },
++    }
++    return httpx.Response(200, json={
++        "choices": [{"finish_reason": "stop", "message": {"content": json.dumps(content)}}],
++    })
++
++
++@pytest.mark.parametrize("state", ["offered", "active", "paused", "awaiting_report"])
++def test_negotiation_withdraws_only_unstarted_offers_and_rejects_old_start(
++    tmp_path: Path, state: str
++) -> None:
++    configured, clock = settings(tmp_path), Clock()
++    replies = iter((provider_reply(2), provider_reply(1, choosing=state == "offered")))
++    model = OpenRouterConversationClient(
++        configured, client=httpx.Client(transport=httpx.MockTransport(lambda _: next(replies)))
++    )
++    with TestClient(create_app(settings=configured, clock=clock, conversation_client=model)) as client:
++        created = client.post("/v1/conversations", headers=OWNER_HEADERS, json={"llm_consent": True})
++        assert created.status_code == 201, created.text
++        endpoint = f"/v1/conversations/{created.json()['id']}"
++        first = client.post(endpoint + "/messages", headers=OWNER_HEADERS, json={
++            "client_message_id": str(uuid4()), "text": "I have two minutes for a quiet pause.",
++        })
++        assert first.status_code == 200, first.text
++        saved = client.post(endpoint + "/activity-sessions", headers=OWNER_HEADERS, json={
++            "client_request_id": str(uuid4()), "expected_conversation_revision": 1,
++            "resource_id": "guided_meditation_2m",
++        })
++        assert saved.status_code == 201, saved.text
++        session = saved.json()
++        if state != "offered":
++            session = command(client, session, "start")
++        if state == "paused":
++            session = command(client, session, "pause")
++        elif state == "awaiting_report":
++            session = command(client, session, "finish_early")
++        stale_start = {
++            "client_request_id": str(uuid4()), "expected_revision": session["revision"],
++            "expected_conversation_revision": 1, "command": "start",
++        }
++        clock.now += timedelta(seconds=1)
++        corrected = client.post(endpoint + "/messages", headers=OWNER_HEADERS, json={
++            "client_message_id": str(uuid4()), "text": "Actually I only have one minute. Make it shorter.",
++        })
++        assert corrected.status_code == 200, corrected.text
++        assert corrected.json()["conversation"]["activity_constraints"]["time_minutes"] == 1
++        current = client.get(endpoint + "/activity-sessions", headers=OWNER_HEADERS).json()
++        if state != "offered":
++            assert current["status"] == state
++            assert current["revision"] == session["revision"]
++            assert current["expires_at"] == session["expires_at"]
++            return
++        assert current["status"] == "stopped"
++        assert current["started_at"] is None and not current["check_in_issued"]
++        assert current["revision"] == session["revision"] + 1
++        assert current["conversation_revision"] == 2
++        old_endpoint = f"/v1/activity-sessions/{current['id']}/commands"
++        # A request prepared before the new signed turn cannot win after that commit.
++        assert client.post(old_endpoint, headers=OWNER_HEADERS, json=stale_start).status_code == 409
++        refreshed_start = {
++            **stale_start, "client_request_id": str(uuid4()), "expected_revision": current["revision"],
++            "expected_conversation_revision": 2,
++        }
++        assert client.post(old_endpoint, headers=OWNER_HEADERS, json=refreshed_start).status_code == 409
++        replacement = client.post(endpoint + "/activity-sessions", headers=OWNER_HEADERS, json={
++            "client_request_id": str(uuid4()), "expected_conversation_revision": 2,
++            "resource_id": "guided_meditation_1m",
++        })
++        assert replacement.status_code == 201, replacement.text
++        started = command(client, replacement.json(), "start")
++        assert started["duration_seconds"] == 60
++        assert started["resource"]["id"] == "guided_meditation_1m"
++
++
++def test_explicit_pause_in_pending_follow_up_stops_another_active_session(tmp_path: Path) -> None:
++    configured, clock = settings(tmp_path), Clock()
++    model = OpenRouterConversationClient(
++        configured,
++        client=httpx.Client(transport=httpx.MockTransport(
++            lambda _: provider_reply(2, choosing=False, stop=True)
++        )),
++    )
++    chat = seed_conversation(configured, clock)
++    with TestClient(create_app(settings=configured, clock=clock, conversation_client=model)) as client:
++        first = reported(
++            client, command(client, command(client, offered(client, chat), "start"), "stop"),
++            note="Please stop the activities, I am done.",
++        )
++        second = command(client, offered(client, chat), "start")
++        reply = client.post(
++            f"/v1/activity-sessions/{first['id']}/follow-up",
++            headers=OWNER_HEADERS, json=follow_up_body(first),
++        )
++        assert reply.status_code == 200, reply.text
++        assert reply.json()["follow_up_status"] == "ready"
++        assert reply.json()["report"] == first["report"]
++        current = client.get(f"/v1/activity-sessions/{second['id']}", headers=OWNER_HEADERS).json()
++        assert current["status"] == "stopped"
++        assert current["expires_at"] is None
++        assert not current["check_in_issued"]

@@ -1,0 +1,12 @@
+{
+  "artifact_sha256": "b9654da8f879702dd79f0163ab6033b08b71a83648bf14c34c3dfa979871fa2b",
+  "load_method": "Exact artifact bytes fulfilled by an intercepted loopback route",
+  "case_pairs": 4,
+  "version_columns": 8,
+  "details_expand": true,
+  "mobile_overflow": false,
+  "javascript_errors": [],
+  "external_requests": [],
+  "browser": "/usr/bin/chromium",
+  "passed": true
+}

@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   OPEN_CONVERSATION_KEY,
+  canApplyConversation,
   chatStage,
   readOpenConversationId,
   readyForSomething,
@@ -20,10 +21,10 @@ function memory() {
 describe("open conversation id", () => {
   test("stores only a conversation id and drops anything else", () => {
     const storage = memory();
-    writeOpenConversationId(storage, "10000000-0000-4000-8000-000000000010");
+    writeOpenConversationId("10000000-0000-4000-8000-000000000010", storage);
     expect(storage.getItem(OPEN_CONVERSATION_KEY)).toBe("10000000-0000-4000-8000-000000000010");
     expect(readOpenConversationId(storage)).toBe("10000000-0000-4000-8000-000000000010");
-    writeOpenConversationId(storage, "not-a-message");
+    writeOpenConversationId("not-a-message", storage);
     expect(readOpenConversationId(storage)).toBeNull();
     expect(storage.getItem(OPEN_CONVERSATION_KEY)).toBeNull();
   });
@@ -51,9 +52,26 @@ describe("chat stage", () => {
 });
 
 describe("ready prompt", () => {
-  test("follows Luna or appears after two messages", () => {
+  test("an explicit listening choice overrides Luna and the message-count shortcut", () => {
+    expect(readyForSomething({ userMessages: 12, readyForAction: true, preference: "listen" })).toBe(false);
+  });
+  test("follows current readiness without inferring consent from a turn count", () => {
     expect(readyForSomething({ userMessages: 1 })).toBe(false);
     expect(readyForSomething({ userMessages: 1, readyForAction: true })).toBe(true);
-    expect(readyForSomething({ userMessages: 2 })).toBe(true);
+    expect(readyForSomething({ userMessages: 2 })).toBe(false);
+    expect(readyForSomething({ userMessages: 12, readyForAction: false })).toBe(false);
+  });
+});
+
+describe("canonical conversation updates", () => {
+  const current = { id: "chat-a", revision: 5, status: "open", safety_mode: "normal" };
+  test("ignores a response older than the saved choice and accepts a newer one", () => {
+    expect(canApplyConversation(current, { ...current, revision: 4 })).toBe(false);
+    expect(canApplyConversation(current, { ...current, revision: 6 })).toBe(true);
+  });
+  test("cannot reopen a closed chat or downgrade support", () => {
+    expect(canApplyConversation({ ...current, status: "closed" }, current)).toBe(false);
+    expect(canApplyConversation({ ...current, safety_mode: "support" }, current)).toBe(false);
+    expect(canApplyConversation(current, { ...current, id: "chat-b" })).toBe(false);
   });
 });

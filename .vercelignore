@@ -14,3 +14,16 @@ __pycache__
 tests
 docs
 artifacts
+.github
+.coverage
+build
+dist
+*.egg-info
+assets/evaluation
+web/tests
+web/test-results
+web/test-results-integration
+web/playwright-report
+web/playwright*.config.ts
+web/vitest.config.ts
+web/*.tsbuildinfo

@@ -1,0 +1,210 @@
+[
+  {
+    "id": "r01_gardening_attention",
+    "original_judgment_sha256": "2660402a0fb4c6c5fa2fb7fb80a81c76d199f506331f10d135877db1a1926cf2",
+    "teacher_request_sha256": "652e420676987c805abc5452092937db2640b2684a1f51098b1263eb8c6ade31",
+    "evaluation_binding": {
+      "case_sha256": "3292d3c007948cde8c91709a9de75b9e70fe281ca891f2d4c090b2cb9f28ba11",
+      "observations_sha256": {
+        "baseline": "939b10bb4b610cb934a3df3f334f8ad01540b7718b5aad2ed43544cc3ca580f5",
+        "candidate": "2de3cffb1c49d7a65d7f4a3ea1187717e7ebb37f982ad033449ed9d1015d4420"
+      }
+    },
+    "transport_identity": "retained_request_reconstruction_only"
+  },
+  {
+    "id": "r02_learning_pride",
+    "original_judgment_sha256": "c45af42a8931f612c37d72a7df256df7ecdb3fd9b6aa54307fbc19a3536de823",
+    "teacher_request_sha256": "479bd594ecf1b2383ab02f9d760ba8d2e5dfc271e1d81ef47e8ec8e1252bebe8",
+    "evaluation_binding": {
+      "case_sha256": "03e6f395086124ab37f05f39fb0556a7c2bbf3fed9f4f41969c14828c8d03d06",
+      "observations_sha256": {
+        "baseline": "83939d69cd85cc0324094b5347e2aa6d0f0fcab2565fa6dcec1624e49a687720",
+        "candidate": "7dfb15aac71d5d8a7586d02b9fd3d259fc586ac3aa9c36755315ac9bb7f85c27"
+      }
+    },
+    "transport_identity": "retained_request_reconstruction_only"
+  },
+  {
+    "id": "r03_deadline_correction",
+    "original_judgment_sha256": "c793155c746faf7a02ca62fe578a0210acd439ecfb3d19340300e89d6837e1ad",
+    "teacher_request_sha256": "5f66c920b5a14ea40035b54c5fb5e5f8812a82f7b5a52b24e5791f468dc3e979",
+    "evaluation_binding": {
+      "case_sha256": "fbea16358fc6023cd50e9eaf13e833d5eb85198b2c3f725624056c84bfdd5365",
+      "observations_sha256": {
+        "baseline": "8a4f3c33c3a9a8de032c4cd74984e1967dc49de32b8a776db55aefef37e4b273",
+        "candidate": "4136b36121eb3657c46d66dbb13160cc9e040d68dcc0c1e55fa20c58f85c43fb"
+      }
+    },
+    "transport_identity": "retained_request_reconstruction_only"
+  },
+  {
+    "id": "r04_roommate_wording",
+    "original_judgment_sha256": "402f0ea7a80b4d556e562248b9e1a11d03eb3c57c32b2eaa3e9c26cfed63e4cc",
+    "teacher_request_sha256": "7ce01c102ec46c886e021e213f2b66ebec3da3af6de12085628ca0fd6c5eec68",
+    "evaluation_binding": {
+      "case_sha256": "0571f48d21cfdf8eded66d321f98465ce19e9614e4d482411eb3cb8be712b53a",
+      "observations_sha256": {
+        "baseline": "5501ba3da03fc23ff6b62248bf0a94fe61e841b940f46e929ea19fbf6f869107",
+        "candidate": "6badafca029661f057eb5b9ccbeaa3b4c44d461bf428786d1ebbbc7a15c2703c"
+      }
+    },
+    "transport_identity": "retained_request_reconstruction_only"
+  },
+  {
+    "id": "r05_understanding_only",
+    "original_judgment_sha256": "88bf8ce222b0b3597a59f36318e2bb2b0debbb53a4695d9d85abbf22a7127742",
+    "teacher_request_sha256": "a4e8193893781d3af751333a06b3573583e8856467e506f5678d9dc383f81ec3",
+    "evaluation_binding": {
+      "case_sha256": "94072402fcbc2014941ca87f7ec99d1543c725cf3f172745b390069f94977444",
+      "observations_sha256": {
+        "baseline": "4952977e55540aa9de9310883bc10d038f1ae47e845834ebd2de5aaad00a2caf",
+        "candidate": "364e86827643050f62f0693a15df196708d4f23a13ad11a3a51a638122d232e6"
+      }
+    },
+    "transport_identity": "retained_request_reconstruction_only"
+  },
+  {
+    "id": "r06_missing_context",
+    "original_judgment_sha256": "e941f3d4cc60e85449ed100d7506c1fa398e8e1e9315344e016e201597e36521",
+    "teacher_request_sha256": "cf14a8b0cef120c400d55e0d900dcde64b523bc7a19067a0fa288776d4a05133",
+    "evaluation_binding": {
+      "case_sha256": "8d784b9c4a74e5d829f0a530f7332dd73aa64e81e1ff92dd76638131ccfc5244",
+      "observations_sha256": {
+        "baseline": "eca022e5916b26c983e2dd7144e40587e433316b60453a410f8b6588387f6704",
+        "candidate": "1f2c1b053a8eea04220c32d10419729ff68d97a0abe99669f8b3484b7a6d4f64"
+      }
+    },
+    "transport_identity": "retained_request_reconstruction_only"
+  },
+  {
+    "id": "r07_tiny_start",
+    "original_judgment_sha256": "ab8e3a2dd44592223d45a8b59da88da4fed41dc25a9eb3b1539a5501d514c54a",
+    "teacher_request_sha256": "957d077f2ddf77af2e3ea1e59a1ac1274d3fa464fba0b269819ddeab63c6c2b3",
+    "evaluation_binding": {
+      "case_sha256": "5ec07e8da50b2ea3f0125a2151c59b0f9109949c17a505abad0d1c1feb176cfc",
+      "observations_sha256": {
+        "baseline": "dc0535aabbb913872e7ed6be57cedcfb0c14023af2c8a804d238334edec0d659",
+        "candidate": "f5269d447a00f73a08e45019d5c822059a237359f68a5e0898ef6fc0125cfdbf"
+      }
+    },
+    "transport_identity": "retained_request_reconstruction_only"
+  },
+  {
+    "id": "r08_connection_capacity",
+    "original_judgment_sha256": "84989f46dcbdcdd1ad0632d74b1d24c0f2a2fb4b2935df6967890a37e74650cb",
+    "teacher_request_sha256": "6d90a4de103e08cb76be406fd94d4e877c2424d71276280385e5561fe9f6e587",
+    "evaluation_binding": {
+      "case_sha256": "218c5cc068a2af2c74def8ee50d327e019cad17c3f40c9fed52ccfb4ef32710d",
+      "observations_sha256": {
+        "baseline": "7d80566792a0483732fbb04e9faa0af66ed2f2e59edbcb6327de19f180721aee",
+        "candidate": "5eee7dc0ec5cef9fd5117ffba05fdadda758093a986410772a356ad731573191"
+      }
+    },
+    "transport_identity": "retained_request_reconstruction_only"
+  },
+  {
+    "id": "r09_silent_one_minute",
+    "original_judgment_sha256": "ff0451554d189696d447873b9a2d6389e0e56e2881e56a42ae6e2b60a4d1b38f",
+    "teacher_request_sha256": "769356fe7ea15a47f93d79466f607c0a93f131214e9b79be73988e8ae1f38b64",
+    "evaluation_binding": {
+      "case_sha256": "2232a9a2677b0dbff8a94e2ee1b1474cb46dc3b974ffd89c4f7b44d96492be71",
+      "observations_sha256": {
+        "baseline": "bd39ae0920eaeb6c9a7f78aecd7c0ae5cda68bfd1eef9696e805e9a458e50304",
+        "candidate": "39af607144ab4ad2e48b871a760a8f8f78e8614dd308e52a6622999464cd8ca7"
+      }
+    },
+    "transport_identity": "retained_request_reconstruction_only"
+  },
+  {
+    "id": "r10_drawing_movement",
+    "original_judgment_sha256": "3da37dcfc3246b04487f3928b1d96ca6ffbf2615b8f724a2554d623ff52fba21",
+    "teacher_request_sha256": "cebc2d868ee4d09ee45f5b604699df316783063475c40677c094399a20b31c97",
+    "evaluation_binding": {
+      "case_sha256": "537b77f7d4701da3068b25038e2dcaad508efdeaf590d6c6e78628132421fbf4",
+      "observations_sha256": {
+        "baseline": "5814001cff8bbce1a9b284dca1c057ac635865f79cb8c760cb64852cad782382",
+        "candidate": "ad27bdb15fbb1a074e7520da87683a9fa0c32ca778703822bacf17e690354a41"
+      }
+    },
+    "transport_identity": "gateway_hash_verified"
+  },
+  {
+    "id": "r11_creative_break",
+    "original_judgment_sha256": "a62a92ae6711f93ab02670913bce065f79c3385b66a122e8eb8f0e8b8a127c55",
+    "teacher_request_sha256": "98fad998039b4f939416fc20eb9d0a5527077a680138dc2cf04542a4ccb3e2ab",
+    "evaluation_binding": {
+      "case_sha256": "0d5ec3d2b85cf7fd3afcdea3d4d18ab46f1f059254eec7bfbe414976257084bd",
+      "observations_sha256": {
+        "baseline": "0d7aa96bfe68aa97e0308264ae9993427142d6eb58475e33704d216eeb91e33d",
+        "candidate": "9e111858c9318fe1dc0e9d5bbbb7f86053f5b1fe92e275024bcaf58de3f4bbec"
+      }
+    },
+    "transport_identity": "gateway_hash_verified"
+  },
+  {
+    "id": "r12_end_without_question",
+    "original_judgment_sha256": "7a695006cfd32cb5bac166e7157037e6b191e7813286e1958627f7d974ee63cc",
+    "teacher_request_sha256": "78bbe80ee2a0a2fd67348cba87cf28388da292057006c94b59d82a8cf4ba1a12",
+    "evaluation_binding": {
+      "case_sha256": "6d634ed59df009360f365cec1d749d4e0cedaf984aede7cfc1c62ec307c543cd",
+      "observations_sha256": {
+        "baseline": "f4f2cabc0e928bfed5e595b9df1dd161efa43162a4bde14948499e3439b6d178",
+        "candidate": "07e9886305eb111a292d1022bc68155928513dea5ddb4fbf65d2cf577f5e6238"
+      }
+    },
+    "transport_identity": "gateway_hash_verified"
+  },
+  {
+    "id": "r13_partial_no_change",
+    "original_judgment_sha256": "0600f63e09bae29211557e0a1e9d94e207d156011991ff05ca1b6d89636e64f3",
+    "teacher_request_sha256": "92fb3f6b2c19aafadea1c205efcb43775d9174ccb778df3a4183c85b64497fe6",
+    "evaluation_binding": {
+      "case_sha256": "09854570386b045a01eb0a79940eaad3afd6789bee43787658ab8867e223b02f",
+      "observations_sha256": {
+        "baseline": "9248957d42695a825495175f11571a8c8356663da157ec004970ec3406bd3104",
+        "candidate": "69afd64e884ed03ccd3e9877553d355ea27a241762a1075016a8d45053ea7ee0"
+      }
+    },
+    "transport_identity": "gateway_hash_verified"
+  },
+  {
+    "id": "r14_movement_discomfort",
+    "original_judgment_sha256": "89a07a52767de76750f597d0da16cfbb8a4eb5dd42d0d16013e0c4bbcb522c8e",
+    "teacher_request_sha256": "28c4b6538a973292529191a4da0c0b9de991a468bc774f939dec61f484e0ae50",
+    "evaluation_binding": {
+      "case_sha256": "33ff5c9f2d781a377ec88f1301fd9ff51e70599c000c9a5e4c0af86c60e6a8fd",
+      "observations_sha256": {
+        "baseline": "9a65b269786d0051ddafcfa9d9d323b4af15a65de808ca1161c6c6bc5b7b01f1",
+        "candidate": "14c3cc2833fab9011af20e00555c5619b1613b501cd4d8faeaf9d04555431bff"
+      }
+    },
+    "transport_identity": "gateway_hash_verified"
+  },
+  {
+    "id": "r16_public_resource",
+    "original_judgment_sha256": "36df1ea4f835bedd52ea5418fe7aa810ed0fe94c7716df4e296a0eeb7e7182b2",
+    "teacher_request_sha256": "53ab132fc8724339f5dafa892c1812c714a88c3ce48cd8c50aae192df76ee3cd",
+    "evaluation_binding": {
+      "case_sha256": "bca39311186033c1896503eda78fa1eff02ff14f22a1b1327ce91fab34e51239",
+      "observations_sha256": {
+        "baseline": "b59cf32f55735baaae741084736fd985af02e69bb60a21cc13ff6bee1fbe90e7",
+        "candidate": "1d37b3c7035eab172247bbbcde31c15a35721c44e824e4c13412d6d3b3f653ff"
+      }
+    },
+    "transport_identity": "gateway_hash_verified"
+  },
+  {
+    "id": "r18_unsupported_surveillance",
+    "original_judgment_sha256": "3faf4e2c7a44fd93dc0c8578dfc6f3548996d83f24ee1488d09eabb11ffeeda1",
+    "teacher_request_sha256": "6d644e37c32fabb0bfbd0dd5860aab5ee9edc96df2e4d4581d2a338f48d26bed",
+    "evaluation_binding": {
+      "case_sha256": "6b0d7d31e3f3ef3319fb16a83409c58184103b49d6156a23b14952eb4573cabf",
+      "observations_sha256": {
+        "baseline": "f650cfa94a4a83b01f8fe106bd7f4e7c7e35b13c4b8d95f75a66dda493145068",
+        "candidate": "ee821d96e1fdfd163ea5d0ba6a21e6b64da68a9af53e610c81ce0ef728ef2618"
+      }
+    },
+    "transport_identity": "gateway_hash_verified"
+  }
+]

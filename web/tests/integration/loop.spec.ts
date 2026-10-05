@@ -17,7 +17,7 @@ async function signIn(page: Page, who: Session, llmConsent = true) {
   await page.addInitScript(
     ([token, userId, consent]) => {
       window.localStorage.setItem(
-        "journalpulse_preferences_v1",
+        `journalpulse_preferences_v1:${userId}`,
         JSON.stringify({ onboarded: true, llmConsent: consent, retainText: false, encryptedDrafts: false, followUpMinutes: 10, locale: "CA" }),
       );
       // supabase-js reads this key for the gateway host 127.0.0.1.
@@ -46,16 +46,18 @@ function api(request: APIRequestContext, who: Session) {
   };
 }
 
-test("the whole loop runs against the real API and database", async ({ page, request }) => {
+test("the legacy guided loop runs against the real API and database", async ({ page, request }) => {
   const alex = await session(request, "alex");
   const as = api(request, alex);
   expect((await as.delete("/v1/account/data")).ok()).toBeTruthy();
-  await signIn(page, alex);
+  // This preserves the original feelings → goal → accept → standalone check-in
+  // contract. AI chats use the separately tested, open-chat activity session loop.
+  await signIn(page, alex, false);
 
   await page.goto("/talk/");
   await page.getByRole("button", { name: /Low/ }).click();
-  await expect(page.getByText("What feels heaviest right now?")).toBeVisible();
-  await page.getByLabel("Message Luna").fill("Work has been so stressful and I'm exhausted.");
+  await expect(page.getByText(/What part of that is sitting with you most right now/)).toBeVisible();
+  await page.getByLabel("Message Luna").fill("Work has been so stressful and I'm exhausted. Please find one small step.");
   await page.getByRole("button", { name: "Send" }).click();
   await page.getByRole("button", { name: /Yes, let’s find one small thing/ }).click();
 
@@ -87,7 +89,8 @@ test("the whole loop runs against the real API and database", async ({ page, req
   expect(saved.self_report_input).toEqual({ feelings: ["tired", "sad"], mood_score: 2 });
   expect(saved.state.emotion_tags).toEqual(["tired", "sad"]);
   expect(saved.state.confidence).toBeNull();
-  expect(saved.model_run.model).toBe("integration-fake-luna");
+  expect(saved.model_run.model).toBe("luna-guided");
+  expect(saved.model_run.provider).toBe("local");
   const closed = await (await as.get(`/v1/conversations/${conversationId}`)).json();
   expect(closed.conversation.status).toBe("closed");
   expect(closed.conversation.reflection_id).toBe(saved.id);
@@ -149,6 +152,145 @@ test("each person sees only their own journal and cannot write provenance direct
   });
   expect(unsigned.status()).toBe(403);
   await alex.delete(`/v1/conversations/${chat.id}`);
+});
+
+test("Just talk survives reload and later AI flags, then resumes with a fresh activity offer", async ({ page, request }) => {
+  const who = await session(request, "alex");
+  const as = api(request, who);
+  await as.delete("/v1/account/data");
+  await signIn(page, who);
+  await page.goto("/talk/");
+  await page.getByLabel("Message Luna").fill("I feel tired.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByText("What feels heaviest right now?")).toBeVisible();
+  await page.getByLabel("Message Luna").fill("I have two minutes and would like a quiet seated pause without audio.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByRole("button", { name: "Start activity", exact: true })).toBeVisible();
+  const id = new URL(page.url()).searchParams.get("c");
+  const old = (await (await as.get(`/v1/conversations/${id}`)).json()).conversation;
+  expect(old.activity_card).toBeTruthy();
+  expect(old.card).toBeNull();
+
+  await page.getByRole("button", { name: "Just talk", exact: true }).click();
+  await expect(page.getByText("Just talking. We’ll stay with your thoughts.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Start activity", exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Find a small step" })).toBeVisible();
+  // The old-contract fake deliberately sets offer_action on later turns. The
+  // server's Listen preference must suppress even that adversarial readiness flag.
+  await page.getByLabel("Message Luna").fill("I still have more to say.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByLabel("Message Luna")).toHaveValue("");
+  const listening = (await (await as.get(`/v1/conversations/${id}`)).json()).conversation;
+  expect(listening.interaction_preference).toBe("listen");
+  expect(listening.ready_for_action).toBe(false);
+  expect(listening.card).toBeNull();
+  expect(listening.activity_card).toBeNull();
+  expect((await (await as.get("/v1/reflections")).json()).items).toEqual([]);
+  await expect(page.getByRole("button", { name: /Yes, let’s find one small thing/ })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Find a small step" }).click();
+  await page.getByLabel("Message Luna").fill("I have two minutes and want a quiet seated pause now.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByRole("button", { name: "Start activity", exact: true })).toBeVisible();
+  const resumed = (await (await as.get(`/v1/conversations/${id}`)).json()).conversation;
+  expect(resumed.revision).toBeGreaterThan(old.revision);
+  expect(resumed.activity_card.offered_message_id).not.toBe(old.activity_card.offered_message_id);
+  const stale = await as.post(`/v1/conversations/${id}/activity-sessions`, {
+    client_request_id: crypto.randomUUID(), resource_id: old.activity_card.decision_preview.action_id,
+    expected_conversation_revision: old.revision,
+  });
+  expect(stale.status()).toBe(409);
+  await page.getByRole("button", { name: "Start activity", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+  const current = (await (await as.get(`/v1/conversations/${id}`)).json()).conversation;
+  expect(current.status).toBe("open");
+  expect((await (await as.get("/v1/reflections")).json()).items).toEqual([]);
+  const activity = await (await as.get(`/v1/conversations/${id}/activity-sessions`)).json();
+  expect(activity.status).toBe("active");
+  expect(activity.offered_message_id).toBe(resumed.activity_card.offered_message_id);
+  await as.delete(`/v1/conversations/${id}`);
+});
+
+test("a lost choice response can be retried without losing the draft or applying twice", async ({ page, request }) => {
+  const who = await session(request, "blair");
+  const as = api(request, who);
+  await as.delete("/v1/account/data");
+  await signIn(page, who, false);
+  await page.goto("/talk/");
+  await page.getByLabel("Message Luna").fill("Starting a guided conversation.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByLabel("Message Luna")).toHaveValue("");
+  await page.getByLabel("Message Luna").fill("Words I am still writing.");
+  const commands: unknown[] = [];
+  await page.route("**/v1/conversations/*/preference", async route => {
+    commands.push(route.request().postDataJSON());
+    const response = await route.fetch();
+    expect(response.ok()).toBeTruthy();
+    if (commands.length <= 2) await route.abort("failed");
+    else await route.fulfill({ response });
+  });
+  await page.getByRole("button", { name: "Just talk", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Try saving choice again" })).toBeVisible();
+  await expect(page.getByLabel("Message Luna")).toHaveValue("Words I am still writing.");
+  await page.getByRole("button", { name: "Try saving choice again" }).click();
+  await expect(page.getByRole("button", { name: "Find a small step" })).toBeVisible();
+  expect(commands).toHaveLength(3); // Automatic retry, then the person's explicit retry.
+  expect(commands[0]).toEqual(commands[1]);
+  expect(commands[0]).toEqual(commands[2]);
+  const id = new URL(page.url()).searchParams.get("c");
+  const stored = (await (await as.get(`/v1/conversations/${id}`)).json()).conversation;
+  expect(stored.revision).toBe(2); // One turn and one choice, despite two HTTP attempts.
+  const exported = await (await as.get("/v1/export")).json();
+  expect(exported.conversation_preference_requests).toHaveLength(1);
+  expect(exported.reflections).toEqual([]);
+  await as.delete(`/v1/conversations/${id}`);
+  expect((await (await as.get("/v1/export")).json()).conversation_preference_requests).toEqual([]);
+});
+
+test("a delayed browser response cannot replace a newer listening choice", async ({ page, request }) => {
+  const who = await session(request, "blair");
+  const as = api(request, who);
+  await as.delete("/v1/account/data");
+  expect((await (await as.get("/v1/export")).json()).conversation_preference_requests).toEqual([]);
+  await signIn(page, who, false);
+  await page.goto("/talk/");
+  await page.getByLabel("Message Luna").fill("My first thought.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByLabel("Message Luna")).toHaveValue("");
+
+  let release!: () => void;
+  let reached!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  const arrived = new Promise<void>(resolve => { reached = resolve; });
+  await page.route("**/v1/conversations/*/messages", async route => {
+    const response = await route.fetch(); // Real commit; delay only HTTP delivery.
+    expect(response.ok()).toBeTruthy();
+    reached();
+    await held;
+    await route.fulfill({ response });
+  });
+  await page.getByLabel("Message Luna").fill("My second thought.");
+  await page.getByRole("button", { name: "Send" }).click();
+  await arrived;
+  try {
+    // The first choice uses the old revision; the page must refresh before retry.
+    await page.getByRole("button", { name: "Just talk", exact: true }).click();
+    await expect(page.locator("p[role=alert]")).toBeVisible();
+    await page.getByRole("button", { name: "Just talk", exact: true }).click();
+    await expect(page.getByText("Just talking. We’ll stay with your thoughts.")).toBeVisible();
+  } finally {
+    release();
+  }
+  await expect(page.getByLabel("Message Luna")).toHaveValue("");
+  await expect(page.getByRole("button", { name: "Find a small step" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: /Yes, let’s find one small thing/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Skip ahead/ })).toHaveCount(0);
+  const id = new URL(page.url()).searchParams.get("c");
+  const stored = await (await as.get(`/v1/conversations/${id}`)).json();
+  expect(stored.conversation.interaction_preference).toBe("listen");
+  expect(stored.conversation.revision).toBe(3);
+  expect(stored.messages).toHaveLength(4);
 });
 
 test("idle chat text is purged by the scheduled job even if the person never returns", async ({ request }) => {

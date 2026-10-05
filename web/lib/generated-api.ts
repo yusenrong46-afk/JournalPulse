@@ -72,6 +72,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/activity-sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Activity */
+        get: operations["read_activity_v1_activity_sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/activity-sessions/{session_id}/commands": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Control Activity */
+        post: operations["control_activity_v1_activity_sessions__session_id__commands_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/activity-sessions/{session_id}/follow-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Follow Up Activity */
+        post: operations["follow_up_activity_v1_activity_sessions__session_id__follow_up_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/activity-sessions/{session_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report Activity */
+        post: operations["report_activity_v1_activity_sessions__session_id__report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/conversations": {
         parameters: {
             query?: never;
@@ -124,6 +192,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/conversations/{conversation_id}/activity-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Activity */
+        get: operations["latest_activity_v1_conversations__conversation_id__activity_sessions_get"];
+        put?: never;
+        /** Offer Activity */
+        post: operations["offer_activity_v1_conversations__conversation_id__activity_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/conversations/{conversation_id}/close": {
         parameters: {
             query?: never;
@@ -141,6 +227,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/conversations/{conversation_id}/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Discover */
+        post: operations["discover_v1_conversations__conversation_id__discover_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/conversations/{conversation_id}/messages": {
         parameters: {
             query?: never;
@@ -152,6 +255,40 @@ export interface paths {
         put?: never;
         /** Continue Conversation */
         post: operations["continue_conversation_v1_conversations__conversation_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/conversations/{conversation_id}/preference": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Preference */
+        post: operations["change_preference_v1_conversations__conversation_id__preference_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/discovery/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search Resources */
+        post: operations["search_resources_v1_discovery_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -186,6 +323,59 @@ export interface paths {
         get: operations["insights_v1_insights_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/journal/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Entries */
+        get: operations["list_entries_v1_journal_entries_get"];
+        put?: never;
+        /** Create Entry */
+        post: operations["create_entry_v1_journal_entries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/journal/entries/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Entry */
+        get: operations["read_entry_v1_journal_entries__entry_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Entry */
+        delete: operations["delete_entry_v1_journal_entries__entry_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/journal/entries/{entry_id}/reflect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reflect Entry */
+        post: operations["reflect_entry_v1_journal_entries__entry_id__reflect_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -306,6 +496,8 @@ export interface components {
             action_id: string;
             /** Client Request Id */
             client_request_id?: string | null;
+            /** Expected Revision */
+            expected_revision?: number | null;
             self_report?: components["schemas"]["AffectiveState"] | null;
         };
         /** ActionCard */
@@ -345,6 +537,244 @@ export interface components {
             state: components["schemas"]["AffectiveState"];
             target: components["schemas"]["TargetState"];
         };
+        /** ActivityCommandRequest */
+        ActivityCommandRequest: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /**
+             * Command
+             * @enum {string}
+             */
+            command: "start" | "pause" | "resume" | "finish_early" | "expire" | "stop" | "decline";
+            /** Expected Conversation Revision */
+            expected_conversation_revision: number;
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /**
+         * ActivityConstraintInputs
+         * @description Correctable activity limits; no free-form private text enters search context.
+         */
+        ActivityConstraintInputs: {
+            /**
+             * Avoid Breath Focus
+             * @default false
+             */
+            avoid_breath_focus: boolean;
+            /**
+             * No Audio
+             * @default false
+             */
+            no_audio: boolean;
+            /**
+             * No Video
+             * @default false
+             */
+            no_video: boolean;
+            /**
+             * Seated
+             * @default false
+             */
+            seated: boolean;
+            /** Time Minutes */
+            time_minutes?: number | null;
+        };
+        /** ActivityFollowUpRequest */
+        ActivityFollowUpRequest: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Expected Conversation Revision */
+            expected_conversation_revision: number;
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** ActivityReport */
+        ActivityReport: {
+            /** After Rating */
+            after_rating?: number | null;
+            /** Before Rating */
+            before_rating?: number | null;
+            /** Effort */
+            effort?: number | null;
+            /** Fit */
+            fit?: ("good" | "mixed" | "poor" | "unsure") | null;
+            /** Goal Progress */
+            goal_progress?: ("closer" | "same" | "further" | "unsure") | null;
+            /** Helpfulness */
+            helpfulness?: number | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Participation
+             * @enum {string}
+             */
+            participation: "completed" | "partial" | "not_tried" | "stopped";
+            /** State Change */
+            state_change?: ("toward_target" | "same" | "away_from_target" | "unsure") | null;
+        };
+        /** ActivityReportRequest */
+        ActivityReportRequest: {
+            /** After Rating */
+            after_rating?: number | null;
+            /** Before Rating */
+            before_rating?: number | null;
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Effort */
+            effort?: number | null;
+            /** Expected Conversation Revision */
+            expected_conversation_revision: number;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Fit */
+            fit?: ("good" | "mixed" | "poor" | "unsure") | null;
+            /** Goal Progress */
+            goal_progress?: ("closer" | "same" | "further" | "unsure") | null;
+            /** Helpfulness */
+            helpfulness?: number | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Participation
+             * @enum {string}
+             */
+            participation: "completed" | "partial" | "not_tried" | "stopped";
+            /** State Change */
+            state_change?: ("toward_target" | "same" | "away_from_target" | "unsure") | null;
+        };
+        /**
+         * ActivitySelectionProvenance
+         * @description These are LLM/user choices, not randomized research-policy assignments.
+         */
+        ActivitySelectionProvenance: {
+            /**
+             * Eligible For Ope
+             * @default false
+             * @constant
+             */
+            eligible_for_ope: false;
+            model_run?: components["schemas"]["ModelRun"] | null;
+            /** Propensity */
+            propensity?: null;
+            /** Recommended Resource Id */
+            recommended_resource_id: string;
+            /** Selected Resource Id */
+            selected_resource_id: string;
+            /**
+             * Selection Source
+             * @enum {string}
+             */
+            selection_source: "llm" | "guided" | "user" | "search";
+        };
+        /** ActivitySession */
+        ActivitySession: {
+            /**
+             * Check In Issued
+             * @default false
+             */
+            check_in_issued: boolean;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Conversation Revision */
+            conversation_revision?: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /**
+             * Duration Seconds
+             * @default 0
+             */
+            duration_seconds: number;
+            /** Expires At */
+            expires_at?: string | null;
+            /**
+             * Final Follow Up
+             * @default false
+             */
+            final_follow_up: boolean;
+            /**
+             * Follow Up Attempts
+             * @default 0
+             */
+            follow_up_attempts: number;
+            /** Follow Up Lease Until */
+            follow_up_lease_until?: string | null;
+            /** Follow Up Message Id */
+            follow_up_message_id?: string | null;
+            follow_up_model_run?: components["schemas"]["ModelRun"] | null;
+            /** Follow Up Reply */
+            follow_up_reply?: string | null;
+            /** Follow Up Request Id */
+            follow_up_request_id?: string | null;
+            /**
+             * Follow Up Status
+             * @default none
+             * @enum {string}
+             */
+            follow_up_status: "none" | "pending" | "generating" | "ready" | "failed";
+            goal?: components["schemas"]["Goal"] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /** Offered Message Id */
+            offered_message_id?: string | null;
+            /** Recommendation Reason */
+            recommendation_reason?: string | null;
+            /**
+             * Remaining Seconds
+             * @default 0
+             */
+            remaining_seconds: number;
+            report?: components["schemas"]["ActivityReport"] | null;
+            /** Reported At */
+            reported_at?: string | null;
+            resource: components["schemas"]["journalpulse__activity_models__ActivityResource"];
+            /**
+             * Revision
+             * @default 0
+             */
+            revision: number;
+            selection: components["schemas"]["ActivitySelectionProvenance"];
+            /** Server Now */
+            server_now?: string | null;
+            /** Source Entry Id */
+            source_entry_id?: string | null;
+            /** Started At */
+            started_at?: string | null;
+            /** @default offered */
+            status: components["schemas"]["ActivityStatus"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at?: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /**
+         * ActivityStatus
+         * @enum {string}
+         */
+        ActivityStatus: "offered" | "active" | "paused" | "awaiting_report" | "completed" | "stopped" | "declined";
         /** AffectiveState */
         AffectiveState: {
             /** Agency */
@@ -381,8 +811,34 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** ChangeConversationPreferenceRequest */
+        ChangeConversationPreferenceRequest: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Preference
+             * @enum {string}
+             */
+            preference: "listen" | "act";
+        };
         /** Conversation */
         Conversation: {
+            activity_card?: components["schemas"]["ActionCard"] | null;
+            activity_constraints?: components["schemas"]["ActivityConstraintInputs"];
+            activity_goal?: components["schemas"]["Goal"] | null;
+            /**
+             * Activity Move
+             * @default reflect
+             * @enum {string}
+             */
+            activity_move: "reflect" | "clarify" | "propose" | "negotiate" | "outcome" | "pause";
+            /** Activity Search Topic */
+            activity_search_topic?: string | null;
             card?: components["schemas"]["ActionCard"] | null;
             /** Confirmed Feelings */
             confirmed_feelings?: string[] | null;
@@ -398,6 +854,8 @@ export interface components {
              * Format: uuid
              */
             id?: string;
+            /** @default auto */
+            interaction_preference: components["schemas"]["InteractionPreference"];
             /** Llm Consent */
             llm_consent: boolean;
             /** Locale */
@@ -428,6 +886,10 @@ export interface components {
             safety?: components["schemas"]["SafetyResult"] | null;
             /** @default normal */
             safety_mode: components["schemas"]["SafetyMode"];
+            /** Source Entry Created At */
+            source_entry_created_at?: string | null;
+            /** Source Entry Id */
+            source_entry_id?: string | null;
             /** @default open */
             status: components["schemas"]["ConversationStatus"];
             /** Summary */
@@ -471,6 +933,7 @@ export interface components {
              */
             id?: string;
             model_run?: components["schemas"]["ModelRun"] | null;
+            request_inputs?: components["schemas"]["ConversationRequestInputs"] | null;
             role: components["schemas"]["MessageRole"];
             safety_mode: components["schemas"]["SafetyMode"];
         };
@@ -479,6 +942,17 @@ export interface components {
          * @enum {string}
          */
         ConversationMode: "ai" | "guided";
+        /**
+         * ConversationRequestInputs
+         * @description Explicit taps accompanying a turn; no text or text digest is retained here.
+         */
+        ConversationRequestInputs: {
+            /** Confirmed Feelings */
+            confirmed_feelings?: string[] | null;
+            goal?: components["schemas"]["Goal"] | null;
+            /** Mood Score */
+            mood_score?: number | null;
+        };
         /**
          * ConversationStatus
          * @enum {string}
@@ -505,6 +979,29 @@ export interface components {
             conversation: components["schemas"]["Conversation"];
             user_message: components["schemas"]["ConversationMessage"];
         };
+        /** CreateActivitySessionRequest */
+        CreateActivitySessionRequest: {
+            /**
+             * Client Request Id
+             * Format: uuid
+             */
+            client_request_id: string;
+            /** Duration Seconds */
+            duration_seconds?: number | null;
+            /** Expected Conversation Revision */
+            expected_conversation_revision: number;
+            /** Resource Id */
+            resource_id: string;
+            /** Resource Token */
+            resource_token?: string | null;
+        };
+        /** CreateJournalEntryRequest */
+        CreateJournalEntryRequest: {
+            /** Client Request Id */
+            client_request_id?: string | null;
+            /** Text */
+            text: string;
+        };
         /** DeletionResponse */
         DeletionResponse: {
             /**
@@ -520,6 +1017,95 @@ export interface components {
              */
             note: string;
         };
+        /** DiscoveryCandidate */
+        DiscoveryCandidate: {
+            /** Description */
+            description: string;
+            /**
+             * Evidence Kind
+             * @default search_snippet
+             * @constant
+             */
+            evidence_kind: "search_snippet";
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+            /** Why Selected */
+            why_selected: string;
+        };
+        /** DiscoveryProvenance */
+        DiscoveryProvenance: {
+            /** Candidate Count */
+            candidate_count: number;
+            /** Model Runs */
+            model_runs: components["schemas"]["ModelRun"][];
+            /**
+             * Page Fetches
+             * @default 0
+             * @constant
+             */
+            page_fetches: 0;
+            /** Prompt Version */
+            prompt_version: string;
+            /** Retrieved At */
+            retrieved_at: string;
+            /**
+             * Search Calls
+             * @default 1
+             * @constant
+             */
+            search_calls: 1;
+            /**
+             * Search Provider
+             * @default brave
+             * @constant
+             */
+            search_provider: "brave";
+        };
+        /** DiscoveryRequest */
+        DiscoveryRequest: {
+            /** Excluded Urls */
+            excluded_urls?: string[];
+            /** Feedback */
+            feedback?: string | null;
+            /**
+             * Llm Consent
+             * @default false
+             */
+            llm_consent: boolean;
+            /**
+             * Locale
+             * @default CA
+             */
+            locale: string;
+            /** Original Query */
+            original_query: string;
+            /** Previous Query */
+            previous_query?: string | null;
+        };
+        /** DiscoveryResponse */
+        DiscoveryResponse: {
+            /** Candidates */
+            candidates: components["schemas"]["DiscoveryCandidate"][];
+            /** Limitations */
+            limitations: string[];
+            /** Original Query */
+            original_query: string;
+            provenance: components["schemas"]["DiscoveryProvenance"];
+            /** Updated Query */
+            updated_query: string;
+        };
+        /**
+         * GenerationErrorResponse
+         * @description 422 can carry a provider-decline message or FastAPI input-validation details.
+         */
+        GenerationErrorResponse: {
+            /** Detail */
+            detail: string | {
+                [key: string]: unknown;
+            }[];
+        };
         /**
          * Goal
          * @enum {string}
@@ -529,6 +1115,54 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** InlineDiscoveryRequest */
+        InlineDiscoveryRequest: {
+            constraints?: components["schemas"]["ActivityConstraintInputs"] | null;
+            /** Excluded Urls */
+            excluded_urls?: string[];
+            /** Expected Revision */
+            expected_revision: number;
+            /** Feedback */
+            feedback?: string | null;
+            goal?: components["schemas"]["Goal"] | null;
+            /**
+             * Llm Consent
+             * @default false
+             */
+            llm_consent: boolean;
+            /** Original Query */
+            original_query?: string | null;
+            /** Previous Query */
+            previous_query?: string | null;
+            /**
+             * Style
+             * @default ground
+             * @enum {string}
+             */
+            style: "ground" | "move" | "connect" | "reflect" | "play" | "watch" | "read" | "pause";
+        };
+        /** InlineDiscoveryResponse */
+        InlineDiscoveryResponse: {
+            /** Candidates */
+            candidates: components["schemas"]["DiscoveryCandidate"][];
+            /** Conversation Revision */
+            conversation_revision: number;
+            /** Limitations */
+            limitations: string[];
+            /** Offers */
+            offers: components["schemas"]["InlineResourceOffer"][];
+            /** Original Query */
+            original_query: string;
+            provenance: components["schemas"]["DiscoveryProvenance"];
+            /** Updated Query */
+            updated_query: string;
+        };
+        /** InlineResourceOffer */
+        InlineResourceOffer: {
+            resource: components["schemas"]["journalpulse__activity_resources__ActivityResource"];
+            /** Resource Token */
+            resource_token: string;
         };
         /** InsightsResponse */
         InsightsResponse: {
@@ -561,6 +1195,65 @@ export interface components {
             state_trajectory: components["schemas"]["StatePoint"][];
         };
         /**
+         * InteractionPreference
+         * @description An explicit choice for this chat, independent of AI/guided provider mode.
+         * @enum {string}
+         */
+        InteractionPreference: "auto" | "listen" | "act";
+        /**
+         * JournalEntry
+         * @description An immutable saved entry; AI output is never folded into its source text.
+         */
+        JournalEntry: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /** Text */
+            text: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** JournalEntryPage */
+        JournalEntryPage: {
+            /** Items */
+            items: components["schemas"]["JournalEntry"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /**
+         * JournalReflectionResult
+         * @description A transient reflection. Deleting or exporting the source has no AI row to retain.
+         */
+        JournalReflectionResult: {
+            /**
+             * Entry Id
+             * Format: uuid
+             */
+            entry_id: string;
+            /**
+             * Generated Text Retained
+             * @default false
+             * @constant
+             */
+            generated_text_retained: false;
+            model_run: components["schemas"]["ModelRun"];
+            /** Reply */
+            reply: string;
+            safety: components["schemas"]["SafetyResult"];
+        };
+        /**
          * MessageRole
          * @enum {string}
          */
@@ -586,6 +1279,10 @@ export interface components {
             provider: string;
             /** Schema Valid */
             schema_valid: boolean;
+            /** Skill Hash */
+            skill_hash?: string | null;
+            /** Skill Version */
+            skill_version?: string | null;
             /**
              * Used Fallback
              * @default false
@@ -677,7 +1374,7 @@ export interface components {
             /** Policy Version */
             policy_version: string;
             /** Propensity */
-            propensity: number;
+            propensity?: number | null;
             /** Recommended Action Id */
             recommended_action_id?: string | null;
             /** Safe Action Ids */
@@ -702,6 +1399,16 @@ export interface components {
             };
             /** Status */
             status: string;
+        };
+        /** ReflectJournalEntryRequest */
+        ReflectJournalEntryRequest: {
+            /** Llm Consent */
+            llm_consent: boolean;
+            /**
+             * Locale
+             * @default CA
+             */
+            locale: string;
         };
         /** ReflectionCopy */
         ReflectionCopy: {
@@ -838,6 +1545,8 @@ export interface components {
              * @default false
              */
             retain_text: boolean;
+            /** Source Entry Id */
+            source_entry_id?: string | null;
         };
         /** StatePoint */
         StatePoint: {
@@ -887,6 +1596,128 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * ActivityResource
+         * @description A server-approved descriptor. Search provenance never implies page review.
+         */
+        journalpulse__activity_models__ActivityResource: {
+            discovery_provenance?: components["schemas"]["DiscoveryProvenance"] | null;
+            /** Duration Seconds */
+            duration_seconds?: number | null;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "timer" | "external" | "manual";
+            /** Id */
+            id: string;
+            /** Instructions */
+            instructions?: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "meditation" | "movement" | "reflection" | "connection" | "focus" | "video" | "reading" | "other";
+            /**
+             * Provenance
+             * @enum {string}
+             */
+            provenance: "builtin" | "catalog" | "search_snippet";
+            /**
+             * Provider
+             * @default JournalPulse
+             */
+            provider: string;
+            /**
+             * Resource Type
+             * @default activity
+             */
+            resource_type: string;
+            /** Title */
+            title: string;
+            /** Url */
+            url?: string | null;
+        };
+        /** ActivityResource */
+        journalpulse__activity_resources__ActivityResource: {
+            /**
+             * Breath Focus
+             * @default false
+             */
+            breath_focus: boolean;
+            /**
+             * Coping Style
+             * @enum {string}
+             */
+            coping_style: "watch" | "move" | "read" | "play" | "connect" | "ground" | "reflect";
+            discovery_provenance?: components["schemas"]["DiscoveryProvenance"] | null;
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Duration Seconds */
+            duration_seconds?: number | null;
+            /** Emotion Tags */
+            emotion_tags?: string[];
+            /**
+             * Evidence Kind
+             * @enum {string}
+             */
+            evidence_kind: "app_guidance" | "catalog_review" | "search_snippet";
+            /** Goal Tags */
+            goal_tags?: string[];
+            /** Id */
+            id: string;
+            /** Instructions */
+            instructions?: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "meditation" | "movement" | "reading" | "video" | "social" | "play" | "reflection" | "focus";
+            /**
+             * No Audio
+             * @default false
+             */
+            no_audio: boolean;
+            /**
+             * No Video
+             * @default false
+             */
+            no_video: boolean;
+            /** Provider */
+            provider: string;
+            /**
+             * Resource Type
+             * @enum {string}
+             */
+            resource_type: "activity" | "video" | "website" | "game";
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /**
+             * Seated
+             * @default false
+             */
+            seated: boolean;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "builtin" | "catalog" | "search_snippet";
+            /** Source Tier */
+            source_tier?: string | null;
+            /** Summary */
+            summary: string;
+            /**
+             * Timer Enabled
+             * @default false
+             */
+            timer_enabled: boolean;
+            /** Title */
+            title: string;
+            /** Url */
+            url?: string | null;
+            /** Why Selected */
+            why_selected?: string | null;
         };
     };
     responses: never;
@@ -994,6 +1825,154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActionPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_activity_v1_activity_sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySession"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    control_activity_v1_activity_sessions__session_id__commands_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityCommandRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySession"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    follow_up_activity_v1_activity_sessions__session_id__follow_up_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityFollowUpRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySession"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_activity_v1_activity_sessions__session_id__report_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityReportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySession"];
                 };
             };
             /** @description Validation Error */
@@ -1147,6 +2126,78 @@ export interface operations {
             };
         };
     };
+    latest_activity_v1_conversations__conversation_id__activity_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySession"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    offer_activity_v1_conversations__conversation_id__activity_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateActivitySessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivitySession"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     close_conversation_v1_conversations__conversation_id__close_post: {
         parameters: {
             query?: never;
@@ -1168,6 +2219,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Conversation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discover_v1_conversations__conversation_id__discover_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InlineDiscoveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InlineDiscoveryResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1208,6 +2297,44 @@ export interface operations {
                     "application/json": components["schemas"]["ConversationTurnResult"];
                 };
             };
+            /** @description Invalid input or provider decline */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationErrorResponse"];
+                };
+            };
+        };
+    };
+    change_preference_v1_conversations__conversation_id__preference_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangeConversationPreferenceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Conversation"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -1215,6 +2342,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_resources_v1_discovery_search_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryResponse"];
+                };
+            };
+            /** @description Invalid input, support routing, or provider decline */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationErrorResponse"];
                 };
             };
         };
@@ -1281,6 +2444,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_entries_v1_journal_entries_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalEntryPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_entry_v1_journal_entries_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateJournalEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_entry_v1_journal_entries__entry_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_entry_v1_journal_entries__entry_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reflect_entry_v1_journal_entries__entry_id__reflect_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReflectJournalEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JournalReflectionResult"];
+                };
+            };
+            /** @description Invalid input or provider decline */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GenerationErrorResponse"];
                 };
             };
         };

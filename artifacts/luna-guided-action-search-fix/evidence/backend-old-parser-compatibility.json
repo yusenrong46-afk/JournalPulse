@@ -1,0 +1,11 @@
+{
+  "test": "exact-frozen-domain-shared-conversation-compatibility",
+  "old_domain_sha256": "7908ee078cfa4db02eea6de193097fba808fb130a4538719daff7a81fffe16f4",
+  "matches_frozen_manifest": true,
+  "new_activity_card_propensity": null,
+  "legacy_card": null,
+  "frozen_parser_ignores_additive_activity_card": true,
+  "frozen_parser_rejects_same_nullable_card_in_legacy_field": true,
+  "private_user_data_used": false,
+  "status": "passed"
+}

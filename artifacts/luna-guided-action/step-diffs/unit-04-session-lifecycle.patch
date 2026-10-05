@@ -1,0 +1,3513 @@
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -54,6 +54,10 @@
+         env:
+           JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+         run: uv run python scripts/verify_integrity_upgrade.py
++      - name: Verify guided activity ownership, receipts, timer, and report lifecycle
++        env:
++          JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
++        run: uv run python scripts/verify_activity_schema.py
+ 
+   frontend:
+     runs-on: ubuntu-latest
+--- /dev/null
++++ b/scripts/verify_activity_schema.py
+@@ -0,0 +1,331 @@
++"""Verify signed guided-action RPCs on local jp_verify after the main schema check.
++
++No reset and no hosted routing: fixtures and adapter payloads are disposable. The
++checks exercise actual PostgreSQL ownership, receipts, timer/report semantics,
++retention, and compatibility; no live AI or Brave request is made.
++"""
++
++# SQL assertion expressions stay readable on one line, matching the schema harness.
++# ruff: noqa: E501
++from __future__ import annotations
++
++import json
++import os
++from datetime import UTC, datetime
++from typing import Literal
++from uuid import uuid4
++
++import httpx
++
++import verify_postgres_schema as base
++from journalpulse.activity_models import (
++    ActivityCommandRequest,
++    ActivityFollowUpRequest,
++    ActivityReportRequest,
++    ActivityResource,
++    ActivitySelectionProvenance,
++    ActivitySession,
++)
++from journalpulse.domain import ActionCard, ActivityFollowUpDirective, Conversation, ModelRun, PolicyDecision
++from journalpulse.journal_models import JournalEntry
++from journalpulse.signing import readiness_probe
++
++
++def session(chat: Conversation) -> ActivitySession:
++    return ActivitySession(
++        user_id=chat.user_id,
++        conversation_id=chat.id,
++        source_entry_id=chat.source_entry_id,
++        resource=ActivityResource(
++            id="guided_meditation_2m",
++            title="Two-minute quiet meditation",
++            format="timer",
++            kind="meditation",
++            duration_seconds=120,
++            provenance="builtin",
++        ),
++        selection=ActivitySelectionProvenance(
++            selection_source="llm",
++            recommended_resource_id="guided_meditation_2m",
++            selected_resource_id="guided_meditation_2m",
++        ),
++        duration_seconds=120,
++        remaining_seconds=120,
++    )
++
++
++def stored(activity: ActivitySession) -> ActivitySession:
++    output = base.psql(
++        base.DATABASE, f"select record from public.activity_sessions where id='{activity.id}';"
++    )
++    return ActivitySession.model_validate(
++        json.loads(next(line.strip() for line in output.splitlines() if line.strip().startswith("{")))
++    )
++
++
++def offer(activity: ActivitySession, revision: int = 0) -> str:
++    return base.captured(
++        lambda repo: repo.offer_activity_session(
++            activity, request_id=activity.id, expected_conversation_revision=revision, now=datetime.now(UTC)
++        )
++    )
++
++
++def command(
++    activity: ActivitySession,
++    name: Literal["start", "pause", "resume", "finish_early", "expire", "stop", "decline"],
++    revision: int,
++    request_id=None,
++    chat_revision=0,
++) -> str:
++    request = ActivityCommandRequest(
++        client_request_id=request_id or uuid4(),
++        expected_revision=revision,
++        expected_conversation_revision=chat_revision,
++        command=name,
++    )
++    return base.captured(
++        lambda repo: repo.command_activity_session(
++            activity.user_id, activity.id, request, now=datetime.now(UTC)
++        )
++    )
++
++
++def report(activity: ActivitySession, request: ActivityReportRequest) -> str:
++    return base.captured(
++        lambda repo: repo.report_activity_session(
++            activity.user_id, activity.id, request, now=datetime.now(UTC)
++        )
++    )
++
++
++def claim(activity: ActivitySession, request: ActivityFollowUpRequest) -> str:
++    return base.captured(
++        lambda repo: repo.claim_activity_follow_up(
++            activity.user_id, activity.id, request, now=datetime.now(UTC)
++        )
++    )
++
++
++def finish(
++    activity: ActivitySession,
++    chat: Conversation,
++    request: ActivityFollowUpRequest,
++    directive: ActivityFollowUpDirective | None = None,
++) -> str:
++    capture = base.Capture()
++
++    def handler(request_http: httpx.Request) -> httpx.Response:
++        name = request_http.url.path.rsplit("/", 1)[-1]
++        if name == "activity_sessions":
++            return httpx.Response(200, json=[{"record": activity.storage_payload()}])
++        if name == "conversations":
++            return httpx.Response(
++                200, json=[{"record": chat.model_dump(mode="json"), "revision": chat.revision}]
++            )
++        capture.bodies.append((name, json.loads(request_http.content)))
++        return httpx.Response(200, json={})
++
++    capture.handler = handler  # type: ignore[method-assign,assignment]
++    try:
++        base.adapter(capture).finish_activity_follow_up(
++            activity.user_id,
++            activity.id,
++            request_id=request.client_request_id,
++            expected_revision=activity.revision,
++            expected_conversation_revision=chat.revision,
++            expected_session_created_at=activity.created_at,
++            reply="The report says it stayed the same. We can leave it here.",
++            model_run=ModelRun(model="fixture", latency_ms=1, schema_valid=True),
++            now=datetime.now(UTC),
++            directive=directive,
++        )
++    except Exception:  # A captured reply is intentionally not a real session.
++        pass
++    name, body = capture.bodies[-1]
++    return base.rpc_call(name, body)
++
++
++def notices(output: str) -> int:
++    checks = 0
++    for line in output.splitlines():
++        if "ok:" in line:
++            print(line.split("NOTICE:", 1)[-1].strip())
++            checks += 1
++    return checks
++
++
++def main() -> None:
++    base.require_local_postgres_dsn(os.getenv("JOURNALPULSE_PG_DSN"))
++    now = datetime.now(UTC)
++    chat = base.conversation(base.USER_A).model_copy(update={"created_at": now, "updated_at": now})
++    activity = session(chat)
++    start_id = uuid4()
++    start = command(activity, "start", 0, start_id)
++    other = session(chat)
++    check = base.check
++    report_request = ActivityReportRequest(
++        client_request_id=uuid4(),
++        expected_revision=4,
++        expected_conversation_revision=0,
++        participation="partial",
++        fit="mixed",
++        state_change="same",
++        note="Fictional check-in note.",
++    )
++    report_sql = report(activity, report_request)
++    count = notices(
++        base.psql(
++            base.DATABASE,
++            f"""
++    {base.as_user(base.USER_A)}
++    select {base.create(chat)};
++    select {offer(activity)};
++    {check(f"({offer(activity)}->>'revision')::integer=0", "offer retry is idempotent")}
++    {base.expect_denied("insert into public.activity_sessions(id,user_id,conversation_id,status,revision,created_at,updated_at,record) values(gen_random_uuid(),auth.uid(),gen_random_uuid(),'offered',0,now(),now(),'{}')", "unsigned activity insertion is denied")}
++    select {start};
++    {check(f"({start}->>'revision')::integer=1", "duplicate start does not restart the clock")}
++    {check(f"(select status from public.conversations where id='{chat.id}')='open'", "starting an in-chat activity does not close its conversation")}
++    {check(f"(select revision from public.conversations where id='{chat.id}')=0", "controls do not change the ordinary chat revision")}
++    {base.expect_error(offer(other), "Finish or stop the current activity before starting another", "one nonterminal activity per conversation")}
++    {base.expect_error(command(activity, "expire", 1), "The timer has not finished yet", "client cannot claim premature timer expiry")}
++    select {command(activity, "pause", 1)};
++    {check(f"(select status from public.activity_sessions where id='{activity.id}')='paused'", "pause is persisted")}
++    select {command(activity, "resume", 2)};
++    select {command(activity, "finish_early", 3)};
++    {check(f"(select record->>'report' from public.activity_sessions where id='{activity.id}') is null", "finish early does not invent participant feedback")}
++    {check(f"(select (record->>'check_in_issued')::boolean from public.activity_sessions where id='{activity.id}')", "one deterministic check-in is issued")}
++    select {report_sql};
++    {check(f"({report_sql}->>'revision')::integer=5", "duplicate report stores one outcome")}
++    {check(f"(select record->'report'->>'participation' from public.activity_sessions where id='{activity.id}')='partial'", "partial report remains distinct from completed")}
++    {check("not exists(select 1 from public.outcomes where user_id=auth.uid())", "partial report never fabricates a legacy completed outcome")}
++    {base.expect_error(report(activity, report_request.model_copy(update={"note": "A conflicting retry"})), "Activity request ID is already in use", "same request ID cannot change its report")}
++    {base.as_user(base.USER_B)}
++    {check(f"not exists(select 1 from public.activity_sessions where id='{activity.id}')", "activity RLS hides another owner's session")}
++    {check(f"not exists(select 1 from public.activity_receipts where session_id='{activity.id}')", "receipt RLS hides another owner's requests")}
++    {base.expect_error(command(activity, "stop", 5), "Record owner does not match authenticated user", "owner cannot replay a different owner's signed command")}
++    """,
++        )
++    )
++    saved = stored(activity)
++    follow = ActivityFollowUpRequest(
++        client_request_id=uuid4(), expected_revision=saved.revision, expected_conversation_revision=0
++    )
++    claim_sql = claim(saved, follow)
++    count += notices(
++        base.psql(
++            base.DATABASE,
++            f"""
++    {base.as_user(base.USER_A)}
++    {check(f"({claim_sql}->>'claimed')::boolean", "one server obtains the generation lease")}
++    {check(f"not ({claim_sql}->>'claimed')::boolean", "claim replay cannot obtain a second paid generation")}
++    """,
++        )
++    )
++    claimed = stored(activity)
++    next_card = ActionCard(
++        resource_intent="ground",
++        card_reason="A user-welcomed quiet alternative.",
++        actions=[{"id": "guided_meditation_2m", "title": "Quiet meditation"}],
++        decision_preview=PolicyDecision(
++            action_id="guided_meditation_2m",
++            recommended_action_id="guided_meditation_2m",
++            propensity=None,
++            eligible_for_ope=False,
++            policy_name="luna-guided-action",
++            policy_version="fixture",
++            safe_action_ids=["guided_meditation_2m"],
++            context_snapshot={},
++            explanation="A user-welcomed alternative.",
++        ),
++    )
++    finish_sql = finish(claimed, chat, follow, ActivityFollowUpDirective(card=next_card))
++    stop_user, stop_assistant = base.pair(chat, "Stop. Please do not ask any more questions.", 0)
++    stop_user = stop_user.model_copy(update={"created_at": now})
++    stop_assistant = stop_assistant.model_copy(update={"created_at": now})
++    pause_reported_chat = chat.model_copy(update={"updated_at": now, "activity_move": "pause"})
++    pause_reported = base.commit(pause_reported_chat, stop_user, stop_assistant, 1)
++    count += notices(
++        base.psql(
++            base.DATABASE,
++            f"""
++    {base.as_user(base.USER_A)}
++    select {finish_sql};
++    select {finish_sql};
++    {check(f"(select count(*) from public.conversation_messages where conversation_id='{chat.id}')=1", "follow-up retry appends one assistant message")}
++    {check(f"(select revision from public.conversations where id='{chat.id}')=1", "follow-up atomically advances the conversation revision")}
++    {check(f"(select record->>'follow_up_reply' from public.activity_sessions where id='{activity.id}') is null", "activity row does not duplicate journal-derived model text")}
++    {check(f"(select record->>'card' from public.conversations where id='{chat.id}') is null", "legacy conversation card remains compatible with the old production parser")}
++    {check(f"(select record->'activity_card'->'decision_preview'->>'propensity' from public.conversations where id='{chat.id}') is null", "new LLM card has no fabricated propensity")}
++    {check(f"(select record->'activity_card'->>'offered_message_id' from public.conversations where id='{chat.id}')=(select record->>'follow_up_message_id' from public.activity_sessions where id='{activity.id}')", "revised card references the atomically stored assistant message")}
++    {check("(select attnotnull from pg_attribute where attrelid='public.policy_decisions'::regclass and attname='propensity')", "legacy policy-decision propensity schema stays unchanged")}
++    select {pause_reported};
++    {check(f"(select status='completed' and record->'report'->>'participation'='partial' from public.activity_sessions where id='{activity.id}')", "a chat stop preserves the already saved participation report")}
++    {check(f"(select not (record->>'check_in_issued')::boolean from public.activity_sessions where id='{activity.id}')", "a chat stop withdraws further report questions")}
++    select public.jp_close_conversation('{chat.id}');
++    {check(f"(select record->>'activity_card' from public.conversations where id='{chat.id}') is null", "closing invalidates the additive recommendation too")}
++
++    {check(f"(select record->'report'->>'note' from public.activity_sessions where id='{activity.id}') is null", "closing an unretained chat clears outcome notes")}
++    {check(f"not exists(select 1 from public.activity_receipts where session_id='{activity.id}')", "unretained close clears request fingerprints")}
++    {check(f"not exists(select 1 from public.conversation_messages where conversation_id='{chat.id}' and record->>'content' is not null)", "canonical follow-up and stop-turn text follow existing retention")}
++    """,
++        )
++    )
++    pause_chat = base.conversation(base.USER_A).model_copy(update={"created_at": now, "updated_at": now})
++    pause_activity = session(pause_chat)
++    pause_user, pause_assistant = base.pair(pause_chat, "Stop. No more questions.", 0)
++    pause_user = pause_user.model_copy(update={"created_at": now})
++    pause_assistant = pause_assistant.model_copy(update={"created_at": now})
++    paused_chat = pause_chat.model_copy(update={"updated_at": now, "activity_move": "pause"})
++    pause_turn = base.commit(paused_chat, pause_user, pause_assistant, 0)
++    count += notices(
++        base.psql(
++            base.DATABASE,
++            f"""
++    {base.as_user(base.USER_A)}
++    select {base.create(pause_chat)};select {offer(pause_activity)};
++    select {command(pause_activity, "start", 0)};
++    select {pause_turn};
++    {check(f"(select status='stopped' and record->>'expires_at' is null and not (record->>'check_in_issued')::boolean from public.activity_sessions where id='{pause_activity.id}')", "signed ordinary-chat stop atomically cancels the active timer without a check-in")}
++    {base.expect_error(command(pause_activity, "start", 2, chat_revision=1), "This chat has paused activities", "a stopped chat cannot restart activity controls")}
++    {base.expect_error(offer(session(pause_chat), revision=1), "This chat has paused activities", "a stopped chat cannot offer a new activity before a new user turn")}
++    """,
++        )
++    )
++    source = JournalEntry(user_id=base.USER_A, text="Fictional old journal", created_at=now)
++    linked = base.conversation(base.USER_A).model_copy(
++        update={
++            "created_at": now,
++            "updated_at": now,
++            "source_entry_id": source.id,
++            "source_entry_created_at": source.created_at,
++        }
++    )
++    linked_activity = session(linked)
++    save_source = base.captured(lambda repo: repo.save_journal_entry(source))
++    delete_source = base.captured(lambda repo: repo.delete_journal_entry(source.user_id, source.id))
++    probe = readiness_probe(base.SIGNING_KEY)
++    readiness = base.rpc_call("jp_readiness_v3", probe)
++    count += notices(
++        base.psql(
++            base.DATABASE,
++            f"""
++    {base.as_user(base.USER_A)}
++    select {save_source};select {base.create(linked)};select {offer(linked_activity)};
++    select {delete_source};
++    {check(f"not exists(select 1 from public.activity_sessions where id='{linked_activity.id}')", "source deletion cascades activity sessions")}
++    {check(f"not exists(select 1 from public.activity_receipts where session_id='{linked_activity.id}')", "source deletion cascades activity receipts")}
++    {base.expect_error(command(linked_activity, "start", 0), "Activity not found", "deleted source cannot be revived by an old command")}
++    {check(f"({readiness}->>'schema')='guided-action-1'", "new preview requires its additive readiness version")}
++    {check(f"({readiness}->>'activities')='ready'", "readiness verifies activity RPCs and retention integration")}
++    select public.delete_my_journalpulse_data();
++    {check("not exists(select 1 from public.activity_sessions)", "account data deletion includes activity sessions")}
++    {check("not exists(select 1 from public.activity_receipts)", "account data deletion includes activity receipts")}
++    """,
++        )
++    )
++    print(f"Guided activity PostgreSQL verification passed ({count} assertions)")
++
++
++if __name__ == "__main__":
++    main()
+--- /dev/null
++++ b/src/journalpulse/activity_lifecycle.py
+@@ -0,0 +1,105 @@
++"""Pure session transitions shared by the local repository and lifecycle tests."""
++
++from __future__ import annotations
++
++from datetime import datetime, timedelta
++from math import ceil
++
++from .activity_models import ActivitySession, ActivityStatus
++
++
++class ActivityNotFound(ValueError):
++    pass
++
++
++class ActivityConflict(ValueError):
++    pass
++
++
++def remaining_seconds(session: ActivitySession, now: datetime) -> int:
++    if session.status == ActivityStatus.ACTIVE and session.expires_at is not None:
++        return min(session.duration_seconds, max(0, ceil((session.expires_at - now).total_seconds())))
++    return session.remaining_seconds
++
++
++def apply_activity_command(session: ActivitySession, command: str, now: datetime) -> ActivitySession:
++    """The server clock owns time; a browser interval only refreshes its display."""
++    changes: dict = {"updated_at": now, "revision": session.revision + 1}
++    if command == "start" and session.status == ActivityStatus.OFFERED:
++        changes.update(status=ActivityStatus.ACTIVE, started_at=now)
++        if session.resource.format == "timer":
++            changes["expires_at"] = now + timedelta(seconds=session.remaining_seconds)
++    elif (
++        command == "pause" and session.status == ActivityStatus.ACTIVE and session.resource.format == "timer"
++    ):
++        remaining = remaining_seconds(session, now)
++        if remaining == 0:
++            changes.update(
++                status=ActivityStatus.AWAITING_REPORT,
++                remaining_seconds=0,
++                expires_at=None,
++                check_in_issued=True,
++            )
++        else:
++            changes.update(status=ActivityStatus.PAUSED, remaining_seconds=remaining, expires_at=None)
++    elif command == "resume" and session.status == ActivityStatus.PAUSED:
++        changes.update(
++            status=ActivityStatus.ACTIVE, expires_at=now + timedelta(seconds=session.remaining_seconds)
++        )
++    elif command == "expire" and session.status == ActivityStatus.ACTIVE and session.expires_at is not None:
++        if now < session.expires_at:
++            raise ActivityConflict("The timer has not finished yet")
++        changes.update(
++            status=ActivityStatus.AWAITING_REPORT, remaining_seconds=0, expires_at=None, check_in_issued=True
++        )
++    elif command == "finish_early" and session.status in {ActivityStatus.ACTIVE, ActivityStatus.PAUSED}:
++        changes.update(
++            status=ActivityStatus.AWAITING_REPORT,
++            remaining_seconds=remaining_seconds(session, now),
++            expires_at=None,
++            check_in_issued=True,
++        )
++    elif command == "decline" and session.status == ActivityStatus.OFFERED:
++        changes.update(status=ActivityStatus.DECLINED, expires_at=None)
++    elif command == "stop" and session.status in {
++        ActivityStatus.OFFERED,
++        ActivityStatus.ACTIVE,
++        ActivityStatus.PAUSED,
++        ActivityStatus.AWAITING_REPORT,
++    }:
++        changes.update(
++            status=ActivityStatus.STOPPED,
++            remaining_seconds=remaining_seconds(session, now),
++            expires_at=None,
++            check_in_issued=session.started_at is not None,
++        )
++    else:
++        raise ActivityConflict("This activity changed; refresh before trying again")
++    return ActivitySession.model_validate({**session.model_dump(), **changes})
++
++
++def invalidated_activity(session: ActivitySession, now: datetime, *, clear_text: bool) -> ActivitySession:
++    """Closing unretained chats removes derived free text, including outcome notes."""
++    changes: dict = {
++        "revision": session.revision + 1,
++        "updated_at": now,
++        "expires_at": None,
++        # Conversation stop/listen/support is withdrawal, not a request for a check-in.
++        "check_in_issued": False,
++        "follow_up_request_id": None,
++        "follow_up_lease_until": None,
++    }
++    if session.status in {
++        ActivityStatus.OFFERED,
++        ActivityStatus.ACTIVE,
++        ActivityStatus.PAUSED,
++        ActivityStatus.AWAITING_REPORT,
++    }:
++        changes["status"] = ActivityStatus.STOPPED
++    if session.follow_up_status in {"pending", "generating"}:
++        changes["follow_up_status"] = "failed"
++    if clear_text:
++        changes.update(recommendation_reason=None, follow_up_reply=None)
++        if session.report is not None:
++            changes["report"] = session.report.model_copy(update={"note": None})
++    return ActivitySession.model_validate({**session.model_dump(), **changes})
+--- /dev/null
++++ b/src/journalpulse/activity_models.py
+@@ -0,0 +1,183 @@
++"""Owner-bound activity contracts, separate from legacy close-and-save choices.
++
++A session records controls and a person's report, never a journal excerpt. Timer
++expiry requests a check-in; only the participant can describe what they tried.
++"""
++
++from __future__ import annotations
++
++from datetime import UTC, datetime
++from enum import StrEnum
++from typing import Literal
++from uuid import UUID, uuid4
++
++from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
++
++from .discovery_models import DiscoveryProvenance, checked_source_url
++from .domain import Goal, ModelRun
++
++
++class ActivityStatus(StrEnum):
++    OFFERED = "offered"
++    ACTIVE = "active"
++    PAUSED = "paused"
++    AWAITING_REPORT = "awaiting_report"
++    COMPLETED = "completed"
++    STOPPED = "stopped"
++    DECLINED = "declined"
++
++
++NONTERMINAL_ACTIVITY_STATES = frozenset(
++    {
++        ActivityStatus.OFFERED,
++        ActivityStatus.ACTIVE,
++        ActivityStatus.PAUSED,
++        ActivityStatus.AWAITING_REPORT,
++    }
++)
++MAX_ACTIVITY_RECEIPTS = 64
++MAX_FOLLOW_UP_ATTEMPTS = 3
++FOLLOW_UP_LEASE_SECONDS = 90
++
++
++class ActivityResource(BaseModel):
++    """A server-approved descriptor. Search provenance never implies page review."""
++
++    model_config = ConfigDict(extra="forbid")
++    id: str = Field(min_length=1, max_length=120)
++    title: str = Field(min_length=1, max_length=200)
++    url: str | None = Field(default=None, max_length=2048)
++    provider: str = Field(default="JournalPulse", min_length=1, max_length=120)
++    resource_type: str = Field(default="activity", min_length=1, max_length=40)
++    format: Literal["timer", "external", "manual"]
++    kind: Literal["meditation", "movement", "reflection", "connection", "focus", "video", "reading", "other"]
++    duration_seconds: int | None = Field(default=None, ge=1, le=3600)
++    instructions: list[str] = Field(default_factory=list, max_length=8)
++    provenance: Literal["builtin", "catalog", "search_snippet"]
++    discovery_provenance: DiscoveryProvenance | None = None
++
++    @field_validator("url")
++    @classmethod
++    def public_url(cls, value: str | None) -> str | None:
++        return checked_source_url(value) if value is not None else None
++
++    @field_validator("instructions")
++    @classmethod
++    def bounded_instructions(cls, values: list[str]) -> list[str]:
++        if any(not value.strip() or len(value) > 240 for value in values):
++            raise ValueError("Instructions must be nonblank and at most 240 characters each")
++        return values
++
++    @model_validator(mode="after")
++    def coherent_format(self) -> ActivityResource:
++        if self.format == "timer" and self.duration_seconds is None:
++            raise ValueError("A timer needs a reviewed duration")
++        if self.format == "external" and self.url is None:
++            raise ValueError("An external activity needs a public resource link")
++        return self
++
++
++class ActivitySelectionProvenance(BaseModel):
++    """These are LLM/user choices, not randomized research-policy assignments."""
++
++    model_config = ConfigDict(extra="forbid")
++    selection_source: Literal["llm", "guided", "user", "search"]
++    recommended_resource_id: str = Field(min_length=1, max_length=120)
++    selected_resource_id: str = Field(min_length=1, max_length=120)
++    eligible_for_ope: Literal[False] = False
++    propensity: None = None
++    model_run: ModelRun | None = None
++
++
++class ActivityReport(BaseModel):
++    model_config = ConfigDict(extra="forbid")
++    participation: Literal["completed", "partial", "not_tried", "stopped"]
++    fit: Literal["good", "mixed", "poor", "unsure"] | None = None
++    state_change: Literal["toward_target", "same", "away_from_target", "unsure"] | None = None
++    goal_progress: Literal["closer", "same", "further", "unsure"] | None = None
++    before_rating: int | None = Field(default=None, ge=1, le=5)
++    after_rating: int | None = Field(default=None, ge=1, le=5)
++    helpfulness: int | None = Field(default=None, ge=1, le=5)
++    effort: int | None = Field(default=None, ge=1, le=5)
++    note: str | None = Field(default=None, max_length=1000)
++
++
++class ActivitySession(BaseModel):
++    model_config = ConfigDict(extra="forbid")
++    id: UUID = Field(default_factory=uuid4)
++    user_id: UUID
++    conversation_id: UUID
++    source_entry_id: UUID | None = None
++    offered_message_id: UUID | None = None
++    revision: int = Field(default=0, ge=0)
++    status: ActivityStatus = ActivityStatus.OFFERED
++    resource: ActivityResource
++    goal: Goal | None = None
++    recommendation_reason: str | None = Field(default=None, max_length=240)
++    selection: ActivitySelectionProvenance
++    duration_seconds: int = Field(default=0, ge=0, le=3600)
++    remaining_seconds: int = Field(default=0, ge=0, le=3600)
++    expires_at: datetime | None = None
++    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
++    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
++    started_at: datetime | None = None
++    check_in_issued: bool = False
++    report: ActivityReport | None = None
++    reported_at: datetime | None = None
++    follow_up_status: Literal["none", "pending", "generating", "ready", "failed"] = "none"
++    follow_up_reply: str | None = Field(default=None, max_length=1200)
++    follow_up_model_run: ModelRun | None = None
++    follow_up_message_id: UUID | None = None
++    follow_up_request_id: UUID | None = None
++    follow_up_lease_until: datetime | None = None
++    follow_up_attempts: int = Field(default=0, ge=0, le=MAX_FOLLOW_UP_ATTEMPTS)
++    final_follow_up: bool = False
++    # Response clock/revision are fresh observations, not duplicated persisted facts.
++    server_now: datetime | None = None
++    conversation_revision: int | None = Field(default=None, ge=0)
++
++    def storage_payload(self) -> dict:
++        return self.model_dump(
++            mode="json", exclude={"server_now", "conversation_revision", "follow_up_reply"}
++        )
++
++
++class CreateActivitySessionRequest(BaseModel):
++    model_config = ConfigDict(extra="forbid")
++    client_request_id: UUID
++    expected_conversation_revision: int = Field(ge=0)
++    resource_id: str = Field(min_length=1, max_length=120)
++    duration_seconds: int | None = Field(default=None, ge=1, le=3600)
++    resource_token: str | None = Field(default=None, min_length=1, max_length=12000)
++
++
++class ActivityCommandRequest(BaseModel):
++    model_config = ConfigDict(extra="forbid")
++    client_request_id: UUID
++    expected_revision: int = Field(ge=0)
++    expected_conversation_revision: int = Field(ge=0)
++    command: Literal["start", "pause", "resume", "finish_early", "expire", "stop", "decline"]
++
++
++class ActivityReportRequest(ActivityReport):
++    client_request_id: UUID
++    expected_revision: int = Field(ge=0)
++    expected_conversation_revision: int = Field(ge=0)
++
++    def participant_report(self) -> ActivityReport:
++        return ActivityReport.model_validate(
++            self.model_dump(
++                exclude={
++                    "client_request_id",
++                    "expected_revision",
++                    "expected_conversation_revision",
++                }
++            )
++        )
++
++
++class ActivityFollowUpRequest(BaseModel):
++    model_config = ConfigDict(extra="forbid")
++    client_request_id: UUID
++    expected_revision: int = Field(ge=0)
++    expected_conversation_revision: int = Field(ge=0)
+--- /dev/null
++++ b/src/journalpulse/activity_sessions.py
+@@ -0,0 +1,424 @@
++"""The in-chat activity loop: control time, save a report, then optionally reflect.
++
++Starting an activity never calls legacy acceptance or closes/clears its chat. The
++first check-in is deterministic; a model is used only for one bounded follow-up.
++"""
++
++from __future__ import annotations
++
++from collections.abc import Callable
++from datetime import datetime
++from typing import Any
++from uuid import UUID, uuid5
++
++from fastapi import Depends, FastAPI, HTTPException, Response
++
++from .activity_lifecycle import ActivityConflict, ActivityNotFound
++from .activity_models import (
++    ActivityCommandRequest,
++    ActivityFollowUpRequest,
++    ActivityReportRequest,
++    ActivityResource,
++    ActivitySelectionProvenance,
++    ActivitySession,
++    ActivityStatus,
++    CreateActivitySessionRequest,
++)
++from .auth import AuthContext
++from .config import Settings
++from .domain import (
++    ActivityFollowUpDirective,
++    Conversation,
++    ConversationMessage,
++    ConversationMode,
++    ConversationStatus,
++    ModelRun,
++    SafetyMode,
++)
++from .intelligence import ConversationProviderError, UnsupportedProviderResponse
++from .persistence import (
++    ConversationClosed,
++    ConversationNotFound,
++    ConversationStale,
++    JournalEntryNotFound,
++    Repository,
++)
++from .safety import SUPPORT_FALLBACK_MESSAGE, assess_safety
++
++ActivityFollowUpResult = tuple[str, ModelRun | None] | tuple[str, ModelRun | None, ActivityFollowUpDirective]
++ActivityFollowUpGenerator = Callable[
++    [Conversation, list[ConversationMessage], ActivitySession], ActivityFollowUpResult
++]
++DefaultActivityFollowUpGenerator = Callable[
++    [Repository, Conversation, list[ConversationMessage], ActivitySession], ActivityFollowUpResult
++]
++
++
++def session_resource(descriptor: dict[str, Any]) -> ActivityResource:
++    """Keep only reviewed activity facts; catalog metadata is not private context."""
++    source = descriptor.get("source", "catalog")
++    kind: Any = descriptor.get("kind", "other")
++    kind = {"social": "connection", "play": "other"}.get(str(kind), kind)
++    if kind not in {
++        "meditation",
++        "movement",
++        "reflection",
++        "connection",
++        "focus",
++        "video",
++        "reading",
++        "other",
++    }:
++        kind = "video" if descriptor.get("coping_style") == "watch" else "reading"
++    timer = bool(descriptor.get("timer_enabled", False))
++    duration = descriptor.get("duration_seconds")
++    instructions = descriptor.get("instructions", [])
++    if isinstance(instructions, str):
++        instructions = [instructions]
++    return ActivityResource(
++        id=descriptor["id"],
++        title=descriptor["title"],
++        url=descriptor.get("url"),
++        provider=descriptor.get("provider", "JournalPulse"),
++        resource_type=descriptor.get("resource_type", "activity"),
++        format="timer" if timer else "external" if descriptor.get("url") else "manual",
++        kind=kind,
++        duration_seconds=duration if timer else None,
++        instructions=instructions,
++        discovery_provenance=descriptor.get("discovery_provenance"),
++        provenance="search_snippet"
++        if source == "search_snippet"
++        else "builtin"
++        if source == "builtin"
++        else "catalog",
++    )
++
++
++def register_activity_routes(
++    app: FastAPI,
++    *,
++    settings: Settings,
++    repositories: Callable[[AuthContext], Repository],
++    auth_dependency: Callable[..., AuthContext],
++    clock: Callable[[], datetime],
++    enforce_generation_limit: Callable[[AuthContext, Repository], None],
++    follow_up: ActivityFollowUpGenerator | None = None,
++    default_follow_up: DefaultActivityFollowUpGenerator | None = None,
++) -> None:
++    def sweep(auth: AuthContext) -> Repository:
++        repository = repositories(auth)
++        repository.close_stale_conversations(auth.user_id, now=clock())
++        return repository
++
++    def owned_chat(
++        repository: Repository, auth: AuthContext, conversation_id: UUID, *, open_only: bool
++    ) -> Conversation:
++        conversation = repository.get_conversation(auth.user_id, conversation_id)
++        if conversation is None:
++            raise HTTPException(404, "Conversation not found")
++        if open_only and conversation.status != ConversationStatus.OPEN:
++            raise HTTPException(409, "This conversation is closed.")
++        if conversation.source_entry_id is not None:
++            source = repository.get_journal_entry(auth.user_id, conversation.source_entry_id)
++            if source is None or source.created_at != conversation.source_entry_created_at:
++                raise HTTPException(404, "Journal entry not found")
++        return conversation
++
++    def owned_session(
++        repository: Repository,
++        auth: AuthContext,
++        session_id: UUID,
++        *,
++        open_only: bool,
++    ) -> tuple[Conversation, ActivitySession]:
++        session = repository.get_activity_session(auth.user_id, session_id)
++        if session is None:
++            raise HTTPException(404, "Activity not found")
++        return owned_chat(repository, auth, session.conversation_id, open_only=open_only), session
++
++    def view(repository: Repository, auth: AuthContext, session: ActivitySession) -> ActivitySession:
++        conversation = owned_chat(repository, auth, session.conversation_id, open_only=False)
++        return session.model_copy(
++            update={"server_now": clock(), "conversation_revision": conversation.revision}
++        )
++
++    def translated(operation: Callable[[], Any]) -> Any:
++        try:
++            return operation()
++        except (ActivityNotFound, ConversationNotFound, JournalEntryNotFound) as exc:
++            raise HTTPException(404, "Activity or its source was deleted.") from exc
++        except ConversationClosed as exc:
++            raise HTTPException(409, "This conversation is closed.") from exc
++        except ConversationStale as exc:
++            raise HTTPException(409, "This chat changed. Refresh before trying again.") from exc
++        except ActivityConflict as exc:
++            raise HTTPException(409, str(exc)) from exc
++
++    def synced(repository: Repository, auth: AuthContext, session: ActivitySession) -> ActivitySession:
++        conversation = owned_chat(repository, auth, session.conversation_id, open_only=False)
++        if (
++            conversation.status == ConversationStatus.OPEN
++            and session.status == ActivityStatus.ACTIVE
++            and session.expires_at is not None
++            and clock() >= session.expires_at
++        ):
++            # All tabs use the same receipt identity for this deadline. A GET after
++            # background/refresh performs one short transaction, never a sleeping worker.
++            request = ActivityCommandRequest(
++                client_request_id=uuid5(
++                    session.id, f"expiry:{session.revision}:{session.expires_at.isoformat()}"
++                ),
++                expected_revision=session.revision,
++                expected_conversation_revision=conversation.revision,
++                command="expire",
++            )
++            try:
++                session = repository.command_activity_session(auth.user_id, session.id, request, now=clock())
++            except (ActivityConflict, ConversationStale, ConversationClosed):
++                _, session = owned_session(repository, auth, session.id, open_only=False)
++        return view(repository, auth, session)
++
++    @app.get("/v1/conversations/{conversation_id}/activity-sessions", response_model=ActivitySession | None)
++    def latest_activity(
++        conversation_id: UUID, auth: AuthContext = Depends(auth_dependency)
++    ) -> ActivitySession | None:
++        repository = sweep(auth)
++        owned_chat(repository, auth, conversation_id, open_only=False)
++        sessions = repository.list_activity_sessions(auth.user_id, conversation_id)
++        return synced(repository, auth, sessions[0]) if sessions else None
++
++    @app.get("/v1/activity-sessions/{session_id}", response_model=ActivitySession)
++    def read_activity(session_id: UUID, auth: AuthContext = Depends(auth_dependency)) -> ActivitySession:
++        repository = sweep(auth)
++        _, session = owned_session(repository, auth, session_id, open_only=False)
++        return synced(repository, auth, session)
++
++    @app.post(
++        "/v1/conversations/{conversation_id}/activity-sessions",
++        response_model=ActivitySession,
++        status_code=201,
++    )
++    def offer_activity(
++        conversation_id: UUID,
++        payload: CreateActivitySessionRequest,
++        auth: AuthContext = Depends(auth_dependency),
++    ) -> ActivitySession:
++        # This helper is imported at use to keep route registration independent
++        # from the provider. It resolves static resources or verifies a signed snippet.
++        from .activity_resources import resolve_activity_resource, verify_resource_token
++
++        repository = sweep(auth)
++        conversation = owned_chat(repository, auth, conversation_id, open_only=True)
++        active_card = conversation.activity_card or conversation.card
++        previous = repository.get_activity_session(auth.user_id, payload.client_request_id)
++        if previous is not None and previous.conversation_id == conversation_id:
++            candidate = previous.resource
++        else:
++            try:
++                if payload.resource_token is not None:
++                    descriptor = verify_resource_token(
++                        settings,
++                        payload.resource_token,
++                        user_id=auth.user_id,
++                        conversation_id=conversation_id,
++                        conversation_revision=conversation.revision,
++                        now=clock(),
++                    )
++                    if descriptor.get("id") != payload.resource_id:
++                        raise ValueError("Resource identity changed")
++                else:
++                    if active_card is None or payload.resource_id not in {
++                        item.get("id") for item in active_card.actions
++                    }:
++                        raise ValueError("Choose from the current Luna recommendation")
++                    resolved = resolve_activity_resource(settings.resource_catalog_path, payload.resource_id)
++                    if resolved is None:
++                        raise ValueError("The recommended resource is unavailable")
++                    descriptor = resolved
++                candidate = session_resource(descriptor)
++            except (ValueError, KeyError, TypeError) as exc:
++                raise HTTPException(409, "This recommendation changed. Ask Luna for another option.") from exc
++        if candidate.id != payload.resource_id:
++            raise HTTPException(409, "Activity request ID is already in use")
++        if payload.duration_seconds is not None and candidate.format != "timer":
++            raise HTTPException(422, "Only a timed activity can have a countdown duration")
++        duration = (
++            payload.duration_seconds
++            if payload.duration_seconds is not None
++            else candidate.duration_seconds or 0
++        )
++        recommended = active_card.decision_preview.recommended_action_id if active_card else None
++        selection = ActivitySelectionProvenance(
++            selection_source="search"
++            if payload.resource_token
++            else "guided"
++            if conversation.mode == ConversationMode.GUIDED
++            else "user",
++            recommended_resource_id=recommended or payload.resource_id,
++            selected_resource_id=payload.resource_id,
++            model_run=active_card.decision_preview.context_snapshot.get("model_run") if active_card else None,
++        )
++        session = ActivitySession(
++            id=payload.client_request_id,
++            user_id=auth.user_id,
++            conversation_id=conversation_id,
++            source_entry_id=conversation.source_entry_id,
++            offered_message_id=active_card.offered_message_id if active_card else None,
++            resource=candidate,
++            goal=active_card.goal if active_card else None,
++            # The visible card may include private context; never copy its freeform
++            # reason (or journal quotations) into an activity row.
++            recommendation_reason=None,
++            selection=selection,
++            duration_seconds=duration,
++            remaining_seconds=duration,
++            created_at=clock(),
++            updated_at=clock(),
++        )
++        saved = translated(
++            lambda: repository.offer_activity_session(
++                session,
++                request_id=payload.client_request_id,
++                expected_conversation_revision=payload.expected_conversation_revision,
++                now=clock(),
++            )
++        )
++        return view(repository, auth, saved)
++
++    @app.post("/v1/activity-sessions/{session_id}/commands", response_model=ActivitySession)
++    def control_activity(
++        session_id: UUID,
++        payload: ActivityCommandRequest,
++        auth: AuthContext = Depends(auth_dependency),
++    ) -> ActivitySession:
++        repository = sweep(auth)
++        owned_session(repository, auth, session_id, open_only=True)
++        saved = translated(
++            lambda: repository.command_activity_session(auth.user_id, session_id, payload, now=clock())
++        )
++        return view(repository, auth, saved)
++
++    @app.post("/v1/activity-sessions/{session_id}/report", response_model=ActivitySession)
++    def report_activity(
++        session_id: UUID,
++        payload: ActivityReportRequest,
++        auth: AuthContext = Depends(auth_dependency),
++    ) -> ActivitySession:
++        repository = sweep(auth)
++        conversation, _ = owned_session(repository, auth, session_id, open_only=True)
++        safety = assess_safety(payload.note or "", conversation.locale)
++        saved = translated(
++            lambda: repository.report_activity_session(
++                auth.user_id,
++                session_id,
++                payload,
++                now=clock(),
++                safety=safety,
++            )
++        )
++        return view(repository, auth, saved)
++
++    @app.post("/v1/activity-sessions/{session_id}/follow-up", response_model=ActivitySession)
++    def follow_up_activity(
++        session_id: UUID,
++        payload: ActivityFollowUpRequest,
++        response: Response,
++        auth: AuthContext = Depends(auth_dependency),
++    ) -> ActivitySession:
++        repository = sweep(auth)
++        conversation, current = owned_session(repository, auth, session_id, open_only=True)
++        if current.report is None:
++            raise HTTPException(409, "Save a check-in before asking Luna to reflect")
++        support = conversation.safety_mode == SafetyMode.SUPPORT
++        use_model = not support and conversation.mode == ConversationMode.AI
++        if use_model and current.follow_up_status != "ready":
++            if not conversation.llm_consent or not settings.openrouter_enabled or not settings.openrouter_zdr:
++                raise HTTPException(409, "Private AI help needs consent and provider retention disabled")
++            if follow_up is None and default_follow_up is None:
++                raise HTTPException(
++                    503, "Your check-in is saved. Luna's follow-up is temporarily unavailable."
++                )
++            # Avoid spending a budget slot for the duplicate of a live claim.
++            if (
++                current.follow_up_status != "generating"
++                or current.follow_up_lease_until is None
++                or clock() >= current.follow_up_lease_until
++            ):
++                enforce_generation_limit(auth, repository)
++        claimed, owns_generation = translated(
++            lambda: repository.claim_activity_follow_up(
++                auth.user_id,
++                session_id,
++                payload,
++                now=clock(),
++            )
++        )
++        if not owns_generation:
++            response.status_code = 202 if claimed.follow_up_status == "generating" else 200
++            return view(repository, auth, claimed)
++        conversation = owned_chat(repository, auth, claimed.conversation_id, open_only=True)
++        if conversation.revision != payload.expected_conversation_revision:
++            raise HTTPException(409, "This chat changed before Luna could reflect. Your check-in is saved.")
++        canonical = repository.get_activity_session(auth.user_id, session_id)
++        if canonical is None or canonical.revision != claimed.revision:
++            raise HTTPException(
++                409, "This activity changed before Luna could reflect. Your check-in is saved."
++            )
++        support = conversation.safety_mode == SafetyMode.SUPPORT
++        generation_revision = conversation.revision
++        directive: ActivityFollowUpDirective | None = None
++        try:
++            if support:
++                reply = conversation.safety.support_message if conversation.safety else None
++                reply = reply or SUPPORT_FALLBACK_MESSAGE
++                model_run = None
++            elif not use_model:
++                reply = "Your check-in is saved. You can keep talking about what changed, or leave it here."
++                model_run = None
++            else:
++                messages = repository.list_messages(auth.user_id, conversation.id)
++                if follow_up is not None:
++                    completion = follow_up(conversation, messages, claimed)
++                else:
++                    assert default_follow_up is not None
++                    completion = default_follow_up(repository, conversation, messages, claimed)
++                reply, model_run = completion[0], completion[1]
++                if len(completion) == 3:
++                    directive = completion[2]
++                if not reply.strip() or len(reply) > 1200:
++                    raise ConversationProviderError("Invalid activity follow-up")
++        except (ConversationProviderError, UnsupportedProviderResponse):
++            translated(
++                lambda: repository.finish_activity_follow_up(
++                    auth.user_id,
++                    session_id,
++                    request_id=payload.client_request_id,
++                    expected_revision=claimed.revision,
++                    expected_conversation_revision=generation_revision,
++                    expected_session_created_at=claimed.created_at,
++                    reply=None,
++                    model_run=None,
++                    now=clock(),
++                )
++            )
++            raise HTTPException(
++                503, "Your check-in is saved. Luna could not reply; you can retry the follow-up."
++            ) from None
++        # Re-read source identity after generation too. The conditional transaction
++        # is the final authority if deletion/preferences/support raced this check.
++        owned_chat(repository, auth, claimed.conversation_id, open_only=True)
++        saved = translated(
++            lambda: repository.finish_activity_follow_up(
++                auth.user_id,
++                session_id,
++                request_id=payload.client_request_id,
++                expected_revision=claimed.revision,
++                expected_conversation_revision=generation_revision,
++                expected_session_created_at=claimed.created_at,
++                reply=reply,
++                model_run=model_run,
++                now=clock(),
++                directive=directive,
++            )
++        )
++        return view(repository, auth, saved)
+--- a/src/journalpulse/persistence.py
++++ b/src/journalpulse/persistence.py
+@@ -1,5 +1,6 @@
+ from __future__ import annotations
+ 
++import hashlib
+ import json
+ import sqlite3
+ from collections.abc import Iterator
+@@ -8,21 +9,41 @@
+ from math import ceil
+ from pathlib import Path
+ from typing import Any, Protocol
+-from uuid import UUID
++from uuid import UUID, uuid5
+ 
+ import httpx
+ from pydantic import BaseModel
+ 
++from .activity_lifecycle import (
++    ActivityConflict,
++    ActivityNotFound,
++    apply_activity_command,
++    invalidated_activity,
++)
++from .activity_models import (
++    FOLLOW_UP_LEASE_SECONDS,
++    MAX_ACTIVITY_RECEIPTS,
++    MAX_FOLLOW_UP_ATTEMPTS,
++    ActivityCommandRequest,
++    ActivityFollowUpRequest,
++    ActivityReportRequest,
++    ActivitySession,
++    ActivityStatus,
++)
+ from .config import Settings
+ from .domain import (
++    ActivityFollowUpDirective,
+     Conversation,
+     ConversationMessage,
+     ConversationRequestInputs,
+     ConversationStatus,
+     InteractionPreference,
++    MessageRole,
++    ModelRun,
+     OutcomeRecord,
+     ReflectionRecord,
+     SafetyMode,
++    SafetyResult,
+ )
+ from .http_clients import managed_http_client
+ from .journal_models import JournalEntry
+@@ -64,7 +85,10 @@
+ 
+ 
+ def require_same_turn_request(
+-    stored: ConversationMessage, *, text: str | None, inputs: ConversationRequestInputs | None,
++    stored: ConversationMessage,
++    *,
++    text: str | None,
++    inputs: ConversationRequestInputs | None,
+ ) -> None:
+     """Replay verified requests only; deleting text also removes our ability to verify it.
+ 
+@@ -81,7 +105,11 @@
+     def save_journal_entry(self, entry: JournalEntry) -> JournalEntry: ...
+     def get_journal_entry(self, user_id: UUID, entry_id: UUID) -> JournalEntry | None: ...
+     def list_journal_entries(
+-        self, user_id: UUID, *, limit: int = 50, offset: int = 0,
++        self,
++        user_id: UUID,
++        *,
++        limit: int = 50,
++        offset: int = 0,
+     ) -> list[JournalEntry]: ...
+     def delete_journal_entry(self, user_id: UUID, entry_id: UUID) -> bool: ...
+     def save_reflection(self, record: ReflectionRecord) -> ReflectionRecord: ...
+@@ -113,12 +141,59 @@
+         expected_revision: int,
+     ) -> ReflectionRecord: ...
+     def change_preference(
+-        self, user_id: UUID, conversation_id: UUID, *, request_id: UUID,
+-        preference: InteractionPreference, expected_revision: int, now: datetime,
++        self,
++        user_id: UUID,
++        conversation_id: UUID,
++        *,
++        request_id: UUID,
++        preference: InteractionPreference,
++        expected_revision: int,
++        now: datetime,
+     ) -> Conversation: ...
+     def close_conversation(self, user_id: UUID, conversation_id: UUID) -> Conversation | None: ...
+     def delete_conversation(self, user_id: UUID, conversation_id: UUID) -> bool: ...
+     def close_stale_conversations(self, user_id: UUID, *, now: datetime) -> int: ...
++    def get_activity_session(self, user_id: UUID, session_id: UUID) -> ActivitySession | None: ...
++    def list_activity_sessions(
++        self, user_id: UUID, conversation_id: UUID | None = None
++    ) -> list[ActivitySession]: ...
++    def offer_activity_session(
++        self,
++        session: ActivitySession,
++        *,
++        request_id: UUID,
++        expected_conversation_revision: int,
++        now: datetime,
++    ) -> ActivitySession: ...
++    def command_activity_session(
++        self, user_id: UUID, session_id: UUID, request: ActivityCommandRequest, *, now: datetime
++    ) -> ActivitySession: ...
++    def report_activity_session(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        request: ActivityReportRequest,
++        *,
++        now: datetime,
++        safety: SafetyResult | None = None,
++    ) -> ActivitySession: ...
++    def claim_activity_follow_up(
++        self, user_id: UUID, session_id: UUID, request: ActivityFollowUpRequest, *, now: datetime
++    ) -> tuple[ActivitySession, bool]: ...
++    def finish_activity_follow_up(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        *,
++        request_id: UUID,
++        expected_revision: int,
++        expected_conversation_revision: int,
++        expected_session_created_at: datetime,
++        reply: str | None,
++        model_run: ModelRun | None,
++        now: datetime,
++        directive: ActivityFollowUpDirective | None = None,
++    ) -> ActivitySession: ...
+     def consume_rate_limit(
+         self, user_id: UUID, bucket: str, *, limit: int, window_seconds: int, now: datetime
+     ) -> tuple[bool, int]: ...
+@@ -162,6 +237,22 @@
+         with self.connect() as connection:
+             connection.executescript(
+                 """
++                CREATE TABLE IF NOT EXISTS activity_sessions (
++                    id TEXT PRIMARY KEY, user_id TEXT NOT NULL, conversation_id TEXT NOT NULL,
++                    source_entry_id TEXT, status TEXT NOT NULL, revision INTEGER NOT NULL,
++                    created_at TEXT NOT NULL, updated_at TEXT NOT NULL, payload_json TEXT NOT NULL
++                );
++                CREATE UNIQUE INDEX IF NOT EXISTS idx_activity_one_nonterminal
++                    ON activity_sessions(user_id,conversation_id)
++                    WHERE status IN ('offered','active','paused','awaiting_report');
++                CREATE INDEX IF NOT EXISTS idx_activity_owner_created
++                    ON activity_sessions(user_id,created_at DESC,id DESC);
++                CREATE TABLE IF NOT EXISTS activity_receipts (
++                    id TEXT NOT NULL, user_id TEXT NOT NULL, session_id TEXT NOT NULL,
++                    operation TEXT NOT NULL, request_hash TEXT NOT NULL, created_at TEXT NOT NULL,
++                    PRIMARY KEY(user_id,id)
++                );
++                CREATE INDEX IF NOT EXISTS idx_activity_receipts_session ON activity_receipts(session_id);
+                 CREATE TABLE IF NOT EXISTS journal_entries (
+                     id TEXT PRIMARY KEY,
+                     user_id TEXT NOT NULL,
+@@ -255,6 +346,575 @@
+                 """
+             )
+ 
++    # Inline activity sessions -------------------------------------------------------
++
++    def _activity_chat_locked(
++        self,
++        connection: sqlite3.Connection,
++        user_id: UUID,
++        conversation_id: UUID,
++    ) -> Conversation:
++        row = connection.execute(
++            "SELECT * FROM conversations WHERE id = ? AND user_id = ?",
++            (str(conversation_id), str(user_id)),
++        ).fetchone()
++        if row is None:
++            raise ConversationNotFound(str(conversation_id))
++        current = self._conversation(row)
++        if current.source_entry_id is not None:
++            if current.source_entry_created_at is None:
++                raise JournalEntryNotFound(str(current.source_entry_id))
++            source = connection.execute(
++                "SELECT id FROM journal_entries WHERE id = ? AND user_id = ? AND created_at = ?",
++                (str(current.source_entry_id), str(user_id), current.source_entry_created_at.isoformat()),
++            ).fetchone()
++            if source is None:
++                raise JournalEntryNotFound(str(current.source_entry_id))
++        return current
++
++    @staticmethod
++    def _activity_row(row: sqlite3.Row) -> ActivitySession:
++        return ActivitySession.model_validate_json(row["payload_json"])
++
++    def _activity_locked(
++        self,
++        connection: sqlite3.Connection,
++        user_id: UUID,
++        session_id: UUID,
++    ) -> tuple[Conversation, ActivitySession]:
++        row = connection.execute(
++            "SELECT * FROM activity_sessions WHERE id = ? AND user_id = ?",
++            (str(session_id), str(user_id)),
++        ).fetchone()
++        if row is None:
++            raise ActivityNotFound("Activity not found")
++        session = self._activity_row(row)
++        return self._activity_chat_locked(connection, user_id, session.conversation_id), session
++
++    @staticmethod
++    def _activity_guard(
++        conversation: Conversation,
++        session: ActivitySession | None,
++        expected_conversation_revision: int,
++        expected_revision: int | None = None,
++        *,
++        allow_support: bool = False,
++        allow_listen: bool = True,
++        now: datetime | None = None,
++    ) -> None:
++        if conversation.status != ConversationStatus.OPEN or (
++            now is not None and conversation.updated_at < now - STALE_AFTER
++        ):
++            raise ConversationClosed(str(conversation.id))
++        if conversation.revision != expected_conversation_revision:
++            raise ConversationStale(str(conversation.id))
++        if session is not None and session.revision != expected_revision:
++            raise ActivityConflict("Activity changed")
++        if not allow_support and conversation.safety_mode == SafetyMode.SUPPORT:
++            raise ActivityConflict("Support mode pauses ordinary activities")
++        if not allow_listen and conversation.interaction_preference == InteractionPreference.LISTEN:
++            raise ActivityConflict("This chat is set to Just talk")
++        if not allow_listen and conversation.activity_move == "pause":
++            raise ActivityConflict("This chat has paused activities")
++
++    @staticmethod
++    def _activity_input_hash(operation: str, body: dict[str, Any]) -> str:
++        canonical = json.dumps({"operation": operation, **body}, sort_keys=True, separators=(",", ":"))
++        return hashlib.sha256(canonical.encode()).hexdigest()
++
++    @staticmethod
++    def _activity_receipt(
++        connection: sqlite3.Connection,
++        user_id: UUID,
++        session_id: UUID,
++        request_id: UUID,
++        operation: str,
++        request_hash: str,
++    ) -> bool:
++        receipt = connection.execute(
++            "SELECT * FROM activity_receipts WHERE user_id = ? AND id = ?",
++            (str(user_id), str(request_id)),
++        ).fetchone()
++        if receipt is not None:
++            if (receipt["session_id"], receipt["operation"], receipt["request_hash"]) != (
++                str(session_id),
++                operation,
++                request_hash,
++            ):
++                raise ActivityConflict("Activity request ID is already in use")
++            return True
++        count = connection.execute(
++            "SELECT COUNT(*) FROM activity_receipts WHERE session_id = ?",
++            (str(session_id),),
++        ).fetchone()[0]
++        # Leave room for stop/report/follow-up even after repeated pause controls.
++        limit = 48 if operation in {"start", "pause", "resume"} else MAX_ACTIVITY_RECEIPTS
++        if count >= limit:
++            raise ActivityConflict("Activity control limit reached; finish the activity to check in")
++        return False
++
++    @staticmethod
++    def _store_activity_receipt(
++        connection: sqlite3.Connection,
++        user_id: UUID,
++        session_id: UUID,
++        request_id: UUID,
++        operation: str,
++        request_hash: str,
++        now: datetime,
++    ) -> None:
++        connection.execute(
++            "INSERT INTO activity_receipts (id,user_id,session_id,operation,request_hash,created_at) "
++            "VALUES (?,?,?,?,?,?)",
++            (str(request_id), str(user_id), str(session_id), operation, request_hash, now.isoformat()),
++        )
++
++    @staticmethod
++    def _write_activity(connection: sqlite3.Connection, session: ActivitySession) -> None:
++        connection.execute(
++            "UPDATE activity_sessions SET status=?,revision=?,updated_at=?,payload_json=? WHERE id=?",
++            (
++                session.status.value,
++                session.revision,
++                session.updated_at.isoformat(),
++                json.dumps(session.storage_payload()),
++                str(session.id),
++            ),
++        )
++
++    def get_activity_session(self, user_id: UUID, session_id: UUID) -> ActivitySession | None:
++        with self.connect() as connection:
++            row = connection.execute(
++                "SELECT * FROM activity_sessions WHERE user_id=? AND id=?",
++                (str(user_id), str(session_id)),
++            ).fetchone()
++        return self._activity_row(row) if row else None
++
++    def list_activity_sessions(
++        self, user_id: UUID, conversation_id: UUID | None = None
++    ) -> list[ActivitySession]:
++        query = "SELECT * FROM activity_sessions WHERE user_id=?"
++        parameters = [str(user_id)]
++        if conversation_id is not None:
++            query += " AND conversation_id=?"
++            parameters.append(str(conversation_id))
++        query += " ORDER BY julianday(created_at) DESC,id DESC"
++        with self.connect() as connection:
++            rows = connection.execute(query, parameters).fetchall()
++        return [self._activity_row(row) for row in rows]
++
++    def offer_activity_session(
++        self,
++        session: ActivitySession,
++        *,
++        request_id: UUID,
++        expected_conversation_revision: int,
++        now: datetime,
++    ) -> ActivitySession:
++        body = {
++            "expected_conversation_revision": expected_conversation_revision,
++            "resource_id": session.resource.id,
++            "duration_seconds": session.duration_seconds,
++        }
++        request_hash = self._activity_input_hash("offer", body)
++        with self.transaction() as connection:
++            conversation = self._activity_chat_locked(connection, session.user_id, session.conversation_id)
++            existing = connection.execute(
++                "SELECT * FROM activity_sessions WHERE id=?",
++                (str(session.id),),
++            ).fetchone()
++            if existing is not None:
++                saved = self._activity_row(existing)
++                if (saved.user_id, saved.conversation_id) != (session.user_id, session.conversation_id):
++                    raise ActivityConflict("Activity request ID is already in use")
++                if self._activity_receipt(
++                    connection, session.user_id, session.id, request_id, "offer", request_hash
++                ):
++                    return saved
++            self._activity_guard(
++                conversation, None, expected_conversation_revision, allow_listen=False, now=now
++            )
++            if (
++                connection.execute(
++                    "SELECT COUNT(*) FROM conversation_messages "
++                    "WHERE user_id=? AND conversation_id=? AND role='user'",
++                    (str(session.user_id), str(session.conversation_id)),
++                ).fetchone()[0]
++                >= 20
++                or connection.execute(
++                    "SELECT COUNT(*) FROM activity_sessions WHERE user_id=? AND conversation_id=?",
++                    (str(session.user_id), str(session.conversation_id)),
++                ).fetchone()[0]
++                >= 20
++            ):
++                raise ActivityConflict("This chat has reached its activity limit")
++            if session.source_entry_id != conversation.source_entry_id:
++                raise ActivityConflict("Activity source changed")
++            active = connection.execute(
++                "SELECT * FROM activity_sessions WHERE user_id=? AND conversation_id=? "
++                "AND status IN ('offered','active','paused','awaiting_report')",
++                (str(session.user_id), str(session.conversation_id)),
++            ).fetchone()
++            if active is not None:
++                current = self._activity_row(active)
++                if current.status != ActivityStatus.OFFERED:
++                    raise ActivityConflict("Finish or stop the current activity before starting another")
++                # Negotiation supersedes an unstarted offer; an active activity is
++                # never replaced silently by a newer recommendation.
++                declined = current.model_copy(
++                    update={
++                        "status": ActivityStatus.DECLINED,
++                        "revision": current.revision + 1,
++                        "updated_at": now,
++                    }
++                )
++                self._write_activity(connection, declined)
++            fresh = session.model_copy(
++                update={
++                    "revision": 0,
++                    "status": ActivityStatus.OFFERED,
++                    "created_at": now,
++                    "updated_at": now,
++                }
++            )
++            connection.execute(
++                "INSERT INTO activity_sessions (id,user_id,conversation_id,source_entry_id,status,revision,"
++                "created_at,updated_at,payload_json) VALUES (?,?,?,?,?,?,?,?,?)",
++                (
++                    str(fresh.id),
++                    str(fresh.user_id),
++                    str(fresh.conversation_id),
++                    str(fresh.source_entry_id) if fresh.source_entry_id else None,
++                    fresh.status.value,
++                    fresh.revision,
++                    now.isoformat(),
++                    now.isoformat(),
++                    json.dumps(fresh.storage_payload()),
++                ),
++            )
++            self._store_activity_receipt(
++                connection, fresh.user_id, fresh.id, request_id, "offer", request_hash, now
++            )
++            return fresh
++
++    def command_activity_session(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        request: ActivityCommandRequest,
++        *,
++        now: datetime,
++    ) -> ActivitySession:
++        request_hash = self._activity_input_hash(request.command, request.model_dump(mode="json"))
++        with self.transaction() as connection:
++            conversation, session = self._activity_locked(connection, user_id, session_id)
++            if self._activity_receipt(
++                connection, user_id, session_id, request.client_request_id, request.command, request_hash
++            ):
++                return session
++            self._activity_guard(
++                conversation,
++                session,
++                request.expected_conversation_revision,
++                request.expected_revision,
++                allow_listen=request.command in {"stop", "decline"},
++                now=now,
++            )
++            if (
++                request.command == "start"
++                and connection.execute(
++                    "SELECT COUNT(*) FROM conversation_messages "
++                    "WHERE user_id=? AND conversation_id=? AND role='user'",
++                    (str(user_id), str(conversation.id)),
++                ).fetchone()[0]
++                >= 20
++            ):
++                raise ActivityConflict("This chat has reached its activity limit")
++            changed = apply_activity_command(session, request.command, now)
++            self._write_activity(connection, changed)
++            self._store_activity_receipt(
++                connection, user_id, session_id, request.client_request_id, request.command, request_hash, now
++            )
++            return changed
++
++    def report_activity_session(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        request: ActivityReportRequest,
++        *,
++        now: datetime,
++        safety: SafetyResult | None = None,
++    ) -> ActivitySession:
++        request_hash = self._activity_input_hash("report", request.model_dump(mode="json"))
++        with self.transaction() as connection:
++            conversation, session = self._activity_locked(connection, user_id, session_id)
++            if self._activity_receipt(
++                connection, user_id, session_id, request.client_request_id, "report", request_hash
++            ):
++                return session
++            self._activity_guard(
++                conversation,
++                session,
++                request.expected_conversation_revision,
++                request.expected_revision,
++                allow_support=True,
++                now=now,
++            )
++            if (
++                session.report is not None
++                or session.status
++                not in {
++                    ActivityStatus.AWAITING_REPORT,
++                    ActivityStatus.STOPPED,
++                }
++                or session.started_at is None
++            ):
++                raise ActivityConflict("This activity is not awaiting a report")
++            changed = session.model_copy(
++                update={
++                    "report": request.participant_report(),
++                    "reported_at": now,
++                    "status": ActivityStatus.STOPPED
++                    if request.participation == "stopped"
++                    else ActivityStatus.COMPLETED,
++                    "revision": session.revision + 1,
++                    "updated_at": now,
++                    "follow_up_status": "pending",
++                    "expires_at": None,
++                }
++            )
++            self._write_activity(connection, changed)
++            self._store_activity_receipt(
++                connection, user_id, session_id, request.client_request_id, "report", request_hash, now
++            )
++            if (
++                safety is not None
++                and safety.mode == SafetyMode.SUPPORT
++                and conversation.safety_mode != SafetyMode.SUPPORT
++            ):
++                supported = conversation.model_copy(
++                    update={
++                        "safety_mode": SafetyMode.SUPPORT,
++                        "safety": safety,
++                        "card": None,
++                        "activity_card": None,
++                        "ready_for_action": False,
++                        "revision": conversation.revision + 1,
++                        "updated_at": now,
++                    }
++                )
++                connection.execute(
++                    "UPDATE conversations SET payload_json=?,revision=?,updated_at=? WHERE id=?",
++                    (supported.model_dump_json(), supported.revision, now.isoformat(), str(conversation.id)),
++                )
++                self._invalidate_activity_sessions(connection, supported, now=now, clear_text=False)
++                refreshed = connection.execute(
++                    "SELECT * FROM activity_sessions WHERE id=?", (str(session_id),)
++                ).fetchone()
++                return self._activity_row(refreshed)
++            return changed
++
++    def claim_activity_follow_up(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        request: ActivityFollowUpRequest,
++        *,
++        now: datetime,
++    ) -> tuple[ActivitySession, bool]:
++        request_hash = self._activity_input_hash("follow_up", request.model_dump(mode="json"))
++        with self.transaction() as connection:
++            conversation, session = self._activity_locked(connection, user_id, session_id)
++            replay = self._activity_receipt(
++                connection, user_id, session_id, request.client_request_id, "follow_up", request_hash
++            )
++            if session.follow_up_status == "ready":
++                return session, False
++            if (
++                session.follow_up_status == "generating"
++                and session.follow_up_lease_until is not None
++                and session.follow_up_lease_until > now
++            ):
++                return session, False
++            self._activity_guard(
++                conversation,
++                session,
++                request.expected_conversation_revision,
++                session.revision if replay else request.expected_revision,
++                allow_support=True,
++                now=now,
++            )
++            if session.report is None or session.follow_up_attempts >= MAX_FOLLOW_UP_ATTEMPTS:
++                raise ActivityConflict("The saved check-in has no available follow-up attempt")
++            count = connection.execute(
++                "SELECT COUNT(*) FROM conversation_messages "
++                "WHERE user_id=? AND conversation_id=? AND role='user'",
++                (str(user_id), str(conversation.id)),
++            ).fetchone()[0]
++            final = count >= 20
++            if final:
++                reserved = connection.execute(
++                    "SELECT payload_json FROM activity_sessions "
++                    "WHERE user_id=? AND conversation_id=? AND id<>?",
++                    (str(user_id), str(conversation.id), str(session.id)),
++                ).fetchall()
++                if any(
++                    ActivitySession.model_validate_json(row["payload_json"]).final_follow_up
++                    for row in reserved
++                ):
++                    raise ActivityConflict("This chat has reached its final check-in response")
++            claimed = session.model_copy(
++                update={
++                    "follow_up_status": "generating",
++                    "follow_up_request_id": request.client_request_id,
++                    "follow_up_lease_until": now + timedelta(seconds=FOLLOW_UP_LEASE_SECONDS),
++                    "follow_up_attempts": session.follow_up_attempts + 1,
++                    "final_follow_up": session.final_follow_up or final,
++                    "revision": session.revision + 1,
++                    "updated_at": now,
++                }
++            )
++            self._write_activity(connection, claimed)
++            if not replay:
++                self._store_activity_receipt(
++                    connection, user_id, session_id, request.client_request_id, "follow_up", request_hash, now
++                )
++            return claimed, True
++
++    def finish_activity_follow_up(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        *,
++        request_id: UUID,
++        expected_revision: int,
++        expected_conversation_revision: int,
++        expected_session_created_at: datetime,
++        reply: str | None,
++        model_run: ModelRun | None,
++        now: datetime,
++        directive: ActivityFollowUpDirective | None = None,
++    ) -> ActivitySession:
++        with self.transaction() as connection:
++            conversation, session = self._activity_locked(connection, user_id, session_id)
++            if session.created_at != expected_session_created_at:
++                raise ActivityConflict("Activity changed")
++            if session.follow_up_status == "ready" and session.follow_up_request_id == request_id:
++                return session
++            self._activity_guard(
++                conversation,
++                session,
++                expected_conversation_revision,
++                expected_revision,
++                allow_support=True,
++                now=now,
++            )
++            if session.follow_up_status != "generating" or session.follow_up_request_id != request_id:
++                raise ActivityConflict("This follow-up changed")
++            if reply is None:
++                failed = session.model_copy(
++                    update={
++                        "follow_up_status": "failed",
++                        "follow_up_lease_until": None,
++                        "revision": session.revision + 1,
++                        "updated_at": now,
++                    }
++                )
++                self._write_activity(connection, failed)
++                return failed
++            if not reply.strip() or len(reply) > 1200:
++                raise ValueError("Invalid activity follow-up")
++            message_id = uuid5(request_id, "activity-follow-up-message")
++            assistant = ConversationMessage(
++                id=message_id,
++                conversation_id=conversation.id,
++                role=MessageRole.ASSISTANT,
++                content=reply,
++                created_at=now,
++                safety_mode=conversation.safety_mode,
++                model_run=model_run,
++            )
++            if directive is not None and (directive.card is not None or directive.search_topic is not None):
++                count = connection.execute(
++                    "SELECT COUNT(*) FROM conversation_messages "
++                    "WHERE user_id=? AND conversation_id=? AND role='user'",
++                    (str(user_id), str(conversation.id)),
++                ).fetchone()[0]
++                if (
++                    session.final_follow_up
++                    or count >= 20
++                    or conversation.safety_mode == SafetyMode.SUPPORT
++                    or conversation.interaction_preference == InteractionPreference.LISTEN
++                ):
++                    raise ActivityConflict("This check-in cannot offer another activity")
++            self._insert_message(connection, user_id, assistant)
++            directive_update = (
++                {}
++                if directive is None
++                else {
++                    "card": None,
++                    "activity_card": directive.card.model_copy(update={"offered_message_id": message_id})
++                    if directive.card is not None
++                    else None,
++                    "activity_constraints": directive.constraints or conversation.activity_constraints,
++                    "activity_goal": directive.goal or conversation.activity_goal,
++                    "activity_search_topic": directive.search_topic,
++                    "activity_move": directive.move,
++                    "ready_for_action": directive.card is not None,
++                }
++            )
++            committed = conversation.model_copy(
++                update={"updated_at": now, "revision": conversation.revision + 1, **directive_update}
++            )
++            connection.execute(
++                "UPDATE conversations SET payload_json=?,revision=?,updated_at=? WHERE id=?",
++                (committed.model_dump_json(), committed.revision, now.isoformat(), str(committed.id)),
++            )
++            finished = session.model_copy(
++                update={
++                    "follow_up_status": "ready",
++                    "follow_up_reply": None,
++                    "follow_up_model_run": model_run,
++                    "follow_up_message_id": message_id,
++                    "follow_up_lease_until": None,
++                    "revision": session.revision + 1,
++                    "updated_at": now,
++                }
++            )
++            self._write_activity(connection, finished)
++            return finished
++
++    def _invalidate_activity_sessions(
++        self,
++        connection: sqlite3.Connection,
++        conversation: Conversation,
++        *,
++        now: datetime,
++        clear_text: bool,
++    ) -> None:
++        rows = connection.execute(
++            "SELECT * FROM activity_sessions WHERE user_id=? AND conversation_id=?",
++            (str(conversation.user_id), str(conversation.id)),
++        ).fetchall()
++        for row in rows:
++            session = self._activity_row(row)
++            self._write_activity(connection, invalidated_activity(session, now, clear_text=clear_text))
++        if clear_text:
++            connection.execute(
++                "DELETE FROM activity_receipts WHERE session_id IN "
++                "(SELECT id FROM activity_sessions WHERE conversation_id=?)",
++                (str(conversation.id),),
++            )
++
++    def _activity_receipts(self, user_id: UUID) -> list[dict]:
++        with self.connect() as connection:
++            rows = connection.execute(
++                "SELECT * FROM activity_receipts WHERE user_id=? ORDER BY created_at,id",
++                (str(user_id),),
++            ).fetchall()
++        return [dict(row) for row in rows]
++
+     # Standalone writing -------------------------------------------------------------
+ 
+     def save_journal_entry(self, entry: JournalEntry) -> JournalEntry:
+@@ -288,7 +948,11 @@
+         return JournalEntry.model_validate_json(row["payload_json"]) if row else None
+ 
+     def list_journal_entries(
+-        self, user_id: UUID, *, limit: int = 50, offset: int = 0,
++        self,
++        user_id: UUID,
++        *,
++        limit: int = 50,
++        offset: int = 0,
+     ) -> list[JournalEntry]:
+         with self.connect() as connection:
+             rows = connection.execute(
+@@ -308,7 +972,8 @@
+         """
+         with self.transaction() as connection:
+             owned = connection.execute(
+-                "SELECT id FROM journal_entries WHERE id = ? AND user_id = ?", (str(entry_id), str(user_id)),
++                "SELECT id FROM journal_entries WHERE id = ? AND user_id = ?",
++                (str(entry_id), str(user_id)),
+             ).fetchone()
+             if owned is None:
+                 return False
+@@ -319,7 +984,8 @@
+             for row in rows:
+                 self._delete_conversation(connection, user_id, UUID(row["id"]))
+             connection.execute(
+-                "DELETE FROM journal_entries WHERE id = ? AND user_id = ?", (str(entry_id), str(user_id)),
++                "DELETE FROM journal_entries WHERE id = ? AND user_id = ?",
++                (str(entry_id), str(user_id)),
+             )
+         return True
+ 
+@@ -335,13 +1001,10 @@
+             if existing["user_id"] != str(record.user_id):
+                 raise ValueError("Reflection request ID belongs to another user")
+             saved = ReflectionRecord.model_validate_json(existing["payload_json"])
+-            if (
+-                existing["conversation_id"] != (str(conversation_id) if conversation_id else None)
+-                or (
+-                    conversation_id is not None
+-                    and (saved.decision.action_id, saved.state, saved.target, saved.self_report_input)
+-                    != (record.decision.action_id, record.state, record.target, record.self_report_input)
+-                )
++            if existing["conversation_id"] != (str(conversation_id) if conversation_id else None) or (
++                conversation_id is not None
++                and (saved.decision.action_id, saved.state, saved.target, saved.self_report_input)
++                != (record.decision.action_id, record.state, record.target, record.self_report_input)
+             ):
+                 raise ValueError("Reflection request ID is already in use")
+             return saved
+@@ -460,6 +1123,8 @@
+ 
+     def export_user_data(self, user_id: UUID) -> dict:
+         return {
++            "activity_sessions": [item.storage_payload() for item in self.list_activity_sessions(user_id)],
++            "activity_receipts": self._activity_receipts(user_id),
+             "journal_entries": [
+                 item.model_dump(mode="json") for item in self.list_journal_entries(user_id, limit=-1)
+             ],
+@@ -477,8 +1142,14 @@
+         deleted = 0
+         with self.transaction() as connection:
+             for table in (
+-                "outcomes", "conversation_messages", "reflections",
+-                "conversation_preference_requests", "conversations", "journal_entries",
++                "activity_receipts",
++                "activity_sessions",
++                "outcomes",
++                "conversation_messages",
++                "reflections",
++                "conversation_preference_requests",
++                "conversations",
++                "journal_entries",
+             ):
+                 cursor = connection.execute(f"DELETE FROM {table} WHERE user_id = ?", (str(user_id),))
+                 deleted += cursor.rowcount
+@@ -497,8 +1168,14 @@
+         return [dict(row) for row in rows]
+ 
+     def change_preference(
+-        self, user_id: UUID, conversation_id: UUID, *, request_id: UUID,
+-        preference: InteractionPreference, expected_revision: int, now: datetime,
++        self,
++        user_id: UUID,
++        conversation_id: UUID,
++        *,
++        request_id: UUID,
++        preference: InteractionPreference,
++        expected_revision: int,
++        now: datetime,
+     ) -> Conversation:
+         """Apply a user command atomically; replay returns current state, not old state."""
+         with self.transaction() as connection:
+@@ -523,19 +1200,32 @@
+                 raise ConversationStale(str(conversation_id))
+             if current.safety_mode.value == "support":
+                 raise ValueError("Support mode cannot be changed")
+-            changed = current.model_copy(update={
+-                "interaction_preference": preference, "card": None,
+-                "ready_for_action": preference == InteractionPreference.ACT,
+-                "revision": current.revision + 1, "updated_at": now,
+-            })
++            changed = current.model_copy(
++                update={
++                    "interaction_preference": preference,
++                    "card": None,
++                    "activity_card": None,
++                    "ready_for_action": preference == InteractionPreference.ACT,
++                    "revision": current.revision + 1,
++                    "updated_at": now,
++                }
++            )
+             connection.execute(
+                 "UPDATE conversations SET payload_json = ?, revision = ?, updated_at = ? WHERE id = ?",
+                 (changed.model_dump_json(), changed.revision, now.isoformat(), str(conversation_id)),
+             )
++            if preference == InteractionPreference.LISTEN:
++                self._invalidate_activity_sessions(connection, changed, now=now, clear_text=False)
+             connection.execute(
+                 "INSERT INTO conversation_preference_requests VALUES (?, ?, ?, ?, ?, ?)",
+-                (str(request_id), str(conversation_id), str(user_id), preference.value,
+-                 expected_revision, now.isoformat()),
++                (
++                    str(request_id),
++                    str(conversation_id),
++                    str(user_id),
++                    preference.value,
++                    expected_revision,
++                    now.isoformat(),
++                ),
+             )
+         return changed
+ 
+@@ -554,9 +1244,11 @@
+                     "SELECT payload_json FROM journal_entries WHERE id = ? AND user_id = ?",
+                     (str(source_entry_id), str(conversation.user_id)),
+                 ).fetchone()
+-                if source_row is None or JournalEntry.model_validate_json(
+-                    source_row["payload_json"]
+-                ).created_at != conversation.source_entry_created_at:
++                if (
++                    source_row is None
++                    or JournalEntry.model_validate_json(source_row["payload_json"]).created_at
++                    != conversation.source_entry_created_at
++                ):
+                     # UUIDs can be reused after deletion. Timestamp identity prevents
+                     # a start computed from a deleted incarnation attaching to its replacement.
+                     raise JournalEntryNotFound(str(source_entry_id))
+@@ -568,11 +1260,17 @@
+                     raise ValueError("Conversation request ID belongs to another user")
+                 saved = self._conversation(existing)
+                 if (
+-                    saved.source_entry_id, saved.source_entry_created_at,
+-                    saved.llm_consent, saved.retain_text, saved.locale,
++                    saved.source_entry_id,
++                    saved.source_entry_created_at,
++                    saved.llm_consent,
++                    saved.retain_text,
++                    saved.locale,
+                 ) != (
+-                    source_entry_id, conversation.source_entry_created_at,
+-                    conversation.llm_consent, conversation.retain_text, conversation.locale,
++                    source_entry_id,
++                    conversation.source_entry_created_at,
++                    conversation.llm_consent,
++                    conversation.retain_text,
++                    conversation.locale,
+                 ):
+                     raise ValueError("Conversation request ID is already in use")
+                 return saved
+@@ -594,7 +1292,8 @@
+                     fresh.model_dump_json(),
+                     str(source_entry_id) if source_entry_id else None,
+                     conversation.source_entry_created_at.isoformat()
+-                    if conversation.source_entry_created_at else None,
++                    if conversation.source_entry_created_at
++                    else None,
+                 ),
+             )
+         return fresh
+@@ -639,7 +1338,9 @@
+             stored = self._stored_turn(connection, conversation.id, user_message.client_message_id)
+             if stored is not None:
+                 require_same_turn_request(
+-                    stored[1], text=user_message.content, inputs=user_message.request_inputs,
++                    stored[1],
++                    text=user_message.content,
++                    inputs=user_message.request_inputs,
+                 )
+                 return stored
+             if row["status"] != ConversationStatus.OPEN.value:
+@@ -659,9 +1360,15 @@
+             )
+             # Match PostgreSQL: an older writer cannot restore ordinary offers
+             # while the canonical choice is Listen. Support still takes precedence.
+-            if (current.interaction_preference == InteractionPreference.LISTEN
+-                    and committed.safety_mode != SafetyMode.SUPPORT):
+-                committed = committed.model_copy(update={"card": None, "ready_for_action": False})
++            if (
++                current.interaction_preference == InteractionPreference.LISTEN
++                and committed.safety_mode != SafetyMode.SUPPORT
++            ):
++                committed = committed.model_copy(
++                    update={"card": None, "activity_card": None, "ready_for_action": False}
++                )
++            if committed.safety_mode == SafetyMode.SUPPORT or committed.activity_move == "pause":
++                committed = committed.model_copy(update={"activity_card": None})
+             self._insert_message(connection, conversation.user_id, user_message)
+             self._insert_message(connection, conversation.user_id, assistant_message)
+             connection.execute(
+@@ -676,6 +1383,12 @@
+                     str(committed.id),
+                 ),
+             )
++            if (
++                committed.safety_mode == SafetyMode.SUPPORT and current.safety_mode != SafetyMode.SUPPORT
++            ) or (committed.activity_move == "pause" and current.activity_move != "pause"):
++                self._invalidate_activity_sessions(
++                    connection, committed, now=committed.updated_at, clear_text=False
++                )
+         return committed, user_message, assistant_message
+ 
+     def accept_conversation(
+@@ -701,11 +1414,11 @@
+                         (str(record.id),),
+                     ).fetchone()
+                     saved_record = ReflectionRecord.model_validate_json(saved["payload_json"])
+-                    if (
+-                        saved["conversation_id"] != str(conversation_id)
+-                        or (saved_record.decision.action_id, saved_record.state, saved_record.target)
+-                        != (record.decision.action_id, record.state, record.target)
+-                    ):
++                    if saved["conversation_id"] != str(conversation_id) or (
++                        saved_record.decision.action_id,
++                        saved_record.state,
++                        saved_record.target,
++                    ) != (record.decision.action_id, record.state, record.target):
+                         raise ValueError("Reflection request ID is already in use")
+                     return saved_record
+                 raise ConversationAlreadyAccepted(str(conversation_id))
+@@ -713,8 +1426,10 @@
+                 raise ConversationClosed(str(conversation_id))
+             if current.revision != expected_revision:
+                 raise ConversationStale(str(conversation_id))
+-            if (current.interaction_preference == InteractionPreference.LISTEN
+-                    and current.safety_mode != SafetyMode.SUPPORT):
++            if (
++                current.interaction_preference == InteractionPreference.LISTEN
++                and current.safety_mode != SafetyMode.SUPPORT
++            ):
+                 raise ConversationStale(str(conversation_id))
+             saved_record = self._insert_reflection(connection, record, conversation_id)
+             self._close_locked(connection, current, reflection_id=record.id, now=datetime.now(UTC))
+@@ -738,10 +1453,14 @@
+             return self._delete_conversation(connection, user_id, conversation_id)
+ 
+     def _delete_conversation(
+-        self, connection: sqlite3.Connection, user_id: UUID, conversation_id: UUID,
++        self,
++        connection: sqlite3.Connection,
++        user_id: UUID,
++        conversation_id: UUID,
+     ) -> bool:
+         row = connection.execute(
+-            "SELECT * FROM conversations WHERE id = ? AND user_id = ?", (str(conversation_id), str(user_id)),
++            "SELECT * FROM conversations WHERE id = ? AND user_id = ?",
++            (str(conversation_id), str(user_id)),
+         ).fetchone()
+         if row is None:
+             return False
+@@ -749,6 +1468,15 @@
+         if current.reflection_id is not None:
+             self._delete_reflection(connection, user_id, current.reflection_id)
+         connection.execute(
++            "DELETE FROM activity_receipts WHERE user_id=? AND session_id IN "
++            "(SELECT id FROM activity_sessions WHERE conversation_id=?)",
++            (str(user_id), str(conversation_id)),
++        )
++        connection.execute(
++            "DELETE FROM activity_sessions WHERE user_id=? AND conversation_id=?",
++            (str(user_id), str(conversation_id)),
++        )
++        connection.execute(
+             "DELETE FROM conversation_messages WHERE user_id = ? AND conversation_id = ?",
+             (str(user_id), str(conversation_id)),
+         )
+@@ -757,7 +1485,8 @@
+             (str(user_id), str(conversation_id)),
+         )
+         connection.execute(
+-            "DELETE FROM conversations WHERE user_id = ? AND id = ?", (str(user_id), str(conversation_id)),
++            "DELETE FROM conversations WHERE user_id = ? AND id = ?",
++            (str(user_id), str(conversation_id)),
+         )
+         return True
+ 
+@@ -814,6 +1543,7 @@
+         closed = current.model_copy(
+             update={
+                 "status": ConversationStatus.CLOSED,
++                "activity_card": None,
+                 "updated_at": now,
+                 "revision": current.revision + 1,
+                 "reflection_id": reflection_id or current.reflection_id,
+@@ -826,6 +1556,7 @@
+             """,
+             (closed.updated_at.isoformat(), closed.model_dump_json(), closed.revision, str(closed.id)),
+         )
++        self._invalidate_activity_sessions(connection, closed, now=now, clear_text=not closed.retain_text)
+         if not closed.retain_text:
+             self._purge_messages(connection, closed.id)
+         return closed
+@@ -977,8 +1708,12 @@
+         try:
+             with managed_http_client(self.client, timeout=15) as client:
+                 response = client.request(
+-                    method, f"{self.base_url}/{table}", headers=self.headers,
+-                    timeout=15, follow_redirects=False, **kwargs,
++                    method,
++                    f"{self.base_url}/{table}",
++                    headers=self.headers,
++                    timeout=15,
++                    follow_redirects=False,
++                    **kwargs,
+                 )
+         except httpx.HTTPError as exc:
+             raise StorageUnavailable("The database could not be reached") from exc
+@@ -1043,9 +1778,26 @@
+         status = response.status_code
+         if status == 404 and message == "Conversation not found":
+             raise ConversationNotFound(message)
++        if status == 404 and message == "Activity not found":
++            raise ActivityNotFound(message)
+         if status == 404 and message == "Journal entry not found":
+             raise JournalEntryNotFound(message)
+         if status == 409:
++            if message.startswith(
++                (
++                    "Activity",
++                    "This activity",
++                    "The timer",
++                    "Finish or stop",
++                    "This chat has reached",
++                    "This chat has paused",
++                    "This chat is set",
++                    "Support mode pauses",
++                    "The saved check-in",
++                    "This follow-up",
++                )
++            ):
++                raise ActivityConflict(message)
+             if message == "Conversation is closed":
+                 raise ConversationClosed(message)
+             if message == "Conversation changed":
+@@ -1066,17 +1818,223 @@
+             raise StorageUnavailable("The server signing key is not configured")
+         return signed_payload(purpose, user_id, body, self.signing_key)
+ 
++    # Versioned signed activity RPCs; direct client writes remain disabled by RLS.
++
++    def get_activity_session(self, user_id: UUID, session_id: UUID) -> ActivitySession | None:
++        rows = self._request(
++            "GET",
++            "activity_sessions",
++            params={
++                "select": "record",
++                "user_id": f"eq.{user_id}",
++                "id": f"eq.{session_id}",
++                "limit": 1,
++            },
++        )
++        return self._row_model(ActivitySession, rows[0]) if rows else None
++
++    def list_activity_sessions(
++        self, user_id: UUID, conversation_id: UUID | None = None
++    ) -> list[ActivitySession]:
++        params = {"select": "record", "user_id": f"eq.{user_id}", "order": "created_at.desc,id.desc"}
++        if conversation_id is not None:
++            params["conversation_id"] = f"eq.{conversation_id}"
++        return [
++            self._row_model(ActivitySession, row) for row in self._select_all("activity_sessions", params)
++        ]
++
++    def offer_activity_session(
++        self,
++        session: ActivitySession,
++        *,
++        request_id: UUID,
++        expected_conversation_revision: int,
++        now: datetime,
++    ) -> ActivitySession:
++        del now  # PostgreSQL owns start/expiry timestamps even if the API clock differs.
++        fingerprint = {
++            "expected_conversation_revision": expected_conversation_revision,
++            "resource_id": session.resource.id,
++            "duration_seconds": session.duration_seconds,
++        }
++        saved = self._request(
++            "POST",
++            "rpc/jp_offer_activity_v1",
++            json=self._signed(
++                "offer_activity",
++                session.user_id,
++                {
++                    "session": session.storage_payload(),
++                    "request_id": str(request_id),
++                    "expected_conversation_revision": expected_conversation_revision,
++                    "request_hash": SQLiteRepository._activity_input_hash("offer", fingerprint),
++                },
++            ),
++        )
++        return self._model(ActivitySession, saved)
++
++    def command_activity_session(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        request: ActivityCommandRequest,
++        *,
++        now: datetime,
++    ) -> ActivitySession:
++        del now
++        saved = self._request(
++            "POST",
++            "rpc/jp_activity_command_v1",
++            json=self._signed(
++                "activity_command",
++                user_id,
++                {
++                    "session_id": str(session_id),
++                    "request": request.model_dump(mode="json"),
++                    "request_hash": SQLiteRepository._activity_input_hash(
++                        request.command, request.model_dump(mode="json")
++                    ),
++                },
++            ),
++        )
++        return self._model(ActivitySession, saved)
++
++    def report_activity_session(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        request: ActivityReportRequest,
++        *,
++        now: datetime,
++        safety: SafetyResult | None = None,
++    ) -> ActivitySession:
++        del now
++        saved = self._request(
++            "POST",
++            "rpc/jp_report_activity_v1",
++            json=self._signed(
++                "report_activity",
++                user_id,
++                {
++                    "session_id": str(session_id),
++                    "request": request.model_dump(mode="json"),
++                    "request_hash": SQLiteRepository._activity_input_hash(
++                        "report", request.model_dump(mode="json")
++                    ),
++                    "safety": safety.model_dump(mode="json")
++                    if safety is not None and safety.mode == SafetyMode.SUPPORT
++                    else None,
++                },
++            ),
++        )
++        return self._model(ActivitySession, saved)
++
++    def claim_activity_follow_up(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        request: ActivityFollowUpRequest,
++        *,
++        now: datetime,
++    ) -> tuple[ActivitySession, bool]:
++        del now
++        saved = self._object(
++            self._request(
++                "POST",
++                "rpc/jp_claim_activity_followup_v1",
++                json=self._signed(
++                    "claim_activity_follow_up",
++                    user_id,
++                    {
++                        "session_id": str(session_id),
++                        "request": request.model_dump(mode="json"),
++                        "request_hash": SQLiteRepository._activity_input_hash(
++                            "follow_up", request.model_dump(mode="json")
++                        ),
++                    },
++                ),
++            )
++        )
++        return self._model(ActivitySession, saved.get("session")), self._boolean(saved.get("claimed"))
++
++    def finish_activity_follow_up(
++        self,
++        user_id: UUID,
++        session_id: UUID,
++        *,
++        request_id: UUID,
++        expected_revision: int,
++        expected_conversation_revision: int,
++        expected_session_created_at: datetime,
++        reply: str | None,
++        model_run: ModelRun | None,
++        now: datetime,
++        directive: ActivityFollowUpDirective | None = None,
++    ) -> ActivitySession:
++        # The API creates a deterministic reply identity; the RPC commits it with
++        # the session and chat revisions, or keeps only the independently saved report.
++        session = self.get_activity_session(user_id, session_id)
++        if session is None:
++            raise ActivityNotFound("Activity not found")
++        conversation = self.get_conversation(user_id, session.conversation_id)
++        if conversation is None:
++            raise ConversationNotFound(str(session.conversation_id))
++        assistant = (
++            None
++            if reply is None
++            else ConversationMessage(
++                id=uuid5(request_id, "activity-follow-up-message"),
++                conversation_id=session.conversation_id,
++                role=MessageRole.ASSISTANT,
++                content=reply,
++                created_at=now,
++                safety_mode=conversation.safety_mode,
++                model_run=model_run,
++            ).model_dump(mode="json")
++        )
++        saved = self._request(
++            "POST",
++            "rpc/jp_finish_activity_followup_v1",
++            json=self._signed(
++                "finish_activity_follow_up",
++                user_id,
++                {
++                    "session_id": str(session_id),
++                    "request_id": str(request_id),
++                    "expected_revision": expected_revision,
++                    "expected_conversation_revision": expected_conversation_revision,
++                    "expected_session_created_at": expected_session_created_at.isoformat(),
++                    "assistant_message": assistant,
++                    "directive": directive.model_dump(mode="json") if directive is not None else None,
++                },
++            ),
++        )
++        return self._model(ActivitySession, saved)
++
+     def change_preference(
+-        self, user_id: UUID, conversation_id: UUID, *, request_id: UUID,
+-        preference: InteractionPreference, expected_revision: int, now: datetime,
++        self,
++        user_id: UUID,
++        conversation_id: UUID,
++        *,
++        request_id: UUID,
++        preference: InteractionPreference,
++        expected_revision: int,
++        now: datetime,
+     ) -> Conversation:
+         saved = self._request(
+-            "POST", "rpc/jp_change_preference",
+-            json=self._signed("change_preference", user_id, {
+-                "conversation_id": str(conversation_id), "client_request_id": str(request_id),
+-                "preference": preference.value, "expected_revision": expected_revision,
+-                "updated_at": now.isoformat(),
+-            }),
++            "POST",
++            "rpc/jp_change_preference",
++            json=self._signed(
++                "change_preference",
++                user_id,
++                {
++                    "conversation_id": str(conversation_id),
++                    "client_request_id": str(request_id),
++                    "preference": preference.value,
++                    "expected_revision": expected_revision,
++                    "updated_at": now.isoformat(),
++                },
++            ),
+         )
+         return self._model(Conversation, saved)
+ 
+@@ -1098,32 +2056,44 @@
+ 
+     def save_journal_entry(self, entry: JournalEntry) -> JournalEntry:
+         saved = self._request(
+-            "POST", "rpc/jp_save_journal_entry",
++            "POST",
++            "rpc/jp_save_journal_entry",
+             json=self._signed("save_journal_entry", entry.user_id, {"entry": entry.model_dump(mode="json")}),
+         )
+         return self._model(JournalEntry, saved)
+ 
+     def get_journal_entry(self, user_id: UUID, entry_id: UUID) -> JournalEntry | None:
+         rows = self._request(
+-            "GET", "journal_entries",
++            "GET",
++            "journal_entries",
+             params={"select": "record", "id": f"eq.{entry_id}", "user_id": f"eq.{user_id}", "limit": 1},
+         )
+         return self._row_model(JournalEntry, rows[0]) if rows else None
+ 
+     def list_journal_entries(
+-        self, user_id: UUID, *, limit: int = 50, offset: int = 0,
++        self,
++        user_id: UUID,
++        *,
++        limit: int = 50,
++        offset: int = 0,
+     ) -> list[JournalEntry]:
+         rows = self._request(
+-            "GET", "journal_entries", params={
+-                "select": "record", "user_id": f"eq.{user_id}", "order": "created_at.desc,id.desc",
+-                "limit": limit, "offset": offset,
++            "GET",
++            "journal_entries",
++            params={
++                "select": "record",
++                "user_id": f"eq.{user_id}",
++                "order": "created_at.desc,id.desc",
++                "limit": limit,
++                "offset": offset,
+             },
+         )
+         return [self._row_model(JournalEntry, row) for row in rows]
+ 
+     def delete_journal_entry(self, user_id: UUID, entry_id: UUID) -> bool:
+         deleted = self._request(
+-            "POST", "rpc/jp_delete_journal_entry",
++            "POST",
++            "rpc/jp_delete_journal_entry",
+             json=self._signed("delete_journal_entry", user_id, {"entry_id": str(entry_id)}),
+         )
+         return self._boolean(deleted)
+@@ -1200,7 +2170,8 @@
+                 table, {**owned, "select": "*", "order": f"{order_column}.asc,id.asc"}
+             )
+         journal_rows = self._select_all(
+-            "journal_entries", {**owned, "select": "record", "order": "created_at.desc,id.desc"},
++            "journal_entries",
++            {**owned, "select": "record", "order": "created_at.desc,id.desc"},
+         )
+         return {
+             "journal_entries": [
+@@ -1214,6 +2185,11 @@
+             ],
+             "conversation_preference_requests": self._select_all(
+                 "conversation_preference_requests",
++                {**owned, "select": "*", "order": "created_at.asc,id.asc"},
++            ),
++            "activity_sessions": [item.storage_payload() for item in self.list_activity_sessions(user_id)],
++            "activity_receipts": self._select_all(
++                "activity_receipts",
+                 {**owned, "select": "*", "order": "created_at.asc,id.asc"},
+             ),
+             **audit,
+@@ -1343,9 +2319,15 @@
+         result = self._request(
+             "POST",
+             "rpc/jp_consume_rate_limit_v2",
+-            json=self._signed("consume_rate_limit", user_id, {
+-                "bucket": bucket, "max_events": limit, "window_seconds": window_seconds,
+-            }),
++            json=self._signed(
++                "consume_rate_limit",
++                user_id,
++                {
++                    "bucket": bucket,
++                    "max_events": limit,
++                    "window_seconds": window_seconds,
++                },
++            ),
+         )
+         receipt = self._object(result)
+         allowed = self._boolean(receipt.get("allowed"))
+@@ -1365,7 +2347,7 @@
+         with managed_http_client(client, timeout=5) as transport:
+             response = transport.post(
+                 # Keep the live reliability API's RPC unchanged during a preview rollout.
+-                f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/jp_readiness_v2",
++                f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/jp_readiness_v3",
+                 headers={
+                     "apikey": settings.supabase_anon_key or "",
+                     "Authorization": f"Bearer {settings.supabase_anon_key or ''}",
+@@ -1393,9 +2375,10 @@
+     return {
+         "database": "reachable",
+         "schema": "schema_ready"
+-        if body.get("schema") == "phase-a-2"
++        if body.get("schema") == "guided-action-1" and body.get("activities") == "ready"
+         else f"schema_outdated:{body.get('schema')}",
+         "signing": signing,
++        "activities": str(body.get("activities", "missing")),
+         "retention_job": str(body.get("retention_job", "unknown")),
+         "retention_state": str(body.get("retention_state", "unknown")),
+         "retention_last_success": str(body.get("retention_last_success", "unknown")),
+--- /dev/null
++++ b/supabase/migrations/202610050001_guided_activity_sessions.sql
+@@ -0,0 +1,414 @@
++-- Additive guided-action storage. Legacy acceptance/readiness/RPC contracts stay
++-- available for production while the preview adopts owner-bound in-chat sessions.
++create unique index conversations_owner_id_activity_idx on public.conversations(user_id,id);
++create table public.activity_sessions (
++  id uuid primary key,
++  user_id uuid not null references auth.users(id) on delete cascade,
++  conversation_id uuid not null,
++  source_entry_id uuid,
++  status text not null check(status in ('offered','active','paused','awaiting_report','completed','stopped','declined')),
++  revision integer not null default 0 check(revision>=0),
++  created_at timestamptz not null,
++  updated_at timestamptz not null,
++  record jsonb not null,
++  foreign key(user_id,conversation_id) references public.conversations(user_id,id) on delete cascade,
++  foreign key(user_id,source_entry_id) references public.journal_entries(user_id,id) on delete cascade,
++  check((record->>'id')::uuid=id),
++  check((record->>'user_id')::uuid=user_id),
++  check((record->>'conversation_id')::uuid=conversation_id),
++  check(record->>'status'=status),
++  check((record->>'revision')::integer=revision),
++  check((record->>'created_at')::timestamptz=created_at),
++  check((record->>'duration_seconds')::integer between 0 and 3600),
++  check((record->>'remaining_seconds')::integer between 0 and 3600),
++  check(record->'selection'->'eligible_for_ope'='false'::jsonb),
++  check(record->'selection'->'propensity'='null'::jsonb)
++);
++create unique index activity_one_nonterminal_idx on public.activity_sessions(user_id,conversation_id)
++  where status in ('offered','active','paused','awaiting_report');
++create index activity_owner_created_idx on public.activity_sessions(user_id,created_at desc,id desc);
++create table public.activity_receipts (
++  id uuid not null,
++  user_id uuid not null references auth.users(id) on delete cascade,
++  session_id uuid not null references public.activity_sessions(id) on delete cascade,
++  operation text not null,
++  request_hash text not null check(request_hash ~ '^[a-f0-9]{64}$'),
++  created_at timestamptz not null default now(),
++  primary key(user_id,id)
++);
++create index activity_receipts_session_idx on public.activity_receipts(session_id);
++alter table public.activity_sessions enable row level security;
++alter table public.activity_receipts enable row level security;
++create policy activity_sessions_owner on public.activity_sessions for select using(auth.uid()=user_id);
++create policy activity_receipts_owner on public.activity_receipts for select using(auth.uid()=user_id);
++revoke all on public.activity_sessions,public.activity_receipts from public,anon,authenticated;
++grant select on public.activity_sessions,public.activity_receipts to authenticated;
++
++create function private.activity_receipt(owner_id uuid,target_id uuid,request_id uuid,operation_name text,request_digest text)
++returns boolean language plpgsql security definer set search_path=private,public as $$
++declare saved public.activity_receipts%rowtype; used integer;
++begin
++  select * into saved from public.activity_receipts where user_id=owner_id and id=request_id;
++  if found then
++    if saved.session_id<>target_id or saved.operation<>operation_name or saved.request_hash<>request_digest then
++      raise exception 'Activity request ID is already in use' using errcode='PT409';
++    end if;
++    return true;
++  end if;
++  select count(*) into used from public.activity_receipts where session_id=target_id;
++  if used >= (case when operation_name in ('start','pause','resume') then 48 else 64 end) then
++    raise exception 'Activity control limit reached; finish the activity to check in' using errcode='PT409';
++  end if;
++  return false;
++end; $$;
++create function private.activity_store_receipt(owner_id uuid,target_id uuid,request_id uuid,operation_name text,request_digest text)
++returns void language sql security definer set search_path=private,public as $$
++  insert into public.activity_receipts(id,user_id,session_id,operation,request_hash)
++  values(request_id,owner_id,target_id,operation_name,request_digest);
++$$;
++
++-- Lock ordering is owned source, parent chat, then session, including deletion and
++-- delayed follow-ups. The API never holds these locks while the model runs.
++create function private.activity_locked_chat(target_id uuid,owner_id uuid)
++returns public.conversations language plpgsql security definer set search_path=private,public as $$
++declare chat public.conversations%rowtype;
++begin
++  select * into chat from public.conversations where id=target_id and user_id=owner_id;
++  if not found then raise exception 'Conversation not found' using errcode='PT404'; end if;
++  if chat.source_entry_id is not null then
++    perform 1 from public.journal_entries where id=chat.source_entry_id and user_id=owner_id
++      and created_at=chat.source_entry_created_at for key share;
++    if not found then raise exception 'Journal entry not found' using errcode='PT404'; end if;
++  end if;
++  select * into chat from public.conversations where id=target_id and user_id=owner_id for update;
++  if not found then raise exception 'Conversation not found' using errcode='PT404'; end if;
++  return chat;
++end; $$;
++create function private.activity_guard(chat public.conversations,chat_revision integer,allow_support boolean,allow_listen boolean)
++returns void language plpgsql security definer set search_path=private,public as $$
++begin
++  if chat.status<>'open' or chat.updated_at<now()-interval '24 hours' then
++    raise exception 'Conversation is closed' using errcode='PT409'; end if;
++  if chat.revision<>chat_revision then raise exception 'Conversation changed' using errcode='PT409'; end if;
++  if not allow_support and chat.record->>'safety_mode'='support' then
++    raise exception 'Support mode pauses ordinary activities' using errcode='PT409';
++  end if;
++  if not allow_listen and chat.record->>'activity_move'='pause' then
++    raise exception 'This chat has paused activities' using errcode='PT409';
++  end if;
++  if not allow_listen and chat.record->>'interaction_preference'='listen' then
++    raise exception 'This chat is set to Just talk' using errcode='PT409';
++  end if;
++end; $$;
++
++create function public.jp_offer_activity_v1(payload text,signature text)
++returns jsonb language plpgsql security definer set search_path=private,public as $$
++declare
++  body jsonb:=private.verified_payload(payload,signature,'offer_activity');
++  owner_id uuid:=auth.uid(); offered jsonb:=body->'session'; target_id uuid:=(offered->>'id')::uuid;
++  request_id uuid:=(body->>'request_id')::uuid; chat public.conversations%rowtype;
++  saved public.activity_sessions%rowtype; pending public.activity_sessions%rowtype; fresh jsonb;
++begin
++  chat:=private.activity_locked_chat((offered->>'conversation_id')::uuid,owner_id);
++  perform pg_advisory_xact_lock(hashtextextended('activity:'||target_id::text,0));
++  select * into saved from public.activity_sessions where id=target_id;
++  if found then
++    if saved.user_id<>owner_id or saved.conversation_id<>chat.id then
++      raise exception 'Activity request ID is already in use' using errcode='PT409';
++    end if;
++    if private.activity_receipt(owner_id,target_id,request_id,'offer',body->>'request_hash') then return saved.record; end if;
++  end if;
++  perform private.activity_guard(chat,(body->>'expected_conversation_revision')::integer,false,false);
++  if (offered->>'user_id')::uuid is distinct from owner_id
++     or (offered->>'source_entry_id')::uuid is distinct from chat.source_entry_id then
++    raise exception 'Activity source changed' using errcode='PT409';
++  end if;
++  if (select count(*) from public.conversation_messages where conversation_id=chat.id and user_id=owner_id and role='user')>=20
++     or (select count(*) from public.activity_sessions where conversation_id=chat.id and user_id=owner_id)>=20 then
++    raise exception 'This chat has reached its activity limit' using errcode='PT409';
++  end if;
++  if offered->'selection'->'eligible_for_ope' is distinct from 'false'::jsonb
++     or offered->'selection'->'propensity' is distinct from 'null'::jsonb
++     or (offered->>'duration_seconds')::integer not between 0 and 3600 then
++    raise exception 'Invalid activity provenance' using errcode='PT400';
++  end if;
++  select * into pending from public.activity_sessions where user_id=owner_id and conversation_id=chat.id
++    and status in ('offered','active','paused','awaiting_report') for update;
++  if found then
++    if pending.status<>'offered' then
++      raise exception 'Finish or stop the current activity before starting another' using errcode='PT409';
++    end if;
++    update public.activity_sessions set status='declined',revision=revision+1,updated_at=now(),
++      record=record||jsonb_build_object('status','declined','revision',revision+1,'updated_at',now()) where id=pending.id;
++  end if;
++  fresh:=(offered-'server_now'-'conversation_revision')||jsonb_build_object(
++    'status','offered','revision',0,'created_at',now(),'updated_at',now());
++  insert into public.activity_sessions(id,user_id,conversation_id,source_entry_id,status,revision,created_at,updated_at,record)
++  values(target_id,owner_id,chat.id,chat.source_entry_id,'offered',0,now(),now(),fresh);
++  perform private.activity_store_receipt(owner_id,target_id,request_id,'offer',body->>'request_hash');
++  return fresh;
++end; $$;
++
++create function public.jp_activity_command_v1(payload text,signature text)
++returns jsonb language plpgsql security definer set search_path=private,public as $$
++declare
++  body jsonb:=private.verified_payload(payload,signature,'activity_command'); owner_id uuid:=auth.uid();
++  target_id uuid:=(body->>'session_id')::uuid; request jsonb:=body->'request';
++  request_id uuid:=(request->>'client_request_id')::uuid; operation_name text:=request->>'command';
++  chat public.conversations%rowtype; saved public.activity_sessions%rowtype; changed jsonb; next_status text;
++  remaining integer; deadline timestamptz;
++begin
++  select * into saved from public.activity_sessions where id=target_id and user_id=owner_id;
++  if not found then raise exception 'Activity not found' using errcode='PT404'; end if;
++  chat:=private.activity_locked_chat(saved.conversation_id,owner_id);
++  select * into saved from public.activity_sessions where id=target_id and user_id=owner_id for update;
++  if not found then raise exception 'Activity not found' using errcode='PT404'; end if;
++  if private.activity_receipt(owner_id,target_id,request_id,operation_name,body->>'request_hash') then return saved.record; end if;
++  perform private.activity_guard(chat,(request->>'expected_conversation_revision')::integer,false,operation_name in ('stop','decline'));
++  if saved.revision<>(request->>'expected_revision')::integer then
++    raise exception 'Activity changed' using errcode='PT409';
++  end if;
++  changed:=saved.record; next_status:=saved.status; remaining:=(changed->>'remaining_seconds')::integer;
++  deadline:=(changed->>'expires_at')::timestamptz;
++  if saved.status='active' and deadline is not null then
++    remaining:=least((changed->>'duration_seconds')::integer,greatest(0,ceil(extract(epoch from deadline-now()))::integer));
++  end if;
++  if operation_name='start' and saved.status='offered' then
++    if (select count(*) from public.conversation_messages where conversation_id=chat.id and user_id=owner_id and role='user')>=20 then
++      raise exception 'This chat has reached its activity limit' using errcode='PT409';
++    end if;
++    next_status:='active'; changed:=changed||jsonb_build_object('started_at',now());
++    if changed->'resource'->>'format'='timer' then deadline:=now()+make_interval(secs=>remaining); end if;
++  elsif operation_name='pause' and saved.status='active' and changed->'resource'->>'format'='timer' then
++    next_status:=case when remaining=0 then 'awaiting_report' else 'paused' end; deadline:=null;
++    if remaining=0 then changed:=changed||jsonb_build_object('check_in_issued',true); end if;
++  elsif operation_name='resume' and saved.status='paused' then
++    next_status:='active'; deadline:=now()+make_interval(secs=>remaining);
++  elsif operation_name='expire' and saved.status='active' and deadline is not null then
++    if now()<deadline then raise exception 'The timer has not finished yet' using errcode='PT409'; end if;
++    next_status:='awaiting_report'; remaining:=0; deadline:=null;
++    changed:=changed||jsonb_build_object('check_in_issued',true);
++  elsif operation_name='finish_early' and saved.status in ('active','paused') then
++    next_status:='awaiting_report'; deadline:=null; changed:=changed||jsonb_build_object('check_in_issued',true);
++  elsif operation_name='decline' and saved.status='offered' then
++    next_status:='declined'; deadline:=null;
++  elsif operation_name='stop' and saved.status in ('offered','active','paused','awaiting_report') then
++    next_status:='stopped'; deadline:=null;
++    changed:=changed||jsonb_build_object('check_in_issued',changed->>'started_at' is not null);
++  else raise exception 'This activity changed; refresh before trying again' using errcode='PT409'; end if;
++  changed:=changed||jsonb_build_object('status',next_status,'remaining_seconds',remaining,'expires_at',deadline,
++    'revision',saved.revision+1,'updated_at',now());
++  update public.activity_sessions set status=next_status,revision=saved.revision+1,updated_at=now(),record=changed where id=target_id;
++  perform private.activity_store_receipt(owner_id,target_id,request_id,operation_name,body->>'request_hash');
++  return changed;
++end; $$;
++
++create function public.jp_report_activity_v1(payload text,signature text)
++returns jsonb language plpgsql security definer set search_path=private,public as $$
++declare
++  body jsonb:=private.verified_payload(payload,signature,'report_activity'); owner_id uuid:=auth.uid();
++  target_id uuid:=(body->>'session_id')::uuid; request jsonb:=body->'request'; report jsonb;
++  request_id uuid:=(request->>'client_request_id')::uuid; chat public.conversations%rowtype;
++  saved public.activity_sessions%rowtype; changed jsonb; next_status text; support jsonb:=body->'safety';
++begin
++  select * into saved from public.activity_sessions where id=target_id and user_id=owner_id;
++  if not found then raise exception 'Activity not found' using errcode='PT404'; end if;
++  chat:=private.activity_locked_chat(saved.conversation_id,owner_id);
++  select * into saved from public.activity_sessions where id=target_id and user_id=owner_id for update;
++  if not found then raise exception 'Activity not found' using errcode='PT404'; end if;
++  if private.activity_receipt(owner_id,target_id,request_id,'report',body->>'request_hash') then return saved.record; end if;
++  perform private.activity_guard(chat,(request->>'expected_conversation_revision')::integer,true,true);
++  if saved.revision<>(request->>'expected_revision')::integer then raise exception 'Activity changed' using errcode='PT409'; end if;
++  if saved.status not in ('awaiting_report','stopped') or saved.record->>'report' is not null or saved.record->>'started_at' is null then
++    raise exception 'This activity is not awaiting a report' using errcode='PT409';
++  end if;
++  report:=request-'client_request_id'-'expected_revision'-'expected_conversation_revision';
++  if report->>'participation' not in ('completed','partial','not_tried','stopped')
++     or length(coalesce(report->>'note',''))>1000 then raise exception 'Invalid activity report' using errcode='PT400'; end if;
++  next_status:=case when report->>'participation'='stopped' then 'stopped' else 'completed' end;
++  changed:=saved.record||jsonb_build_object('status',next_status,'report',report,'reported_at',now(),
++    'follow_up_status','pending','expires_at',null,'revision',saved.revision+1,'updated_at',now());
++  update public.activity_sessions set status=next_status,revision=saved.revision+1,updated_at=now(),record=changed where id=target_id;
++  perform private.activity_store_receipt(owner_id,target_id,request_id,'report',body->>'request_hash');
++  if support->>'mode'='support' and chat.record->>'safety_mode'<>'support' then
++    update public.conversations set revision=revision+1,updated_at=now(),record=record||jsonb_build_object(
++      'safety_mode','support','safety',support,'card',null,'activity_card',null,'ready_for_action',false,'revision',revision+1,'updated_at',now()) where id=chat.id;
++    select record into changed from public.activity_sessions where id=target_id;
++  end if;
++  return changed;
++end; $$;
++
++create function public.jp_claim_activity_followup_v1(payload text,signature text)
++returns jsonb language plpgsql security definer set search_path=private,public as $$
++declare
++  body jsonb:=private.verified_payload(payload,signature,'claim_activity_follow_up'); owner_id uuid:=auth.uid();
++  target_id uuid:=(body->>'session_id')::uuid; request jsonb:=body->'request';
++  request_id uuid:=(request->>'client_request_id')::uuid; chat public.conversations%rowtype;
++  saved public.activity_sessions%rowtype; replay boolean; changed jsonb; is_final boolean;
++begin
++  select * into saved from public.activity_sessions where id=target_id and user_id=owner_id;
++  if not found then raise exception 'Activity not found' using errcode='PT404'; end if;
++  chat:=private.activity_locked_chat(saved.conversation_id,owner_id);
++  select * into saved from public.activity_sessions where id=target_id and user_id=owner_id for update;
++  if not found then raise exception 'Activity not found' using errcode='PT404'; end if;
++  replay:=private.activity_receipt(owner_id,target_id,request_id,'follow_up',body->>'request_hash');
++  if saved.record->>'follow_up_status'='ready' or (saved.record->>'follow_up_status'='generating'
++     and (saved.record->>'follow_up_lease_until')::timestamptz>now()) then
++    return jsonb_build_object('session',saved.record,'claimed',false);
++  end if;
++  perform private.activity_guard(chat,(request->>'expected_conversation_revision')::integer,true,true);
++  if not replay and saved.revision<>(request->>'expected_revision')::integer then
++    raise exception 'Activity changed' using errcode='PT409'; end if;
++  if saved.record->>'report' is null or (saved.record->>'follow_up_attempts')::integer>=3 then
++    raise exception 'The saved check-in has no available follow-up attempt' using errcode='PT409'; end if;
++  select count(*)>=20 into is_final from public.conversation_messages where conversation_id=chat.id and user_id=owner_id and role='user';
++  if is_final and exists(select 1 from public.activity_sessions where conversation_id=chat.id and user_id=owner_id
++    and id<>target_id and (record->>'final_follow_up')::boolean) then
++    raise exception 'This chat has reached its final check-in response' using errcode='PT409'; end if;
++  changed:=saved.record||jsonb_build_object('follow_up_status','generating','follow_up_request_id',request_id,
++    'follow_up_lease_until',now()+interval '90 seconds','follow_up_attempts',(saved.record->>'follow_up_attempts')::integer+1,
++    'final_follow_up',is_final or (saved.record->>'final_follow_up')::boolean,'revision',saved.revision+1,'updated_at',now());
++  update public.activity_sessions set revision=saved.revision+1,updated_at=now(),record=changed where id=target_id;
++  if not replay then perform private.activity_store_receipt(owner_id,target_id,request_id,'follow_up',body->>'request_hash'); end if;
++  return jsonb_build_object('session',changed,'claimed',true);
++end; $$;
++
++create function public.jp_finish_activity_followup_v1(payload text,signature text)
++returns jsonb language plpgsql security definer set search_path=private,public as $$
++declare
++  body jsonb:=private.verified_payload(payload,signature,'finish_activity_follow_up'); owner_id uuid:=auth.uid();
++  target_id uuid:=(body->>'session_id')::uuid; request_id uuid:=(body->>'request_id')::uuid;
++  chat public.conversations%rowtype; saved public.activity_sessions%rowtype; changed jsonb; assistant jsonb:=body->'assistant_message';
++  directive jsonb:=body->'directive';
++begin
++  select * into saved from public.activity_sessions where id=target_id and user_id=owner_id;
++  if not found then raise exception 'Activity not found' using errcode='PT404'; end if;
++  chat:=private.activity_locked_chat(saved.conversation_id,owner_id);
++  select * into saved from public.activity_sessions where id=target_id and user_id=owner_id for update;
++  if not found then raise exception 'Activity not found' using errcode='PT404'; end if;
++  if saved.created_at is distinct from (body->>'expected_session_created_at')::timestamptz then
++    raise exception 'Activity changed' using errcode='PT409'; end if;
++  if saved.record->>'follow_up_status'='ready' and (saved.record->>'follow_up_request_id')::uuid=request_id then return saved.record; end if;
++  perform private.activity_guard(chat,(body->>'expected_conversation_revision')::integer,true,true);
++  if saved.revision<>(body->>'expected_revision')::integer or saved.record->>'follow_up_status'<>'generating'
++     or (saved.record->>'follow_up_request_id')::uuid is distinct from request_id then
++    raise exception 'This follow-up changed' using errcode='PT409'; end if;
++  if assistant->>'content' is null then
++    changed:=saved.record||jsonb_build_object('follow_up_status','failed','follow_up_lease_until',null,
++      'revision',saved.revision+1,'updated_at',now());
++  else
++    if assistant->>'role'<>'assistant' or (assistant->>'conversation_id')::uuid is distinct from chat.id
++       or length(assistant->>'content') not between 1 and 1200 then
++      raise exception 'Invalid activity follow-up' using errcode='PT400'; end if;
++    if directive is not null and directive<>'null'::jsonb
++       and (directive->>'card' is not null or directive->>'search_topic' is not null)
++       and ((saved.record->>'final_follow_up')::boolean or chat.record->>'safety_mode'='support'
++         or chat.record->>'interaction_preference'='listen'
++         or (select count(*) from public.conversation_messages where user_id=owner_id and conversation_id=chat.id and role='user')>=20) then
++      raise exception 'This check-in cannot offer another activity' using errcode='PT409'; end if;
++    -- No user message is synthesized. The one outcome reply has a distinct UUID
++    -- and cannot become another route around the ordinary 20-user-message cap.
++    insert into public.conversation_messages(id,conversation_id,user_id,client_message_id,role,created_at,record)
++    values((assistant->>'id')::uuid,chat.id,owner_id,null,'assistant',now(),assistant||jsonb_build_object('created_at',now()));
++    update public.conversations set revision=revision+1,updated_at=now(),record=record||jsonb_build_object(
++      'revision',revision+1,'updated_at',now())
++      || case when directive is null or directive='null'::jsonb then '{}'::jsonb else jsonb_build_object(
++        'card',null,'activity_card',case when directive->>'card' is null then 'null'::jsonb else directive->'card'||jsonb_build_object('offered_message_id',assistant->>'id') end,'activity_constraints',coalesce(nullif(directive->'constraints','null'::jsonb),record->'activity_constraints'),
++        'activity_goal',coalesce(nullif(directive->'goal','null'::jsonb),record->'activity_goal'),
++        'activity_search_topic',directive->'search_topic','activity_move',directive->'move',
++        'ready_for_action',directive->>'card' is not null) end where id=chat.id;
++    changed:=saved.record||jsonb_build_object('follow_up_status','ready','follow_up_reply',null,
++      'follow_up_model_run',assistant->'model_run','follow_up_message_id',assistant->>'id','follow_up_lease_until',null,
++      'revision',saved.revision+1,'updated_at',now());
++  end if;
++  update public.activity_sessions set revision=saved.revision+1,updated_at=now(),record=changed where id=target_id;
++  return changed;
++end; $$;
++
++-- New LLM cards use a versioned extra field. Old deployed models ignore it;
++-- their original card/PolicyDecision still has a real nonnull propensity.
++create function private.guard_guided_activity_card()
++returns trigger language plpgsql security definer set search_path=private,public as $$
++begin
++  if new.record->'card'->'decision_preview'->>'propensity' is null
++     and new.record->'card'->'decision_preview'->'eligible_for_ope'='false'::jsonb then
++    raise exception 'Guided Luna cards must use the additive activity card field' using errcode='PT400';
++  end if;
++  if new.status='closed' or new.record->>'safety_mode'='support'
++     or new.record->>'interaction_preference'='listen' or new.record->>'activity_move'='pause' then
++    new.record:=new.record||jsonb_build_object('activity_card',null);
++  end if;
++  return new;
++end; $$;
++create trigger conversation_guided_card_compatibility before insert or update on public.conversations
++  for each row execute function private.guard_guided_activity_card();
++
++-- Existing close/sweep/accept RPCs all update the conversation, so this additive
++-- trigger gives them the new lifecycle without changing their deployed signature.
++create function private.invalidate_conversation_activities()
++returns trigger language plpgsql security definer set search_path=private,public as $$
++declare target public.activity_sessions%rowtype; changed jsonb; clear_text boolean;
++begin
++  if new.status='closed' or (new.record->>'safety_mode'='support' and old.record->>'safety_mode' is distinct from 'support')
++     or (new.record->>'interaction_preference'='listen' and old.record->>'interaction_preference' is distinct from 'listen')
++     or (new.record->>'activity_move'='pause' and old.record->>'activity_move' is distinct from 'pause') then
++    clear_text:=new.status='closed' and not coalesce((new.record->>'retain_text')::boolean,false);
++    for target in select * from public.activity_sessions where conversation_id=new.id and user_id=new.user_id for update loop
++      changed:=target.record||jsonb_build_object('expires_at',null,'check_in_issued',false,'follow_up_request_id',null,'follow_up_lease_until',null,
++        'revision',target.revision+1,'updated_at',now());
++      if target.status in ('offered','active','paused','awaiting_report') then changed:=changed||jsonb_build_object('status','stopped'); end if;
++      if target.record->>'follow_up_status' in ('pending','generating') then changed:=changed||jsonb_build_object('follow_up_status','failed'); end if;
++      if clear_text then
++        changed:=changed||jsonb_build_object('recommendation_reason',null,'follow_up_reply',null);
++        if target.record->>'report' is not null then changed:=changed||jsonb_build_object('report',(target.record->'report')||jsonb_build_object('note',null)); end if;
++      end if;
++      update public.activity_sessions set status=changed->>'status',revision=target.revision+1,updated_at=now(),record=changed where id=target.id;
++    end loop;
++    if clear_text then delete from public.activity_receipts where session_id in(select id from public.activity_sessions where conversation_id=new.id); end if;
++  end if;
++  return new;
++end; $$;
++create trigger conversation_activity_lifecycle after update on public.conversations
++  for each row execute function private.invalidate_conversation_activities();
++
++create or replace function public.delete_my_journalpulse_data()
++returns integer language plpgsql security definer set search_path=private,public as $$
++declare owner_id uuid:=auth.uid(); deleted_count integer:=0; affected integer; table_name text;
++begin
++  if owner_id is null then raise exception 'Authentication required' using errcode='PT401'; end if;
++  foreach table_name in array array[
++    'activity_receipts','activity_sessions','outcomes','affective_observations','policy_decisions','model_runs','safety_events',
++    'conversation_messages','conversation_preference_requests','episodic_memories','reflections','conversations',
++    'journal_entries','consents','profiles'
++  ] loop
++    execute format('delete from public.%I where user_id=$1',table_name) using owner_id;
++    get diagnostics affected=row_count; deleted_count:=deleted_count+affected;
++  end loop;
++  return deleted_count;
++end; $$;
++
++create function public.jp_readiness_v3(probe text,signature text)
++returns jsonb language plpgsql stable security definer set search_path=private,public as $$
++declare result jsonb; activity_ready boolean;
++begin
++  result:=public.jp_readiness_v2(probe,signature);
++  activity_ready:=to_regprocedure('public.jp_offer_activity_v1(text,text)') is not null
++    and to_regprocedure('public.jp_finish_activity_followup_v1(text,text)') is not null
++    and exists(select 1 from pg_trigger where tgname='conversation_activity_lifecycle' and not tgisinternal)
++    and exists(select 1 from pg_trigger where tgname='conversation_guided_card_compatibility' and not tgisinternal);
++  return result||jsonb_build_object('schema','guided-action-1','activities',case when activity_ready then 'ready' else 'missing' end);
++end; $$;
++
++revoke all on function private.activity_receipt(uuid,uuid,uuid,text,text),
++  private.activity_store_receipt(uuid,uuid,uuid,text,text),private.activity_locked_chat(uuid,uuid),
++  private.activity_guard(public.conversations,integer,boolean,boolean),private.invalidate_conversation_activities(),
++  private.guard_guided_activity_card()
++  from public,anon,authenticated;
++revoke all on function public.jp_offer_activity_v1(text,text),public.jp_activity_command_v1(text,text),
++  public.jp_report_activity_v1(text,text),public.jp_claim_activity_followup_v1(text,text),
++  public.jp_finish_activity_followup_v1(text,text),public.jp_readiness_v3(text,text)
++  from public,anon,authenticated;
++grant execute on function public.jp_offer_activity_v1(text,text),public.jp_activity_command_v1(text,text),
++  public.jp_report_activity_v1(text,text),public.jp_claim_activity_followup_v1(text,text),
++  public.jp_finish_activity_followup_v1(text,text) to authenticated;
++grant execute on function public.jp_readiness_v3(text,text) to anon,authenticated;
+--- /dev/null
++++ b/tests/test_activity_sessions_repository.py
+@@ -0,0 +1,447 @@
++"""Behavioral boundaries for the additive in-chat lifecycle, with injected time."""
++
++from concurrent.futures import ThreadPoolExecutor
++from datetime import UTC, datetime, timedelta
++from pathlib import Path
++from uuid import UUID, uuid4
++
++import pytest
++
++from journalpulse.activity_lifecycle import ActivityConflict, ActivityNotFound
++from journalpulse.activity_models import (
++    ActivityCommandRequest,
++    ActivityFollowUpRequest,
++    ActivityReportRequest,
++    ActivityResource,
++    ActivitySelectionProvenance,
++    ActivitySession,
++    ActivityStatus,
++)
++from journalpulse.domain import (
++    ActionCard,
++    ActivityFollowUpDirective,
++    Conversation,
++    Goal,
++    InteractionPreference,
++    ModelRun,
++    PolicyDecision,
++    SafetyMode,
++)
++from journalpulse.journal_models import JournalEntry
++from journalpulse.persistence import ConversationClosed, ConversationStale, SQLiteRepository
++from journalpulse.safety import assess_safety
++
++OWNER = UUID("00000000-0000-4000-8000-000000000001")
++OTHER = UUID("00000000-0000-4000-8000-000000000002")
++NOW = datetime(2026, 10, 5, 12, tzinfo=UTC)
++
++
++def setup(tmp_path: Path, *, source: bool = False, retain: bool = False):
++    repo = SQLiteRepository(tmp_path / "activity.db")
++    entry = (
++        repo.save_journal_entry(JournalEntry(user_id=OWNER, text="Fictional source", created_at=NOW))
++        if source
++        else None
++    )
++    chat = repo.create_conversation(
++        Conversation(
++            user_id=OWNER,
++            llm_consent=True,
++            locale="CA",
++            prompt_version="test",
++            created_at=NOW,
++            updated_at=NOW,
++            retain_text=retain,
++            source_entry_id=entry.id if entry else None,
++            source_entry_created_at=entry.created_at if entry else None,
++        )
++    )
++    session = ActivitySession(
++        user_id=OWNER,
++        conversation_id=chat.id,
++        source_entry_id=chat.source_entry_id,
++        resource=ActivityResource(
++            id="guided_meditation_2m",
++            title="Quiet pause",
++            format="timer",
++            kind="meditation",
++            duration_seconds=120,
++            provenance="builtin",
++        ),
++        selection=ActivitySelectionProvenance(
++            selection_source="llm",
++            recommended_resource_id="guided_meditation_2m",
++            selected_resource_id="guided_meditation_2m",
++        ),
++        duration_seconds=120,
++        remaining_seconds=120,
++        recommendation_reason="Private situation fit.",
++    )
++    offered = repo.offer_activity_session(
++        session, request_id=session.id, expected_conversation_revision=0, now=NOW
++    )
++    return repo, chat, offered, entry
++
++
++def command(repo, session, name, moment=NOW, request_id=None, chat_revision=0):
++    request = ActivityCommandRequest(
++        client_request_id=request_id or uuid4(),
++        expected_revision=session.revision,
++        expected_conversation_revision=chat_revision,
++        command=name,
++    )
++    return repo.command_activity_session(OWNER, session.id, request, now=moment), request
++
++
++def awaiting(repo, session):
++    active, _ = command(repo, session, "start")
++    return command(repo, active, "expire", NOW + timedelta(seconds=120))[0]
++
++
++def report(repo, session, *, note="Private outcome.", participation="partial", safety=None, chat_revision=0):
++    request = ActivityReportRequest(
++        client_request_id=uuid4(),
++        expected_revision=session.revision,
++        expected_conversation_revision=chat_revision,
++        participation=participation,
++        state_change="same",
++        fit="mixed",
++        note=note,
++    )
++    saved = repo.report_activity_session(
++        OWNER, session.id, request, now=NOW + timedelta(seconds=121), safety=safety
++    )
++    return saved, request
++
++
++def test_pause_resume_uses_authoritative_deadline_and_keeps_chat_open(tmp_path):
++    repo, chat, offered, _ = setup(tmp_path)
++    active, start_request = command(repo, offered, "start")
++    assert active.expires_at == NOW + timedelta(seconds=120)
++    assert (
++        repo.command_activity_session(OWNER, active.id, start_request, now=NOW + timedelta(seconds=12))
++        == active
++    )
++    paused, _ = command(repo, active, "pause", NOW + timedelta(seconds=30.2))
++    assert paused.remaining_seconds == 90
++    resumed, _ = command(repo, paused, "resume", NOW + timedelta(seconds=80))
++    assert resumed.expires_at == NOW + timedelta(seconds=170)
++    with pytest.raises(ActivityConflict, match="not finished"):
++        command(repo, resumed, "expire", NOW + timedelta(seconds=169))
++    expired, expiry = command(repo, resumed, "expire", NOW + timedelta(seconds=171))
++    assert expired.status == ActivityStatus.AWAITING_REPORT
++    assert expired.check_in_issued and expired.report is None
++    assert (
++        repo.command_activity_session(OWNER, expired.id, expiry, now=NOW + timedelta(seconds=190)) == expired
++    )
++    assert repo.get_conversation(OWNER, chat.id).status == "open"
++    assert repo.get_conversation(OWNER, chat.id).revision == 0
++    assert expired.selection.propensity is None and not expired.selection.eligible_for_ope
++
++
++def test_two_instances_accept_one_pause_and_request_id_conflict_changes_nothing(tmp_path):
++    repo, _, offered, _ = setup(tmp_path)
++    active, _ = command(repo, offered, "start")
++    second = SQLiteRepository(repo.path)
++    request = ActivityCommandRequest(
++        client_request_id=uuid4(),
++        expected_revision=active.revision,
++        expected_conversation_revision=0,
++        command="pause",
++    )
++    with ThreadPoolExecutor(max_workers=2) as pool:
++        receipts = list(
++            pool.map(
++                lambda adapter: adapter.command_activity_session(
++                    OWNER, active.id, request, now=NOW + timedelta(seconds=20)
++                ),
++                [repo, second],
++            )
++        )
++    assert receipts[0] == receipts[1]
++    assert receipts[0].revision == 2
++    with pytest.raises(ActivityConflict, match="already in use"):
++        repo.command_activity_session(
++            OWNER, active.id, request.model_copy(update={"command": "stop"}), now=NOW
++        )
++    assert repo.get_activity_session(OTHER, active.id) is None
++    with pytest.raises(ActivityNotFound):
++        repo.command_activity_session(OTHER, active.id, request, now=NOW)
++
++
++def test_report_is_saved_once_and_failed_model_retry_does_not_duplicate_outcome(tmp_path):
++    repo, chat, offered, _ = setup(tmp_path)
++    saved, report_request = report(repo, awaiting(repo, offered))
++    assert saved.report.participation == "partial"
++    assert repo.list_outcomes(OWNER) == [], "partial must not become a legacy completed=true outcome"
++    assert repo.report_activity_session(OWNER, saved.id, report_request, now=NOW) == saved
++    request = ActivityFollowUpRequest(
++        client_request_id=uuid4(), expected_revision=saved.revision, expected_conversation_revision=0
++    )
++    claimed, owns = repo.claim_activity_follow_up(OWNER, saved.id, request, now=NOW + timedelta(seconds=122))
++    assert owns
++    duplicate, owns = repo.claim_activity_follow_up(
++        OWNER, saved.id, request, now=NOW + timedelta(seconds=123)
++    )
++    assert not owns and duplicate == claimed
++    failed = repo.finish_activity_follow_up(
++        OWNER,
++        saved.id,
++        request_id=request.client_request_id,
++        expected_revision=claimed.revision,
++        expected_conversation_revision=0,
++        expected_session_created_at=claimed.created_at,
++        reply=None,
++        model_run=None,
++        now=NOW + timedelta(seconds=124),
++    )
++    assert failed.report == saved.report
++    retried, owns = repo.claim_activity_follow_up(OWNER, saved.id, request, now=NOW + timedelta(seconds=125))
++    assert owns and retried.follow_up_attempts == 2
++    ready = repo.finish_activity_follow_up(
++        OWNER,
++        saved.id,
++        request_id=request.client_request_id,
++        expected_revision=retried.revision,
++        expected_conversation_revision=0,
++        expected_session_created_at=retried.created_at,
++        reply="It stayed the same; we can leave it here.",
++        model_run=ModelRun(model="fixture", latency_ms=1, schema_valid=True),
++        now=NOW + timedelta(seconds=126),
++    )
++    assert ready.follow_up_status == "ready"
++    assert len(repo.list_messages(OWNER, chat.id)) == 1
++    assert repo.get_conversation(OWNER, chat.id).revision == 1
++    assert (
++        repo.finish_activity_follow_up(
++            OWNER,
++            saved.id,
++            request_id=request.client_request_id,
++            expected_revision=retried.revision,
++            expected_conversation_revision=0,
++            expected_session_created_at=retried.created_at,
++            reply="A duplicate reply",
++            model_run=None,
++            now=NOW,
++        )
++        == ready
++    )
++    assert len(repo.list_messages(OWNER, chat.id)) == 1
++
++
++def test_listen_invalidates_generation_and_close_clears_unretained_outcome_text(tmp_path):
++    repo, chat, offered, _ = setup(tmp_path)
++    saved, _ = report(repo, awaiting(repo, offered))
++    request = ActivityFollowUpRequest(
++        client_request_id=uuid4(), expected_revision=saved.revision, expected_conversation_revision=0
++    )
++    claimed, _ = repo.claim_activity_follow_up(OWNER, saved.id, request, now=NOW)
++    repo.change_preference(
++        OWNER,
++        chat.id,
++        request_id=uuid4(),
++        preference=InteractionPreference.LISTEN,
++        expected_revision=0,
++        now=NOW,
++    )
++    with pytest.raises(ConversationStale):
++        repo.finish_activity_follow_up(
++            OWNER,
++            saved.id,
++            request_id=request.client_request_id,
++            expected_revision=claimed.revision,
++            expected_conversation_revision=0,
++            expected_session_created_at=claimed.created_at,
++            reply="stale",
++            model_run=None,
++            now=NOW,
++        )
++    repo.close_conversation(OWNER, chat.id)
++    exported = repo.export_user_data(OWNER)
++    session = exported["activity_sessions"][0]
++    assert session["report"]["note"] is None
++    assert session["recommendation_reason"] is None and session.get("follow_up_reply") is None
++    assert exported["activity_receipts"] == []
++
++
++def test_deleted_source_cascades_and_pending_reply_cannot_recreate_it(tmp_path):
++    repo, chat, offered, entry = setup(tmp_path, source=True)
++    saved, _ = report(repo, awaiting(repo, offered))
++    request = ActivityFollowUpRequest(
++        client_request_id=uuid4(), expected_revision=saved.revision, expected_conversation_revision=0
++    )
++    claimed, _ = repo.claim_activity_follow_up(OWNER, saved.id, request, now=NOW)
++    assert repo.delete_journal_entry(OWNER, entry.id)
++    assert repo.list_activity_sessions(OWNER) == []
++    assert repo.export_user_data(OWNER)["activity_receipts"] == []
++    with pytest.raises(ActivityNotFound):
++        repo.finish_activity_follow_up(
++            OWNER,
++            saved.id,
++            request_id=request.client_request_id,
++            expected_revision=claimed.revision,
++            expected_conversation_revision=0,
++            expected_session_created_at=claimed.created_at,
++            reply="deleted text",
++            model_run=None,
++            now=NOW,
++        )
++
++
++def test_current_risk_in_report_is_sticky_before_any_followup_and_cannot_clear(tmp_path):
++    repo, chat, offered, _ = setup(tmp_path)
++    note = "I plan to kill myself tonight."
++    saved, _ = report(repo, awaiting(repo, offered), note=note, safety=assess_safety(note))
++    assert saved.report.note == note
++    assert repo.get_conversation(OWNER, chat.id).safety_mode == SafetyMode.SUPPORT
++    assert repo.get_conversation(OWNER, chat.id).revision == 1
++
++
++def test_new_offer_supersedes_only_unstarted_offer(tmp_path):
++    repo, chat, first, _ = setup(tmp_path)
++    newer = first.model_copy(update={"id": uuid4()})
++    second = repo.offer_activity_session(
++        newer, request_id=newer.id, expected_conversation_revision=0, now=NOW
++    )
++    assert repo.get_activity_session(OWNER, first.id).status == ActivityStatus.DECLINED
++    active, _ = command(repo, second, "start")
++    with pytest.raises(ActivityConflict, match="Finish or stop"):
++        repo.offer_activity_session(
++            newer.model_copy(update={"id": uuid4()}),
++            request_id=uuid4(),
++            expected_conversation_revision=0,
++            now=NOW,
++        )
++    stopped, _ = command(repo, active, "stop")
++    saved, _ = report(repo, stopped, participation="stopped")
++    assert saved.status == ActivityStatus.STOPPED
++
++
++def test_started_activity_cannot_resurrect_an_idle_chat(tmp_path):
++    repo, chat, offered, _ = setup(tmp_path)
++    active, _ = command(repo, offered, "start")
++    with pytest.raises(ConversationClosed):
++        command(repo, active, "expire", NOW + timedelta(hours=24, seconds=1))
++    assert repo.get_activity_session(OWNER, active.id).report is None
++    assert repo.close_stale_conversations(OWNER, now=NOW + timedelta(hours=25)) == 1
++    assert repo.get_activity_session(OWNER, active.id).status == ActivityStatus.STOPPED
++
++
++def test_followup_attempts_are_bounded_without_losing_the_report(tmp_path):
++    repo, chat, offered, _ = setup(tmp_path)
++    saved, _ = report(repo, awaiting(repo, offered))
++    request = ActivityFollowUpRequest(
++        client_request_id=uuid4(), expected_revision=saved.revision, expected_conversation_revision=0
++    )
++    for attempt in range(3):
++        claimed, owns = repo.claim_activity_follow_up(OWNER, saved.id, request, now=NOW)
++        assert owns and claimed.follow_up_attempts == attempt + 1
++        repo.finish_activity_follow_up(
++            OWNER,
++            saved.id,
++            request_id=request.client_request_id,
++            expected_revision=claimed.revision,
++            expected_conversation_revision=0,
++            expected_session_created_at=claimed.created_at,
++            reply=None,
++            model_run=None,
++            now=NOW,
++        )
++    with pytest.raises(ActivityConflict, match="no available"):
++        repo.claim_activity_follow_up(OWNER, saved.id, request, now=NOW)
++    assert repo.get_activity_session(OWNER, saved.id).report == saved.report
++
++
++def test_delayed_followup_cannot_commit_into_recreated_ids(tmp_path):
++    repo, chat, offered, source = setup(tmp_path, source=True)
++    saved, _ = report(repo, awaiting(repo, offered))
++    request = ActivityFollowUpRequest(
++        client_request_id=uuid4(), expected_revision=saved.revision, expected_conversation_revision=0
++    )
++    original, _ = repo.claim_activity_follow_up(OWNER, saved.id, request, now=NOW)
++    repo.delete_journal_entry(OWNER, source.id)
++    later = NOW + timedelta(hours=1)
++    restored = repo.save_journal_entry(
++        source.model_copy(update={"text": "New fictional writing.", "created_at": later})
++    )
++    recreated = repo.create_conversation(
++        chat.model_copy(
++            update={"created_at": later, "updated_at": later, "source_entry_created_at": restored.created_at}
++        )
++    )
++    fresh = repo.offer_activity_session(
++        offered, request_id=offered.id, expected_conversation_revision=0, now=later
++    )
++    active, _ = command(repo, fresh, "start", later)
++    ended, _ = command(repo, active, "expire", later + timedelta(seconds=120))
++    new_report = ActivityReportRequest(
++        client_request_id=uuid4(),
++        expected_revision=ended.revision,
++        expected_conversation_revision=0,
++        participation="completed",
++    )
++    saved_new = repo.report_activity_session(OWNER, fresh.id, new_report, now=later + timedelta(seconds=121))
++    current, _ = repo.claim_activity_follow_up(OWNER, fresh.id, request, now=later + timedelta(seconds=122))
++    assert current.revision == original.revision
++    with pytest.raises(ActivityConflict, match="Activity changed"):
++        repo.finish_activity_follow_up(
++            OWNER,
++            fresh.id,
++            request_id=request.client_request_id,
++            expected_revision=original.revision,
++            expected_conversation_revision=0,
++            expected_session_created_at=original.created_at,
++            reply="Obsolete private source",
++            model_run=None,
++            now=later + timedelta(seconds=123),
++        )
++    assert repo.get_activity_session(OWNER, fresh.id).report == saved_new.report
++    assert repo.list_messages(OWNER, recreated.id) == []
++
++
++def test_outcome_negotiation_card_uses_actual_followup_message_identity(tmp_path):
++    repo, chat, offered, _ = setup(tmp_path)
++    saved, _ = report(repo, awaiting(repo, offered))
++    request = ActivityFollowUpRequest(
++        client_request_id=uuid4(), expected_revision=saved.revision, expected_conversation_revision=0
++    )
++    claimed, _ = repo.claim_activity_follow_up(OWNER, saved.id, request, now=NOW)
++    incorrect_message = uuid4()
++    card = ActionCard(
++        resource_intent="ground",
++        card_reason="Another quiet option.",
++        actions=[{"id": "guided_meditation_2m", "title": "Quiet meditation"}],
++        offered_message_id=incorrect_message,
++        goal=Goal.SETTLE,
++        decision_preview=PolicyDecision(
++            action_id="guided_meditation_2m",
++            recommended_action_id="guided_meditation_2m",
++            propensity=None,
++            eligible_for_ope=False,
++            policy_name="luna-guided-action",
++            policy_version="test",
++            safe_action_ids=["guided_meditation_2m"],
++            context_snapshot={},
++            explanation="A user-welcomed alternative.",
++        ),
++    )
++    finished = repo.finish_activity_follow_up(
++        OWNER,
++        saved.id,
++        request_id=request.client_request_id,
++        expected_revision=claimed.revision,
++        expected_conversation_revision=0,
++        expected_session_created_at=claimed.created_at,
++        reply="Would you like a different quiet pause?",
++        model_run=None,
++        now=NOW,
++        directive=ActivityFollowUpDirective(card=card, goal=Goal.SETTLE),
++    )
++    current = repo.get_conversation(OWNER, chat.id)
++    assert current.card is None
++    assert current.activity_card.offered_message_id == finished.follow_up_message_id
++    assert current.activity_card.offered_message_id != incorrect_message
++    assert current.activity_card.offered_message_id == repo.list_messages(OWNER, chat.id)[0].id
++    assert len(repo.list_activity_sessions(OWNER, chat.id)) == 1, (
++        "proposal never automatically starts another session"
++    )
+--- /dev/null
++++ b/tests/test_activity_stop.py
+@@ -0,0 +1,125 @@
++"""Stopping in ordinary chat also withdraws timers and automatic questions."""
++
++from datetime import timedelta
++from pathlib import Path
++from uuid import uuid4
++
++import pytest
++from fastapi.testclient import TestClient
++
++from journalpulse.api import create_app
++from journalpulse.domain import ModelRun
++from journalpulse.guided_action import ActivityDirective, GuidedActionContext
++from journalpulse.intelligence import ConversationCompletion
++from test_guided_action_boundaries import (
++    OWNER_HEADERS,
++    Clock,
++    command,
++    offered,
++    reported,
++    seed_conversation,
++    settings,
++)
++
++
++class StopAndResumeChat:
++    def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
++        raise AssertionError("This test must exercise the guided conversation directive")
++
++    def complete_guided(
++        self,
++        messages: list[dict[str, str]],
++        context: GuidedActionContext,
++    ) -> ConversationCompletion:
++        latest = messages[-1]["content"]
++        stopping = "Stop" in latest
++        return ConversationCompletion(
++            reply="Of course. We can leave it here." if stopping else "Would a short quiet pause fit?",
++            offer_action=not stopping,
++            resource_intent="pause" if stopping else "ground",
++            card_reason="" if stopping else "A short quiet pause fits your request.",
++            summary="Fictional activity control test.",
++            model_run=ModelRun(model="local-stop-directive-test-double", latency_ms=0, schema_valid=True),
++            activity=ActivityDirective(
++                move="pause" if stopping else "propose",
++                goal="settle",
++                selected_resource_id=None if stopping else "guided_meditation_2m",
++                constraints=context.constraints,
++                search_topic=None,
++            ),
++        )
++
++
++@pytest.mark.parametrize("state", ["active", "awaiting_report", "completed"])
++def test_text_stop_withdraws_automatic_checkin_and_preserves_saved_reports(tmp_path: Path, state: str):
++    configured, clock = settings(tmp_path), Clock()
++    chat = seed_conversation(configured, clock)
++    with TestClient(
++        create_app(settings=configured, clock=clock, conversation_client=StopAndResumeChat())
++    ) as client:
++        session = command(client, offered(client, chat), "start")
++        if state != "active":
++            session = command(client, session, "finish_early")
++            assert session["check_in_issued"]
++        if state == "completed":
++            session = reported(client, session, note="Fictional unchanged outcome.")
++        saved_report = session["report"]
++        response = client.post(
++            f"/v1/conversations/{chat.id}/messages",
++            headers=OWNER_HEADERS,
++            json={"client_message_id": str(uuid4()), "text": "Stop. Please do not ask any more questions."},
++        )
++        assert response.status_code == 200, response.text
++        assert response.json()["conversation"]["activity_move"] == "pause"
++        clock.now += timedelta(minutes=10)
++        reread = client.get(f"/v1/activity-sessions/{session['id']}", headers=OWNER_HEADERS)
++        assert reread.status_code == 200
++        stopped = reread.json()
++        assert stopped["status"] == ("completed" if state == "completed" else "stopped")
++        assert stopped["expires_at"] is None and not stopped["check_in_issued"]
++        assert stopped["report"] == saved_report
++        restarted = client.post(
++            f"/v1/activity-sessions/{session['id']}/commands",
++            headers=OWNER_HEADERS,
++            json={
++                "client_request_id": str(uuid4()),
++                "command": "start",
++                "expected_revision": stopped["revision"],
++                "expected_conversation_revision": stopped["conversation_revision"],
++            },
++        )
++        assert restarted.status_code == 409
++        assert "paused activities" in restarted.json()["detail"]
++        # A subsequent explicit request changes the move and permits a fresh offer;
++        # the previous timer is never resumed or made into a completion claim.
++        again = client.post(
++            f"/v1/conversations/{chat.id}/messages",
++            headers=OWNER_HEADERS,
++            json={"client_message_id": str(uuid4()), "text": "I would like a quiet pause again now."},
++        )
++        assert again.status_code == 200, again.text
++        current = again.json()["conversation"]
++        fresh = client.post(
++            f"/v1/conversations/{chat.id}/activity-sessions",
++            headers=OWNER_HEADERS,
++            json={
++                "client_request_id": str(uuid4()),
++                "resource_id": "guided_meditation_2m",
++                "expected_conversation_revision": current["revision"],
++            },
++        )
++        assert fresh.status_code == 201, fresh.text
++        new_started = command(client, fresh.json(), "start")
++        assert new_started["status"] == "active" and new_started["report"] is None
++
++
++def test_explicit_stop_control_still_offers_optional_participation_report(tmp_path: Path):
++    configured, clock = settings(tmp_path), Clock()
++    chat = seed_conversation(configured, clock)
++    with TestClient(
++        create_app(settings=configured, clock=clock, conversation_client=StopAndResumeChat())
++    ) as client:
++        active = command(client, offered(client, chat), "start")
++        stopped = command(client, active, "stop")
++        assert stopped["status"] == "stopped" and stopped["check_in_issued"]
++        assert stopped["report"] is None
+--- a/tests/test_research_beta_api.py
++++ b/tests/test_research_beta_api.py
+@@ -213,6 +213,8 @@
+             "conversations": [],
+             "conversation_messages": [],
+             "conversation_preference_requests": [],
++            "activity_sessions": [],
++            "activity_receipts": [],
+         }
+         assert len(
+             client.get("/v1/reflections", headers={"X-JournalPulse-User": USER_B}).json()["items"]

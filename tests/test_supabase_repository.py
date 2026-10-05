@@ -21,6 +21,7 @@ from journalpulse.domain import (
     SafetyResult,
     TargetState,
 )
+from journalpulse.journal_models import JournalEntry
 from journalpulse.persistence import (
     ConversationAlreadyAccepted,
     ConversationClosed,
@@ -223,10 +224,14 @@ def test_close_and_delete_use_the_lifecycle_functions(tmp_path: Path):
 
 def test_export_reads_every_page_of_every_table(tmp_path: Path):
     sizes = {
+        "activity_sessions": 0,
+        "activity_receipts": 501,
+        "journal_entries": 1203,
         "reflections": 1203,
         "outcomes": 501,
         "conversations": 500,
         "conversation_messages": 1777,
+        "conversation_preference_requests": 1203,
         "policy_decisions": 1203,
         "model_runs": 3,
         "safety_events": 0,
@@ -236,6 +241,7 @@ def test_export_reads_every_page_of_every_table(tmp_path: Path):
     sample = record().model_dump(mode="json")
     chat = conversation().model_dump(mode="json")
     message = turn(conversation())[0].model_dump(mode="json")
+    journal_entry = JournalEntry(user_id=USER_ID, text="An owned journal entry.").model_dump(mode="json")
 
     def handler(request: httpx.Request) -> httpx.Response:
         table = request.url.path.rsplit("/", 1)[-1]
@@ -245,7 +251,9 @@ def test_export_reads_every_page_of_every_table(tmp_path: Path):
         limit, offset = int(query["limit"][0]), int(query["offset"][0])
         requests[table] += 1
         count = max(0, min(limit, sizes[table] - offset))
-        if table in {"reflections", "outcomes"}:
+        if table == "journal_entries":
+            rows = [{"record": journal_entry} for _ in range(count)]
+        elif table in {"reflections", "outcomes"}:
             if table == "reflections":
                 rows = [{"record": sample} for _ in range(count)]
             else:
@@ -265,19 +273,30 @@ def test_export_reads_every_page_of_every_table(tmp_path: Path):
     for table, size in sizes.items():
         assert len(exported[table]) == size, table
     assert requests["reflections"] == 3
+    assert requests["journal_entries"] == 3
     assert requests["conversations"] == 2
+    assert requests["conversation_preference_requests"] == 3
     assert requests["safety_events"] == 1
     assert exported["conversations"][0]["revision"] == 2
 
 
 def test_readiness_distinguishes_schema_signing_and_reachability(tmp_path: Path):
     def ready(request: httpx.Request) -> httpx.Response:
+        # A separate RPC lets the preview require its new schema while the live
+        # reliability API continues checking the original readiness contract.
+        assert request.url.path == "/rest/v1/rpc/jp_readiness_v3"
         body = json.loads(request.content)
         assert body["probe"].startswith("readiness:")
         assert body["signature"] == sign_text(body["probe"], KEY)
         assert request.headers["authorization"] == "Bearer public-anon-key"
         return httpx.Response(
-            200, json={"schema": "phase-a-1", "signing": "valid", "retention_job": "scheduled"}
+            200,
+            json={
+                "schema": "guided-action-1",
+                "activities": "ready",
+                "signing": "valid",
+                "retention_job": "scheduled",
+            },
         )
 
     checks = supabase_readiness(settings(tmp_path), client=httpx.Client(transport=httpx.MockTransport(ready)))
@@ -285,7 +304,12 @@ def test_readiness_distinguishes_schema_signing_and_reachability(tmp_path: Path)
         "database": "reachable",
         "schema": "schema_ready",
         "signing": "valid",
+        "activities": "ready",
         "retention_job": "scheduled",
+        "retention_state": "unknown",
+        "retention_last_success": "unknown",
+        "retention_last_run_status": "unknown",
+        "retention_overdue": "unknown",
     }
 
     def missing(request: httpx.Request) -> httpx.Response:
@@ -321,3 +345,29 @@ def test_bulk_delete_uses_authenticated_database_function(tmp_path: Path):
         return httpx.Response(200, json=7)
 
     assert repository(tmp_path, handler).delete_user_data(USER_ID) == 7
+
+
+def test_readiness_reports_scheduler_execution_without_content(tmp_path: Path):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "schema": "guided-action-1",
+                "activities": "ready",
+                "signing": "valid",
+                "retention_job": "scheduled",
+                "retention_state": "overdue",
+                "retention_last_success": "2026-10-04T10:00:00+00:00",
+                "retention_last_run_status": "succeeded",
+                "retention_overdue": "true",
+            },
+        )
+
+    checks = supabase_readiness(
+        settings(tmp_path), client=httpx.Client(transport=httpx.MockTransport(handler))
+    )
+    assert checks["schema"] == "schema_ready"
+    assert checks["retention_state"] == "overdue"
+    assert checks["retention_last_success"] == "2026-10-04T10:00:00+00:00"
+    assert checks["retention_last_run_status"] == "succeeded"
+    assert checks["retention_overdue"] == "true"

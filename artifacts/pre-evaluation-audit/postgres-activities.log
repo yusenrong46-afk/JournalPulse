@@ -1,0 +1,76 @@
+/workspace/JournalPulse/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `enum` - serialized value may not be as expected [field_name='activity_goal', input_value='move', input_type=str])
+  return self.__pydantic_serializer__.to_python(
+ok: offer retry is idempotent
+ok: unsigned activity insertion is denied
+ok: duplicate start does not restart the clock
+ok: starting an in-chat activity does not close its conversation
+ok: controls do not change the ordinary chat revision
+ok: one nonterminal activity per conversation
+ok: client cannot claim premature timer expiry
+ok: pause is persisted
+ok: finish early does not invent participant feedback
+ok: one deterministic check-in is issued
+ok: duplicate report stores one outcome
+ok: partial report remains distinct from completed
+ok: partial report never fabricates a legacy completed outcome
+ok: same request ID cannot change its report
+ok: activity RLS hides another owner's session
+ok: receipt RLS hides another owner's requests
+ok: owner cannot replay a different owner's signed command
+ok: one server obtains the generation lease
+ok: claim replay cannot obtain a second paid generation
+ok: listen preference returns the committed card withdrawal
+ok: listen retry returns current state
+ok: listen preserves the intended active-session lifecycle
+ok: act preference returns the committed card withdrawal
+ok: act retry returns current state
+ok: act preserves the intended active-session lifecycle
+ok: owner cannot reset the turn bound through partial message deletion
+ok: denied partial deletion preserves all twenty turn records
+ok: activity offer remains blocked at the preserved turn bound
+ok: existing full-conversation RPC still deletes all owned messages
+ok: new recommendation atomically withdraws the unstarted offer
+ok: new recommendation cannot start the withdrawn offer
+ok: shorter requested duration atomically withdraws the unstarted offer
+ok: shorter requested duration cannot start the withdrawn offer
+ok: changed goal atomically withdraws the unstarted offer
+ok: changed goal cannot start the withdrawn offer
+ok: new public search topic atomically withdraws the unstarted offer
+ok: new public search topic cannot start the withdrawn offer
+ok: withdrawn recommendation atomically withdraws the unstarted offer
+ok: withdrawn recommendation cannot start the withdrawn offer
+ok: ordinary updates preserve offered activity when withdrawal is not required
+ok: ordinary updates preserve active activity when withdrawal is not required
+ok: ordinary updates preserve paused activity when withdrawal is not required
+ok: ordinary updates preserve awaiting_report activity when withdrawal is not required
+ok: pause follow-up returns its actual saved report and successful reply
+ok: outcome reply persists the pause directive
+ok: outcome pause atomically stops a second active timer without a check-in
+ok: pause follow-up remains idempotent after activity invalidation
+ok: follow-up retry appends one assistant message
+ok: follow-up atomically advances the conversation revision
+ok: activity row does not duplicate journal-derived model text
+ok: legacy conversation card remains compatible with the old production parser
+ok: new LLM card has no fabricated propensity
+ok: revised card references the atomically stored assistant message
+ok: legacy policy-decision propensity schema stays unchanged
+ok: a chat stop preserves the already saved participation report
+ok: a chat stop withdraws further report questions
+ok: closing invalidates the additive recommendation too
+ok: closing an unretained chat clears outcome notes
+ok: unretained close clears request fingerprints
+ok: canonical follow-up and stop-turn text follow existing retention
+ok: signed ordinary-chat stop atomically cancels the active timer without a check-in
+ok: a stopped chat cannot restart activity controls
+ok: a stopped chat cannot offer a new activity before a new user turn
+ok: source deletion cascades activity sessions
+ok: source deletion cascades activity receipts
+ok: signed source deletion still cascades its message metadata
+ok: deleted source cannot be revived by an old command
+ok: new preview requires its additive readiness version
+ok: readiness verifies activity RPCs and retention integration
+ok: account data deletion includes activity sessions
+ok: account data deletion includes activity receipts
+ok: existing account deletion still removes owned message metadata
+Guided activity PostgreSQL verification passed (72 assertions)

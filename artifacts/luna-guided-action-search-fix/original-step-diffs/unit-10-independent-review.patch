@@ -1,0 +1,11 @@
+--- a/docs/LUNA_GUIDED_ACTION_RELEASE.md
++++ b/docs/LUNA_GUIDED_ACTION_RELEASE.md
+@@ -95,7 +95,7 @@
+ 
+ Release preparation includes a frozen upload, unchanged hashes for nine inherited
+ migrations, additive migration impact, rollback limits and an explicit gated
+-helper. No migration, deployment or stable-alias mutation was performed. The
++helper. No hosted migration, product deployment or stable-alias mutation was performed. The
+ existing Preview deployment is `dpl_Ey6QzvQBWwpXaqwyT64N8rhR9d5n`; production is
+ `dpl_57Rut4UoR24LsTRjsA7nEpiBQycU`. Temporary owner-locked evaluation deployments
+ and the implementation-owned fictional account are removed after evaluation;

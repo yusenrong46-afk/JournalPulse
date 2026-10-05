@@ -1,0 +1,12 @@
+{
+  "html_sha256": "4000e0f2b4549a6cd19498f3a84a00630dd4e895d361311f3a1008675b64325e",
+  "cases": 60,
+  "adaptive_comparisons": 8,
+  "heldout_filter_cases": 24,
+  "safety_holdout_cases": 4,
+  "review_persistence": true,
+  "exact_report_review_export": true,
+  "blind_labels": true,
+  "mobile_overflow": false,
+  "javascript_errors": []
+}

@@ -1,0 +1,6 @@
+{
+  "paused_at": "2026-10-05T18:03:54.041434+00:00",
+  "reason": "Paused between recorded requests after repeated evaluator rate limits. Case r15 exhausted its four-attempt bound; full controlled plus adaptive evaluation cannot be completed under remaining original budget. User requested browser/agent capabilities instead of approving a budget increase. Preserve formal incomplete results and run separately labeled browser/agent verification.",
+  "pending_request_files": [],
+  "original_caps_unchanged": true
+}

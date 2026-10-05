@@ -154,6 +154,9 @@ export type Conversation = {
   updated_at: string;
   status: "open" | "closed";
   llm_consent: boolean;
+  /** One explicitly selected journal entry; the original text remains in the journal. */
+  source_entry_id?: string | null;
+  source_entry_created_at?: string | null;
   retain_text: boolean;
   safety_mode: "normal" | "support";
   summary?: string | null;
@@ -166,10 +169,19 @@ export type Conversation = {
   /** Luna's suggestion only. */
   feelings?: string[];
   ready_for_action?: boolean;
+  /** The person's choice for this chat; absent legacy values mean automatic. */
+  interaction_preference?: "auto" | "listen" | "act";
   /** What the person reported. Null until they report it. */
   reported_mood?: number | null;
   confirmed_feelings?: string[] | null;
   revision?: number;
+};
+
+export type JournalEntry = {
+  id: string;
+  user_id: string;
+  created_at: string;
+  text: string;
 };
 
 export type ConversationDetail = {

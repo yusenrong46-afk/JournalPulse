@@ -1,0 +1,39 @@
+{
+  "checked_at": "2026-10-05T18:35:41.533011+00:00",
+  "commands": [
+    {
+      "command": "UV_CACHE_DIR=/workspace/journalpulse-uv-cache uv lock --upgrade-package gitpython --upgrade-package urllib3",
+      "exit_code": 0,
+      "result": "Only GitPython and urllib3 package records changed"
+    },
+    {
+      "command": "UV_CACHE_DIR=/workspace/journalpulse-uv-cache uv lock --check",
+      "exit_code": 0,
+      "result": "Resolved 80 packages"
+    },
+    {
+      "command": "UV_CACHE_DIR=/workspace/journalpulse-uv-cache uv sync --frozen --extra dev --dry-run",
+      "exit_code": 0,
+      "result": "Checked 36 packages; would make no changes"
+    },
+    {
+      "command": "UV_CACHE_DIR=/workspace/journalpulse-uv-cache uv sync --frozen --all-extras --dry-run",
+      "exit_code": 0,
+      "result": "Would download/install 43 optional packages; dry-run did not install them"
+    },
+    {
+      "command": "UV_CACHE_DIR=/workspace/journalpulse-uv-cache uv run --isolated --no-project --with GitPython==3.2.0 --with urllib3==2.8.0 python [local smoke script]",
+      "exit_code": 0,
+      "result": "Four isolated packages installed; patched imports, temporary repo init/config round-trip, author parsing, in-memory gzip response decoding, HTTPS pool construction passed; no HTTP requests sent by smoke"
+    }
+  ],
+  "limits": [
+    "Project .venv was not modified",
+    "Optional Streamlit application/research workflows were not installed or run",
+    "PyPI advisory lookup is known-advisory coverage, not proof against unknown vulnerabilities",
+    "Existing deployed environments were not inspected"
+  ],
+  "changed_product_files": [
+    "uv.lock"
+  ]
+}

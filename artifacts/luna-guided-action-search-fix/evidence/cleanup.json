@@ -1,0 +1,27 @@
+{
+  "started_at": "2026-10-05T18:06:53.775203+00:00",
+  "temporary_deployments": [
+    {
+      "id": "dpl_8g9NHXizH2YJFc5X4tCF7NgYkC3X",
+      "phase": "baseline",
+      "delete_http": 200
+    },
+    {
+      "id": "dpl_C7P4TdkvuCKq6JGwACck2ePTxy1c",
+      "phase": "candidate",
+      "delete_http": 200
+    },
+    {
+      "id": "dpl_HTdSaQuHN8gkcXqpLfYALQcRQ2Av",
+      "phase": "teacher-azure",
+      "delete_http": 200
+    }
+  ],
+  "only_implementation_owned_fixtures": true,
+  "owned_account_data_delete_http": 200,
+  "fictional_account_deleted": true,
+  "owned_auth_delete_http": 200,
+  "preview_after": "dpl_Ey6QzvQBWwpXaqwyT64N8rhR9d5n",
+  "production_after": "dpl_57Rut4UoR24LsTRjsA7nEpiBQycU",
+  "finished_at": "2026-10-05T18:07:04.107701+00:00"
+}

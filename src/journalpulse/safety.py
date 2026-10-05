@@ -6,8 +6,9 @@ from .domain import SafetyMode, SafetyResult
 
 HIGH_RISK_PATTERNS = (
     r"\b(?:want|plan|going) to (?:die|kill myself|end my life)\b",
+    r"\bi(?: will|'ll) (?:kill myself|end my life)\b",
     r"\b(?:hurt|harm) myself\b",
-    r"\b(?:not|do not|don't) feel safe (?:right now|tonight|today|alone)?\b",
+    r"\b(?:not|do not|don't) feel safe(?: (?:right now|tonight|today|alone))?\b",
     r"\bi (?:have|made) a suicide plan\b",
     r"\bi might act on (?:it|these thoughts)\b",
     r"\boverdose (?:myself|tonight|today)\b",
@@ -15,8 +16,7 @@ HIGH_RISK_PATTERNS = (
 
 NEGATED_PATTERNS = (
     r"\b(?:not|never) suicidal\b",
-    r"\bdo not want to (?:die|hurt myself|harm myself)\b",
-    r"\bdon't want to (?:die|hurt myself|harm myself)\b",
+    r"\b(?:do not|don't|never) want to (?:die|hurt myself|harm myself|kill myself|end my life)\b",
 )
 
 SUPPORT_BY_LOCALE = {
@@ -47,15 +47,20 @@ def _clauses(normalized: str) -> list[str]:
 
 
 def _clause_has_unnegated_risk(clause: str) -> bool:
-    has_risk = any(re.search(pattern, clause) for pattern in HIGH_RISK_PATTERNS)
-    if not has_risk:
-        return False
-    # Negation suppresses risk only inside the same clause, not the rest of the entry.
-    return not any(re.search(pattern, clause) for pattern in NEGATED_PATTERNS)
+    negated_spans = [
+        match.span() for pattern in NEGATED_PATTERNS for match in re.finditer(pattern, clause)
+    ]
+    # A denial applies only to the phrase it contains. "I don't want to die and
+    # I might act on these thoughts" still contains a separate affirmative risk.
+    return any(
+        not any(start <= match.start() and match.end() <= end for start, end in negated_spans)
+        for pattern in HIGH_RISK_PATTERNS
+        for match in re.finditer(pattern, clause)
+    )
 
 
 def assess_safety(text: str, locale: str = "CA") -> SafetyResult:
-    normalized = " ".join(text.lower().split())
+    normalized = " ".join(text.lower().replace("’", "'").split())
     if not any(_clause_has_unnegated_risk(clause) for clause in _clauses(normalized)):
         return SafetyResult(mode=SafetyMode.NORMAL, locale=locale.upper(), exploration_allowed=True)
 

@@ -1,0 +1,13 @@
+{
+  "src/journalpulse/activity_chat.py": "58670ecc40cc24c6e9b3b7df30095de9419f8d0f9341eecd83f19d0bfe5ab3c4",
+  "src/journalpulse/api.py": "85808dc265d58445c96739ad0e30c7333d61d760d21453f0df2f1022d6467557",
+  "src/journalpulse/conversations.py": "fc28deb7e87edb3250ae7fa5ed9e6b257aba9ca59945e65f1dad554557996cea",
+  "src/journalpulse/discovery.py": "c178f5282b36eafdb6d69e2d08678c2c878897574444e1e9762db53fb4ab61ab",
+  "src/journalpulse/domain.py": "1e8f037918458ff539dce2eb4ef7353fd7626b253e08de596176ad86c74ff150",
+  "src/journalpulse/inline_discovery.py": "b161c4bbf202af94438161ae896c333eae914f5c95a8adc407d295d0453c1921",
+  "src/journalpulse/policy.py": "dc3a7dbaf522e0016f2146c9e3bb54c3ce288bab85a91a81c77e59152f9d8ccb",
+  "src/journalpulse/reflection_prompts.py": "1dce092266af4003e3f41e0aa38c21fc920ad6d8f64b3316b06714fdd4c19397",
+  "tests/test_activity_chat.py": "4641737995fbaf003954a2c3d56dbd334a2dcba19d6c72bffd436400d0b6bc0d",
+  "tests/test_guided_action_boundaries.py": "4ce3fdfbfa8bfbeb4195736d3a7bb8324980c7d7b92ff8b6146386df6bac30d6",
+  "tests/test_inline_discovery.py": "78e8177b05af1723468047c52bfb2040a0f0ab551f536c10d31a7cc972883d0e"
+}

@@ -1,0 +1,18 @@
+{
+  "artifact_sha256": "e86a9ea80e12f6e3f0d442627362bbe7fb57b3bbc4a242c8b47409bdb1a275ed",
+  "load_method": "Exact artifact bytes fulfilled by an intercepted loopback route; file URLs are blocked by browser policy.",
+  "case_cards": 60,
+  "adaptive_sections": 8,
+  "public_resource_assistant_delivered": true,
+  "native_refusal_assistant_bubbles": 0,
+  "heldout_cards": 24,
+  "journal_cards": 8,
+  "blind_summary_hidden": true,
+  "blind_metadata_hidden": true,
+  "review_download_name": "luna-guided-action-my-review.json",
+  "review_export_verified": true,
+  "javascript_errors": [],
+  "external_requests": [],
+  "browser": "/usr/bin/chromium",
+  "passed": true
+}

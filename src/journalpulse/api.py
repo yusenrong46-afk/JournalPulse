@@ -16,9 +16,12 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.gzip import GZipMiddleware
 
+from .activity_chat import generate_activity_follow_up
+from .activity_sessions import ActivityFollowUpGenerator, register_activity_routes
 from .auth import AuthContext, resolve_auth
 from .config import PROJECT_ROOT, Settings, load_settings
 from .conversations import ConversationClient, register_conversation_routes
+from .discovery import DiscoveryClient, register_discovery_routes
 from .domain import (
     ActionPreview,
     ActionPreviewRequest,
@@ -34,7 +37,9 @@ from .domain import (
     ReflectionRequest,
     SafetyMode,
 )
+from .inline_discovery import register_inline_discovery_routes
 from .intelligence import OpenRouterReflectionClient, UnsupportedProviderResponse, safe_analyze
+from .journals import register_journal_routes
 from .middleware import RequestContextMiddleware, SlidingWindowRateLimiter
 from .persistence import (
     DuplicateOutcomeError,
@@ -103,6 +108,8 @@ def create_app(
     policy: ReflectionPolicy | None = None,
     intelligence_client: OpenRouterReflectionClient | None = None,
     conversation_client: ConversationClient | None = None,
+    discovery_client: DiscoveryClient | None = None,
+    activity_follow_up_generator: ActivityFollowUpGenerator | None = None,
     clock: Callable[[], datetime] | None = None,
     database_probe: Callable[[], dict[str, str]] | None = None,
 ) -> FastAPI:
@@ -133,6 +140,15 @@ def create_app(
         return SQLiteRepository(settings.database_path)
 
     repositories = repository_factory or default_repository_factory
+    # Resolve once so readiness checks the same export that the app will serve.
+    # An unset path deliberately supports API-only development/deployments.
+    web_dist_value = os.getenv("JOURNALPULSE_WEB_DIST", "").strip()
+    web_dist: Path | None = None
+    if web_dist_value:
+        web_dist = Path(web_dist_value).expanduser()
+        if not web_dist.is_absolute():
+            web_dist = PROJECT_ROOT / web_dist
+        web_dist = web_dist.resolve()
     app = FastAPI(title="JournalPulse Research Beta API", version="1.0.0")
     app.add_middleware(RequestContextMiddleware, max_request_bytes=settings.max_request_bytes)
     app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
@@ -150,7 +166,11 @@ def create_app(
         del request, exc
         return JSONResponse(
             status_code=503,
-            content={"detail": "Your journal could not be reached. Nothing new was saved; please try again."},
+            # A timeout can happen after a transaction commits. The client must keep
+            # its original request ID when retrying rather than assume no write occurred.
+            content={"detail": (
+                "Your journal could not be reached. We could not confirm its latest state; please retry."
+            )},
         )
 
     def enforce_generation_limit(auth: AuthContext, repository: Repository) -> None:
@@ -203,16 +223,19 @@ def create_app(
             checks["resources"] = f"not_ready:{exc.__class__.__name__}"
         if not settings.llm_feature_enabled:
             checks["llm"] = "disabled"
-        elif settings.openrouter_enabled:
+        elif settings.openrouter_enabled and settings.chat_model.strip() and settings.openrouter_zdr:
             # Configured only; /ready never spends a paid model call.
             checks["llm"] = "configured:not_probed"
         else:
             checks["llm"] = "not_configured"
+        if web_dist is not None:
+            checks["web"] = "ready" if (web_dist / "index.html").is_file() else "not_ready:export_missing"
         checks.update(database_checks())
         required_ready = (
             checks["configuration"] == "ready"
             and checks["resources"] == "ready"
             and checks["llm"] != "not_configured"
+            and checks.get("web", "ready") == "ready"
         )
         if settings.supabase_enabled:
             required_ready = (
@@ -234,12 +257,12 @@ def create_app(
         if not settings.llm_feature_enabled:
             analysis_mode = "local_only"
             message = "Private AI analysis is turned off. Your corrections remain the source of truth."
-        elif settings.openrouter_enabled:
+        elif settings.openrouter_enabled and settings.openrouter_zdr:
             analysis_mode = "ai_configured"
             message = "Private AI analysis is configured. A safe local fallback remains available."
         else:
             analysis_mode = "local_fallback"
-            message = "AI analysis is unavailable, so entries use the local reflection fallback."
+            message = "AI conversation is unavailable. You can still write or use guided prompts."
         return SystemStatusResponse(
             analysis_mode=analysis_mode,
             persistence_mode="account" if settings.supabase_enabled else "server_sqlite",
@@ -364,7 +387,6 @@ def create_app(
     def analyze_reflection(
         payload: AnalysisRequest, auth: AuthContext = Depends(auth_dependency)
     ) -> PreparedAnalysis:
-        enforce_generation_limit(auth, repositories(auth))
         safety = assess_safety(payload.text, payload.locale)
         if safety.mode == SafetyMode.SUPPORT:
             return PreparedAnalysis(
@@ -392,6 +414,9 @@ def create_app(
                 ),
                 resource_intent="pause",
             )
+        # Human-support information requires no model call. Keep it available even
+        # when the generation quota is exhausted or its storage cannot be reached.
+        enforce_generation_limit(auth, repositories(auth))
         try:
             analysis = safe_analyze(
                 settings,
@@ -474,7 +499,8 @@ def create_app(
         helpfulness: dict[str, list[int]] = defaultdict(list)
         deltas: dict[str, list[float]] = defaultdict(list)
         state_by_decision = {str(item.decision.decision_id): item.state for item in reflections}
-        completed_decisions = {str(item.decision_id) for item in outcomes}
+        checked_in_decisions = {str(item.decision_id) for item in outcomes}
+        completed_count = sum(item.completed for item in outcomes)
         for outcome in outcomes:
             action_id = action_by_decision.get(str(outcome.decision_id), "unknown")
             if outcome.helpfulness is not None:
@@ -487,7 +513,7 @@ def create_app(
                     )
         return InsightsResponse(
             reflection_count=len(reflections),
-            completed_outcomes=sum(item.completed for item in outcomes),
+            completed_outcomes=completed_count,
             action_counts=dict(action_counts),
             average_helpfulness_by_action={
                 key: round(sum(values) / len(values), 3) for key, values in helpfulness.items()
@@ -497,11 +523,12 @@ def create_app(
                 if deltas
                 else None
             ),
-            completion_rate=round(len(completed_decisions) / len(reflections), 3) if reflections else 0.0,
+            # Submitting a check-in that says "not completed" is not action completion.
+            completion_rate=round(completed_count / len(reflections), 3) if reflections else 0.0,
             pending_decision_ids=[
                 item.decision.decision_id
                 for item in reflections
-                if str(item.decision.decision_id) not in completed_decisions
+                if str(item.decision.decision_id) not in checked_in_decisions
             ],
             state_trajectory=[
                 StatePoint(
@@ -534,6 +561,37 @@ def create_app(
         deleted = repositories(auth).delete_user_data(auth.user_id)
         return DeletionResponse(deleted_records=deleted)
 
+    register_journal_routes(
+        app,
+        settings=settings,
+        repositories=repositories,
+        enforce_generation_limit=enforce_generation_limit,
+        auth_dependency=auth_dependency,
+        conversation_client=conversation_client,
+        clock=now,
+    )
+
+    register_discovery_routes(
+        app,
+        settings=settings,
+        repositories=repositories,
+        auth_dependency=auth_dependency,
+        enforce_generation_limit=enforce_generation_limit,
+        client=discovery_client,
+    )
+
+    register_activity_routes(
+        app, settings=settings, repositories=repositories, auth_dependency=auth_dependency,
+        clock=now, enforce_generation_limit=enforce_generation_limit,
+        follow_up=activity_follow_up_generator,
+        default_follow_up=lambda repository, conversation, messages, session: generate_activity_follow_up(
+            settings, repository, conversation, messages, session, conversation_client,
+        ),
+    )
+    register_inline_discovery_routes(
+        app, settings=settings, repositories=repositories, auth_dependency=auth_dependency,
+        clock=now, enforce_generation_limit=enforce_generation_limit, client=discovery_client,
+    )
     register_conversation_routes(
         app,
         settings=settings,
@@ -545,14 +603,8 @@ def create_app(
         clock=clock or (lambda: datetime.now(UTC)),
     )
 
-    web_dist_value = os.getenv("JOURNALPULSE_WEB_DIST", "").strip()
-    if web_dist_value:
-        web_dist = Path(web_dist_value).expanduser()
-        if not web_dist.is_absolute():
-            web_dist = PROJECT_ROOT / web_dist
-        web_dist = web_dist.resolve()
-        if web_dist.is_dir():
-            app.mount("/", StaticFiles(directory=web_dist, html=True), name="journalpulse-web")
+    if web_dist is not None and web_dist.is_dir():
+        app.mount("/", StaticFiles(directory=web_dist, html=True), name="journalpulse-web")
 
     return app
 

@@ -1,0 +1,57 @@
+{
+  "scope": "unchanged shared Preview discovery provider smoke, not candidate inline session acceptance",
+  "request": {
+    "original_query": "short guided meditation video",
+    "llm_consent": true,
+    "locale": "CA"
+  },
+  "http_status": 200,
+  "latency_ms": 4643,
+  "reserved_max_luna_attempts": 1,
+  "reserved_brave_attempts": 1,
+  "response": {
+    "original_query": "short guided meditation video",
+    "updated_query": "short guided meditation video",
+    "candidates": [
+      {
+        "title": "Daily Calm | 10 Minute Mindfulness Meditation | Be Present - YouTube",
+        "url": "https://www.youtube.com/watch?v=ZToicYcHIOU",
+        "description": "Try Calm for 14 days free: https://www.calm.com/signup-flow?utm_content=blog_ft-sfTamara Levitt guides this 10 minute Daily Calm mindfulness meditation to po...",
+        "why_selected": "Its snippet describes a 10-minute guided mindfulness meditation on YouTube, so it appears to fit a short guided video; the snippet doesn\u2019t establish whether that length suits you.",
+        "evidence_kind": "search_snippet"
+      },
+      {
+        "title": "3 Simple Guided Meditation Scripts for Improving Wellbeing",
+        "url": "https://positivepsychology.com/guided-meditation-scripts/",
+        "description": "Below is a short script devised to deliver loving-kindness meditation in person and online. We suggest taking a three-second pause between each line if you use it with a client in a session. For an idea of pacing, play this guided 10-minute LKM video by Declutter the Mind.",
+        "why_selected": "Its snippet mentions a guided 10-minute loving-kindness meditation video, though the result itself is a page of scripts, so the video may be linked rather than the main resource.",
+        "evidence_kind": "search_snippet"
+      }
+    ],
+    "provenance": {
+      "search_provider": "brave",
+      "prompt_version": "discovery-snippets-v1-2026-10-04",
+      "retrieved_at": "2026-10-05T16:56:15.097877+00:00",
+      "candidate_count": 6,
+      "search_calls": 1,
+      "model_runs": [
+        {
+          "model": "openai/gpt-6-luna",
+          "provider": "Azure",
+          "latency_ms": 2685,
+          "prompt_tokens": 982,
+          "completion_tokens": 270,
+          "schema_valid": true,
+          "used_fallback": false,
+          "fallback_reason": null,
+          "prompt_version": "discovery-snippets-v1-2026-10-04"
+        }
+      ],
+      "page_fetches": 0
+    },
+    "limitations": [
+      "Suggestions use search-provider snippets; full pages were not read.",
+      "Links were returned by Brave and structurally checked. Their availability and claims are not verified."
+    ]
+  }
+}

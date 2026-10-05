@@ -13,12 +13,19 @@ therapeutic effect, or large-scale availability.
   | `configuration` | `ready`, or `not_ready:<issues>` (for example `signing_key_missing`) |
   | `resources` | `ready`, or `not_ready:<error>` |
   | `llm` | `configured:not_probed`, `not_configured`, or `disabled`. `/ready` never spends a model call |
+  | `web` | When `JOURNALPULSE_WEB_DIST` is set: `ready` or `not_ready:export_missing`. An index page is required; API-only deployments omit this check |
   | `database` | `reachable`, `unreachable`, `error:<status>`, or `local_sqlite` |
   | `schema` | `schema_ready`, `schema_missing`, or `schema_outdated:<version>` |
   | `signing` | `valid`, `invalid` (the API and database keys differ), `missing` (none in the database), or `not_configured` (none in the API) |
-  | `retention_job` | `scheduled` or `not_scheduled`. Reported, not required; see Retention |
+  | `retention_job` | `scheduled`, `not_scheduled`, or `unknown` |
+  | `retention_state` | `healthy`, `missing`, `never_succeeded`, `failed`, `overdue`, or `unknown` |
+  | `retention_last_success` | Last corroborated cron completion time, `never`, or `unknown` |
+  | `retention_last_run_status` | Bounded cron status; no error messages or journal text |
+  | `retention_overdue` | `true`, `false`, or `unknown`; 30-minute threshold |
 
   The database probe is cached for 30 seconds per instance.
+- Production CORS accepts explicit HTTPS origins, with an optional port. Wildcards,
+  credentials, paths, query strings, fragments, and loopback origins fail readiness.
 - Every response carries `X-Request-ID`. Logs hold method, path, status, latency, and that ID, never
   request bodies, authorization headers, keys, or journal text.
 
@@ -26,9 +33,11 @@ therapeutic effect, or large-scale availability.
 
 1. Rotate any key that has appeared outside a secret store.
 2. Run the checks listed in the README's **Test** section. CI runs them on every push.
-3. Apply `supabase/migrations/` in filename order. `scripts/verify_postgres_schema.py` rebuilds a
+3. Apply only new `supabase/migrations/` in filename order; never replay or rewrite applied migrations.
+   `scripts/verify_postgres_schema.py` rebuilds a
    scratch database from the migrations and checks RLS, provenance signing, lifecycle races, retention,
-   the rate limit, and deletion.
+   the rate limit, and deletion. Scratch verification and integration helpers accept
+   only local loopback or Unix-socket PostgreSQL routing and reject hosted DSNs.
 4. Create one signing key per environment (at least 32 characters, for example
    `openssl rand -hex 32`) and store it in both places:
    - in the database, as the postgres role:
@@ -41,12 +50,14 @@ therapeutic effect, or large-scale availability.
    - **Vercel (production):** also set `JOURNALPULSE_WEB_DIST=web-dist`, then `vercel deploy --prod`.
      The build runs `scripts/build_vercel_web.py`, which exports the site with the Supabase values baked
      in.
-   - **Render (alternative):** create a Blueprint from `render.yaml`; it asks for the secret values.
+   - **Render (alternative):** create a Blueprint from `render.yaml`; it asks for the model key,
+     public Supabase anon key, and signing key. The signing key must match `private.server_secrets`.
      `Dockerfile.api` builds the site and serves it from FastAPI.
 7. In Supabase, under **Authentication → URL configuration**, set the Site URL to the public address and
    add `https://<address>/**` as a redirect URL. Without this, sign-in links return to localhost.
 8. Confirm `/ready` reports `database: reachable`, `schema: schema_ready`, `signing: valid`, and
-   `retention_job: scheduled`.
+   `retention_job: scheduled`. Observe an actual completed run and `retention_state: healthy`;
+   a schedule alone does not verify cleanup.
 9. Smoke test with a disposable account: sign in, chat to a saved step, check in, view Journey, export,
    then delete the test entry.
 
@@ -64,12 +75,53 @@ when a live check is intended.
 - The migration schedules the job when `pg_cron` is available. On Supabase, if it is not enabled, turn on
   **Database → Extensions → pg_cron** and rerun the scheduling block at the end of
   `202609280001_phase_a_integrity.sql`.
-- Check recent runs: `select status, return_message, start_time from cron.job_run_details
-  order by start_time desc limit 10;`
-- If the job fails or is missing, `/ready` shows `retention_job: not_scheduled` and chats are still swept
-  for each person when they next use the chat. Text in chats of people who never return stays until the
-  job runs again. It can be run by hand as the postgres role: `select public.jp_purge_expired_conversations();`
-- Chats with **Keep my messages** on are never purged automatically.
+- Check this job's recent runs, without exposing error text:
+  `select r.status, r.start_time, r.end_time from cron.job_run_details r join cron.job j using (jobid)
+  where j.jobname = 'journalpulse-retention' order by r.start_time desc limit 10;`
+- `202610040002_retention_diagnostics.sql` adds one private timestamp row. The scheduled entry point
+  writes completion after successful cleanup in the same transaction; failures roll it back.
+  Readiness corroborates completion with successful cron history after monitoring began. A manual
+  purge and request-time cleanup cannot make a broken scheduler appear healthy. Missing/unreadable
+  history, an unexpected schedule/command, or inconsistent evidence reports `unknown`.
+- The proposed alert threshold is **more than 30 minutes** since successful scheduled completion.
+  A new installation gets 30 minutes before `retention_overdue` becomes true, but reports
+  `never_succeeded` until a run succeeds. A later cron failure reports `failed`; a later successful
+  run recovers to `healthy`. The schema verifier checks both 30-minute boundaries with a fixed clock.
+- Retention degradation remains visible without making `/ready` fail: privacy actions and the app
+  remain available. Monitor these fields separately; investigate `missing`, `failed`, `unknown`, or
+  overdue cleanup. Do not rely on HTTP 200 alone for retention health.
+- When scheduled cleanup stops, each person is still swept when they next use chat. Text for people
+  who never return stays until cleanup succeeds. An operator can run the entry point as postgres:
+  `select public.jp_purge_expired_conversations();` This repairs data but does not prove cron works.
+- The cutoff is 24 hours **of inactivity**, plus scheduling delay (normally up to 15 minutes), locks,
+  and any outage delay. Cleanup skips rows currently locked and retries on later runs. It is not an
+  exact 24-hour deletion promise.
+- Chats with **Keep my messages** on can still be closed for inactivity; their text is retained.
+- The private singleton retains only monitoring-start and latest entry-point completion timestamps.
+  Cron history follows the host's history-retention policy. Clearing it may temporarily make a
+  formerly healthy scheduler appear unverified until a new run completes.
+
+### Release the preference and diagnostics slice
+
+Apply `202610040001_conversation_preference.sql`, then `202610040002_retention_diagnostics.sql`.
+These are additive replacements; do not edit an already applied migration. Deploy the matching API
+and frontend together. The new API calls `jp_readiness_v2` and expects `phase-a-2`;
+the original `jp_readiness` keeps its `phase-a-1` response so the existing live API
+continues reporting readiness during a preview rollout. A missing v2 function still
+makes the new API not ready; it never falls back to the older schema contract.
+For a release without a preference endpoint mismatch, use a maintenance window or the host's atomic
+deployment switch, then verify a disposable chat, reload, Just talk, resumption, export, and deletion.
+
+Older API code is insufficient for preference-aware chats even though migrations preserve canonical
+preference and block unsafe acceptance. Keep this compatible API/frontend pair as the rollback target;
+repair forward rather than promoting an older frontend/API across this contract. A database restore
+must be coordinated with the application version and the host's verified restore procedure.
+
+When a preview shares the existing Supabase project, these migrations still update shared lifecycle
+functions. Use a disposable account and fictional messages; keep preference-aware preview chats
+away from the older application. Preview-scoped `JOURNALPULSE_LLM_ENABLED=false` disables paid
+calls without changing production settings. Apply migrations only with authorized database access,
+then check both the existing site's readiness and the preview's readiness and user flow.
 
 ## Failure behaviour
 

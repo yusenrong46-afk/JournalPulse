@@ -6,7 +6,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 
 import { Luna } from "@/components/luna";
 import { Icon } from "@/components/nav-icon";
-import { apiRequest } from "@/lib/api";
+import { ApiError, apiRequest } from "@/lib/api";
 import { FEELINGS, selfReport } from "@/lib/feelings";
 import { clearReminder } from "@/lib/reminders";
 import type { OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
@@ -35,16 +35,20 @@ function CheckInWorkspace() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [retryPending, setRetryPending] = useState(false);
   const [error, setError] = useState("");
-  const requestId = useRef("");
+  const pendingOutcome = useRef<string | null>(null);
+  const submission = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     Promise.all([
-      apiRequest<{ items: ReflectionRecord[] }>("/v1/reflections?limit=100"),
-      apiRequest<{ items: OutcomeRecord[] }>("/v1/outcomes"),
-      apiRequest<{ items: Resource[] }>("/v1/resources"),
+      apiRequest<{ items: ReflectionRecord[] }>("/v1/reflections?limit=100", { signal: controller.signal }),
+      apiRequest<{ items: OutcomeRecord[] }>("/v1/outcomes", { signal: controller.signal }),
+      apiRequest<{ items: Resource[] }>("/v1/resources", { signal: controller.signal }),
     ])
       .then(([history, outcomes, catalog]) => {
+        if (controller.signal.aborted) return;
         const done = new Set(outcomes.items.map((item) => item.decision_id));
         const selected = requestedDecision
           ? history.items.find((item) => item.decision.decision_id === requestedDecision)
@@ -54,36 +58,57 @@ function CheckInWorkspace() {
         setAlreadyDone(done.has(selected.decision.decision_id));
         setResource(catalog.items.find((item) => item.id === selected.decision.action_id) ?? null);
       })
-      .catch(() => setError("Luna couldn’t load this check-in. Please try again in a moment."))
-      .finally(() => setLoading(false));
+      .catch(() => { if (!controller.signal.aborted) setError("Luna couldn’t load this check-in. Please try again in a moment."); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => {
+      controller.abort();
+      submission.current?.abort();
+    };
   }, [requestedDecision]);
 
   async function submit(completed: boolean) {
-    if (!reflection) return;
+    if (!reflection || submission.current) return;
+    const controller = new AbortController();
+    submission.current = controller;
     setBusy(true);
     setError("");
-    const elapsed = Math.round((Date.now() - new Date(reflection.created_at).getTime()) / 60_000);
+    if (!pendingOutcome.current) {
+      const elapsed = Math.round((Date.now() - new Date(reflection.created_at).getTime()) / 60_000);
+      pendingOutcome.current = JSON.stringify({
+        client_request_id: crypto.randomUUID(),
+        decision_id: reflection.decision.decision_id,
+        completed,
+        post_state: completed && feelings.length ? selfReport(feelings, null) : null,
+        helpfulness: completed ? helpfulness : null,
+        effort: null,
+        elapsed_minutes: Math.min(Math.max(elapsed, 0), 10080),
+        note: note.trim() || null,
+      });
+    }
     try {
       await apiRequest<OutcomeRecord>("/v1/outcomes", {
         method: "POST",
         retry: true,
-        body: JSON.stringify({
-          client_request_id: requestId.current || (requestId.current = crypto.randomUUID()),
-          decision_id: reflection.decision.decision_id,
-          completed,
-          post_state: completed && feelings.length ? selfReport(feelings, null) : null,
-          helpfulness: completed ? helpfulness : null,
-          effort: null,
-          elapsed_minutes: Math.min(Math.max(elapsed, 0), 10080),
-          note: note.trim() || null,
-        }),
+        signal: controller.signal,
+        // The server stores one outcome per decision and replays the first
+        // receipt. A lost response must retry these exact answers and timestamp.
+        body: pendingOutcome.current,
       });
+      if (controller.signal.aborted) return;
       clearReminder(reflection.decision.decision_id);
+      setRetryPending(false);
       setSaved(true);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "That didn’t save. Please try again.");
+      if (!controller.signal.aborted) {
+        // Validation rejects before saving, so those answers remain editable.
+        const rejected = reason instanceof ApiError && [400, 422].includes(reason.status);
+        if (rejected) pendingOutcome.current = null;
+        setRetryPending(!rejected);
+        setError(reason instanceof Error ? reason.message : "The save could not be confirmed. Please retry.");
+      }
     } finally {
-      setBusy(false);
+      if (!controller.signal.aborted) setBusy(false);
+      if (submission.current === controller) submission.current = null;
     }
   }
 
@@ -132,7 +157,7 @@ function CheckInWorkspace() {
         <p>Small steps work best when they fit your day. Want Luna to ask again later, or skip this one?</p>
         <div className="stack">
           <Link className="btn btn-primary btn-block" href="/">Ask me later</Link>
-          <button className="btn btn-soft btn-block" type="button" disabled={busy} onClick={() => void submit(false)}>{busy ? "Saving…" : "Skip this one"}</button>
+          <button className="btn btn-soft btn-block" type="button" disabled={busy} onClick={() => void submit(false)}>{busy ? "Saving…" : retryPending ? "Retry saving check-in" : "Skip this one"}</button>
         </div>
         {error && <p className="note error" role="alert">{error}</p>}
       </>
@@ -144,7 +169,7 @@ function CheckInWorkspace() {
         <h1>How much did it help?</h1>
         <div className="faces" role="group" aria-label="How much did it help?">
           {HELP_FACES.map((face) => (
-            <button key={face.score} className="face" type="button" aria-pressed={helpfulness === face.score} onClick={() => setHelpfulness(face.score)}>
+            <button key={face.score} className="face" type="button" disabled={busy || retryPending} aria-pressed={helpfulness === face.score} onClick={() => setHelpfulness(face.score)}>
               <span aria-hidden="true">{face.emoji}</span>
               <span>{face.label}</span>
             </button>
@@ -158,6 +183,7 @@ function CheckInWorkspace() {
                 key={item.id}
                 className="chip"
                 type="button"
+                disabled={busy || retryPending}
                 aria-pressed={feelings.includes(item.id)}
                 onClick={() => setFeelings((current) => (current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id]))}
               >
@@ -167,11 +193,11 @@ function CheckInWorkspace() {
           </div>
           <label className="text-field">
             Anything you noticed? <span className="muted small">(optional)</span>
-            <textarea value={note} maxLength={1000} onChange={(event) => setNote(event.target.value)} placeholder="What helped, what didn’t, what surprised you…" />
+            <textarea value={note} maxLength={1000} disabled={busy || retryPending} onChange={(event) => setNote(event.target.value)} placeholder="What helped, what didn’t, what surprised you…" />
           </label>
         </div>
         <button className="btn btn-primary btn-big btn-block" type="button" disabled={busy || helpfulness === null} onClick={() => void submit(true)}>
-          {busy ? "Saving…" : "Save my check-in"}
+          {busy ? "Saving…" : retryPending ? "Retry saving check-in" : "Save my check-in"}
         </button>
         {error && <p className="note error" role="alert">{error}</p>}
       </>
@@ -184,14 +210,25 @@ function CheckInWorkspace() {
         <Link className="icon-btn" href="/" aria-label="Back to home"><Icon name="back" /></Link>
       </div>
       {body}
+      {retryPending && !saved && !alreadyDone && <p className="note" role="status">
+        Your save is not confirmed. Your submitted answers are kept unchanged; retry to confirm the same check-in.
+      </p>}
     </div>
   );
+}
+
+function CheckInRoute() {
+  const searchParams = useSearchParams();
+  // A different decision is a different form and idempotency receipt. Keying the
+  // workspace also cancels the previous load and discards its unsaved answers.
+  const identity = JSON.stringify([searchParams.get("decision"), searchParams.get("h"), searchParams.get("tried")]);
+  return <CheckInWorkspace key={identity} />;
 }
 
 export default function CheckInPage() {
   return (
     <Suspense fallback={<div className="loading-luna"><Luna mood="checkin" size={100} decorative /></div>}>
-      <CheckInWorkspace />
+      <CheckInRoute />
     </Suspense>
   );
 }

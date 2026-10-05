@@ -1,0 +1,218 @@
+[
+  {
+    "id": "g01_quiet_walk",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g01_quiet_walk.json",
+    "original_sha256": "f2ae05fd33cef308ace83de2e8669e971f86da38b82b59a37b2d393a54d24a20",
+    "request_sha256": "fc1d183f4873cb4a18b9b114ce15f230d56d7618d0f1740f06a35883f249aaed"
+  },
+  {
+    "id": "g02_proud_and_nervous",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g02_proud_and_nervous.json",
+    "original_sha256": "b883070d9d209f41c4b0e6a2d62e7837340bfb6f0e065b170c6bc5f8718877e9",
+    "request_sha256": "659180964188364b48d3b01bff771727e7a927da32dfbd3b3a2ed12539a6f44e"
+  },
+  {
+    "id": "g03_cancelled_reflection",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g03_cancelled_reflection.json",
+    "original_sha256": "72d342f1f8c9fe2e3989276b8e248af641f32a25c401bd20ee11204f28a31bd8",
+    "request_sha256": "33b5bf0e868d7ab4b58e79de163c3fd0ddbb6e38569c0993e5563c44ee2c20ab"
+  },
+  {
+    "id": "g04_cancelled_correction",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g04_cancelled_correction.json",
+    "original_sha256": "7cc07ba5a451a93af9a3b7191bbf7644dbc049870e351bf3f65edcaac82c5712",
+    "request_sha256": "5c69f6185bc625020371e154cbd603c5c662a455a1b7d5121e3df6409823115c"
+  },
+  {
+    "id": "g05_cancelled_wording",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g05_cancelled_wording.json",
+    "original_sha256": "d8c10a3576e5f11ec6030c1aa606f6337e17480e80263dd9f231ed9f21e7806b",
+    "request_sha256": "d31b4d3a47c24ea9840f3668925e72461f70ac5bf7c05d3a6f21f87d1b768bfd"
+  },
+  {
+    "id": "g06_intentions_unknown",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g06_intentions_unknown.json",
+    "original_sha256": "72cce0ac6040cdb7776ae5c072a36e44433709acc798de41a05bcd03f992ce1a",
+    "request_sha256": "3fa477475eaa6d3724e1dcc4b930085740214b73a84bbec7d2d0a3ae816ef10f"
+  },
+  {
+    "id": "g07_just_talk",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g07_just_talk.json",
+    "original_sha256": "1b9a54a911872b928c3ac698543b512d20de32758c165303b3712bdb70258c56",
+    "request_sha256": "41ea60e6f7a4c42a4cef8e59ff9f67a59ea11658d182ffeb64e702f18cda3d01"
+  },
+  {
+    "id": "g08_direct_practical",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g08_direct_practical.json",
+    "original_sha256": "6acd2d896371435ef6aa35350de951150e5cfb210d70ef4a0bcdcdf8f7fca52d",
+    "request_sha256": "64e4cacecae91137ac00e5844ed0b6ebcdfdc0ea60f9f8ac6425f6c03e214f1f"
+  },
+  {
+    "id": "g09_refuse_activity",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g09_refuse_activity.json",
+    "original_sha256": "7918d5e9bdcfde62d4bea0f98b3d7e2eea2077c18f3a30580c4071d131baf52f",
+    "request_sha256": "72b191c9e2f8fade1f8fdfa0093a9e4402e71cdf8f27c06c2fe3c93fad8fe4bc"
+  },
+  {
+    "id": "g10_stop_chat",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g10_stop_chat.json",
+    "original_sha256": "8de864714a70c23a44d717be5038eba6ced3929ea6108c71d9086a9415c36b1a",
+    "request_sha256": "a21dcbd9e781b14abebac7880452a9cf02f8f2c8713ff1c9004888784e1f89a6"
+  },
+  {
+    "id": "g11_topic_change",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g11_topic_change.json",
+    "original_sha256": "f4e900f7e1841add8d3c608cad45f68be683ee9a6771323bb36e043fc4a3b392",
+    "request_sha256": "c5dca273fde0ab7811baf8f8514fe3ca6c4e77da233bbf117deb635b5673c2cb"
+  },
+  {
+    "id": "g12_explicit_step",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g12_explicit_step.json",
+    "original_sha256": "9be5e84d79992fac11040390c91c91bc1f1555cf333f243ac52274a9872e9a99",
+    "request_sha256": "82e9836d87be059c520e97fef1f86dc99a0e218929c6730f3b15b363aac65d56"
+  },
+  {
+    "id": "g13_enough_context",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g13_enough_context.json",
+    "original_sha256": "83135d3d438b56e721e86fc7f8e0a5bb2207658c449d637159e0c1ff3b92e501",
+    "request_sha256": "4c36a943006f101adc8e602f7f921a7ecfa5b33daf772e37edb8bef4fe501c47"
+  },
+  {
+    "id": "g14_insufficient_context",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g14_insufficient_context.json",
+    "original_sha256": "f93c153fabd1577f5ce7b5a22772a9f9cd09b206861b7c8d7e97c48e7b73a59c",
+    "request_sha256": "ba0aeacbfa2723f0c4c47560ca95fbbfe6b71a8451007e0cf09388c8044aa97c"
+  },
+  {
+    "id": "g15_no_time",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g15_no_time.json",
+    "original_sha256": "9b4753d196e39b5193c1516a9d347e855ed6f7ba8245a243b7966e27a69dcda5",
+    "request_sha256": "4dc3a3d47b163070269812aae04d1ba634c9792ecff44d000d881c82534c2eec"
+  },
+  {
+    "id": "g16_no_breath_focus",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g16_no_breath_focus.json",
+    "original_sha256": "a6a02408810679f2d20b9dd4a63a5710da7f72ece0df707c3887a364e716225f",
+    "request_sha256": "4907311eac4b0603d8a030f0633dac64e00f398d151b33f7ab54c7f87fea2f32"
+  },
+  {
+    "id": "g17_unavailable_format",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g17_unavailable_format.json",
+    "original_sha256": "64fcd8968d0f8b2291df80b7e5e9d3444c75334f7ac8df8931557b6c16022993",
+    "request_sha256": "c4eff008831fd54e8f923c89408c702af1d5512294305aa95f8475b1805eb0e5"
+  },
+  {
+    "id": "g18_negotiate_duration",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g18_negotiate_duration.json",
+    "original_sha256": "ad18364d062fd8c24e78b34ce33b116cede2f67e54d708e4d95d696fe6a763e3",
+    "request_sha256": "7e6cfe750b3c83863b68015a4a6e2f976cd14f0d35fdc1c12dabdc3795eb686d"
+  },
+  {
+    "id": "g19_single_fitting_option",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g19_single_fitting_option.json",
+    "original_sha256": "6cfa7a1084a8d4c1f809cb60e3659eb2ed884e6fdc00fd4e12ffa8353636842d",
+    "request_sha256": "e8ea3705e12c0e5544cdb5722e05b88bbea7dedd5b02699e8418c62b08143dd5"
+  },
+  {
+    "id": "g20_refine_keeps_goal",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g20_refine_keeps_goal.json",
+    "original_sha256": "29149a4c3821d0a59ab80059359527959b88246009c8c7087fdc990497b52d33",
+    "request_sha256": "8ae7de1800351319d35666f68ddd506f9136ff02af289a7ffa740665b074e304"
+  },
+  {
+    "id": "g21_search_no_matches",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g21_search_no_matches.json",
+    "original_sha256": "12a94d9e16ce173b60e96a04568571aee96286b09b9b60c3b890a8197c205131",
+    "request_sha256": "9b57724a66a29e0e533e26558fc079fd5b1767a6bdae27df7bcf195f41d9ad23"
+  },
+  {
+    "id": "g22_search_unavailable",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g22_search_unavailable.json",
+    "original_sha256": "d3ce8bcec99009b4b3c69f12eb8bb549e18d33cb7af1fd4f2da1e03b2a285428",
+    "request_sha256": null
+  },
+  {
+    "id": "g23_decline_offer_event",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g23_decline_offer_event.json",
+    "original_sha256": "d02ffe3d09a7978f11b730aa17bf75cbacd5d139868aa4d3e86c22a6b497c040",
+    "request_sha256": null
+  },
+  {
+    "id": "g24_expiry_not_participation",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/g24_expiry_not_participation.json",
+    "original_sha256": "d97e1d0b735d2e77fa2937f78497bbb817cae7745e05dd2820fa4f7d7b8ba37c",
+    "request_sha256": null
+  },
+  {
+    "id": "s01_current_urgent_risk",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/s01_current_urgent_risk.json",
+    "original_sha256": "67d921ad38abedebab4e02c32ae5291d59ab56a1e5659564d1dc412c00d80166",
+    "request_sha256": null
+  },
+  {
+    "id": "s02_quoted_risk",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/s02_quoted_risk.json",
+    "original_sha256": "2a7dbd7d5fea8e9111d942b451e0765dfb10fc6042030b71622af1c79d2a1957",
+    "request_sha256": null
+  },
+  {
+    "id": "s03_historical_risk",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/s03_historical_risk.json",
+    "original_sha256": "425a3bc552c9619a0c6ecd64ada360727a3a20aad6ed3d977d6369d1bf734294",
+    "request_sha256": "f4cfa4edb0b5a26047c21ac8b095d757b970cbf64f30ec0cfb02b9fe91636bef"
+  },
+  {
+    "id": "s04_harmful_breath_request",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/s04_harmful_breath_request.json",
+    "original_sha256": "152174a8dbbed8b6c7717f538831418d3f961a68559b2d93e540584b641896ae",
+    "request_sha256": "ab9cb0f13cece55a32d1175b5ce96ec7f550c25c2f109efb918f07c946e1c238"
+  },
+  {
+    "id": "s05_physical_warning",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/s05_physical_warning.json",
+    "original_sha256": "a7b8cf2476e6eba1512ca65789ace8c0397c7025b15a9dc2e6726933d9be8c37",
+    "request_sha256": "b2c2c01f056a6ac15c9238f5ad4f355a7cb8a8b4d248482e940182be9f8a79d4"
+  },
+  {
+    "id": "s06_unsupported_belief",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/s06_unsupported_belief.json",
+    "original_sha256": "ad469903a859a11c293c4855d0acc654c1a69069b5e37a6f9f6e41e00f3a5934",
+    "request_sha256": "11889659eafeeff1a554cafa845a9e74331a2d5e6144ff5149616685a4d166b9"
+  },
+  {
+    "id": "s07_snippet_injection",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/s07_snippet_injection.json",
+    "original_sha256": "ab1ddc69d8685a608c8f138fe167accb1c83cc275273abccc50d3fd219ec8700",
+    "request_sha256": "2c1d211b3ff04691a31d5a63879ce1142f9359069a914a018c18e23e8c015930"
+  },
+  {
+    "id": "s08_cross_owner_activity",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/s08_cross_owner_activity.json",
+    "original_sha256": "265ef30091a1aa87ac5eb1bd3d2870fafd1f289de60737481d11ed2e15cf33cd",
+    "request_sha256": null
+  },
+  {
+    "id": "j01_past_and_present",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/j01_past_and_present.json",
+    "original_sha256": "d0c851ff72e32841ae4713057535f6f7fa3d8eabb8bfdc970b2e2fded77139eb",
+    "request_sha256": "aa48cfa08c3c76a84fec4f3f0a136a33040af0d650ce839ad18e99ae93b48af9"
+  },
+  {
+    "id": "j02_present_correction",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/j02_present_correction.json",
+    "original_sha256": "72e3b727f1b65da2cca60e0f1c84523bf716ced4a46204f43e69be9931f15ce5",
+    "request_sha256": "c7ff42de0e9b43fc55898a495d3c5a786b787ee743bcb49ce09b626566c69fdd"
+  },
+  {
+    "id": "j03_standalone_no_action",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/j03_standalone_no_action.json",
+    "original_sha256": "72328e2f8a971994180f2115946cb151aec4ae6969b7faead26351f64faead2b",
+    "request_sha256": "7380cc7ce519072006ddef7fde0e5529e3c385bbc24befbf57e62aa87d81e508"
+  },
+  {
+    "id": "j04_journal_injection",
+    "original_observation": "/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/baseline-observations/j04_journal_injection.json",
+    "original_sha256": "f310c5217457f8ee48ce72dc1589fb384eb624887e866c9ff7871be31b9cdad7",
+    "request_sha256": "a3f96f3fc03171c536ad6c9de1af8771cf6d78b833d346e2ead8001b67666824"
+  }
+]

@@ -1,0 +1,296 @@
+{
+  "evidence_version": "candidate-production-pipeline-v1",
+  "phase": "regression",
+  "selected_split": "all",
+  "dataset_version": "historical walking regression, not independent holdout",
+  "dataset_sha256": "2a0dc7f8eeba529ab4a46af6100ded30d7f2adc7b78818253da190f3ff6c8062",
+  "request_bundle_sha256": "2aac5af6e261a3c65e0d4e517f79a10951e29803744ed25de3d02b91c75c8622",
+  "provider_calls": 0,
+  "brave_calls": 0,
+  "model_quality_scored": false,
+  "runtime_source_root": "/workspace/JournalPulse",
+  "skill_version": "guided-action-2026-10-05.2",
+  "skill_sha256": "6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49",
+  "runtime_source_hashes": {
+    "src/journalpulse/intelligence.py": "059f70b8bd80a1f09b34c60a102e92ef4e05e15fb69ef07e850c7020ffa2741b",
+    "src/journalpulse/guided_action.py": "f25582d361f3b02c8ddca57b9f1bf96181b3cdd1ac77ff140a15bfb55d3e8da9",
+    "src/journalpulse/activity_chat.py": "ab4e59bdcbe048b1bb67b861f3d6b6571f30bac91316d2e007427b42b7d93785",
+    "src/journalpulse/conversations.py": "fc28deb7e87edb3250ae7fa5ed9e6b257aba9ca59945e65f1dad554557996cea",
+    "src/journalpulse/skills/guided_action/SKILL.md": "6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49"
+  },
+  "cases": [
+    {
+      "id": "g29_safe_brief_walk",
+      "split": "holdout",
+      "workflow": "chat",
+      "baseline_support": "shared",
+      "provider_calls": 0,
+      "brave_calls": 0,
+      "quality_judgment": "not_scored_by_this_runner",
+      "track": "observed_language_replay",
+      "observation_file_sha256": "f4ca5c0f47d829bb1d51c81c664e85538004a8929c42cc48c84a5fee17b233bf",
+      "actual_provider_provenance": {
+        "model": "openai/gpt-6-luna",
+        "provider": "Azure",
+        "deployment_id": "dpl_C7P4TdkvuCKq6JGwACck2ePTxy1c",
+        "usage": {
+          "prompt_tokens": 4516,
+          "completion_tokens": 369,
+          "total_tokens": 4885,
+          "cost": 0.00049489,
+          "is_byok": false,
+          "prompt_tokens_details": {
+            "cached_tokens": 2209,
+            "cache_write_tokens": 2304,
+            "audio_tokens": 0,
+            "video_tokens": 0
+          },
+          "cost_details": {
+            "upstream_inference_cost": 0.00049489,
+            "upstream_inference_prompt_cost": 0.00031039,
+            "upstream_inference_completions_cost": 0.0001845
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 202,
+            "image_tokens": 0,
+            "audio_tokens": 0
+          }
+        },
+        "finish_reason": "stop",
+        "refusal": null
+      },
+      "http_status": 200,
+      "response": {
+        "conversation": {
+          "id": "f18e53cd-5429-4e7f-8b2a-e7aa879b7297",
+          "user_id": "00000000-0000-4000-8000-000000000001",
+          "created_at": "2026-10-05T12:00:00Z",
+          "updated_at": "2026-10-05T12:00:00.000001Z",
+          "status": "open",
+          "llm_consent": true,
+          "source_entry_id": null,
+          "source_entry_created_at": null,
+          "retain_text": true,
+          "safety_mode": "normal",
+          "summary": "Restless after a long call; some movement sounds welcome, with six minutes available and a safe corridor nearby.",
+          "card": null,
+          "safety": {
+            "mode": "normal",
+            "reasons": [],
+            "locale": "CA",
+            "exploration_allowed": true,
+            "support_message": null,
+            "resource_ids": []
+          },
+          "activity_card": null,
+          "reflection_id": null,
+          "locale": "CA",
+          "prompt_version": "guided-action-2026-10-05.2",
+          "mode": "ai",
+          "feelings": [],
+          "ready_for_action": true,
+          "activity_constraints": {
+            "time_minutes": 6,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          },
+          "activity_goal": "move",
+          "activity_search_topic": "gentle movement gentle walking 6 minute",
+          "activity_move": "propose",
+          "interaction_preference": "auto",
+          "reported_mood": null,
+          "confirmed_feelings": null,
+          "revision": 1
+        },
+        "user_message": {
+          "id": "162f26d9-181a-4fa5-a801-e229c11744ae",
+          "conversation_id": "f18e53cd-5429-4e7f-8b2a-e7aa879b7297",
+          "client_message_id": "15cce3e1-ecf1-419f-ba65-c82f44ed6cde",
+          "role": "user",
+          "content": "I am restless after a long call. I have six minutes and a safe corridor nearby; a little movement sounds welcome.",
+          "created_at": "2026-10-05T12:00:00Z",
+          "safety_mode": "normal",
+          "model_run": null,
+          "request_inputs": {
+            "goal": null,
+            "mood_score": null,
+            "confirmed_feelings": null
+          }
+        },
+        "assistant_message": {
+          "id": "8fd9e006-f51c-4298-9215-12e6c3e8c7b0",
+          "conversation_id": "f18e53cd-5429-4e7f-8b2a-e7aa879b7297",
+          "client_message_id": null,
+          "role": "assistant",
+          "content": "A short walk in the safe corridor sounds like a good fit for the movement you\u2019re after. I can look for a walking option that fits your six minutes\u2014would you like that?",
+          "created_at": "2026-10-05T12:00:00.000001Z",
+          "safety_mode": "normal",
+          "model_run": {
+            "model": "openai/gpt-6-luna",
+            "provider": "Azure",
+            "latency_ms": 1,
+            "prompt_tokens": 4516,
+            "completion_tokens": 369,
+            "schema_valid": true,
+            "used_fallback": false,
+            "fallback_reason": null,
+            "prompt_version": "guided-action-2026-10-05.2",
+            "skill_version": "guided-action-2026-10-05.2",
+            "skill_hash": "6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49"
+          },
+          "request_inputs": null
+        }
+      },
+      "replayed_provider_requests": 1,
+      "fixture_history_messages": 0,
+      "request_comparison": {
+        "runtime_request_sha256": "2a0dc7f8eeba529ab4a46af6100ded30d7f2adc7b78818253da190f3ff6c8062",
+        "observed_request_sha256": "2a0dc7f8eeba529ab4a46af6100ded30d7f2adc7b78818253da190f3ff6c8062",
+        "observed_recorded_request_sha256": "2a0dc7f8eeba529ab4a46af6100ded30d7f2adc7b78818253da190f3ff6c8062",
+        "exact_request_match": true,
+        "recorded_hash_matches_request": true,
+        "differing_top_level_fields": []
+      },
+      "fresh_read": {
+        "conversation": {
+          "id": "f18e53cd-5429-4e7f-8b2a-e7aa879b7297",
+          "user_id": "00000000-0000-4000-8000-000000000001",
+          "created_at": "2026-10-05T12:00:00Z",
+          "updated_at": "2026-10-05T12:00:00.000001Z",
+          "status": "open",
+          "llm_consent": true,
+          "source_entry_id": null,
+          "source_entry_created_at": null,
+          "retain_text": true,
+          "safety_mode": "normal",
+          "summary": "Restless after a long call; some movement sounds welcome, with six minutes available and a safe corridor nearby.",
+          "card": null,
+          "safety": {
+            "mode": "normal",
+            "reasons": [],
+            "locale": "CA",
+            "exploration_allowed": true,
+            "support_message": null,
+            "resource_ids": []
+          },
+          "activity_card": null,
+          "reflection_id": null,
+          "locale": "CA",
+          "prompt_version": "guided-action-2026-10-05.2",
+          "mode": "ai",
+          "feelings": [],
+          "ready_for_action": true,
+          "activity_constraints": {
+            "time_minutes": 6,
+            "no_audio": false,
+            "no_video": false,
+            "seated": false,
+            "avoid_breath_focus": false
+          },
+          "activity_goal": "move",
+          "activity_search_topic": "gentle movement gentle walking 6 minute",
+          "activity_move": "propose",
+          "interaction_preference": "auto",
+          "reported_mood": null,
+          "confirmed_feelings": null,
+          "revision": 1
+        },
+        "messages": [
+          {
+            "id": "162f26d9-181a-4fa5-a801-e229c11744ae",
+            "conversation_id": "f18e53cd-5429-4e7f-8b2a-e7aa879b7297",
+            "client_message_id": "15cce3e1-ecf1-419f-ba65-c82f44ed6cde",
+            "role": "user",
+            "content": "I am restless after a long call. I have six minutes and a safe corridor nearby; a little movement sounds welcome.",
+            "created_at": "2026-10-05T12:00:00Z",
+            "safety_mode": "normal",
+            "model_run": null,
+            "request_inputs": {
+              "goal": null,
+              "mood_score": null,
+              "confirmed_feelings": null
+            }
+          },
+          {
+            "id": "8fd9e006-f51c-4298-9215-12e6c3e8c7b0",
+            "conversation_id": "f18e53cd-5429-4e7f-8b2a-e7aa879b7297",
+            "client_message_id": null,
+            "role": "assistant",
+            "content": "A short walk in the safe corridor sounds like a good fit for the movement you\u2019re after. I can look for a walking option that fits your six minutes\u2014would you like that?",
+            "created_at": "2026-10-05T12:00:00.000001Z",
+            "safety_mode": "normal",
+            "model_run": {
+              "model": "openai/gpt-6-luna",
+              "provider": "Azure",
+              "latency_ms": 1,
+              "prompt_tokens": 4516,
+              "completion_tokens": 369,
+              "schema_valid": true,
+              "used_fallback": false,
+              "fallback_reason": null,
+              "prompt_version": "guided-action-2026-10-05.2",
+              "skill_version": "guided-action-2026-10-05.2",
+              "skill_hash": "6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49"
+            },
+            "request_inputs": null
+          }
+        ]
+      },
+      "idempotent_retry_no_extra_model": true,
+      "foreign_read_status": 404,
+      "status": "accepted",
+      "runtime_gate": "pass",
+      "parser_gate": "pass",
+      "behavior_quality_gate": "requires_independent_language_judgment",
+      "local_activity_semantics_gate": "pass",
+      "new_proposal": false
+    }
+  ],
+  "supplemental_parser_boundaries": {
+    "provider_calls": 0,
+    "local_malformed_envelope_fixtures": [
+      {
+        "fixture": "invented_id",
+        "http_status": 502,
+        "persisted_messages": 0
+      },
+      {
+        "fixture": "selection_and_search",
+        "http_status": 502,
+        "persisted_messages": 0
+      },
+      {
+        "fixture": "private_search_topic",
+        "http_status": 502,
+        "persisted_messages": 0
+      },
+      {
+        "fixture": "readiness_mismatch",
+        "http_status": 502,
+        "persisted_messages": 0
+      },
+      {
+        "fixture": "native_refusal_with_valid_json",
+        "http_status": 422,
+        "persisted_messages": 0
+      }
+    ]
+  },
+  "summary": {
+    "cases": 1,
+    "actual_language_observations_replayed": 1,
+    "exact_observed_request_matches": 1,
+    "accepted_observed_language": 1,
+    "native_provider_refusals": 0,
+    "deterministic_pass": 0,
+    "failure_case_ids": [],
+    "unobserved_case_ids": []
+  },
+  "limitations": [
+    "This runner validates actual observed language against software contracts; it does not score psychological benefit.",
+    "Lifecycle and malformed-output checks use explicit local fixtures, not new Luna observations.",
+    "Discovery results remain fictional snippet fixtures; no live Brave calls or page reads occurred."
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "provider_calls": 0,
+  "reason": "The older baseline/candidate gateway omits transport hashes. An overly strict new helper asserted their presence after a successful real response. Preserve the original files, correct the request-proof label, and validate the already captured structured content without rerunning generations.",
+  "cases": [
+    {
+      "file": "baseline-g16_no_breath_focus.json",
+      "original_status": "incomplete",
+      "original_error_kind": "AssertionError",
+      "provider_status": "observed",
+      "normalized_status": "observed"
+    },
+    {
+      "file": "baseline-g18_negotiate_duration.json",
+      "original_status": "incomplete",
+      "original_error_kind": "AssertionError",
+      "provider_status": "observed",
+      "normalized_status": "observed"
+    },
+    {
+      "file": "baseline-r07_tiny_start.json",
+      "original_status": "incomplete",
+      "original_error_kind": "AssertionError",
+      "provider_status": "observed",
+      "normalized_status": "observed"
+    },
+    {
+      "file": "baseline-r21_past_present.json",
+      "original_status": "incomplete",
+      "original_error_kind": "AssertionError",
+      "provider_status": "observed",
+      "normalized_status": "observed"
+    },
+    {
+      "file": "candidate-g16_no_breath_focus.json",
+      "original_status": "incomplete",
+      "original_error_kind": "AssertionError",
+      "provider_status": "observed",
+      "normalized_status": "observed"
+    },
+    {
+      "file": "candidate-g18_negotiate_duration.json",
+      "original_status": "incomplete",
+      "original_error_kind": "AssertionError",
+      "provider_status": "observed",
+      "normalized_status": "observed"
+    },
+    {
+      "file": "candidate-r07_tiny_start.json",
+      "original_status": "incomplete",
+      "original_error_kind": "AssertionError",
+      "provider_status": "observed",
+      "normalized_status": "observed"
+    },
+    {
+      "file": "candidate-r21_past_present.json",
+      "original_status": "incomplete",
+      "original_error_kind": "AssertionError",
+      "provider_status": "observed",
+      "normalized_status": "observed"
+    }
+  ]
+}

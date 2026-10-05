@@ -1,0 +1,27 @@
+{
+  "candidate_sha256": "58b2b5d5d6eed98eacf220643820e50f0bd2178246d1f871a775d3f368140d3f",
+  "deployment_id": "dpl_9xFz5u928LMBgsiJuFQYecw7gV35",
+  "development_identity_rejected": 401,
+  "homepage": 200,
+  "readiness": {
+    "checks": {
+      "activities": "ready",
+      "configuration": "ready",
+      "database": "reachable",
+      "llm": "configured:not_probed",
+      "resources": "ready",
+      "retention_job": "scheduled",
+      "retention_last_run_status": "succeeded",
+      "retention_last_success": "2026-10-05 20:45:00.105993+00",
+      "retention_overdue": "false",
+      "retention_state": "healthy",
+      "schema": "schema_ready",
+      "signing": "valid",
+      "web": "ready"
+    },
+    "status": "ready"
+  },
+  "status": "pass",
+  "unauthenticated_private_data": 401,
+  "url": "https://journalpulse-4bv2ozlb1-yusenrong46-9212s-projects.vercel.app"
+}

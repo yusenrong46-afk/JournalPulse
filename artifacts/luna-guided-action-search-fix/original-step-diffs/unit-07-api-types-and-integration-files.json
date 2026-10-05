@@ -1,0 +1,5 @@
+{
+  "web/lib/generated-api.ts": "c76d3aff508f47f70b082499693f371d025647e11a83d6f277057535aa799451",
+  "web/openapi.json": "a44c15aac603d417b61e58a73e1298c2dd7ac1c5763a01eab7b476a5241269fd",
+  "web/tests/integration/guided-action.spec.ts": "83edda9bd2de77f0fcf957e5e1091e9fa43569f7580cd11549561aaa9bf2c866"
+}

@@ -28,6 +28,7 @@ from journalpulse.domain import (
     AffectiveState,
     Conversation,
     ConversationMessage,
+    InteractionPreference,
     MessageRole,
     ModelRun,
     OutcomeRecord,
@@ -41,6 +42,7 @@ from journalpulse.domain import (
 from journalpulse.intelligence import CONVERSATION_PROMPT_VERSION
 from journalpulse.persistence import SupabaseRepository
 from journalpulse.signing import readiness_probe, signed_payload
+from scratch_postgres import require_local_postgres_dsn
 
 ROOT = Path(__file__).resolve().parents[1]
 DATABASE = "jp_verify"
@@ -52,6 +54,7 @@ STARTED = datetime(2026, 9, 27, 12, 0, tzinfo=UTC)
 
 def dsn_for(database: str) -> str | None:
     raw = os.environ.get("JOURNALPULSE_PG_DSN")
+    require_local_postgres_dsn(raw)
     if not raw:
         return None
     parts = urlsplit(raw)
@@ -132,6 +135,12 @@ def captured(call: Any) -> str:
     return rpc_call(name, body)
 
 
+def rate(bucket: str = "generation", limit: int = 3, window: int = 60) -> str:
+    return captured(lambda repo: repo.consume_rate_limit(
+        USER_A, bucket, limit=limit, window_seconds=window, now=datetime.now(UTC),
+    ))
+
+
 def conversation(owner: UUID, *, retain: bool = False) -> Conversation:
     return Conversation(
         id=uuid4(),
@@ -204,6 +213,75 @@ def accept(chat: Conversation, record: ReflectionRecord, revision: int) -> str:
     return captured(
         lambda repo: repo.accept_conversation(chat.user_id, chat.id, record, expected_revision=revision)
     )
+
+
+def preference(chat: Conversation, value: InteractionPreference, revision: int, request: UUID) -> str:
+    return captured(
+        lambda repo: repo.change_preference(
+            chat.user_id, chat.id, request_id=request, preference=value,
+            expected_revision=revision, now=STARTED,
+        )
+    )
+
+
+def preference_checks() -> None:
+    """Use signed adapter payloads to verify the choice through real RLS and row locks."""
+    chat = conversation(USER_A)
+    legacy = conversation(USER_A)
+    legacy_accept = signed_payload("accept_conversation", USER_A, {
+        "conversation_id": str(legacy.id), "expected_revision": 0,
+        "reflection": reflection(USER_A).model_dump(mode="json"),
+    }, SIGNING_KEY)
+    first_id = uuid4()
+    listen = preference(chat, InteractionPreference.LISTEN, 0, first_id)
+    act = preference(chat, InteractionPreference.ACT, 1, uuid4())
+    user, assistant = pair(chat, "a delayed turn", 0)
+    offered = chat.model_copy(update={"ready_for_action": True})
+    next_user, next_assistant = pair(chat, "later turn", 1)
+    record = reflection(USER_A)
+    missing_revision = signed_payload("accept_conversation", USER_A, {
+        "conversation_id": str(chat.id), "expected_revision": 6,
+        "reflection": record.model_dump(mode="json"),
+    }, SIGNING_KEY)
+    output = psql(DATABASE, f"""
+    {as_user(USER_A)}
+    select {create(legacy)};
+    reset role;
+    update public.conversations set record = record - 'interaction_preference' where id = '{legacy.id}';
+    {as_user(USER_A)}
+    select {rpc_call("jp_accept_conversation", legacy_accept)};
+    {check(f"(select status from public.conversations where id = '{legacy.id}') = 'closed'", "legacy JSON without preference keeps its original acceptance contract")}
+    {as_user(USER_A)}
+    select {create(chat)};
+    select {listen};
+    {check(f"(select record->>'interaction_preference' from public.conversations where id = '{chat.id}') = 'listen'", "preference persists in PostgreSQL")}
+    select {act};
+    {check(f"({listen}->>'interaction_preference') = 'act'", "replayed Listen returns current Act without changing it")}
+    {expect_error(preference(chat, InteractionPreference.ACT, 0, first_id), "Preference request ID is already in use", "conflicting preference ID is refused")}
+    {expect_error(commit(chat, user, assistant, 0), "Conversation changed", "a delayed turn cannot restore the withdrawn card")}
+    {check(f"(select count(*) from public.conversation_messages where conversation_id = '{chat.id}') = 0", "rejected turn inserts no messages")}
+    select {commit(chat, user, assistant, 2)};
+    {check(f"(select record->>'interaction_preference' from public.conversations where id = '{chat.id}') = 'act'", "older server turn cannot overwrite preference")}
+    select {preference(chat, InteractionPreference.LISTEN, 3, uuid4())};
+    select {commit(offered, next_user, next_assistant, 4)};
+    {check(f"(select record->>'ready_for_action' from public.conversations where id = '{chat.id}') = 'false'", "database suppresses a model offer while listening")}
+    {expect_error(accept(chat, record, 5), "Conversation changed", "listening cannot accept an ordinary card")}
+    select {preference(chat, InteractionPreference.ACT, 5, uuid4())};
+    {expect_error(rpc_call("jp_accept_conversation", missing_revision), "Conversation changed", "explicit choice requires client card revision")}
+    {as_user(USER_B)}
+    {expect_error(preference(chat.model_copy(update={"user_id": USER_B}), InteractionPreference.LISTEN, 6, uuid4()), "Conversation not found", "other owner cannot change preference")}
+    {check(f"(select count(*) from public.conversation_preference_requests where conversation_id = '{chat.id}') = 0", "RLS hides another person's command receipts")}
+    {expect_denied("insert into public.conversation_preference_requests default values", "direct preference receipt writes are forbidden")}
+    {as_user(USER_A)}
+    select {accept(chat, record, 6)};
+    {check(f"({listen}->>'status') = 'closed'", "duplicate command after close returns closed state")}
+    {expect_error(preference(chat, InteractionPreference.LISTEN, 7, uuid4()), "Conversation is closed", "new preference cannot reopen a closed chat")}
+    select public.jp_delete_conversation('{chat.id}');
+    {check(f"(select count(*) from public.conversation_preference_requests where conversation_id = '{chat.id}') = 0", "conversation deletion cascades to receipts")}
+    """)
+    for line in output.splitlines():
+        if "ok:" in line:
+            print(line.split("NOTICE:", 1)[-1].strip())
 
 
 def as_user(user: UUID | None) -> str:
@@ -537,27 +615,27 @@ def behavior_sql() -> str:
     }
 
     -- Shared rate limit.
-    select public.jp_consume_rate_limit('generation', 3, 60);
-    select public.jp_consume_rate_limit('generation', 3, 60);
+    select {rate()};
+    select {rate()};
     {
         check(
-            "(public.jp_consume_rate_limit('generation', 3, 60)->>'allowed')::boolean",
+            f"({rate()}->>'allowed')::boolean",
             "third event is allowed",
         )
     }
     {
         check(
-            "not (public.jp_consume_rate_limit('generation', 3, 60)->>'allowed')::boolean",
+            f"not ({rate()}->>'allowed')::boolean",
             "fourth event is refused",
         )
     }
     {
         check(
-            "(public.jp_consume_rate_limit('generation', 3, 60)->>'retry_after')::int between 1 and 60",
+            f"({rate()}->>'retry_after')::int between 1 and 60",
             "refusal carries retry_after within the window",
         )
     }
-    {check("(public.jp_consume_rate_limit('other', 3, 60)->>'allowed')::boolean", "buckets are independent")}
+    {check(f"({rate('other')}->>'allowed')::boolean", "buckets are independent")}
     {expect_denied("select * from public.rate_limit_events", "usage counters are not readable")}
 
     -- Isolation.
@@ -621,22 +699,35 @@ def behavior_sql() -> str:
     set role anon;
     {
         check(
-            f"(public.jp_readiness({literal(probe['probe'])}, {literal(probe['signature'])})->>'signing') = 'valid'",
-            "readiness confirms the shared key",
+            f"(public.jp_readiness({literal(probe['probe'])}, {literal(probe['signature'])})->>'schema')"
+            " = 'phase-a-1'",
+            "the existing API retains its readiness schema contract",
         )
     }
     {
         check(
-            f"(public.jp_readiness({literal(bad_probe['probe'])}, {literal(bad_probe['signature'])})->>'signing')"
+            f"(public.jp_readiness({literal(probe['probe'])}, {literal(probe['signature'])})->>'signing') = 'valid'",
+            "the existing API can still verify its shared signing key",
+        )
+    }
+    {
+        check(
+            f"(public.jp_readiness_v2({literal(bad_probe['probe'])}, {literal(bad_probe['signature'])})->>'signing')"
             " = 'invalid'",
             "readiness detects a mismatched key",
         )
     }
     {
         check(
-            f"(public.jp_readiness({literal(probe['probe'])}, {literal(probe['signature'])})->>'schema')"
-            " = 'phase-a-1'",
+            f"(public.jp_readiness_v2({literal(probe['probe'])}, {literal(probe['signature'])})->>'schema')"
+            " = 'phase-a-2'",
             "readiness reports the schema version",
+        )
+    }
+    {
+        check(
+            f"(public.jp_readiness_v2({literal(probe['probe'])}, {literal(probe['signature'])})->>'signing') = 'valid'",
+            "the preview API verifies the same shared signing key",
         )
     }
     {expect_denied("select count(*) from public.conversations", "anonymous callers read nothing")}
@@ -676,6 +767,86 @@ def behavior_sql() -> str:
 
 def race_sql(user: UUID, first: str, hold_seconds: float) -> str:
     return f"{as_user(user)} begin; select {first}; select pg_sleep({hold_seconds}); commit;"
+
+
+def retention_checks() -> None:
+    """Real PostgreSQL functions, with disposable cron metadata and a controlled clock.
+
+    These cases do not claim the pg_cron worker actually fired. Metadata stand-ins
+    are rolled back, including when the extension exists on the test server.
+    """
+    at = "2026-10-04 12:00:00+00"
+
+    def observed(key: str, moment: str = at) -> str:
+        return f"(private.retention_diagnostics('{moment}'::timestamptz)->>'{key}')"
+
+    output = psql(DATABASE, f"""
+    begin;
+    reset role;
+    create schema if not exists cron;
+    create table if not exists cron.job (
+      jobid bigint primary key, jobname text, schedule text, command text, active boolean
+    );
+    create table if not exists cron.job_run_details (
+      runid bigint primary key, jobid bigint, status text, start_time timestamptz, end_time timestamptz
+    );
+    delete from cron.job where jobname = 'journalpulse-retention';
+    update private.retention_state set monitoring_started_at = '{at}', last_success_at = null;
+    {check(f"{observed('retention_state')} = 'missing'", "retention distinguishes a missing job")}
+    insert into cron.job(jobid, jobname, schedule, command, active)
+      values(99001, 'journalpulse-retention', '*/15 * * * *',
+             'select public.jp_purge_expired_conversations()', true);
+    {check(f"{observed('retention_state')} = 'never_succeeded'", "a schedule alone is never success")}
+    {check(f"{observed('retention_overdue', '2026-10-04 12:30:00+00')} = 'false'", "initial grace includes exactly 30 minutes")}
+    {check(f"{observed('retention_overdue', '2026-10-04 12:30:01+00')} = 'true'", "initial grace expires after 30 minutes")}
+    select public.jp_purge_expired_conversations();
+    {check("(select last_success_at from private.retention_state) is not null", "successful scheduled entry point records completion")}
+    {check(f"{observed('retention_state')} = 'never_succeeded'", "manual entry point cannot masquerade as a successful scheduler")}
+    update private.retention_state set last_success_at = '{at}';
+    {as_user(USER_A)}
+    select public.jp_close_my_stale_conversations();
+    reset role;
+    {check(f"(select last_success_at from private.retention_state) = '{at}'::timestamptz", "request-time cleanup cannot repair scheduler evidence")}
+    insert into cron.job_run_details(runid, jobid, status, start_time, end_time)
+      values (99000, 99001, 'succeeded', '{at}', '{at}');
+    {check(f"{observed('retention_state', '2026-10-04 12:30:00+00')} = 'healthy'", "success is fresh at the 30-minute boundary")}
+    {check(f"{observed('retention_state', '2026-10-04 12:30:01+00')} = 'overdue'", "stale success is overdue after 30 minutes")}
+    insert into cron.job_run_details(runid, jobid, status, start_time, end_time)
+      values (99001, 99001, 'failed', '2026-10-04 12:10:00+00', '2026-10-04 12:11:00+00');
+    {check(f"{observed('retention_state', '2026-10-04 12:12:00+00')} = 'failed'", "failure after success is observable")}
+    update private.retention_state set last_success_at = '2026-10-04 12:15:00+00';
+    {check(f"{observed('retention_state', '2026-10-04 12:16:00+00')} = 'failed'", "manual completion cannot hide a cron failure")}
+    insert into cron.job_run_details(runid, jobid, status, start_time, end_time)
+      values (99002, 99001, 'succeeded', '2026-10-04 12:14:00+00', '2026-10-04 12:15:00+00');
+    {check(f"{observed('retention_state', '2026-10-04 12:16:00+00')} = 'healthy'", "later completion recovers from failure")}
+    alter table cron.job_run_details rename to job_run_details_unavailable;
+    {check(f"{observed('retention_state')} = 'unknown'", "unavailable cron history is unknown")}
+    alter table cron.job_run_details_unavailable rename to job_run_details;
+    alter table cron.job_run_details rename column status to unavailable_status;
+    {check(f"{observed('retention_state')} = 'unknown'", "unreadable cron metadata is unknown")}
+    alter table cron.job_run_details rename column unavailable_status to status;
+    update cron.job set schedule = '* * * * *' where jobid = 99001;
+    {check(f"{observed('retention_state')} = 'unknown'", "unexpected schedule is not called healthy")}
+    update cron.job set active = false where jobid = 99001;
+    {check(f"{observed('retention_state')} = 'missing'", "inactive cron job is missing")}
+    create or replace function private.purge_conversations(max_idle interval, only_owner uuid)
+    returns jsonb language plpgsql security definer set search_path = private, public as $fail$
+    begin raise exception 'forced cleanup failure'; end;
+    $fail$;
+    {expect_error("public.jp_purge_expired_conversations()", "forced cleanup failure", "failed cleanup propagates rather than claiming success")}
+    {check("(select last_success_at from private.retention_state) = '2026-10-04 12:15:00+00'::timestamptz", "failed cleanup leaves previous success unchanged")}
+    {as_user(USER_A)}
+    {expect_denied("select public.jp_purge_expired_conversations()", "authenticated user cannot mark scheduler success")}
+    {expect_denied("select * from private.retention_state", "authenticated user cannot read or write private monitoring data")}
+    reset role; set role anon;
+    {check("public.jp_readiness_v2('readiness:test', 'invalid')->>'retention_state' = 'missing'", "anonymous readiness exposes bounded operational status")}
+    {expect_denied("select private.retention_diagnostics()", "public callers cannot choose the diagnostic clock")}
+    rollback;
+    """)
+    for line in output.splitlines():
+        if "ok:" in line:
+            print(line.split("NOTICE:", 1)[-1].strip())
+    print("note: retention clock/history checks use cron metadata stand-ins; no worker execution claimed")
 
 
 def concurrency_checks() -> None:
@@ -739,8 +910,20 @@ def concurrency_checks() -> None:
         raise SystemExit(f"FAILED: concurrent accepts did not store exactly one reflection: {counts}")
     print("ok: concurrent accepts store exactly one reflection")
 
+    choice_chat = conversation(USER_A)
+    choice_user, choice_assistant = pair(choice_chat, "pending offer", 0)
+    psql(DATABASE, f"{as_user(USER_A)} select {create(choice_chat)};")
+    _, error = contend(
+        preference(choice_chat, InteractionPreference.LISTEN, 0, uuid4()),
+        commit(choice_chat, choice_user, choice_assistant, 0),
+    )
+    if "Conversation changed" not in error:
+        raise SystemExit(f"FAILED: concurrent preference did not reject the waiting turn: {error}")
+    print("ok: a turn waiting on a concurrent preference choice is rejected")
+
 
 def reset_database() -> None:
+    require_local_postgres_dsn(os.getenv("JOURNALPULSE_PG_DSN"))
     psql(
         "postgres",
         """
@@ -770,6 +953,8 @@ def main() -> None:
         sys.stderr.write(output)
         raise SystemExit("schema verification did not report success")
     concurrency_checks()
+    preference_checks()
+    retention_checks()
     print("PostgreSQL schema verification passed")
 
 

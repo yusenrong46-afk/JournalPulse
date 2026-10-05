@@ -5,8 +5,10 @@ import { useState } from "react";
 
 import { Luna } from "@/components/luna";
 import { apiRequest } from "@/lib/api";
+import { writeOpenConversationId } from "@/lib/conversation";
 import { usePreferences } from "@/lib/preferences";
 import { clearReflectionDraft } from "@/lib/reflection-draft";
+import { clearReminders } from "@/lib/reminders";
 import { getSupabase } from "@/lib/supabase";
 
 const DELETE_PHRASE = "delete my journal";
@@ -41,6 +43,8 @@ export default function MePage() {
     setError("");
     try {
       const result = await apiRequest<{ deleted_records: number }>("/v1/account/data", { method: "DELETE" });
+      writeOpenConversationId(null);
+      clearReminders();
       await clearReflectionDraft();
       setConfirmation("");
       setMessage(`Done. ${result.deleted_records} saved items were deleted. You’re still signed in.`);
@@ -52,9 +56,18 @@ export default function MePage() {
   }
 
   async function signOut() {
-    const client = await getSupabase();
-    await client?.auth.signOut();
-    router.replace("/login");
+    setBusy(true);
+    setError("");
+    try {
+      const client = await getSupabase();
+      const result = await client?.auth.signOut();
+      if (result?.error) throw result.error;
+      router.replace("/login");
+    } catch {
+      setError("Sign-out didn’t finish. You’re still signed in; please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -101,14 +114,15 @@ export default function MePage() {
         <details className="explain">
           <summary>Safety comes first</summary>
           <div>
-            <p>Every message is checked for signs of crisis before anything else happens. If there are signs, Luna skips the AI and points you to people who can help right away.</p>
+            <p>JournalPulse checks messages for certain clear crisis phrases. These checks can miss signs of distress. When a phrase is detected, Luna switches to support information and points you toward human help.</p>
           </div>
         </details>
         <details className="explain">
           <summary>Where Luna’s ideas come from</summary>
           <div>
-            <p>Luna only suggests activities from a reviewed list, like breathing exercises, short walks, or reading from trusted health sites. The AI never invents links.</p>
-            <p>Luna’s pick comes from a simple, fixed rule. You can always choose a different option, and that choice is yours.</p>
+            <p>Luna can suggest built-in activities and options from a reviewed resource collection, such as short walks and reading from health sites.</p>
+            <p>With your permission, Luna can also search Brave and select links from search snippets. These web results have not been reviewed; full pages are not read or fact-checked.</p>
+            <p>With AI help on, Luna uses the current conversation and any journal entry you explicitly share to choose from available activities. Simple mode uses a fixed selection rule. You can decline a suggestion or choose another option.</p>
           </div>
         </details>
         <details className="explain">
@@ -124,7 +138,7 @@ export default function MePage() {
         <h2 id="data-heading">Your data</h2>
         <div className="row">
           <button className="btn btn-soft" type="button" onClick={exportData}>Download my data</button>
-          <button className="btn btn-ghost" type="button" onClick={() => void signOut()}>Sign out</button>
+          <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => void signOut()}>Sign out</button>
         </div>
         <div className="card danger-card">
           <h3>Delete everything</h3>

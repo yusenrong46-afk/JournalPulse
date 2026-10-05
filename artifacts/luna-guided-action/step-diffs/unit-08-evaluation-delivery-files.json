@@ -1,0 +1,7 @@
+{
+  "docs/LUNA_GUIDED_ACTION_IMPLEMENTATION.md": "81c1e9954d27df8cb6b3c71b3514ecee6ed240fc6c8b59731c7cfa0b95f45d11",
+  "docs/LUNA_GUIDED_ACTION_VERTICAL_SLICE_PLAN.md": "78a64dda1809d9471ee385ba5dd890fe8a1abf75ca6fb7d3ba2d3083aacc6940",
+  "docs/evaluations/GUIDED_ACTION_RUBRIC.md": "eea8e25f3f4b48a2482405819f7c4c1760cd24bcc42ec5e51d9a1484baa7347d",
+  "src/journalpulse/guided_evaluation.py": "ffaa8ec642ab74e37d9677ccb450910bfa9c48ab1fc6f528056c67795b50a153",
+  "tests/test_guided_evaluation.py": "e85ec1818d7d28c95fadcd0c4c07976878581d7e40a2f60360b4286fccf6264d"
+}

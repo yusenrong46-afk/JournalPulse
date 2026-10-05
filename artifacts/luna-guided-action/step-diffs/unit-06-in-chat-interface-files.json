@@ -1,0 +1,11 @@
+{
+  "web/app/talk/page.tsx": "af27030b3e37fb4c6bd6b702be801ce79e870f0eac5f2265fdbfd22d1bf17207",
+  "web/components/action-timer.tsx": "a57cc2b59fb31bbe3deac8c13ea177a2f9b3ca1d51544b3a4b4f44c690bf6ad3",
+  "web/components/activity-session-discovery.tsx": "51315e186c53d038bbbc45a8bbb17a8e6276ea695af0812b2f49f2ebbde5d904",
+  "web/components/activity-session-panel.tsx": "d256bc2a4fff21ea3b8946eb781373daf20edaca96710988590a6a405024a8d5",
+  "web/components/activity-session-workspace.tsx": "fec294fc14adcbf211d18fa53fd0dcbb1468785bbced6a0557a04ed9cb4ae80b",
+  "web/lib/activity-card.ts": "0117875ce01c89a27593e803bf34500a3893324c4dd87da961773ff79f7f90f6",
+  "web/lib/activity-session.ts": "5e8099b17512bc6d62986bbaa9bb93d3583e1f0084c55c37406e93da3e3c408c",
+  "web/tests/unit/activity-session.test.tsx": "d2cb5c06852fe1d0231a83970072d94a522a3e1a3087fbdcdc80351df4ba558d",
+  "web/tests/unit/journal-chat.test.tsx": "a5ceb86885b79c7823063b065024d414b9c2658a34ad696909b68712a865b92b"
+}

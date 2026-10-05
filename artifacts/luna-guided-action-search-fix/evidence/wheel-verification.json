@@ -1,0 +1,20 @@
+{
+  "skill_version": "guided-action-2026-10-05.2",
+  "skill_sha256": "6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49",
+  "search_categories": [
+    "meditation",
+    "grounding",
+    "movement",
+    "walking",
+    "stretching",
+    "reflection",
+    "communication",
+    "focus",
+    "reading",
+    "puzzle",
+    "video",
+    "pause"
+  ],
+  "wheel_sha256": "39c5e2b8e6b1f6ca33872a3d4736f48f3ef12ec6e3f29f122fd2920c71973a84",
+  "status": "pass"
+}

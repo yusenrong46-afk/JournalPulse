@@ -1,0 +1,84 @@
+{
+  "total_cases": 60,
+  "development_primary": {
+    "n": 24,
+    "mean_difference": 0.5,
+    "approximate_95_percent_interval": [
+      0.028087455903784753,
+      0.9719125440962153
+    ],
+    "uncertainty_note": "Normal approximation over paired teacher scores; small/nonrandom sample, model bias."
+  },
+  "heldout_primary": {
+    "n": 13,
+    "mean_difference": 0.5384615384615384,
+    "approximate_95_percent_interval": [
+      -0.07396597204178779,
+      1.1508890489648647
+    ],
+    "uncertainty_note": "Normal approximation over paired teacher scores; small/nonrandom sample, model bias."
+  },
+  "expected_heldout_quality_pairs": 14,
+  "heldout_preferences": {
+    "tie": 6,
+    "candidate": 5,
+    "baseline": 2
+  },
+  "heldout_non_tied_pairs": 7,
+  "heldout_candidate_win_fraction": 0.7142857142857143,
+  "naturalness_paired": {
+    "n": 36,
+    "mean_difference": 0.25,
+    "approximate_95_percent_interval": [
+      0.06895979574813899,
+      0.431040204251861
+    ],
+    "uncertainty_note": "Normal approximation over paired teacher scores; small/nonrandom sample, model bias."
+  },
+  "adaptive": {
+    "expected_scenarios": 8,
+    "baseline_status_counts": {
+      "observed": 8
+    },
+    "candidate_status_counts": {
+      "observed": 8
+    },
+    "judged_pairs": 7,
+    "maximum_assistant_turns": 4,
+    "note": "Adaptive trajectories do not increase the controlled primary denominator."
+  },
+  "baseline_status_counts": {
+    "observed": 41,
+    "deterministic_pass": 7,
+    "unsupported_baseline": 8,
+    "provider_refusal": 4
+  },
+  "candidate_status_counts": {
+    "observed": 40,
+    "deterministic_pass": 15,
+    "provider_error": 1,
+    "provider_refusal": 4
+  },
+  "outcome_counts": {
+    "candidate": 15,
+    "tie": 18,
+    "baseline": 7,
+    "unjudged": 7,
+    "new_capability": 8,
+    "candidate_failure": 5
+  },
+  "severe_observed_failures": [],
+  "failed_heldout_deliveries": [
+    "g29_safe_brief_walk"
+  ],
+  "unresolved_critical_cases": [],
+  "gates": {
+    "complete_heldout_observations": "fail",
+    "hard_safety_privacy_lifecycle": "fail",
+    "heldout_primary_gain": "incomplete",
+    "heldout_non_tied_win_fraction": "incomplete",
+    "naturalness": "incomplete",
+    "adaptive_observations": "pass"
+  },
+  "release_gate_status": "fail"
+}

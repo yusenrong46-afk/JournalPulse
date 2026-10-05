@@ -1,15 +1,130 @@
 from __future__ import annotations
 
+import json
+import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 import httpx
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
+from .activity_resources import activity_resource_matches_constraints
 from .config import Settings
 from .domain import FEELINGS, AffectiveState, ModelRun, ReflectionCopy
+from .guided_action import (
+    GUIDED_ACTION_JSON_SCHEMA,
+    GUIDED_ACTION_PROMPT_VERSION,
+    GUIDED_ACTION_SYSTEM_PROMPT,
+    ActivityDirective,
+    GuidedActionContext,
+    load_guided_action_skill,
+)
+from .http_clients import managed_http_client
+
+logger = logging.getLogger(__name__)
+
+_DIAGNOSTIC_FIELDS = {
+    "reply", "offer_action", "resource_intent", "card_reason", "summary", "feelings",
+    "model", "provider", "latency_ms", "prompt_tokens", "completion_tokens", "schema_valid",
+    "used_fallback", "fallback_reason", "prompt_version",
+    "activity", "move", "goal", "selected_resource_id", "constraints", "search_topic",
+    "skill_version", "skill_hash",
+}
+_DIAGNOSTIC_ERROR_TYPES = {
+    "json_invalid", "missing", "extra_forbidden", "literal_error", "string_type",
+    "string_too_short", "string_too_long", "list_type", "too_long", "bool_type",
+    "int_parsing", "int_type", "greater_than_equal", "value_error", "model_type", "dict_type",
+    "invalid_activity_operation",
+}
+_DIAGNOSTIC_STAGES = {
+    "provider_json", "envelope", "content_format", "output_schema", "output_semantics",
+    "usage_metadata", "completion_truncated", "provider_transport", "upstream_error", "upstream_http",
+    "provider_refusal",
+}
+
+
+@dataclass(frozen=True)
+class CompletionDiagnostic:
+    """Bounded error categories that may leave the server; never rejected values."""
+
+    stage: str
+    errors: tuple[tuple[str, str], ...] = ()
+    content_kind: str | None = None
+    finish_reason: str | None = None
+    provider: str | None = None
+
+    @property
+    def headers(self) -> dict[str, str]:
+        # Live log access can fail. Authenticated callers can still distinguish
+        # routing failures from schema failures without seeing provider text.
+        headers = {"X-JournalPulse-Error-Stage": (
+            self.stage if self.stage in _DIAGNOSTIC_STAGES else "provider_response"
+        )}
+        if self.errors:
+            categories = []
+            for field, error_type in self.errors[:5]:
+                safe_field = field if field in _DIAGNOSTIC_FIELDS or field == "root" else "unrecognized_field"
+                safe_type = error_type if (
+                    error_type in _DIAGNOSTIC_ERROR_TYPES or error_type == "nonblank_reason_required"
+                ) else "validation_error"
+                categories.append(f"{safe_field}.{safe_type}")
+            headers["X-JournalPulse-Error-Fields"] = ",".join(categories)
+        for name, value, allowed in [
+            ("Content", self.content_kind, {"empty", "markdown_fenced", "json_like", "plain_text"}),
+            ("Finish", self.finish_reason, {"stop", "length", "content_filter", "tool_calls", "error"}),
+            ("Provider", self.provider, {"Azure", "OpenAI", "Amazon Bedrock", "openrouter"}),
+        ]:
+            if value is not None:
+                headers[f"X-JournalPulse-Error-{name}"] = value if value in allowed else "other"
+        return headers
+
+
+def _log_completion_rejection(
+    stage: str, exc: Exception, *, content_kind: str | None = None,
+    finish_reason: str | None = None, provider: str | None = None,
+) -> CompletionDiagnostic:
+    """Log fixed validation metadata, never provider text, input, context or traceback.
+
+    Pydantic's normal error strings contain rejected values. Even an unknown
+    field name can be private model output, so only known field names survive.
+    """
+    errors = []
+    if isinstance(exc, ValidationError):
+        for error in exc.errors(include_url=False, include_context=False, include_input=False)[:5]:
+            location = error.get("loc", ())
+            field = location[0] if location else "root"
+            if field != "root" and field not in _DIAGNOSTIC_FIELDS:
+                field = "unrecognized_field"
+            error_type = error.get("type")
+            errors.append({
+                "field": field,
+                "type": error_type if error_type in _DIAGNOSTIC_ERROR_TYPES else "validation_error",
+            })
+    elif isinstance(exc, ActivitySemanticError):
+        errors.append({"field": "activity", "type": "invalid_activity_operation"})
+    elif stage == "output_semantics":
+        errors.append({"field": "card_reason", "type": "nonblank_reason_required"})
+    diagnostic = {
+        "stage": stage, "exception_type": type(exc).__name__,
+        "prompt_version": CONVERSATION_PROMPT_VERSION, "errors": errors,
+    }
+    logger.warning("luna_completion_rejected %s", json.dumps(diagnostic, sort_keys=True))
+    return CompletionDiagnostic(
+        stage, tuple((error["field"], error["type"]) for error in errors),
+        content_kind, finish_reason, provider,
+    )
+
+
+def _content_kind(text: str) -> str:
+    """Classify syntax shape without recording words, length or a private-text digest."""
+    stripped = text.lstrip()
+    if not stripped:
+        return "empty"
+    if stripped.startswith("```"):
+        return "markdown_fenced"
+    return "json_like" if stripped.startswith(("{", "[")) else "plain_text"
 
 
 class UnsupportedProviderResponse(Exception):
@@ -19,9 +134,47 @@ class UnsupportedProviderResponse(Exception):
 class ConversationProviderError(Exception):
     """The conversation model failed, or its completion cannot be shown."""
 
-    def __init__(self, message: str, *, status_code: int = 502) -> None:
+    def __init__(
+        self, message: str, *, status_code: int = 502, diagnostic: CompletionDiagnostic | None = None,
+    ) -> None:
         super().__init__(message)
         self.status_code = status_code
+        self.diagnostic = diagnostic
+
+    @property
+    def diagnostic_headers(self) -> dict[str, str]:
+        return self.diagnostic.headers if self.diagnostic else {}
+
+
+MAX_MODEL_RESPONSE_BYTES = 256_000
+
+
+def _bounded_provider_post(
+    client: httpx.Client, url: str, *, timeout: float, **kwargs: Any
+) -> httpx.Response:
+    """Bound decoded response bytes and elapsed streaming time for fixed provider calls.
+
+    A per-read timeout alone can be renewed by a slowly trickled response. Check
+    elapsed time between chunks as well; an in-flight read can add at most 5s.
+    Redirects are disabled so provider credentials cannot follow another host.
+    """
+    deadline = time.monotonic() + timeout
+    with client.stream(
+        "POST", url, timeout=httpx.Timeout(timeout, read=min(timeout, 5)),
+        follow_redirects=False, **kwargs,
+    ) as response:
+        content = bytearray()
+        for chunk in response.iter_bytes():
+            if time.monotonic() > deadline:
+                raise httpx.ReadTimeout("Provider response deadline exceeded")
+            if len(content) + len(chunk) > MAX_MODEL_RESPONSE_BYTES:
+                raise httpx.DecodingError("Provider response size limit exceeded")
+            content.extend(chunk)
+        # iter_bytes() is decoded already; omitting encoding headers avoids a
+        # second decompression when creating the bounded in-memory response.
+        return httpx.Response(
+            response.status_code, content=bytes(content), request=response.request,
+        )
 
 
 class StructuredReflection(BaseModel):
@@ -94,16 +247,22 @@ class OpenRouterReflectionClient:
         if not settings.openrouter_zdr:
             raise ValueError("JournalPulse requires zero-data-retention routing")
         self.settings = settings
-        self.client = client or httpx.Client(timeout=settings.openrouter_timeout_seconds)
+        self.client = client
         self.sleeper = sleeper
 
     def analyze(self, text: str, context: dict[str, str]) -> AnalysisResult:
+        with managed_http_client(self.client, timeout=self.settings.openrouter_timeout_seconds) as client:
+            return self._analyze(client, text, context)
+
+    def _analyze(self, client: httpx.Client, text: str, context: dict[str, str]) -> AnalysisResult:
         started = time.perf_counter()
         response: httpx.Response | None = None
         for attempt in range(self.settings.openrouter_max_attempts):
             try:
-                response = self.client.post(
+                response = _bounded_provider_post(
+                    client,
                     f"{self.settings.openrouter_base_url}/chat/completions",
+                    timeout=self.settings.openrouter_timeout_seconds,
                     headers={
                         "Authorization": f"Bearer {self.settings.openrouter_api_key}",
                         "Content-Type": "application/json",
@@ -156,9 +315,27 @@ class OpenRouterReflectionClient:
         latency_ms = round((time.perf_counter() - started) * 1000)
         response.raise_for_status()
         body = response.json()
-        content = body["choices"][0]["message"]["content"]
+        if not isinstance(body, dict):
+            raise ValueError("Expected provider object")
+        choices = body.get("choices")
+        if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+            raise ValueError("Expected reflection choice")
+        choice = choices[0]
+        message = choice.get("message")
+        refusal = message.get("refusal") if isinstance(message, dict) else None
+        # Native provider flags take precedence over otherwise valid JSON. The
+        # legacy route uses its local fallback, never a declined AI completion.
+        if choice.get("finish_reason") == "content_filter" or isinstance(refusal, str) and refusal.strip():
+            raise ValueError("Provider declined the reflection")
+        if choice.get("finish_reason") == "length":
+            raise ValueError("Provider truncated the reflection")
+        if not isinstance(message, dict) or "content" not in message:
+            raise ValueError("Expected reflection message")
+        content = message["content"]
         structured = structured_reflection_from_content(content)
         usage = body.get("usage", {})
+        if not isinstance(usage, dict):
+            raise ValueError("Expected usage object")
         run = ModelRun(
             model=body.get("model", self.settings.openrouter_model),
             provider=body.get("provider", "openrouter"),
@@ -210,7 +387,7 @@ def _openrouter_body_error(response: httpx.Response) -> tuple[int, str] | None:
         return None
     try:
         payload = response.json()
-    except ValueError:
+    except (ValueError, RecursionError):
         return None
     if not isinstance(payload, dict) or "choices" in payload:
         return None
@@ -283,7 +460,7 @@ def safe_analyze(
         return (client or OpenRouterReflectionClient(settings)).analyze(text, context)
     except UnsupportedProviderResponse:
         raise
-    except (httpx.HTTPError, KeyError, ValueError, ValidationError) as exc:
+    except (httpx.HTTPError, KeyError, ValueError, ValidationError, RecursionError) as exc:
         fallback = deterministic_reflection(text, self_report)
         return AnalysisResult(
             state=fallback.state,
@@ -295,20 +472,8 @@ def safe_analyze(
         )
 
 
-CONVERSATION_PROMPT_VERSION = "2026-09-27.2"
-
-CONVERSATION_SYSTEM_PROMPT = (
-    "You are Luna, a small, warm journaling companion. You are not a therapist. Write in plain, "
-    "friendly language, 80 words at most, and ask one question at a time. Reflect the person's own "
-    "words. Gently help them say what happened and how it feels; do not rush to fixes. Never "
-    "suggest an activity, exercise, or technique yourself: the app offers reviewed options. Do not "
-    "diagnose, give medical or crisis advice, claim memory of other conversations, or output URLs, "
-    "phone numbers, or resource names. In feelings, list up to three words from the allowed list "
-    "that best match what the person has said so far; leave it empty if you cannot tell. Set "
-    "offer_action once you understand how they feel and they ask what to do, or sound ready to try "
-    "one small thing; then ask whether they would like to find one small thing together. Return "
-    "only the schema."
-)
+CONVERSATION_PROMPT_VERSION = GUIDED_ACTION_PROMPT_VERSION
+CONVERSATION_SYSTEM_PROMPT = GUIDED_ACTION_SYSTEM_PROMPT
 
 CONVERSATION_JSON_SCHEMA: dict[str, Any] = {
     "name": "journalpulse_conversation_turn",
@@ -344,12 +509,16 @@ CONVERSATION_JSON_SCHEMA: dict[str, Any] = {
 
 
 class ConversationTurnOutput(BaseModel):
+    # Provider-side structured output is a request, not a local trust boundary.
+    # Validate it again without coercing readiness flags or accepting invented fields.
+    model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=True)
+
     reply: str = Field(min_length=1, max_length=1200)
     offer_action: bool
-    resource_intent: str = Field(min_length=1, max_length=40)
-    card_reason: str = Field(default="", max_length=240)
+    resource_intent: Literal["ground", "move", "connect", "reflect", "play", "watch", "read", "pause"]
+    card_reason: str = Field(max_length=240)
     summary: str = Field(min_length=1, max_length=420)
-    feelings: list[str] = Field(default_factory=list, max_length=3)
+    feelings: list[str] = Field(max_length=3)
 
     @field_validator("feelings")
     @classmethod
@@ -374,6 +543,59 @@ class ConversationCompletion:
     summary: str
     model_run: ModelRun
     feelings: tuple[str, ...] = ()
+    # Defaults preserve the old six-field journal contract and simple test clients.
+    activity: ActivityDirective | None = None
+
+
+class GuidedActionTurnOutput(ConversationTurnOutput):
+    activity: ActivityDirective
+
+    def require_activity_semantics(self, context: GuidedActionContext) -> GuidedActionTurnOutput:
+        choosing = self.activity.selected_resource_id is not None or self.activity.search_topic is not None
+        if self.offer_action != choosing:
+            raise ActivitySemanticError("Readiness must describe the validated activity operation")
+        if choosing and (
+            not context.action_allowed
+            or context.preference == "listen"
+            or context.activity_state in {"active", "paused", "awaiting_report"}
+        ):
+            raise ActivitySemanticError("A new activity is unavailable in this conversation state")
+        if self.activity.selected_resource_id is not None:
+            candidates = {item["id"]: item for item in context.candidates}
+            selected = candidates.get(self.activity.selected_resource_id)
+            if selected is None:
+                raise ActivitySemanticError("The selected resource was not offered by the server")
+            if not activity_resource_matches_constraints(selected, self.activity.constraints):
+                raise ActivitySemanticError("The selected resource does not fit the activity constraints")
+        return self
+
+
+class ActivitySemanticError(ValueError):
+    """A fixed diagnostic category, without exposing rejected IDs or model text."""
+
+
+def build_guided_request(
+    settings: Settings, messages: list[dict[str, str]], context: GuidedActionContext,
+) -> dict[str, Any]:
+    """The application and benchmark share the exact guided provider request.
+
+    Context is escaped user data. Snippets and participant notes never become a
+    dynamically assembled system instruction, even when they contain role labels.
+    """
+    return {
+        "model": settings.chat_model,
+        "provider": {"zdr": True, "require_parameters": True},
+        "max_tokens": 4000,
+        "include_reasoning": False,
+        "reasoning": {"effort": "medium"},
+        "response_format": {"type": "json_schema", "json_schema": GUIDED_ACTION_JSON_SCHEMA},
+        "messages": [
+            {"role": "system", "content": CONVERSATION_SYSTEM_PROMPT},
+            {"role": "user", "content": json.dumps({"activity_context": context.prompt_data()},
+                                                     ensure_ascii=False)},
+            *messages,
+        ],
+    }
 
 
 class OpenRouterConversationClient:
@@ -390,18 +612,19 @@ class OpenRouterConversationClient:
         if not settings.openrouter_zdr:
             raise ValueError("JournalPulse requires zero-data-retention routing")
         self.settings = settings
-        self.client = client or httpx.Client(timeout=settings.chat_timeout_seconds)
+        self.client = client
         self.sleeper = sleeper
 
     def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
         # Parameter set is limited to what OpenRouter lists for openai/gpt-6-luna
-        # (models list and endpoints page, 2026-09-24): max_tokens, response_format,
+        # (models list and endpoints page, 2026-10-04): max_tokens, response_format,
         # structured_outputs, reasoning, include_reasoning. Temperature is not supported.
         # The request asks for medium effort, the model's default, and excludes
-        # reasoning text from the reply. Bedrock does not list response_format.
+        # reasoning text from the reply. Requiring parameter support prevents
+        # routing to endpoints that silently ignore the requested output format.
         body = {
             "model": self.settings.chat_model,
-            "provider": {"zdr": True},
+            "provider": {"zdr": True, "require_parameters": True},
             "max_tokens": 4000,
             "include_reasoning": False,
             "reasoning": {"effort": "medium"},
@@ -414,35 +637,74 @@ class OpenRouterConversationClient:
                 *messages,
             ],
         }
+        return self._complete_request(body)
+
+    def complete_guided(
+        self, messages: list[dict[str, str]], context: GuidedActionContext,
+    ) -> ConversationCompletion:
+        return self._complete_request(build_guided_request(self.settings, messages, context), context=context)
+
+    def _complete_request(
+        self, body: dict[str, Any], *, context: GuidedActionContext | None = None,
+    ) -> ConversationCompletion:
         started = time.perf_counter()
         response = self._post(body)
         latency_ms = round((time.perf_counter() - started) * 1000)
-        payload = response.json()
-        choice = payload["choices"][0]
-        if choice.get("finish_reason") == "length":
-            raise ConversationProviderError("The model reply was cut off. Nothing was saved.")
+        stage = "provider_json"
+        content_kind = finish_reason = diagnostic_provider = None
         try:
-            content = choice["message"]["content"]
-            structured = ConversationTurnOutput.model_validate_json(
-                _json_text_from_content(content)
-            ).require_card_reason()
-        except UnsupportedProviderResponse:
-            raise
-        except (KeyError, ValueError, ValidationError) as exc:
-            raise ConversationProviderError(
-                "The model reply did not match the conversation schema. Nothing was saved."
-            ) from exc
-        usage = payload.get("usage", {})
-        raw_provider = payload.get("provider", "openrouter")
-        provider = raw_provider if isinstance(raw_provider, str) else "openrouter"
-        return ConversationCompletion(
-            reply=structured.reply,
-            offer_action=structured.offer_action,
-            resource_intent=structured.resource_intent,
-            card_reason=structured.card_reason,
-            summary=structured.summary,
-            feelings=tuple(structured.feelings),
-            model_run=ModelRun(
+            payload = response.json()
+            stage = "envelope"
+            if not isinstance(payload, dict):
+                raise ValueError("expected provider object")
+            choices = payload.get("choices")
+            if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+                raise ValueError("expected completion choice")
+            choice = choices[0]
+            raw_finish = choice.get("finish_reason")
+            finish_reason = raw_finish if isinstance(raw_finish, str) else "other"
+            raw_provider = payload.get("provider", "openrouter")
+            diagnostic_provider = raw_provider if isinstance(raw_provider, str) else "other"
+            if choice.get("finish_reason") == "length":
+                diagnostic = _log_completion_rejection("completion_truncated", ValueError())
+                raise ConversationProviderError(
+                    "The model reply was cut off. Nothing was saved.", diagnostic=diagnostic,
+                )
+            message = choice["message"]
+            if not isinstance(message, dict):
+                if finish_reason != "content_filter":
+                    raise ValueError("expected completion message")
+                message = {}
+            refusal = message.get("refusal")
+            if finish_reason == "content_filter" or isinstance(refusal, str) and refusal.strip():
+                diagnostic = _log_completion_rejection(
+                    "provider_refusal", ValueError(),
+                    finish_reason=finish_reason, provider=diagnostic_provider,
+                )
+                raise ConversationProviderError(
+                    "Luna's AI provider declined this reply. Your message was not saved.",
+                    status_code=422, diagnostic=diagnostic,
+                )
+            content = message["content"]
+            stage = "content_format"
+            text = _json_text_from_content(content)
+            content_kind = _content_kind(text)
+            stage = "output_schema"
+            structured = (
+                GuidedActionTurnOutput.model_validate_json(text)
+                if context is not None else ConversationTurnOutput.model_validate_json(text)
+            )
+            stage = "output_semantics"
+            structured.require_card_reason()
+            if isinstance(structured, GuidedActionTurnOutput) and context is not None:
+                structured.require_activity_semantics(context)
+            stage = "usage_metadata"
+            usage = payload.get("usage", {})
+            if not isinstance(usage, dict):
+                raise ValueError("expected usage object")
+            raw_provider = payload.get("provider", "openrouter")
+            provider = raw_provider if isinstance(raw_provider, str) else "openrouter"
+            model_run = ModelRun(
                 model=payload.get("model", self.settings.chat_model),
                 provider=provider,
                 latency_ms=latency_ms,
@@ -450,15 +712,44 @@ class OpenRouterConversationClient:
                 completion_tokens=usage.get("completion_tokens"),
                 schema_valid=True,
                 prompt_version=CONVERSATION_PROMPT_VERSION,
-            ),
+                skill_version=load_guided_action_skill().version,
+                skill_hash=load_guided_action_skill().sha256,
+            )
+        except UnsupportedProviderResponse as exc:
+            _log_completion_rejection(stage, exc)
+            raise
+        except (KeyError, TypeError, ValueError, ValidationError, RecursionError) as exc:
+            diagnostic = _log_completion_rejection(
+                stage, exc, content_kind=content_kind,
+                finish_reason=finish_reason, provider=diagnostic_provider,
+            )
+            raise ConversationProviderError(
+                "The model reply did not match the conversation schema. Nothing was saved.",
+                diagnostic=diagnostic,
+            ) from exc
+        return ConversationCompletion(
+            reply=structured.reply,
+            offer_action=structured.offer_action,
+            resource_intent=structured.resource_intent,
+            card_reason=structured.card_reason,
+            summary=structured.summary,
+            feelings=tuple(structured.feelings),
+            model_run=model_run,
+            activity=structured.activity if isinstance(structured, GuidedActionTurnOutput) else None,
         )
 
     def _post(self, body: dict[str, Any]) -> httpx.Response:
+        with managed_http_client(self.client, timeout=self.settings.chat_timeout_seconds) as client:
+            return self._post_with_client(client, body)
+
+    def _post_with_client(self, client: httpx.Client, body: dict[str, Any]) -> httpx.Response:
         response: httpx.Response | None = None
         for attempt in range(self.settings.openrouter_max_attempts):
             try:
-                response = self.client.post(
+                response = _bounded_provider_post(
+                    client,
                     f"{self.settings.openrouter_base_url}/chat/completions",
+                    timeout=self.settings.chat_timeout_seconds,
                     headers={
                         "Authorization": f"Bearer {self.settings.openrouter_api_key}",
                         "Content-Type": "application/json",
@@ -467,11 +758,12 @@ class OpenRouterConversationClient:
                     },
                     json=body,
                 )
-            except (httpx.ConnectError, httpx.TimeoutException) as exc:
+            except (httpx.HTTPError, OSError) as exc:
                 if attempt + 1 >= self.settings.openrouter_max_attempts:
                     raise ConversationProviderError(
                         "Luna did not respond in time. Nothing was saved.",
                         status_code=503,
+                        diagnostic=CompletionDiagnostic("provider_transport"),
                     ) from exc
                 self.sleeper(0.15 * (2**attempt))
                 continue
@@ -484,19 +776,22 @@ class OpenRouterConversationClient:
                 continue
             if body_error is not None:
                 raise ConversationProviderError(
-                    f"The model request failed. Nothing was saved. {body_error[1]}".strip(),
+                    "Luna is temporarily unavailable. Nothing was saved. Please try again.",
                     status_code=429 if body_error[0] == 429 else 502,
+                    diagnostic=CompletionDiagnostic("upstream_error"),
                 )
         if response is None:
             raise ConversationProviderError(
                 "Luna did not respond in time. Nothing was saved.",
                 status_code=503,
+                diagnostic=CompletionDiagnostic("provider_transport"),
             )
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
-            detail = exc.response.text[:500]
             raise ConversationProviderError(
-                f"The model request failed. Nothing was saved. {detail}".strip()
+                "Luna is temporarily unavailable. Nothing was saved. Please try again.",
+                status_code=503 if exc.response.status_code in {429, 500, 502, 503, 504} else 502,
+                diagnostic=CompletionDiagnostic("upstream_http"),
             ) from exc
         return response

@@ -1,0 +1,53 @@
+{
+  "checked_at": "2026-10-05T15:40:07.782051-03:00",
+  "backend": {
+    "passed": 700,
+    "coverage_percent": 90.83,
+    "branch_measured": true
+  },
+  "frontend_unit": {
+    "passed": 108,
+    "files": 20
+  },
+  "browser_mocked": {
+    "startTime": "2026-10-05T18:34:49.898Z",
+    "duration": 48168.53,
+    "expected": 46,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "browser_real_stack": {
+    "startTime": "2026-10-05T18:35:55.788Z",
+    "duration": 96597.352,
+    "expected": 18,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "postgres_checks": {
+    "schema": 100,
+    "journal": 17,
+    "integrity": 19,
+    "activity": 72
+  },
+  "static_checks": [
+    "ruff",
+    "mypy",
+    "eslint",
+    "tsc",
+    "openapi",
+    "generated-types",
+    "resource-validation"
+  ],
+  "builds": [
+    "Node 22 production static export",
+    "Python wheel skill byte identity"
+  ],
+  "paid_provider_calls": 0,
+  "deployed": false,
+  "migration_applied_to_hosted_database": false,
+  "model_quality_release_ready": false,
+  "model_evidence_version": "guided-action-2026-10-05.2",
+  "current_prompt_version": "guided-action-2026-10-05.3"
+}

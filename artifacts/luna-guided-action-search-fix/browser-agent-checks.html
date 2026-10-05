@@ -1,0 +1,343 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Luna supplementary conversation checks</title><style>body{font:16px/1.55 system-ui,sans-serif;color:#182b36;background:#f4f7f7;margin:0}main{max-width:1200px;margin:auto;padding:32px}h1,h2,h3{line-height:1.2}a{color:#145a75}article{background:white;border:1px solid #cdd8dc;border-radius:12px;padding:22px;margin:24px 0}.pair{display:grid;grid-template-columns:1fr 1fr;gap:24px}.message{border-left:3px solid #ccd8dc;padding:10px 14px;margin:12px 0}.user{background:#f0f5f6}.assistant{background:#f5faf5}p{margin:8px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}.status{background:#fff4d8;padding:16px;border-radius:8px}summary{cursor:pointer}@media(max-width:760px){main{padding:18px}.pair{grid-template-columns:1fr}article{padding:16px}}</style><main><h1>Luna: supplementary before/after checks</h1><p class="status"><strong>Fix verified locally. Formal release evaluation incomplete.</strong> This page uses four post-hoc assistant-written fictional follow-ups and eight actual GPT-6 Luna responses. It supplies no teacher scores and does not change the release gate.</p><p>Both versions get the same added user question. Starting messages come from the frozen fictional fixture; assistant messages already present in that fixture are scripted. The first observed Luna reply and the extra response are actual provider observations. Older continuation gateways omit the transport body hash; provenance is labeled reconstructed.</p><p><a href="comparison.html">Full 60-case formal comparison</a> · <a href="AGENT_REVIEW.md">Qualitative review notes</a></p><article><h2>g16_no_breath_focus</h2><p><strong>Same added follow-up:</strong> Can you keep it to two minutes and use something I can notice without focusing on breathing?</p><div class="pair"><section class="version"><h3>Before</h3><div class="message user"><strong>User</strong><p>I would like a small settling activity, but focusing on breathing makes me uncomfortable. I can stand up for two minutes.</p></div><div class="message assistant"><strong>Assistant</strong><p>A standing, two-minute settling activity without breath focus sounds like a better fit. I’ll keep it simple and use those preferences.</p></div><div class="message user"><strong>User</strong><p>Can you keep it to two minutes and use something I can notice without focusing on breathing?</p></div><div class="message assistant"><strong>Assistant</strong><p>Yes—two minutes, standing, and no focus on breathing. I’ll keep the activity within those limits.</p></div><details><summary>Final structured response and provenance</summary><pre>{
+  &quot;output&quot;: {
+    &quot;reply&quot;: &quot;Yes—two minutes, standing, and no focus on breathing. I’ll keep the activity within those limits.&quot;,
+    &quot;offer_action&quot;: true,
+    &quot;resource_intent&quot;: &quot;ground&quot;,
+    &quot;card_reason&quot;: &quot;A brief standing settling activity that avoids breath focus.&quot;,
+    &quot;summary&quot;: &quot;Wants a two-minute standing settling activity without focusing on breathing.&quot;,
+    &quot;feelings&quot;: []
+  },
+  &quot;model&quot;: &quot;openai/gpt-6-luna&quot;,
+  &quot;provider&quot;: &quot;Azure&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 677,
+    &quot;completion_tokens&quot;: 246,
+    &quot;total_tokens&quot;: 923,
+    &quot;cost&quot;: 0.0001907,
+    &quot;is_byok&quot;: false,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 0,
+      &quot;cache_write_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0,
+      &quot;video_tokens&quot;: 0
+    },
+    &quot;cost_details&quot;: {
+      &quot;upstream_inference_cost&quot;: 0.0001907,
+      &quot;upstream_inference_prompt_cost&quot;: 6.77e-05,
+      &quot;upstream_inference_completions_cost&quot;: 0.000123
+    },
+    &quot;completion_tokens_details&quot;: {
+      &quot;reasoning_tokens&quot;: 165,
+      &quot;image_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0
+    }
+  },
+  &quot;request_proof&quot;: &quot;Reconstructed from frozen gateway request template and posted history; this older gateway does not return the actual transport body hash. Not an exact-provider-body replay assertion.&quot;
+}</pre></details></section><section class="version"><h3>After</h3><div class="message user"><strong>User</strong><p>I would like a small settling activity, but focusing on breathing makes me uncomfortable. I can stand up for two minutes.</p></div><div class="message assistant"><strong>Assistant</strong><p>A two-minute quiet pause could fit: it’s silent and focuses on noticing a sound or the support beneath you, not on your breathing. You can sit or stand if that feels comfortable; would you like to try it?</p></div><div class="message user"><strong>User</strong><p>Can you keep it to two minutes and use something I can notice without focusing on breathing?</p></div><div class="message assistant"><strong>Assistant</strong><p>Yes—a two-minute quiet pause is available that uses noticing a sound or the support beneath you, without focusing on breathing. You can stand if comfortable, and stop whenever you like. Would you like to try it?</p></div><details><summary>Final structured response and provenance</summary><pre>{
+  &quot;output&quot;: {
+    &quot;reply&quot;: &quot;Yes—a two-minute quiet pause is available that uses noticing a sound or the support beneath you, without focusing on breathing. You can stand if comfortable, and stop whenever you like. Would you like to try it?&quot;,
+    &quot;offer_action&quot;: true,
+    &quot;resource_intent&quot;: &quot;ground&quot;,
+    &quot;card_reason&quot;: &quot;A silent two-minute pause that focuses on surroundings rather than breathing fits your request.&quot;,
+    &quot;summary&quot;: &quot;You want a two-minute settling activity based on noticing something other than your breath.&quot;,
+    &quot;feelings&quot;: [],
+    &quot;activity&quot;: {
+      &quot;move&quot;: &quot;negotiate&quot;,
+      &quot;goal&quot;: &quot;settle&quot;,
+      &quot;selected_resource_id&quot;: &quot;guided_meditation_2m&quot;,
+      &quot;constraints&quot;: {
+        &quot;time_minutes&quot;: 2,
+        &quot;no_audio&quot;: false,
+        &quot;no_video&quot;: false,
+        &quot;seated&quot;: false,
+        &quot;avoid_breath_focus&quot;: true
+      },
+      &quot;search_topic&quot;: null
+    }
+  },
+  &quot;model&quot;: &quot;openai/gpt-6-luna&quot;,
+  &quot;provider&quot;: &quot;Azure&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 4589,
+    &quot;completion_tokens&quot;: 272,
+    &quot;total_tokens&quot;: 4861,
+    &quot;cost&quot;: 0.000190555,
+    &quot;is_byok&quot;: false,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 4513,
+      &quot;cache_write_tokens&quot;: 73,
+      &quot;audio_tokens&quot;: 0,
+      &quot;video_tokens&quot;: 0
+    },
+    &quot;cost_details&quot;: {
+      &quot;upstream_inference_cost&quot;: 0.000190555,
+      &quot;upstream_inference_prompt_cost&quot;: 5.4555e-05,
+      &quot;upstream_inference_completions_cost&quot;: 0.000136
+    },
+    &quot;completion_tokens_details&quot;: {
+      &quot;reasoning_tokens&quot;: 99,
+      &quot;image_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0
+    }
+  },
+  &quot;request_proof&quot;: &quot;Reconstructed from frozen gateway request template and posted history; this older gateway does not return the actual transport body hash. Not an exact-provider-body replay assertion.&quot;
+}</pre></details></section></div></article><article><h2>g18_negotiate_duration</h2><p><strong>Same added follow-up:</strong> Can I keep my eyes open for the whole two minutes, and stop early if I want?</p><div class="pair"><section class="version"><h3>Before</h3><div class="message user"><strong>User</strong><p>I would like a pause from thinking about work.</p></div><div class="message assistant"><strong>Assistant</strong><p>We could try a ten-minute meditation if that fits.</p></div><div class="message user"><strong>User</strong><p>Ten minutes is too long. Can we make it two minutes and keep my eyes open?</p></div><div class="message assistant"><strong>Assistant</strong><p>Absolutely—two minutes, eyes open, and no need to think about work.</p></div><div class="message user"><strong>User</strong><p>Can I keep my eyes open for the whole two minutes, and stop early if I want?</p></div><div class="message assistant"><strong>Assistant</strong><p>Yes. Keep your eyes open the whole time, and stop whenever you want—even before two minutes.</p></div><details><summary>Final structured response and provenance</summary><pre>{
+  &quot;output&quot;: {
+    &quot;reply&quot;: &quot;Yes. Keep your eyes open the whole time, and stop whenever you want—even before two minutes.&quot;,
+    &quot;offer_action&quot;: true,
+    &quot;resource_intent&quot;: &quot;pause&quot;,
+    &quot;card_reason&quot;: &quot;A short, flexible pause from thinking about work.&quot;,
+    &quot;summary&quot;: &quot;Wants a two-minute pause from work thoughts, with eyes open and the option to stop early.&quot;,
+    &quot;feelings&quot;: [
+      &quot;stressed&quot;
+    ]
+  },
+  &quot;model&quot;: &quot;openai/gpt-6-luna&quot;,
+  &quot;provider&quot;: &quot;Azure&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 693,
+    &quot;completion_tokens&quot;: 435,
+    &quot;total_tokens&quot;: 1128,
+    &quot;cost&quot;: 0.0002868,
+    &quot;is_byok&quot;: false,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 0,
+      &quot;cache_write_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0,
+      &quot;video_tokens&quot;: 0
+    },
+    &quot;cost_details&quot;: {
+      &quot;upstream_inference_cost&quot;: 0.0002868,
+      &quot;upstream_inference_prompt_cost&quot;: 6.93e-05,
+      &quot;upstream_inference_completions_cost&quot;: 0.0002175
+    },
+    &quot;completion_tokens_details&quot;: {
+      &quot;reasoning_tokens&quot;: 346,
+      &quot;image_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0
+    }
+  },
+  &quot;request_proof&quot;: &quot;Reconstructed from frozen gateway request template and posted history; this older gateway does not return the actual transport body hash. Not an exact-provider-body replay assertion.&quot;
+}</pre></details></section><section class="version"><h3>After</h3><div class="message user"><strong>User</strong><p>I would like a pause from thinking about work.</p></div><div class="message assistant"><strong>Assistant</strong><p>We could try a ten-minute meditation if that fits.</p></div><div class="message user"><strong>User</strong><p>Ten minutes is too long. Can we make it two minutes and keep my eyes open?</p></div><div class="message assistant"><strong>Assistant</strong><p>Absolutely—there’s a silent two-minute pause, and you can keep your eyes open. It’s optional; you can stop whenever you like.</p></div><div class="message user"><strong>User</strong><p>Can I keep my eyes open for the whole two minutes, and stop early if I want?</p></div><div class="message assistant"><strong>Assistant</strong><p>Yes—you can keep your eyes open the whole time and stop whenever you want. The silent two-minute pause is optional; would you like to try it?</p></div><details><summary>Final structured response and provenance</summary><pre>{
+  &quot;output&quot;: {
+    &quot;reply&quot;: &quot;Yes—you can keep your eyes open the whole time and stop whenever you want. The silent two-minute pause is optional; would you like to try it?&quot;,
+    &quot;offer_action&quot;: true,
+    &quot;resource_intent&quot;: &quot;pause&quot;,
+    &quot;card_reason&quot;: &quot;A silent two-minute pause that allows eyes open and stopping early fits your preference.&quot;,
+    &quot;summary&quot;: &quot;Wants a brief pause from thinking about work; prefers two minutes, eyes open, and the option to stop early.&quot;,
+    &quot;feelings&quot;: [],
+    &quot;activity&quot;: {
+      &quot;move&quot;: &quot;negotiate&quot;,
+      &quot;goal&quot;: &quot;settle&quot;,
+      &quot;selected_resource_id&quot;: &quot;guided_meditation_2m&quot;,
+      &quot;constraints&quot;: {
+        &quot;time_minutes&quot;: 2,
+        &quot;no_audio&quot;: false,
+        &quot;no_video&quot;: false,
+        &quot;seated&quot;: false,
+        &quot;avoid_breath_focus&quot;: false
+      },
+      &quot;search_topic&quot;: null
+    }
+  },
+  &quot;model&quot;: &quot;openai/gpt-6-luna&quot;,
+  &quot;provider&quot;: &quot;Azure&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 4599,
+    &quot;completion_tokens&quot;: 341,
+    &quot;total_tokens&quot;: 4940,
+    &quot;cost&quot;: 0.00022343,
+    &quot;is_byok&quot;: false,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 4538,
+      &quot;cache_write_tokens&quot;: 58,
+      &quot;audio_tokens&quot;: 0,
+      &quot;video_tokens&quot;: 0
+    },
+    &quot;cost_details&quot;: {
+      &quot;upstream_inference_cost&quot;: 0.00022343,
+      &quot;upstream_inference_prompt_cost&quot;: 5.293e-05,
+      &quot;upstream_inference_completions_cost&quot;: 0.0001705
+    },
+    &quot;completion_tokens_details&quot;: {
+      &quot;reasoning_tokens&quot;: 172,
+      &quot;image_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0
+    }
+  },
+  &quot;request_proof&quot;: &quot;Reconstructed from frozen gateway request template and posted history; this older gateway does not return the actual transport body hash. Not an exact-provider-body replay assertion.&quot;
+}</pre></details></section></div></article><article><h2>r07_tiny_start</h2><p><strong>Same added follow-up:</strong> The whole chapter still feels too big. Can the first step be smaller than a paragraph?</p><div class="pair"><section class="version"><h3>Before</h3><div class="message user"><strong>User</strong><p>I want to begin my reading assignment, but the whole chapter feels too big. I have three minutes and would welcome one very small start.</p></div><div class="message assistant"><strong>Assistant</strong><p>The whole chapter feels too big, and you have three minutes. Let’s keep the start tiny: open the chapter and read just the first paragraph. You can stop there.</p></div><div class="message user"><strong>User</strong><p>The whole chapter still feels too big. Can the first step be smaller than a paragraph?</p></div><div class="message assistant"><strong>Assistant</strong><p>Yes. Just open to the chapter and look at its title. That can be the whole first step.</p></div><details><summary>Final structured response and provenance</summary><pre>{
+  &quot;output&quot;: {
+    &quot;reply&quot;: &quot;Yes. Just open to the chapter and look at its title. That can be the whole first step.&quot;,
+    &quot;offer_action&quot;: false,
+    &quot;resource_intent&quot;: &quot;read&quot;,
+    &quot;card_reason&quot;: &quot;A smaller start for the reading assignment they want to begin.&quot;,
+    &quot;summary&quot;: &quot;The chapter feels too big; they want a tiny first step.&quot;,
+    &quot;feelings&quot;: [
+      &quot;overwhelmed&quot;
+    ]
+  },
+  &quot;model&quot;: &quot;openai/gpt-6-luna&quot;,
+  &quot;provider&quot;: &quot;Azure&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 690,
+    &quot;completion_tokens&quot;: 412,
+    &quot;total_tokens&quot;: 1102,
+    &quot;cost&quot;: 0.000275,
+    &quot;is_byok&quot;: false,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 0,
+      &quot;cache_write_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0,
+      &quot;video_tokens&quot;: 0
+    },
+    &quot;cost_details&quot;: {
+      &quot;upstream_inference_cost&quot;: 0.000275,
+      &quot;upstream_inference_prompt_cost&quot;: 6.9e-05,
+      &quot;upstream_inference_completions_cost&quot;: 0.000206
+    },
+    &quot;completion_tokens_details&quot;: {
+      &quot;reasoning_tokens&quot;: 326,
+      &quot;image_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0
+    }
+  },
+  &quot;request_proof&quot;: &quot;Reconstructed from frozen gateway request template and posted history; this older gateway does not return the actual transport body hash. Not an exact-provider-body replay assertion.&quot;
+}</pre></details></section><section class="version"><h3>After</h3><div class="message user"><strong>User</strong><p>I want to begin my reading assignment, but the whole chapter feels too big. I have three minutes and would welcome one very small start.</p></div><div class="message assistant"><strong>Assistant</strong><p>You could try the two-minute “one small task” step: open the chapter and read a few lines, with no need to finish. It fits your three-minute window, and you can stop whenever you like.</p></div><div class="message user"><strong>User</strong><p>The whole chapter still feels too big. Can the first step be smaller than a paragraph?</p></div><div class="message assistant"><strong>Assistant</strong><p>Absolutely. Make the first step just opening the chapter and reading its title—no paragraph required. The two-minute task option can stay that small, and you can stop there if you want.</p></div><details><summary>Final structured response and provenance</summary><pre>{
+  &quot;output&quot;: {
+    &quot;reply&quot;: &quot;Absolutely. Make the first step just opening the chapter and reading its title—no paragraph required. The two-minute task option can stay that small, and you can stop there if you want.&quot;,
+    &quot;offer_action&quot;: true,
+    &quot;resource_intent&quot;: &quot;move&quot;,
+    &quot;card_reason&quot;: &quot;A short, flexible task step can be as small as opening the chapter and reading its title.&quot;,
+    &quot;summary&quot;: &quot;Wants to begin a reading assignment but finds the chapter overwhelming; prefers a first step smaller than a paragraph and has three minutes.&quot;,
+    &quot;feelings&quot;: [
+      &quot;overwhelmed&quot;
+    ],
+    &quot;activity&quot;: {
+      &quot;move&quot;: &quot;negotiate&quot;,
+      &quot;goal&quot;: &quot;act&quot;,
+      &quot;selected_resource_id&quot;: &quot;guided_focus_2m&quot;,
+      &quot;constraints&quot;: {
+        &quot;time_minutes&quot;: 3,
+        &quot;no_audio&quot;: false,
+        &quot;no_video&quot;: false,
+        &quot;seated&quot;: false,
+        &quot;avoid_breath_focus&quot;: false
+      },
+      &quot;search_topic&quot;: null
+    }
+  },
+  &quot;model&quot;: &quot;openai/gpt-6-luna&quot;,
+  &quot;provider&quot;: &quot;Azure&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 4591,
+    &quot;completion_tokens&quot;: 491,
+    &quot;total_tokens&quot;: 5082,
+    &quot;cost&quot;: 0.000299845,
+    &quot;is_byok&quot;: false,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 4517,
+      &quot;cache_write_tokens&quot;: 71,
+      &quot;audio_tokens&quot;: 0,
+      &quot;video_tokens&quot;: 0
+    },
+    &quot;cost_details&quot;: {
+      &quot;upstream_inference_cost&quot;: 0.000299845,
+      &quot;upstream_inference_prompt_cost&quot;: 5.4345e-05,
+      &quot;upstream_inference_completions_cost&quot;: 0.0002455
+    },
+    &quot;completion_tokens_details&quot;: {
+      &quot;reasoning_tokens&quot;: 310,
+      &quot;image_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0
+    }
+  },
+  &quot;request_proof&quot;: &quot;Reconstructed from frozen gateway request template and posted history; this older gateway does not return the actual transport body hash. Not an exact-provider-body replay assertion.&quot;
+}</pre></details></section></div></article><article><h2>r21_past_present</h2><p><strong>Same added follow-up:</strong> I feel relieved now. What can we learn from last Tuesday’s entry without treating that fear as current?</p><div class="pair"><section class="version"><h3>Before</h3><div class="message user"><strong>User</strong><p>That entry was from last Tuesday. The presentation is over and I feel relieved now. Help me reflect without assuming I am still scared.</p></div><div class="message assistant"><strong>Assistant</strong><p>Thanks for clarifying—the entry was from last Tuesday, and the presentation is over. You feel relieved now; I won’t assume that earlier fear is still here. You cared about doing the work well. What stands out to you now about how it went, or about having it behind you?</p></div><div class="message user"><strong>User</strong><p>I feel relieved now. What can we learn from last Tuesday’s entry without treating that fear as current?</p></div><div class="message assistant"><strong>Assistant</strong><p>Last Tuesday’s entry suggests the presentation mattered to you: you felt scared about it and cared about doing the work well. That tells us what was at stake for you then, not how you feel now—and it doesn’t tell us how the presentation went. With it over, is there anything you’d want to remember about what you needed or valued that day?</p></div><details><summary>Final structured response and provenance</summary><pre>{
+  &quot;output&quot;: {
+    &quot;reply&quot;: &quot;Last Tuesday’s entry suggests the presentation mattered to you: you felt scared about it and cared about doing the work well. That tells us what was at stake for you then, not how you feel now—and it doesn’t tell us how the presentation went. With it over, is there anything you’d want to remember about what you needed or valued that day?&quot;,
+    &quot;offer_action&quot;: false,
+    &quot;resource_intent&quot;: &quot;reflect&quot;,
+    &quot;card_reason&quot;: &quot;You asked to reflect on the older entry without treating its fear as current.&quot;,
+    &quot;summary&quot;: &quot;The person feels relieved now that the presentation is over and wants to learn from last Tuesday’s fear without assuming it remains current.&quot;,
+    &quot;feelings&quot;: [
+      &quot;calm&quot;
+    ]
+  },
+  &quot;model&quot;: &quot;openai/gpt-6-luna&quot;,
+  &quot;provider&quot;: &quot;Azure&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 1010,
+    &quot;completion_tokens&quot;: 260,
+    &quot;total_tokens&quot;: 1270,
+    &quot;cost&quot;: 0.000231,
+    &quot;is_byok&quot;: false,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 0,
+      &quot;cache_write_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0,
+      &quot;video_tokens&quot;: 0
+    },
+    &quot;cost_details&quot;: {
+      &quot;upstream_inference_cost&quot;: 0.000231,
+      &quot;upstream_inference_prompt_cost&quot;: 0.000101,
+      &quot;upstream_inference_completions_cost&quot;: 0.00013
+    },
+    &quot;completion_tokens_details&quot;: {
+      &quot;reasoning_tokens&quot;: 108,
+      &quot;image_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0
+    }
+  },
+  &quot;request_proof&quot;: &quot;Reconstructed from frozen gateway request template and posted history; this older gateway does not return the actual transport body hash. Not an exact-provider-body replay assertion.&quot;
+}</pre></details></section><section class="version"><h3>After</h3><div class="message user"><strong>User</strong><p>That entry was from last Tuesday. The presentation is over and I feel relieved now. Help me reflect without assuming I am still scared.</p></div><div class="message assistant"><strong>Assistant</strong><p>Last Tuesday, the presentation was still ahead and you were scared because doing the work well mattered to you. Now it’s over, and you feel relieved. Looking back, what stands out to you about what mattered most then?</p></div><div class="message user"><strong>User</strong><p>I feel relieved now. What can we learn from last Tuesday’s entry without treating that fear as current?</p></div><div class="message assistant"><strong>Assistant</strong><p>Last Tuesday’s entry suggests the presentation mattered to you because you cared about doing the work well. It captures fear before the event, not how you feel now; your current relief is part of the picture too. One takeaway might be that something can feel daunting when it matters, without that fear defining the whole experience.</p></div><details><summary>Final structured response and provenance</summary><pre>{
+  &quot;output&quot;: {
+    &quot;reply&quot;: &quot;Last Tuesday’s entry suggests the presentation mattered to you because you cared about doing the work well. It captures fear before the event, not how you feel now; your current relief is part of the picture too. One takeaway might be that something can feel daunting when it matters, without that fear defining the whole experience.&quot;,
+    &quot;offer_action&quot;: false,
+    &quot;resource_intent&quot;: &quot;reflect&quot;,
+    &quot;card_reason&quot;: &quot;&quot;,
+    &quot;summary&quot;: &quot;Reflecting on what the past entry reveals about caring about the work, while keeping the fear in the past and recognizing current relief.&quot;,
+    &quot;feelings&quot;: [
+      &quot;okay&quot;
+    ],
+    &quot;activity&quot;: {
+      &quot;move&quot;: &quot;reflect&quot;,
+      &quot;goal&quot;: &quot;understand&quot;,
+      &quot;selected_resource_id&quot;: null,
+      &quot;constraints&quot;: {
+        &quot;time_minutes&quot;: null,
+        &quot;no_audio&quot;: false,
+        &quot;no_video&quot;: false,
+        &quot;seated&quot;: false,
+        &quot;avoid_breath_focus&quot;: false
+      },
+      &quot;search_topic&quot;: null
+    }
+  },
+  &quot;model&quot;: &quot;openai/gpt-6-luna&quot;,
+  &quot;provider&quot;: &quot;Azure&quot;,
+  &quot;usage&quot;: {
+    &quot;prompt_tokens&quot;: 4919,
+    &quot;completion_tokens&quot;: 302,
+    &quot;total_tokens&quot;: 5221,
+    &quot;cost&quot;: 0.0002092,
+    &quot;is_byok&quot;: false,
+    &quot;prompt_tokens_details&quot;: {
+      &quot;cached_tokens&quot;: 4840,
+      &quot;cache_write_tokens&quot;: 76,
+      &quot;audio_tokens&quot;: 0,
+      &quot;video_tokens&quot;: 0
+    },
+    &quot;cost_details&quot;: {
+      &quot;upstream_inference_cost&quot;: 0.0002092,
+      &quot;upstream_inference_prompt_cost&quot;: 5.82e-05,
+      &quot;upstream_inference_completions_cost&quot;: 0.000151
+    },
+    &quot;completion_tokens_details&quot;: {
+      &quot;reasoning_tokens&quot;: 122,
+      &quot;image_tokens&quot;: 0,
+      &quot;audio_tokens&quot;: 0
+    }
+  },
+  &quot;request_proof&quot;: &quot;Reconstructed from frozen gateway request template and posted history; this older gateway does not return the actual transport body hash. Not an exact-provider-body replay assertion.&quot;
+}</pre></details></section></div></article><p>No real user data, teacher-model scores, participation, or emotional benefit is inferred. No external scripts, fonts, or tracking are included.</p></main></html>

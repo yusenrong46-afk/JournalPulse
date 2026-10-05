@@ -1,0 +1,7 @@
+{
+  "status": "blocked_as_required",
+  "reason": "Declared benchmark/release gates did not pass",
+  "external_calls": 0,
+  "candidate_sha256": "d1959359e0ff6f0a55abcf0ebbac644a376ddd4927363a7948abfcaa1057251d",
+  "gate_file_sha256": "a1e300e8ecbfd116bda182b20fbfbf3c23b6e0bb66755463814ce43972c2c21b"
+}

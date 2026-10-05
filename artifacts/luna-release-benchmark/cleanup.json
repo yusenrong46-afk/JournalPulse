@@ -1,0 +1,13 @@
+{
+  "initial": {
+    "deployment_deleted:dpl_8ERXKwBf3yxCejTReoLTb7dUd74w": true,
+    "deployment_deleted:dpl_8S9of1Uttiq7p8KRv61kTVgrcQEC": true,
+    "deployment_deleted:dpl_4ivD3jXQoiTxTa3B2RMwue6Z2ac6": true,
+    "deployment_deleted:dpl_7tcn6vD6hHQ65JbLM89dJvVuN4WJ": true,
+    "disposable_owner_deleted": true
+  },
+  "resource_evidence_correction": {
+    "deployment_deleted:dpl_FmtJRur8KcdMXdY7QpjEgMQQSURR": true,
+    "disposable_owner_deleted": true
+  }
+}

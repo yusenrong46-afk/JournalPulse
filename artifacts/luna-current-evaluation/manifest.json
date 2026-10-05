@@ -1,0 +1,18 @@
+{
+  "EVALUATION.md": "ca40a38b489619c1307d6db670d2df6f4659aae62eb43dc265bcc24b75daf3df",
+  "browser-verification.json": "193111e50e4c701292d7df19413c21e75cbc0b9ac22a903326ff85114d986970",
+  "budget-after.json": "180bb04e981533a515379c5012a705ef7d92378d1709b16665581a384d9104da",
+  "budget-before.json": "acd38cb5a4db1d63c9d27e7b483c76241896ba2b8a98648a36f5ea9dde47a183",
+  "cleanup.json": "350723098a381649cb05db8b94bf56e9f55b118329abc5b8d6a3e0e3e3e55dd7",
+  "harness-correction.json": "381886e99404c549c4394ce7cb205d94393bc11f044c9a350b749cac03d2784d",
+  "protocol.json": "fa8e8d64a8bccc7857d18404f0e880ea9051bb22e00d344c787c9f3492de3aba",
+  "provider-preflight.json": "47c1fd513597fc80120cd828dd0d30d8888cd67dc02d2e938ab0ddc59fa3facf",
+  "report-desktop.png": "642a1c372cdd544afc3388e4140b346ba1f48f752296d70eea0a1436e97fd4d6",
+  "report-mobile.png": "01b366c5970e993e856f4fa9270b1f7cdfb7a325f3ec7ab3b6c8f7d2792bce67",
+  "results.json": "4ae734ee4fab4cef7fc8ba34417661ca28e64c08c3fdf3e247598f80dfabeb83",
+  "retained-aliases.json": "bf7cd65ae3c5adde00b05cacc29b62aa11d6e30596def93ab83d4aed7009ee49",
+  "review.html": "68c7f8f176541362c3964be51ba45474f595745482abfe21317661666e60fdba",
+  "review.json": "cfa5b136a29519201732f3b081b6dc80fb5bd258958e2f1b9b0f4706f44518f3",
+  "source-freeze.json": "e80384ec4f22c89e0413af8d782d5f81386a3c8fd0cb1d4d30208ca2937e8d91",
+  "verification.json": "7ea978a42e2dae29f1f0f697b2aa712ae6df6590fe5087c24b361f94eb85ad31"
+}

@@ -1,0 +1,517 @@
+--- a/web/app/check-in/page.tsx
++++ b/web/app/check-in/page.tsx
+@@ -6,7 +6,7 @@
+ 
+ import { Luna } from "@/components/luna";
+ import { Icon } from "@/components/nav-icon";
+-import { apiRequest } from "@/lib/api";
++import { ApiError, apiRequest } from "@/lib/api";
+ import { FEELINGS, selfReport } from "@/lib/feelings";
+ import { clearReminder } from "@/lib/reminders";
+ import type { OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
+@@ -35,8 +35,9 @@
+   const [saved, setSaved] = useState(false);
+   const [loading, setLoading] = useState(true);
+   const [busy, setBusy] = useState(false);
++  const [retryPending, setRetryPending] = useState(false);
+   const [error, setError] = useState("");
+-  const requestId = useRef("");
++  const pendingOutcome = useRef<string | null>(null);
+   const submission = useRef<AbortController | null>(null);
+ 
+   useEffect(() => {
+@@ -71,28 +72,40 @@
+     submission.current = controller;
+     setBusy(true);
+     setError("");
+-    const elapsed = Math.round((Date.now() - new Date(reflection.created_at).getTime()) / 60_000);
++    if (!pendingOutcome.current) {
++      const elapsed = Math.round((Date.now() - new Date(reflection.created_at).getTime()) / 60_000);
++      pendingOutcome.current = JSON.stringify({
++        client_request_id: crypto.randomUUID(),
++        decision_id: reflection.decision.decision_id,
++        completed,
++        post_state: completed && feelings.length ? selfReport(feelings, null) : null,
++        helpfulness: completed ? helpfulness : null,
++        effort: null,
++        elapsed_minutes: Math.min(Math.max(elapsed, 0), 10080),
++        note: note.trim() || null,
++      });
++    }
+     try {
+       await apiRequest<OutcomeRecord>("/v1/outcomes", {
+         method: "POST",
+         retry: true,
+         signal: controller.signal,
+-        body: JSON.stringify({
+-          client_request_id: requestId.current || (requestId.current = crypto.randomUUID()),
+-          decision_id: reflection.decision.decision_id,
+-          completed,
+-          post_state: completed && feelings.length ? selfReport(feelings, null) : null,
+-          helpfulness: completed ? helpfulness : null,
+-          effort: null,
+-          elapsed_minutes: Math.min(Math.max(elapsed, 0), 10080),
+-          note: note.trim() || null,
+-        }),
++        // The server stores one outcome per decision and replays the first
++        // receipt. A lost response must retry these exact answers and timestamp.
++        body: pendingOutcome.current,
+       });
+       if (controller.signal.aborted) return;
+       clearReminder(reflection.decision.decision_id);
++      setRetryPending(false);
+       setSaved(true);
+     } catch (reason) {
+-      if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "That didn’t save. Please try again.");
++      if (!controller.signal.aborted) {
++        // Validation rejects before saving, so those answers remain editable.
++        const rejected = reason instanceof ApiError && [400, 422].includes(reason.status);
++        if (rejected) pendingOutcome.current = null;
++        setRetryPending(!rejected);
++        setError(reason instanceof Error ? reason.message : "The save could not be confirmed. Please retry.");
++      }
+     } finally {
+       if (!controller.signal.aborted) setBusy(false);
+       if (submission.current === controller) submission.current = null;
+@@ -144,7 +157,7 @@
+         <p>Small steps work best when they fit your day. Want Luna to ask again later, or skip this one?</p>
+         <div className="stack">
+           <Link className="btn btn-primary btn-block" href="/">Ask me later</Link>
+-          <button className="btn btn-soft btn-block" type="button" disabled={busy} onClick={() => void submit(false)}>{busy ? "Saving…" : "Skip this one"}</button>
++          <button className="btn btn-soft btn-block" type="button" disabled={busy} onClick={() => void submit(false)}>{busy ? "Saving…" : retryPending ? "Retry saving check-in" : "Skip this one"}</button>
+         </div>
+         {error && <p className="note error" role="alert">{error}</p>}
+       </>
+@@ -156,7 +169,7 @@
+         <h1>How much did it help?</h1>
+         <div className="faces" role="group" aria-label="How much did it help?">
+           {HELP_FACES.map((face) => (
+-            <button key={face.score} className="face" type="button" aria-pressed={helpfulness === face.score} onClick={() => setHelpfulness(face.score)}>
++            <button key={face.score} className="face" type="button" disabled={busy || retryPending} aria-pressed={helpfulness === face.score} onClick={() => setHelpfulness(face.score)}>
+               <span aria-hidden="true">{face.emoji}</span>
+               <span>{face.label}</span>
+             </button>
+@@ -170,6 +183,7 @@
+                 key={item.id}
+                 className="chip"
+                 type="button"
++                disabled={busy || retryPending}
+                 aria-pressed={feelings.includes(item.id)}
+                 onClick={() => setFeelings((current) => (current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id]))}
+               >
+@@ -179,11 +193,11 @@
+           </div>
+           <label className="text-field">
+             Anything you noticed? <span className="muted small">(optional)</span>
+-            <textarea value={note} maxLength={1000} onChange={(event) => setNote(event.target.value)} placeholder="What helped, what didn’t, what surprised you…" />
++            <textarea value={note} maxLength={1000} disabled={busy || retryPending} onChange={(event) => setNote(event.target.value)} placeholder="What helped, what didn’t, what surprised you…" />
+           </label>
+         </div>
+         <button className="btn btn-primary btn-big btn-block" type="button" disabled={busy || helpfulness === null} onClick={() => void submit(true)}>
+-          {busy ? "Saving…" : "Save my check-in"}
++          {busy ? "Saving…" : retryPending ? "Retry saving check-in" : "Save my check-in"}
+         </button>
+         {error && <p className="note error" role="alert">{error}</p>}
+       </>
+@@ -196,6 +210,9 @@
+         <Link className="icon-btn" href="/" aria-label="Back to home"><Icon name="back" /></Link>
+       </div>
+       {body}
++      {retryPending && !saved && !alreadyDone && <p className="note" role="status">
++        Your save is not confirmed. Your submitted answers are kept unchanged; retry to confirm the same check-in.
++      </p>}
+     </div>
+   );
+ }
+--- a/web/app/me/page.tsx
++++ b/web/app/me/page.tsx
+@@ -114,14 +114,15 @@
+         <details className="explain">
+           <summary>Safety comes first</summary>
+           <div>
+-            <p>Every message is checked for signs of crisis before anything else happens. If there are signs, Luna skips the AI and points you to people who can help right away.</p>
++            <p>JournalPulse checks messages for certain clear crisis phrases. These checks can miss signs of distress. When a phrase is detected, Luna switches to support information and points you toward human help.</p>
+           </div>
+         </details>
+         <details className="explain">
+           <summary>Where Luna’s ideas come from</summary>
+           <div>
+-            <p>Luna only suggests activities from a reviewed list, like breathing exercises, short walks, or reading from trusted health sites. The AI never invents links.</p>
+-            <p>Luna’s pick comes from a simple, fixed rule. You can always choose a different option, and that choice is yours.</p>
++            <p>Luna can suggest built-in activities and options from a reviewed resource collection, such as short walks and reading from health sites.</p>
++            <p>With your permission, Luna can also search Brave and select links from search snippets. These web results have not been reviewed; full pages are not read or fact-checked.</p>
++            <p>With AI help on, Luna uses the current conversation and any journal entry you explicitly share to choose from available activities. Simple mode uses a fixed selection rule. You can decline a suggestion or choose another option.</p>
+           </div>
+         </details>
+         <details className="explain">
+--- a/web/app/talk/page.tsx
++++ b/web/app/talk/page.tsx
+@@ -1137,6 +1137,7 @@
+             id="chat-input"
+             ref={inputRef}
+             rows={1}
++            maxLength={2000}
+             value={draft}
+             disabled={userMessages >= CHAT_MESSAGE_LIMIT || busy !== null || activityBusy || preferenceBusy || resuming || Boolean(resumeFailure) || sourcePending || linkedSourceUnavailable || Boolean(activeSourceId && sourceError)}
+             placeholder={stage === "welcome" ? "Or tell Luna what’s going on…" : "Type something…"}
+--- a/web/components/activity-session-discovery.tsx
++++ b/web/components/activity-session-discovery.tsx
+@@ -62,7 +62,7 @@
+       const payload = {
+         goal: activityChat.activity_goal ?? card?.goal ?? "settle",
+         style: card?.resource_intent ?? "ground",
+-        ...activityChat.activity_constraints,
++        constraints: activityChat.activity_constraints,
+         llm_consent: true,
+         expected_revision: current.revision ?? 0,
+         ...(result ? { original_query: result.original_query } : topic.trim() ? { original_query: topic.trim() } : {}),
+@@ -109,8 +109,8 @@
+             placeholder="Leave blank for a general topic based on your goal" disabled={busy || disabled || Boolean(result)} />
+         </label>
+         {result && <label className="text-field">What would fit better? Keep it general.
+-          <textarea value={feedback} onChange={(event) => setFeedback(event.target.value)} maxLength={600}
+-            placeholder="For example: shorter, seated, no video" disabled={busy || disabled} required />
++          <textarea value={feedback} onChange={(event) => setFeedback(event.target.value)} maxLength={160}
++            placeholder="For example: shorter seated no video" disabled={busy || disabled} required />
+         </label>}
+         <button className="btn btn-soft" type="submit" disabled={!approved || busy || disabled || Boolean(result && !feedback.trim())}>
+           {busy ? "Searching…" : result ? "Find different sources" : "Search activities"}
+--- a/web/lib/api.ts
++++ b/web/lib/api.ts
+@@ -77,6 +77,25 @@
+   return method === "GET" || method === "HEAD" || init.retry === true;
+ }
+ 
++function errorDetail(detail: unknown): string {
++  if (typeof detail === "string" && detail.trim()) return detail.trim().slice(0, 600);
++  if (Array.isArray(detail)) {
++    // FastAPI validation details also contain submitted input and context. Show
++    // only bounded validation messages, never serialize the private request.
++    const labels: Record<string, string> = {
++      text: "Message", feedback: "Search feedback", original_query: "Search topic", note: "Note",
++    };
++    const messages = detail.flatMap((item: unknown) => {
++      if (!item || typeof item !== "object" || !("msg" in item) || typeof item.msg !== "string") return [];
++      const location = "loc" in item && Array.isArray(item.loc) ? item.loc.at(-1) : undefined;
++      const label = typeof location === "string" ? labels[location] : undefined;
++      return [`${label ? `${label}: ` : ""}${item.msg.trim().slice(0, 180)}`];
++    }).filter(Boolean);
++    if (messages.length) return [...new Set(messages)].slice(0, 3).join("; ").slice(0, 600);
++  }
++  return "JournalPulse could not complete the request. Please check your answers and try again.";
++}
++
+ export async function apiRequest<T>(path: string, init: ApiRequestInit = {}): Promise<T> {
+   const startedAccount = browserAccount();
+   const startedRevision = browserAccountRevision();
+@@ -135,7 +154,7 @@
+         const detail = await response.json().catch(() => null);
+         const retryAfter = Number(response.headers.get("Retry-After")) || undefined;
+         const error = new ApiError(
+-          detail?.detail ?? "JournalPulse could not complete the request.",
++          errorDetail(detail?.detail),
+           response.status,
+           requestId,
+           retryAfter,
+--- a/web/tests/e2e/core-flow.spec.ts
++++ b/web/tests/e2e/core-flow.spec.ts
+@@ -93,6 +93,34 @@
+   }, preferences);
+ }
+ 
++test("the chat composer keeps pasted messages within the API's limit", async ({ page }) => {
++  await seed(page);
++  let sentText = "";
++  await page.route(`${API}/**`, (route) => {
++    const path = new URL(route.request().url()).pathname;
++    if (path === "/v1/conversations") return fulfilJson(route, conversation(), 201);
++    if (path === `/v1/conversations/${CONVERSATION_ID}/messages`) {
++      sentText = route.request().postDataJSON().text;
++      return fulfilJson(route, {
++        conversation: conversation(), user_message: message("user", sentText),
++        assistant_message: message("assistant", "I hear you."),
++      });
++    }
++    return fulfilJson(route, { items: [] });
++  });
++  await page.goto("/talk");
++  const input = page.getByLabel("Message Luna");
++  await input.fill("a".repeat(2001));
++  await expect(input).toHaveValue("a".repeat(2000));
++  await page.keyboard.press("End");
++  await page.keyboard.insertText("b");
++  await expect(input).toHaveValue("a".repeat(2000));
++  await page.getByRole("button", { name: "Send", exact: true }).click();
++  await expect(page.getByRole("log")).toContainText("Luna said: I hear you.");
++  expect(sentText).toHaveLength(2000);
++  await expect(input).toHaveValue("");
++});
++
+ test("chat privacy and options support keyboard focus and dismissal", async ({ page }) => {
+   await seed(page);
+   await page.route(`${API}/**`, (route) => {
+--- a/web/tests/integration/guided-action.spec.ts
++++ b/web/tests/integration/guided-action.spec.ts
+@@ -149,3 +149,106 @@
+     for (const who of [first, second]) await clearAccount(request, who);
+   }
+ });
++
++test("inline search uses the real request contract and saves a refined signed offer in chat", async ({ page, request }) => {
++  const who = await sessionFor(request, "grace");
++  await clearAccount(request, who);
++  try {
++    await signIn(page, who);
++    await page.goto("/talk/");
++    await page.getByLabel("Message Luna").fill("A fictional busy afternoon has left my head feeling crowded.");
++    await page.getByRole("button", { name: "Send", exact: true }).click();
++    await expect(page.getByLabel("Message Luna")).toHaveValue("");
++    await page.getByRole("button", { name: "Find another resource", exact: true }).click();
++    const discovery = page.getByRole("region", { name: "Find another activity", exact: true });
++    await discovery.getByLabel("Allow this general activity search with Brave and Luna").check();
++    await discovery.getByLabel("General activity topic (optional)").fill("quiet meditation");
++    const searched = page.waitForResponse((response) => response.url().endsWith("/discover") && response.request().method() === "POST");
++    await discovery.getByRole("button", { name: "Search activities", exact: true }).click();
++    const response = await searched;
++    expect(response.status()).toBe(200);
++    const firstRequest = response.request().postDataJSON();
++    expect(firstRequest.constraints).toEqual({
++      time_minutes: null, no_audio: false, no_video: false, seated: false, avoid_breath_focus: false,
++    });
++    expect(firstRequest).not.toHaveProperty("no_audio");
++    await expect(discovery.getByRole("heading", { name: "Fictional reflection resource 1", exact: true })).toBeVisible();
++
++    const feedback = discovery.getByLabel("What would fit better? Keep it general.");
++    await expect(feedback).toHaveAttribute("maxlength", "160");
++    // The UI's own example must pass the real public-topic validator.
++    await feedback.fill((await feedback.getAttribute("placeholder"))!.replace("For example: ", ""));
++    const refined = page.waitForResponse((value) => value.url().endsWith("/discover") && value.request().method() === "POST");
++    await discovery.getByRole("button", { name: "Find different sources", exact: true }).click();
++    const refinedResponse = await refined;
++    expect(refinedResponse.status()).toBe(200);
++    expect(refinedResponse.request().postDataJSON().excluded_urls).toEqual([
++      "https://example.org/reflection-1", "https://example.org/reflection-2",
++    ]);
++    await expect(discovery.getByRole("heading", { name: "Fictional reflection resource 3", exact: true })).toBeVisible();
++    await expect(discovery.getByRole("heading", { name: "Fictional reflection resource 1", exact: true })).toHaveCount(0);
++    await discovery.getByRole("button", { name: "Save this activity", exact: true }).first().click();
++
++    const panel = page.getByRole("region", { name: "Activity with Luna", exact: true });
++    await expect(panel.getByRole("heading", { name: "Fictional reflection resource 3", exact: true })).toBeVisible();
++    await panel.getByRole("button", { name: "Start activity", exact: true }).click();
++    await expect(panel.getByRole("button", { name: "Done / check in", exact: true })).toBeVisible();
++    const chatId = new URL(page.url()).searchParams.get("c")!;
++    expect((await getActivity(request, who, chatId)).status).toBe("active");
++    const exported = await (await request.get("/v1/export", { headers: headers(who) })).json();
++    expect(exported.activity_sessions).toHaveLength(1);
++    expect(exported.activity_sessions[0].resource.url).toBe("https://example.org/reflection-3");
++    expect(exported.outcomes).toEqual([]);
++  } finally {
++    await clearAccount(request, who);
++  }
++});
++
++test("a newer recommendation replaces an unstarted saved search offer", async ({ page, request }) => {
++  const who = await sessionFor(request, "grace");
++  await clearAccount(request, who);
++  try {
++    const chat = await (await request.post("/v1/conversations", {
++      headers: headers(who), data: { llm_consent: true, retain_text: false },
++    })).json();
++    const discoveredResponse = await request.post(`/v1/conversations/${chat.id}/discover`, {
++      headers: headers(who), data: {
++        expected_revision: chat.revision, llm_consent: true, original_query: "quiet meditation",
++      },
++    });
++    expect(discoveredResponse.status()).toBe(200);
++    const { offers } = await discoveredResponse.json();
++    expect(offers.length).toBeGreaterThan(0);
++    const createdResponse = await request.post(`/v1/conversations/${chat.id}/activity-sessions`, {
++      headers: headers(who), data: {
++        client_request_id: crypto.randomUUID(), expected_conversation_revision: chat.revision,
++        resource_id: offers[0].resource.id, resource_token: offers[0].resource_token,
++      },
++    });
++    expect(createdResponse.ok()).toBeTruthy();
++    const oldOffer = await createdResponse.json();
++    expect(oldOffer.status).toBe("offered");
++    await signIn(page, who);
++    await page.goto(`/talk/?c=${chat.id}`);
++    await expect(page.getByRole("heading", { name: offers[0].resource.title, exact: true })).toBeVisible();
++    await page.getByLabel("Message Luna").fill("I have two minutes and would like a quiet seated pause, without audio.");
++    await page.getByRole("button", { name: "Send", exact: true }).click();
++    await expect(page.getByLabel("Message Luna")).toHaveValue("");
++    const newOffer = page.getByRole("region", { name: "Activity with Luna", exact: true })
++      .filter({ has: page.getByRole("heading", { name: "Two-minute quiet meditation", exact: true }) });
++    await expect(newOffer.getByRole("button", { name: "Start activity", exact: true })).toBeVisible();
++    expect((await getActivity(request, who, chat.id)).status).toBe("stopped");
++    await newOffer.getByRole("button", { name: "Start activity", exact: true }).click();
++    await expect(newOffer.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
++    const activity = await getActivity(request, who, chat.id);
++    expect(activity.id).not.toBe(oldOffer.id);
++    expect(activity.status).toBe("active");
++    expect(activity.remaining_seconds).toBeLessThanOrEqual(120);
++    const oldState = await (await request.get(`/v1/activity-sessions/${oldOffer.id}`, { headers: headers(who) })).json();
++    expect(oldState.status).toBe("stopped");
++    expect(oldState.started_at).toBeNull();
++    expect(oldState.report).toBeNull();
++  } finally {
++    await clearAccount(request, who);
++  }
++});
+--- /dev/null
++++ b/web/tests/unit/activity-discovery.test.tsx
+@@ -0,0 +1,53 @@
++import { act, createElement } from "react";
++import { createRoot, type Root } from "react-dom/client";
++import { afterEach, beforeEach, expect, test, vi } from "vitest";
++
++vi.mock("@/lib/api", async (original) => ({
++  ...await original<typeof import("@/lib/api")>(), apiRequest: vi.fn(),
++}));
++
++import { ActivitySessionDiscovery } from "@/components/activity-session-discovery";
++import { apiRequest } from "@/lib/api";
++import type { components } from "@/lib/generated-api";
++import type { Conversation } from "@/lib/types";
++
++const constraints = { time_minutes: 2, no_audio: true, no_video: true, seated: true, avoid_breath_focus: true };
++const conversation: Conversation & { activity_constraints: typeof constraints } = {
++  id: "10000000-0000-4000-8000-000000000001", user_id: "owner", status: "open", mode: "ai",
++  created_at: "2026-10-05T12:00:00Z", updated_at: "2026-10-05T12:00:00Z", revision: 4,
++  llm_consent: true, retain_text: false, safety_mode: "normal", locale: "CA", prompt_version: "test",
++  activity_constraints: constraints,
++};
++
++const requested = vi.mocked(apiRequest);
++let root: Root;
++let container: HTMLDivElement;
++beforeEach(() => {
++  (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
++  requested.mockReset().mockResolvedValue({
++    original_query: "quiet meditation", updated_query: "quiet meditation", candidates: [], offers: [],
++    conversation_revision: 4,
++  });
++  container = document.createElement("div"); document.body.appendChild(container); root = createRoot(container);
++});
++afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
++
++test("inline search sends confirmed constraints in the API's nested request field", async () => {
++  await act(async () => root.render(createElement(ActivitySessionDiscovery, {
++    conversation, disabled: false, onSave: vi.fn(),
++  })));
++  await act(async () => { container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click(); });
++  await act(async () => { container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
++
++  expect(requested).toHaveBeenCalledOnce();
++  const [path, init] = requested.mock.calls[0];
++  const payload = JSON.parse(String(init?.body));
++  const expected: components["schemas"]["InlineDiscoveryRequest"] = {
++    goal: "settle", style: "ground", constraints, llm_consent: true, expected_revision: 4, excluded_urls: [],
++  };
++  expect(path).toBe(`/v1/conversations/${conversation.id}/discover`);
++  expect(payload).toEqual(expected);
++  expect(init?.signal).toBeInstanceOf(AbortSignal);
++  expect(init?.retry).toBe(false);
++  expect(container.textContent).toContain("No fitting sources this time");
++});
+--- a/web/tests/unit/api.test.ts
++++ b/web/tests/unit/api.test.ts
+@@ -29,4 +29,32 @@
+     await expect(apiRequest("/v1/reflections", { method: "POST", body: "{}" })).rejects.toThrow();
+     expect(fetchMock).toHaveBeenCalledTimes(1);
+   });
++
++  test("validation errors explain the field without dumping submitted private input", async () => {
++    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
++      detail: [{ type: "string_too_long", loc: ["body", "text"],
++        msg: "String should have at most 2000 characters", input: "private journal words", ctx: { max_length: 2000 } }],
++    }), { status: 422 }));
++    vi.stubGlobal("fetch", fetchMock);
++
++    await expect(apiRequest("/v1/conversations/chat/messages", { method: "POST", body: "{}" }))
++      .rejects.toThrow("Message: String should have at most 2000 characters");
++    expect(fetchMock).toHaveBeenCalledOnce();
++  });
++
++  test("unexpected error objects have a readable fallback and validation output is bounded", async () => {
++    const fetchMock = vi.fn<typeof fetch>()
++      .mockResolvedValueOnce(new Response(JSON.stringify({ detail: { input: "private words" } }), { status: 400 }))
++      .mockResolvedValueOnce(new Response(JSON.stringify({ detail: Array.from({ length: 20 }, (_, index) => ({
++        loc: ["body", "feedback"], msg: `${index} ${"too long ".repeat(200)}`, input: "private words",
++      })) }), { status: 422 }));
++    vi.stubGlobal("fetch", fetchMock);
++    await expect(apiRequest("/request", { method: "POST" }))
++      .rejects.toThrow("JournalPulse could not complete the request. Please check your answers and try again.");
++    const error = await apiRequest("/request", { method: "POST" }).catch((reason: Error) => reason);
++    expect(error).toBeInstanceOf(Error);
++    expect((error as Error).message.length).toBeLessThanOrEqual(600);
++    expect((error as Error).message).not.toContain("private words");
++    expect((error as Error).message).not.toContain("[object Object]");
++  });
+ });
+--- a/web/tests/unit/check-in-workspace.test.tsx
++++ b/web/tests/unit/check-in-workspace.test.tsx
+@@ -14,10 +14,10 @@
+   } };
+ });
+ vi.mock("next/link", () => ({ default: ({ href, children, ...props }: { href: string; children: ReactNode }) => createElement("a", { href, ...props }, children) }));
+-vi.mock("@/lib/api", () => ({ apiRequest: vi.fn() }));
++vi.mock("@/lib/api", async (original) => ({ ...await original<typeof import("@/lib/api")>(), apiRequest: vi.fn() }));
+ 
+ import CheckInPage from "@/app/check-in/page";
+-import { apiRequest } from "@/lib/api";
++import { ApiError, apiRequest } from "@/lib/api";
+ 
+ const history = { items: ["first", "second"].map((id) => ({
+   created_at: "2026-10-05T10:00:00Z", decision: { decision_id: id, action_id: id },
+@@ -76,4 +76,49 @@
+     expect(receipts[1].decision_id).toBe("second");
+     expect(receipts[0].client_request_id).not.toBe(receipts[1].client_request_id);
+   });
++
++  test("an ambiguous save keeps answers fixed and retries the complete original receipt", async () => {
++    const writes: string[] = [];
++    requested.mockImplementation(async (path, options) => {
++      if (path === "/v1/outcomes" && options?.method === "POST") {
++        writes.push(String(options.body));
++        if (writes.length === 1) throw new Error("Lost response after commit");
++        return JSON.parse(writes[0]);
++      }
++      return path.startsWith("/v1/reflections") ? history : path === "/v1/resources" ? catalog : { items: [] };
++    });
++    await mount();
++    await click("Yes, I did");
++    const face = (label: string) => [...container.querySelectorAll<HTMLButtonElement>(".face")]
++      .find((button) => button.textContent?.includes(label))!;
++    await act(async () => { face("Not at all").click(); });
++    await click("Save my check-in");
++    expect(container.textContent).toContain("submitted answers are kept unchanged");
++    expect(face("A lot").disabled).toBe(true);
++    expect(container.querySelector("textarea")!.disabled).toBe(true);
++    expect([...container.querySelectorAll<HTMLButtonElement>(".chips button")].every((button) => button.disabled)).toBe(true);
++    await act(async () => { face("A lot").click(); });
++    expect(face("Not at all").getAttribute("aria-pressed")).toBe("true");
++    await click("Retry saving check-in");
++    expect(writes).toHaveLength(2);
++    expect(writes[1]).toBe(writes[0]);
++    expect(JSON.parse(writes[1]).helpfulness).toBe(1);
++    expect(container.textContent).toContain("Thank you!");
++  });
++
++  test("a validation rejection keeps the answers editable and creates a new corrected receipt", async () => {
++    const writes: string[] = [];
++    requested.mockImplementation(async (path, options) => {
++      if (path === "/v1/outcomes" && options?.method === "POST") {
++        writes.push(String(options.body));
++        if (writes.length === 1) throw new ApiError("Check your answers", 422);
++        return JSON.parse(writes[1]);
++      }
++      return path.startsWith("/v1/reflections") ? history : path === "/v1/resources" ? catalog : { items: [] };
++    });
++    await mount(); await click("Not yet"); await click("Skip this one");
++    expect(container.textContent).not.toContain("submitted answers are kept unchanged");
++    await click("Skip this one");
++    expect(JSON.parse(writes[0]).client_request_id).not.toBe(JSON.parse(writes[1]).client_request_id);
++  });
+ });

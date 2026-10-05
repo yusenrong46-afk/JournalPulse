@@ -1,0 +1,238 @@
+--- a/scripts/integration_stack.py
++++ b/scripts/integration_stack.py
+@@ -48,8 +48,12 @@
+     DiscoveryResponse,
+ )
+ from journalpulse.discovery_prompts import DISCOVERY_PROMPT_VERSION  # noqa: E402
+-from journalpulse.domain import ModelRun  # noqa: E402
++from journalpulse.domain import (  # noqa: E402
++    ActivityConstraintInputs,
++    ModelRun,
++)
+ from journalpulse.guided import guess_feelings  # noqa: E402
++from journalpulse.guided_action import ActivityDirective, GuidedActionContext  # noqa: E402
+ from journalpulse.intelligence import ConversationCompletion  # noqa: E402
+ 
+ DATABASE = "jp_integration"
+@@ -334,7 +338,7 @@
+ 
+ 
+ class DeterministicLuna:
+-    """Stands in for OpenRouter: fixed replies, keyword feelings, and an offer on turn two."""
++    """A named fake for legacy provider flags and the new quiet-activity contract."""
+ 
+     def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
+         user_texts = [message["content"] for message in messages if message["role"] == "user"]
+@@ -346,8 +350,9 @@
+         )
+         return ConversationCompletion(
+             reply=(
+-                "I’m listening. What else is on your mind?" if listening else
+-                "Thank you for telling me. What feels heaviest right now?"
++                "I’m listening. What else is on your mind?"
++                if listening
++                else "Thank you for telling me. What feels heaviest right now?"
+                 if turn < 2
+                 else "That sounds like a lot. Would you like to find one small thing together?"
+             ),
+@@ -361,6 +366,55 @@
+                 model="integration-fake-luna", provider="fake", latency_ms=1, schema_valid=True
+             ),
+         )
++
++    def complete_guided(
++        self,
++        messages: list[dict[str, str]],
++        context: GuidedActionContext,
++    ) -> ConversationCompletion:
++        latest = next((item["content"] for item in reversed(messages) if item["role"] == "user"), "")
++        # This stand-in proves the real session path, never model quality. Other
++        # provider scenarios retain the old six-field schema to exercise backwards
++        # compatibility and adversarial readiness flags. The manual UI loop itself
++        # is tested explicitly in no-AI guided mode, rather than faking an AI flow.
++        if "participant_report" in latest:
++            return ConversationCompletion(
++                reply="You reported what happened. We can leave it here or keep talking.",
++                offer_action=False,
++                resource_intent="ground",
++                card_reason="",
++                summary="A saved fictional activity check-in.",
++                model_run=ModelRun(
++                    model="integration-fake-luna", provider="fake", latency_ms=1, schema_valid=True
++                ),
++                activity=ActivityDirective(
++                    move="outcome",
++                    goal=None,
++                    selected_resource_id=None,
++                    constraints=context.constraints,
++                    search_topic=None,
++                ),
++            )
++        if "two minutes" in latest.lower() and "quiet" in latest.lower() and context.action_allowed:
++            return ConversationCompletion(
++                reply=("A short quiet pause could fit the two minutes you have. "
++                       "You can try it or keep talking."),
++                offer_action=True,
++                resource_intent="ground",
++                card_reason="A silent seated option for two minutes.",
++                summary="A fictional request for a quiet pause.",
++                model_run=ModelRun(
++                    model="integration-fake-luna", provider="fake", latency_ms=1, schema_valid=True
++                ),
++                activity=ActivityDirective(
++                    move="propose",
++                    goal="settle",
++                    selected_resource_id="guided_meditation_2m",
++                    constraints=ActivityConstraintInputs(time_minutes=2, no_audio=True, seated=True),
++                    search_topic=None,
++                ),
++            )
++        return self.complete(messages)
+ 
+ 
+ class DeterministicDiscovery:
+@@ -385,10 +439,15 @@
+                 prompt_version=DISCOVERY_PROMPT_VERSION,
+                 retrieved_at="2026-10-04T12:00:00+00:00",
+                 candidate_count=len(candidates),
+-                model_runs=[ModelRun(
+-                    model="integration-fake-discovery", provider="test-double", latency_ms=0,
+-                    schema_valid=True, prompt_version=DISCOVERY_PROMPT_VERSION,
+-                )],
++                model_runs=[
++                    ModelRun(
++                        model="integration-fake-discovery",
++                        provider="test-double",
++                        latency_ms=0,
++                        schema_valid=True,
++                        prompt_version=DISCOVERY_PROMPT_VERSION,
++                    )
++                ],
+             ),
+             limitations=["Synthetic integration fixtures; no live pages or search providers were consulted."],
+         )
+@@ -423,7 +482,8 @@
+     build_web()
+     os.environ["JOURNALPULSE_WEB_DIST"] = str(WEB_DIST)
+     app = create_app(
+-        settings=api_settings(), conversation_client=DeterministicLuna(),
++        settings=api_settings(),
++        conversation_client=DeterministicLuna(),
+         discovery_client=DeterministicDiscovery(),
+     )
+     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+--- a/web/tests/integration/loop.spec.ts
++++ b/web/tests/integration/loop.spec.ts
+@@ -46,16 +46,18 @@
+   };
+ }
+ 
+-test("the whole loop runs against the real API and database", async ({ page, request }) => {
++test("the legacy guided loop runs against the real API and database", async ({ page, request }) => {
+   const alex = await session(request, "alex");
+   const as = api(request, alex);
+   expect((await as.delete("/v1/account/data")).ok()).toBeTruthy();
+-  await signIn(page, alex);
++  // This preserves the original feelings → goal → accept → standalone check-in
++  // contract. AI chats use the separately tested, open-chat activity session loop.
++  await signIn(page, alex, false);
+ 
+   await page.goto("/talk/");
+   await page.getByRole("button", { name: /Low/ }).click();
+-  await expect(page.getByText("What feels heaviest right now?")).toBeVisible();
+-  await page.getByLabel("Message Luna").fill("Work has been so stressful and I'm exhausted.");
++  await expect(page.getByText(/What part of that is sitting with you most right now/)).toBeVisible();
++  await page.getByLabel("Message Luna").fill("Work has been so stressful and I'm exhausted. Please find one small step.");
+   await page.getByRole("button", { name: "Send" }).click();
+   await page.getByRole("button", { name: /Yes, let’s find one small thing/ }).click();
+ 
+@@ -87,7 +89,8 @@
+   expect(saved.self_report_input).toEqual({ feelings: ["tired", "sad"], mood_score: 2 });
+   expect(saved.state.emotion_tags).toEqual(["tired", "sad"]);
+   expect(saved.state.confidence).toBeNull();
+-  expect(saved.model_run.model).toBe("integration-fake-luna");
++  expect(saved.model_run.model).toBe("luna-guided");
++  expect(saved.model_run.provider).toBe("local");
+   const closed = await (await as.get(`/v1/conversations/${conversationId}`)).json();
+   expect(closed.conversation.status).toBe("closed");
+   expect(closed.conversation.reflection_id).toBe(saved.id);
+@@ -151,7 +154,7 @@
+   await alex.delete(`/v1/conversations/${chat.id}`);
+ });
+ 
+-test("Just talk survives reload and later AI offers, then resumes with a fresh card", async ({ page, request }) => {
++test("Just talk survives reload and later AI flags, then resumes with a fresh activity offer", async ({ page, request }) => {
+   const who = await session(request, "alex");
+   const as = api(request, who);
+   await as.delete("/v1/account/data");
+@@ -160,21 +163,21 @@
+   await page.getByLabel("Message Luna").fill("I feel tired.");
+   await page.getByRole("button", { name: "Send" }).click();
+   await expect(page.getByText("What feels heaviest right now?")).toBeVisible();
+-  await page.getByLabel("Message Luna").fill("Work has been hard.");
+-  await page.getByRole("button", { name: "Send" }).click();
+-  await page.getByRole("button", { name: /Yes, let’s find one small thing/ }).click();
+-  await page.getByRole("button", { name: "That’s it" }).click();
+-  await page.getByRole("button", { name: /Calm down/ }).click();
+-  await expect(page.getByRole("button", { name: "Let’s try it" })).toBeVisible();
++  await page.getByLabel("Message Luna").fill("I have two minutes and would like a quiet seated pause without audio.");
++  await page.getByRole("button", { name: "Send" }).click();
++  await expect(page.getByRole("button", { name: "Start activity", exact: true })).toBeVisible();
+   const id = new URL(page.url()).searchParams.get("c");
+   const old = (await (await as.get(`/v1/conversations/${id}`)).json()).conversation;
++  expect(old.activity_card).toBeTruthy();
++  expect(old.card).toBeNull();
+ 
+   await page.getByRole("button", { name: "Just talk", exact: true }).click();
+   await expect(page.getByText("Just talking. We’ll stay with your thoughts.")).toBeVisible();
+-  await expect(page.getByRole("button", { name: "Let’s try it" })).toHaveCount(0);
++  await expect(page.getByRole("button", { name: "Start activity", exact: true })).toHaveCount(0);
+   await page.reload();
+   await expect(page.getByRole("button", { name: "Find a small step" })).toBeVisible();
+-  // The fake provider deliberately offers on every later turn: server state must win.
++  // The old-contract fake deliberately sets offer_action on later turns. The
++  // server's Listen preference must suppress even that adversarial readiness flag.
+   await page.getByLabel("Message Luna").fill("I still have more to say.");
+   await page.getByRole("button", { name: "Send" }).click();
+   await expect(page.getByLabel("Message Luna")).toHaveValue("");
+@@ -182,23 +185,31 @@
+   expect(listening.interaction_preference).toBe("listen");
+   expect(listening.ready_for_action).toBe(false);
+   expect(listening.card).toBeNull();
++  expect(listening.activity_card).toBeNull();
+   expect((await (await as.get("/v1/reflections")).json()).items).toEqual([]);
+   await expect(page.getByRole("button", { name: /Yes, let’s find one small thing/ })).toHaveCount(0);
+ 
+   await page.getByRole("button", { name: "Find a small step" }).click();
+-  await page.getByRole("button", { name: "That’s it" }).click();
+-  await page.getByRole("button", { name: /Calm down/ }).click();
+-  await expect(page.getByRole("button", { name: "Let’s try it" })).toBeVisible();
++  await page.getByLabel("Message Luna").fill("I have two minutes and want a quiet seated pause now.");
++  await page.getByRole("button", { name: "Send" }).click();
++  await expect(page.getByRole("button", { name: "Start activity", exact: true })).toBeVisible();
+   const resumed = (await (await as.get(`/v1/conversations/${id}`)).json()).conversation;
+   expect(resumed.revision).toBeGreaterThan(old.revision);
+-  const stale = await as.post(`/v1/conversations/${id}/accept`, {
+-    client_request_id: crypto.randomUUID(), action_id: old.card.decision_preview.action_id,
+-    expected_revision: old.revision,
++  expect(resumed.activity_card.offered_message_id).not.toBe(old.activity_card.offered_message_id);
++  const stale = await as.post(`/v1/conversations/${id}/activity-sessions`, {
++    client_request_id: crypto.randomUUID(), resource_id: old.activity_card.decision_preview.action_id,
++    expected_conversation_revision: old.revision,
+   });
+   expect(stale.status()).toBe(409);
+-  await page.getByRole("button", { name: "Let’s try it" }).click();
+-  await expect(page.getByRole("heading", { name: "Nice choice." })).toBeVisible();
+-  expect((await (await as.get("/v1/reflections")).json()).items).toHaveLength(1);
++  await page.getByRole("button", { name: "Start activity", exact: true }).click();
++  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
++  const current = (await (await as.get(`/v1/conversations/${id}`)).json()).conversation;
++  expect(current.status).toBe("open");
++  expect((await (await as.get("/v1/reflections")).json()).items).toEqual([]);
++  const activity = await (await as.get(`/v1/conversations/${id}/activity-sessions`)).json();
++  expect(activity.status).toBe("active");
++  expect(activity.offered_message_id).toBe(resumed.activity_card.offered_message_id);
++  await as.delete(`/v1/conversations/${id}`);
+ });
+ 
+ test("a lost choice response can be retried without losing the draft or applying twice", async ({ page, request }) => {

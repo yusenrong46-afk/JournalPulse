@@ -1,0 +1,13 @@
+{
+  "assets/evaluation/luna-guided-action-v3.json": "ffbec1dec34d021122f4a05b4906b64c15c70cf9565c07a128e16e87b3baa990",
+  "docs/LUNA_GUIDED_ACTION_IMPLEMENTATION.md": "e2603677214d30a60d7e5180e8567512a4165275e2b80c26d397762e77edf6d9",
+  "docs/LUNA_GUIDED_ACTION_RELEASE.md": "2c07ea57bad8a6b22a2a32ce5ca3d3fff086e5a64763587177623aacca62aef5",
+  "docs/LUNA_GUIDED_ACTION_VERTICAL_SLICE_PLAN.md": "c61919bb50d0b3d548c4394d944aff28a827d8811819f83140a274808f7ecada",
+  "docs/LUNA_SEARCH_CONTRACT_FIX.md": "21e6fc37077cc74ecbdafe4692ff6ad68c633b6d6d929e2562471cfea779143a",
+  "src/journalpulse/activity_chat.py": "ab4e59bdcbe048b1bb67b861f3d6b6571f30bac91316d2e007427b42b7d93785",
+  "src/journalpulse/activity_resources.py": "04915b3cd97826a7468f5aeb5738565de07c81da6a6c6a7ede28bb34e2d73add",
+  "src/journalpulse/guided_action.py": "f25582d361f3b02c8ddca57b9f1bf96181b3cdd1ac77ff140a15bfb55d3e8da9",
+  "src/journalpulse/skills/guided_action/SKILL.md": "6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49",
+  "tests/test_activity_search_contract.py": "03eb6817bc1622d6797c4df2a545714817e7a6dd1100ee4bc19b4b9144c2c341",
+  "tests/test_guided_action_prompt.py": "e3f6adb5603dab467b3ef08c59e6c22aeb2cdcae1eb4f71a7e93514b535a71a6"
+}

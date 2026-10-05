@@ -1,0 +1,15 @@
+{
+  "user_statement": "I will authorize 7 dollars",
+  "recorded_at": "2026-10-05T19:42:47.425723+00:00",
+  "authorized_total_usd": 7,
+  "interpretation": "Total model/search evaluation accounting including prior retained provider response costs. No credit purchase. Stop before a request would exceed total.",
+  "prior_provider_response_evidence_usd": 1.8951729150000005,
+  "unreconciled_historical_charge_allowance_usd": 0.35,
+  "historical_accounting_limit": "Retained response estimate, not a reconciled invoice; unknown historical charges are not provably capped.",
+  "additional_attempt_caps": {
+    "teacher": 120,
+    "luna": 150,
+    "brave": 1
+  },
+  "authorization_replaces_unapproved_40_usd_proposal": true
+}

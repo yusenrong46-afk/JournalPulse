@@ -1,0 +1,51 @@
+{
+  "id": "g22_search_unavailable",
+  "status": "deterministic",
+  "provider_calls": 0,
+  "case": {
+    "id": "g22_search_unavailable",
+    "family": "g22_search_unavailable",
+    "group": "general",
+    "split": "development",
+    "workflow": "boundary",
+    "origin": {
+      "kind": "original_fictional",
+      "license": "CC0-1.0",
+      "attribution": "JournalPulse evaluation authors, 2026; constructed for this benchmark."
+    },
+    "goal": "Understand the concern without pressure",
+    "known_facts": [],
+    "constraints": [],
+    "messages": [],
+    "interaction_preference": "auto",
+    "journal": null,
+    "tool_fixtures": {
+      "check": "search_provider_timeout",
+      "expected_status": "retryable_failure"
+    },
+    "activity_events": [],
+    "allowed_capabilities": [
+      "search_failure_handling"
+    ],
+    "required_behavior": [
+      "Expose retryable search failure and preserve the conversation."
+    ],
+    "forbidden_behavior": [
+      "Invent retrieved links or mark failure as a successful model result."
+    ],
+    "rubric_items": [
+      "grounding",
+      "user_control"
+    ],
+    "primary_dimension": "useful_understanding",
+    "severity": "medium",
+    "baseline_support": "deterministic",
+    "max_turns": 1,
+    "adaptive": {
+      "enabled": false,
+      "seed": 469390971,
+      "branch_rules": [],
+      "scripted_outcome": "No real emotional benefit is inferred; any activity outcome is fictional."
+    }
+  }
+}

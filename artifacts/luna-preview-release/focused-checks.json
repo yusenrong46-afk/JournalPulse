@@ -1,0 +1,21 @@
+{
+  "backend_tests": 82,
+  "deployment_exclusion_check": {
+    "length": 227,
+    "maximum": 256,
+    "runtime_paths_verified": 3,
+    "unwanted_paths_verified": 14
+  },
+  "inherited_full_audit": "docs/PRE_EVALUATION_AUDIT_2026-10-05.md",
+  "status": "passed",
+  "suites": [
+    "guided_action_boundaries",
+    "guided_action_prompt",
+    "activity_offer_supersession",
+    "activity_follow_up_recovery",
+    "activity_search_contract",
+    "readiness",
+    "safety_direct_intent"
+  ],
+  "warning": "Upstream Starlette/httpx TestClient deprecation"
+}

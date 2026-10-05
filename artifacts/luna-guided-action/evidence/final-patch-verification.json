@@ -1,0 +1,8 @@
+{
+  "ordered_patch_count": 12,
+  "changed_source_files": 51,
+  "ordered_patches_reconstruct_candidate": true,
+  "combined_patch_reconstructs_candidate": true,
+  "combined_patch_base": "complete 202-file pre-upgrade dirty source snapshot",
+  "hosted_mutations": 0
+}

@@ -1,0 +1,18 @@
+{
+  "brave_calls": 0,
+  "browser_transport": "Actual hosted responses through verified httpx HTTPS; loopback bridge bound to test process; persistent trust unchanged",
+  "candidate_sha256": "58b2b5d5d6eed98eacf220643820e50f0bd2178246d1f871a775d3f368140d3f",
+  "checks": [
+    "real Luna .3 response",
+    "approved one-minute activity",
+    "cross-owner isolation",
+    "hosted browser activity loop",
+    "saved not-tried followup .3",
+    "Just talk clears offers",
+    "activity export and account deletion"
+  ],
+  "deployment_id": "dpl_9xFz5u928LMBgsiJuFQYecw7gV35",
+  "luna_generations": 2,
+  "status": "pass",
+  "teacher_calls": 0
+}

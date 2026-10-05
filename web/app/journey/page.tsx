@@ -82,9 +82,13 @@ export default function JourneyPage() {
 
   async function remove(id: string) {
     if (!window.confirm("Delete this entry and its check-in? This can’t be undone.")) return;
+    const decisionId = reflections.find((item) => item.id === id)?.decision.decision_id;
     try {
       await apiRequest(`/v1/reflections/${id}`, { method: "DELETE" });
       setReflections((current) => current.filter((item) => item.id !== id));
+      // The server cascades the check-in too. Keep the local totals and garden
+      // consistent immediately, rather than counting the deleted outcome.
+      setOutcomes((current) => current.filter((item) => item.decision_id !== decisionId));
     } catch {
       setError(true);
     }

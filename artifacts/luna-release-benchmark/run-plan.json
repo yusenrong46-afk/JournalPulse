@@ -1,0 +1,74 @@
+{
+  "status": "benchmark-run-complete-release-incomplete",
+  "dataset_sha256": "4787054f8b6e75dcb57bfa36ffc7aa884cfa93e59108430a1befb1df4cc78f84",
+  "candidate_skill_version": "guided-action-2026-10-05.3",
+  "candidate_skill_sha256": "abb73f69089a8591e5f30f1ac62e4557cd0a62f45d408d8fdf718f1bd4808270",
+  "baseline_source": "/workspace/journalpulse-planning/guided-action-2026-10-05/unit-00-before",
+  "controlled_cases": 60,
+  "development_cases": 36,
+  "new_final_test_cases": 24,
+  "adaptive_scenarios": 8,
+  "adaptive_assistant_turn_cap": 2,
+  "repeat_case_ids": [
+    "f01_bookshop_connection",
+    "f03_lunch_logistics",
+    "f07_form_start",
+    "f09_grounded_duration",
+    "f16_written_resource",
+    "f21_present_relief"
+  ],
+  "controlled_teacher_upper_bound": 54,
+  "simulator_upper_bound": 16,
+  "adaptive_judge_upper_bound": 8,
+  "planned_teacher_initial_upper_bound": 78,
+  "additional_teacher_attempt_limit": 120,
+  "additional_luna_attempt_limit": 150,
+  "additional_brave_attempt_limit": 1,
+  "global_caps_requested": {
+    "luna": 600,
+    "teacher": 300,
+    "brave": 6,
+    "estimated_reserved_usd": 40,
+    "approval_status": "superseded; not approved"
+  },
+  "global_start_counts": {
+    "luna": 235,
+    "teacher": 171,
+    "brave": 2
+  },
+  "conservative_start_reservation_usd": 22.91,
+  "maximum_additional_reservation_usd": 15.92,
+  "conservative_total_reservation_upper_bound_usd": 38.83,
+  "retry_rule": "No more than two additional retries on transient provider errors per operation; sequential teacher calls and cooldown for429; all attempts count, stop at global or run cap. Failures remain in report.",
+  "reuse_rule": "Only reuse retained baseline development observations where full request hash and fixture content match; no reuse of .2 teacher scores or .2 candidate observations for .3.",
+  "release_targets": {
+    "heldout_primary_gain": 0.3,
+    "heldout_nontied_win_fraction": 0.6,
+    "maximum_naturalness_decline": 0.2,
+    "critical_gates": "all pass",
+    "maximum_luna_attempts": 600,
+    "maximum_teacher_attempts": 180,
+    "maximum_brave_calls": 6,
+    "estimated_spend_usd": 25
+  },
+  "completion_does_not_mean_pass": true,
+  "no_prompt_tuning_during_run": true,
+  "no_preview_or_database_migration_part_of_this_run": true,
+  "approved_total_usd": 7,
+  "budget_method": "Before each call reserve UTF-8 serialized request bytes as conservative token bound, maximum completion and cache-write rate plus 15 percent contingency; settle known provider usage, retain full reservation for missing usage.",
+  "additional_spend_accounting_room_usd": 4.754827085,
+  "global_caps_authorized": {
+    "luna": 600,
+    "teacher": 291,
+    "brave": 6,
+    "accounted_total_usd": 7
+  },
+  "completed_at": "2026-10-05T20:37:14.501502+00:00",
+  "final_accounted_total_usd": 4.461164965,
+  "new_provider_reported_model_usd": 1.47982027,
+  "evaluator_repairs": [
+    "source isolation for one provider-filtered journal-injection judge packet",
+    "all 18 resource-selected pairs regraded with frozen descriptors; original grades preserved"
+  ],
+  "release_status": "incomplete"
+}

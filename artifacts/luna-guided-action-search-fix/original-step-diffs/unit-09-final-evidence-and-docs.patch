@@ -1,0 +1,368 @@
+--- a/docs/LUNA_GUIDED_ACTION_IMPLEMENTATION.md
++++ b/docs/LUNA_GUIDED_ACTION_IMPLEMENTATION.md
+@@ -1,9 +1,10 @@
+ # Luna guided action: implementation and review guide
+ 
+-Updated October 5, 2026. The slice is implemented in this workspace. The
+-before/after teacher benchmark and preview release gates are still pending.
+-This document describes implemented behavior, rather than a claim that the new
+-experience has already passed its language-quality or release gates.
++Updated October 5, 2026. The slice is implemented in this workspace. The frozen
++candidate failed its delivery gate: one walking-search suggestion was rejected
++by the strict public-topic vocabulary. The existing Preview remains unchanged;
++the new migration has not been applied to the shared database. See the
++[release evidence](LUNA_GUIDED_ACTION_RELEASE.md) and offline comparison report.
+ 
+ ## What changed
+ 
+@@ -33,9 +34,9 @@
+ 
+ ## Resources, search, and journals
+ 
+-The server supplies approved resource IDs. It filters duration and format
+-constraints before selection and checks the chosen resource again. Luna cannot
+-invent a resource URL or turn an arbitrary ID into an activity.
++The server supplies a bounded pool of approved resource IDs. It checks the chosen
++resource against the latest duration and format constraints, including user
++corrections. Luna cannot invent a resource URL or turn an arbitrary ID into an activity.
+ 
+ **Find another resource** provides inline Brave search with explicit search
+ consent. Queries and refinements use bounded general activity words; chat history,
+@@ -85,7 +86,9 @@
+ 
+ ## Easiest manual review
+ 
+-Use a disposable test account and fictional writing. Begin a new private AI chat
++These steps apply to the candidate with its migration and Luna configured; the
++existing Preview currently serves the previous version. Use a disposable test
++account and fictional writing. Begin a new private AI chat
+ with AI consent enabled. These are behavioral checks, not exact reply templates.
+ 
+ 1. Say: **“My head is noisy after work. I have two minutes for a quiet pause,
+@@ -146,14 +149,19 @@
+ 
+ ## Verification recorded so far
+ 
+-The current integration run recorded **604 backend tests passing**, with
+-**90.47% branch coverage**, **103 frontend unit tests**, and **16 real-stack
++The current integration run recorded **609 backend tests passing**, with
++**90.59% coverage with branch measurement**, **103 frontend unit tests**, and **16 real-stack
+ integration tests**. An earlier run recorded **44 desktop/mobile browser
+ regression tests**; that earlier run is not substituted for final candidate
+ browser verification. The actual built wheel was checked for the packaged skill
+ and its loader/hash. Coverage measures executed code, not empathy, clinical safety,
+ or language quality.
+ 
+-The controlled/adaptive before/after teacher benchmark, its standalone comparison
+-report, final release gates, and preview deployment verification are pending.
+-Do not infer a benchmark win or a deployed upgrade from these software-test counts.
++The before/after benchmark and standalone report are complete. There are 40
++controlled teacher judgments and seven of eight adaptive judgments; the final
++adaptive judgment exhausted its bounded retries under provider rate limiting.
++One held-out walking-search proposal was rejected by the application's public
++topic validator, so the release gates failed. The report retains that failure and
++the missing judgment. The existing Preview and shared database remain unchanged.
++See [release evidence](LUNA_GUIDED_ACTION_RELEASE.md) for the exact results and
++remaining work. Software-test counts alone do not establish a benchmark win.
+--- /dev/null
++++ b/docs/LUNA_GUIDED_ACTION_RELEASE.md
+@@ -0,0 +1,102 @@
++# Guided-action candidate: release evidence
++
++October 5, 2026. The candidate is implemented and tested locally. Release is
++**blocked** by the approved benchmark's delivery gate. The existing protected
++Preview and production remain on their previous deployments, and the new SQL
++migration has not been applied to the shared Supabase database.
++
++## Implemented and verified
++
++The new loop keeps chat open through an optional Luna proposal, negotiation,
++activity controls, honest participation/outcome reporting, and one bounded
++follow-up. Silent one/two-minute meditation, deadline-based timers, single check-ins,
++inline consented public-topic search, linked-entry grounding, stopping, revision
++checks and retries are implemented. Existing no-AI guided acceptance is preserved.
++
++The packaged research-informed skill is actually loaded and versioned. LLM/user
++selections have no fabricated propensity and remain excluded from off-policy
++evaluation. Timer expiry never establishes participation or improvement.
++
++Final software verification: **609 backend tests**, **90.59% coverage with branch
++measurement**, **103 frontend unit tests**, **16 real API/PostgreSQL browser
++integrations** and **44 earlier desktop/mobile browser checks** pass. Ruff, mypy,
++OpenAPI consistency, resource validation, lint, TypeScript and the production build
++pass. Fresh PostgreSQL migration/signing/RLS/lifecycle checks include 42 activity
++assertions. The frozen old parser reads the new records in local compatibility
++tests. Hosted post-migration compatibility has not been claimed or tested.
++
++## Actual model comparison
++
++The frozen dataset contains 60 original fictional CC0 cases: 36 development and
++24 held out, with eight bounded adaptive conversations and six declared repeated
++cases. No real journals or private conversation data are used. Baseline and
++candidate provider bodies use the same GPT-6 Luna model, token ceiling, medium
++reasoning and retention settings; the skill, contextual resource contract and
++instructions differ. Exact request hashes match their production pipeline replays.
++
++The teacher is actual `openai/gpt-6.1-sol` with **high** API reasoning. Ultra refers
++to the coding configuration; it is not a label for the evaluation API. Versions
++and desired winner are hidden in randomized A/B inputs. Judgments retain evidence,
++uncertainty, structured decisions, refusals, failures, tokens and latency.
++
++Controlled judging produced 27 development and 13 deliverable held-out pairs.
++Development primary scores improved by a descriptive **0.50/5** across 24 eligible
++pairs. Among **13 of 14 expected held-out quality pairs**, descriptive primary
++gain is **0.538/5**: candidate preferred 5, baseline 2, ties 6. Five of seven
++non-tied pairs favor the candidate (71.4%). Paired naturalness improved by 0.25
++across 36 applicable controlled pairs. These partial results do not satisfy the
++complete-holdout release gate or establish human usefulness or clinical efficacy.
++
++Seven of eight adaptive pairs received a teacher judgment, for **47 actual
++teacher judgments** across both tracks. The final adaptive judgment exhausted
++four bounded attempts under provider rate limiting; its missing score remains
++visible. All eight before/after language trajectories were captured. They use
++fixed fictional facts and frozen activity context, with at most
++four Luna turns and unseeded sampling. They are separate from actual UI/session
++orchestration. Six paired additional runs remain separate from primary scoring.
++
++## Release blocker
++
++Case `g29_safe_brief_walk` generated a reasonable proposal to search for a brief
++corridor-walking break. Its public-looking phrase contained words outside the
++finite search vocabulary. The production parser returned HTTP 502, saved no turn
++and made no Brave call. The raw generation is retained as a rejected diagnostic;
++it is not displayed or scored as a delivered Luna reply.
++
++The failed case keeps the original expected denominator of 14. It blocks release
++despite positive descriptive scores on the other cases. Its adaptive continuation
++is explicitly hypothetical provider-language evidence following a rejected first
++reply, and cannot establish successful product delivery.
++
++A future candidate should align model search intent with categorical server
++query construction, validate that change using development examples and privacy
++regressions, then freeze a fresh independent holdout. Keep this failed result in
++the evidence. Results used to revise a candidate become exploratory.
++
++## External checks and review artifacts
++
++One consented, fictional public query through the unchanged Preview returned two
++Brave resources. This confirms the existing provider connection; it does not claim
++hosted acceptance of the new inline-session flow. No retrieved page was clinically
++reviewed. Model pricing was verified; the workspace proxy blocked the public Brave
++pricing page, so its per-call estimate is labeled unverified and not an invoice.
++Every retry is counted against the declared model/search attempt ceilings.
++
++`artifacts/luna-guided-action/comparison.html` is a standalone offline report with
++all cases, transcripts, diagnostic states, blind review, evidence, provenance and
++local review export. Review notes remain on the reviewer's device. It has no
++remote dependencies. Its manifest contains final metrics, costs and gate states.
++
++Upgrade-only ordered patches, before/after notes and a combined patch are under
++`/workspace/journalpulse-planning/guided-action-2026-10-05/`. They compare against
++the complete 202-file dirty pre-upgrade workspace, preserving the earlier audit.
++The patches group source changes for review; validation covers the integrated
++candidate, and intermediate groups can depend on later shared contracts.
++
++Release preparation includes a frozen upload, unchanged hashes for nine inherited
++migrations, additive migration impact, rollback limits and an explicit gated
++helper. No migration, deployment or stable-alias mutation was performed. The
++existing Preview deployment is `dpl_Ey6QzvQBWwpXaqwyT64N8rhR9d5n`; production is
++`dpl_57Rut4UoR24LsTRjsA7nEpiBQycU`. Temporary owner-locked evaluation deployments
++and the implementation-owned fictional account are removed after evaluation;
++cleanup evidence records the actual result.
+--- a/docs/LUNA_GUIDED_ACTION_VERTICAL_SLICE_PLAN.md
++++ b/docs/LUNA_GUIDED_ACTION_VERTICAL_SLICE_PLAN.md
+@@ -1,6 +1,6 @@
+ # Luna guided action: complete vertical-slice upgrade plan
+ 
+-Status: implementation in progress; benchmark and preview gates pending. Prepared October 5, 2026.
++Status: implemented locally; frozen candidate release blocked by a failed delivery gate. Prepared October 5, 2026. See `LUNA_GUIDED_ACTION_RELEASE.md` for observed results.
+ Requested execution model: GPT-6.1 Sol with Ultra reasoning.
+ 
+ ## 1. Outcome and scope
+--- a/src/journalpulse/activity_chat.py
++++ b/src/journalpulse/activity_chat.py
+@@ -232,7 +232,7 @@
+         completion.reply,
+         completion.model_run,
+         ActivityFollowUpDirective(
+-        card=update.get("activity_card"),
++            card=update.get("activity_card"),
+             constraints=update.get("activity_constraints"),
+             goal=update.get("activity_goal"),
+             search_topic=update.get("activity_search_topic"),
+--- a/src/journalpulse/guided_evaluation.py
++++ b/src/journalpulse/guided_evaluation.py
+@@ -423,6 +423,12 @@
+             raise ValueError("Judging needs separate gates for both versions")
+         if self.status == "observed" and not self.provenance.get("model"):
+             raise ValueError("Teacher judgments require actual model provenance")
++        if self.status == "observed":
++            for label in ("A", "B"):
++                for dimension, score in self.scores[label].model_dump().items():
++                    evidence = self.evidence.get(label, {}).get(dimension)
++                    if score is not None and (not isinstance(evidence, str) or not evidence.strip()):
++                        raise ValueError("An observed score requires explicit evidence")
+         return self
+ 
+ 
+@@ -1094,6 +1100,7 @@
+         "generated_at": datetime.now(UTC).isoformat(),
+         "dataset_version": dataset.dataset_version,
+         "dataset_sha256": digest(dataset.model_dump()),
++        "review_id": digest({"dataset_sha256": digest(dataset.model_dump()), "cases": rows}),
+         "release_targets": targets,
+         "metadata": supplied_metadata,
+         "baseline_metadata": baseline.get("metadata", {}),
+@@ -1181,6 +1188,7 @@
+                 "report_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
+                 "dataset_version": comparison["dataset_version"],
+                 "dataset_sha256": comparison["dataset_sha256"],
++                "review_id": comparison["review_id"],
+                 "generated_at": comparison["generated_at"],
+                 "summary": comparison["summary"],
+                 "metadata": comparison["metadata"],
+@@ -1230,7 +1238,7 @@
+ <div id="cases"></div></main><script id="report-data" type="application/json">__DATA__</script><script>
+ 'use strict';
+ const report=JSON.parse(document.getElementById('report-data').textContent);
+-const storageKey='journalpulse-review-'+report.dataset_sha256;let reviews={};let blind=false;
++const storageKey='journalpulse-review-'+report.review_id;let reviews={};let blind=false;
+ try{reviews=JSON.parse(localStorage.getItem(storageKey)||'{}')}catch{reviews={}}
+ const el=(tag,text,cls)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=String(text);
+  if(cls)node.className=cls;return node};
+@@ -1256,7 +1264,8 @@
+  const output=observation.output;messages.push({role:'assistant',content:typeof output==='string'?output:
+  typeof output.reply==='string'?output.reply:format(output)})}return messages}
+ function versionPanel(row,version,label){const panel=el('section',undefined,'version');const observation=row[version];
+- panel.append(el('h3',label),el('p',observation.status,'status'));
++ panel.append(el('h3',label),el('p',blind&&observation.status==='unsupported_baseline'?
++ 'unsupported_capability':observation.status,'status'));
+  if(observation.delivery_status==='rejected')panel.append(el('p',
+  'Application rejected the generated result. No Luna reply was delivered.','warning'));
+  const messages=transcript(row.case,observation);if(!messages.length)panel.append(el('p','No model transcript for this system fixture.'));
+@@ -1275,7 +1284,7 @@
+  article.append(el('p','Goal: '+c.goal));const fixtures=el('details');fixtures.append(el('summary','Facts, sources, events and expected behavior'),
+  el('pre',format({known_facts:c.known_facts,constraints:c.constraints,journal:c.journal,tool_fixtures:c.tool_fixtures,
+  activity_events:c.activity_events,required:c.required_behavior,forbidden:c.forbidden_behavior,adaptive:c.adaptive,
+- baseline_support:c.baseline_support,origin:c.origin})));article.append(fixtures);
++ ...(blind?{}:{baseline_support:c.baseline_support}),origin:c.origin})));article.append(fixtures);
+  const pair=el('div',undefined,'pair');const aVersion=row.judge?.a_version||((c.id.length%2)?'baseline':'candidate');
+  const bVersion=aVersion==='baseline'?'candidate':'baseline';
+  pair.append(versionPanel(row,blind?aVersion:'baseline',blind?'A':'Before'),
+@@ -1312,7 +1321,8 @@
+  document.getElementById('summary').hidden=blind;document.getElementById('outcome').parentElement.hidden=blind;
+  if(blind)document.getElementById('outcome').value='';render()});
+ document.getElementById('export').addEventListener('click',()=>{const content={dataset_version:report.dataset_version,
+- dataset_sha256:report.dataset_sha256,exported_at:new Date().toISOString(),reviews,storage:'Local browser only; not uploaded or used for training.'};
++ dataset_sha256:report.dataset_sha256,review_id:report.review_id,exported_at:new Date().toISOString(),reviews,
++ storage:'Local browser only; not uploaded or used for training.'};
+  const url=URL.createObjectURL(new Blob([format(content)],{type:'application/json'}));const link=el('a');link.href=url;
+  link.download='luna-guided-action-my-review.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),0)});
+ render();
+--- a/tests/test_guided_evaluation.py
++++ b/tests/test_guided_evaluation.py
+@@ -62,7 +62,7 @@
+         "b_version": b_version,
+         "scores": {"A": scores[a_version], "B": scores[b_version]},
+         "preference": "tie" if preference == "tie" else "A" if preference == a_version else "B",
+-        "evidence": {"A": {"naturalness": "test excerpt"}, "B": {"naturalness": "test excerpt"}},
++        "evidence": {label: {dimension: "test excerpt" for dimension in DIMENSIONS} for label in ("A", "B")},
+         "uncertainty": "medium",
+         "rationale": "Test-only judgment.",
+         "critical_gates": {
+@@ -89,6 +89,29 @@
+         item.origin.kind == "original_fictional" and item.origin.license == "CC0-1.0"
+         for item in dataset.cases
+     )
++
++
++def test_observed_teacher_scores_require_evidence_but_null_scores_are_unscored() -> None:
++    value = judgment("g01_quiet_walk")
++    value["evidence"]["A"]["naturalness"] = None
++    with pytest.raises(ValidationError, match="requires explicit evidence"):
++        JudgePair.model_validate(value)
++    value["scores"]["A"]["naturalness"] = None
++    assert JudgePair.model_validate(value).scores["A"].naturalness is None
++
++
++def test_local_review_identity_changes_with_actual_outputs_not_render_time() -> None:
++    before = {"cases": [observed("g01_quiet_walk")]}
++    first = build_comparison(load_dataset(), before, {"cases": []})
++    repeated = build_comparison(load_dataset(), before, {"cases": []})
++    changed = build_comparison(
++        load_dataset(), {"cases": [observed("g01_quiet_walk", "Changed text")]}, {"cases": []}
++    )
++    assert first["review_id"] == repeated["review_id"]
++    assert first["review_id"] != changed["review_id"]
++    html = render_comparison_html(first)
++    assert "'journalpulse-review-'+report.review_id" in html
++    assert "...(blind?{}:{baseline_support:c.baseline_support})" in html
+ 
+ 
+ def test_family_leakage_is_rejected_even_when_counts_are_unchanged() -> None:
+--- a/tests/test_supabase_repository.py
++++ b/tests/test_supabase_repository.py
+@@ -224,6 +224,8 @@
+ 
+ def test_export_reads_every_page_of_every_table(tmp_path: Path):
+     sizes = {
++        "activity_sessions": 0,
++        "activity_receipts": 501,
+         "journal_entries": 1203,
+         "reflections": 1203,
+         "outcomes": 501,
+@@ -282,13 +284,19 @@
+     def ready(request: httpx.Request) -> httpx.Response:
+         # A separate RPC lets the preview require its new schema while the live
+         # reliability API continues checking the original readiness contract.
+-        assert request.url.path == "/rest/v1/rpc/jp_readiness_v2"
++        assert request.url.path == "/rest/v1/rpc/jp_readiness_v3"
+         body = json.loads(request.content)
+         assert body["probe"].startswith("readiness:")
+         assert body["signature"] == sign_text(body["probe"], KEY)
+         assert request.headers["authorization"] == "Bearer public-anon-key"
+         return httpx.Response(
+-            200, json={"schema": "phase-a-2", "signing": "valid", "retention_job": "scheduled"}
++            200,
++            json={
++                "schema": "guided-action-1",
++                "activities": "ready",
++                "signing": "valid",
++                "retention_job": "scheduled",
++            },
+         )
+ 
+     checks = supabase_readiness(settings(tmp_path), client=httpx.Client(transport=httpx.MockTransport(ready)))
+@@ -296,6 +304,7 @@
+         "database": "reachable",
+         "schema": "schema_ready",
+         "signing": "valid",
++        "activities": "ready",
+         "retention_job": "scheduled",
+         "retention_state": "unknown",
+         "retention_last_success": "unknown",
+@@ -340,11 +349,19 @@
+ 
+ def test_readiness_reports_scheduler_execution_without_content(tmp_path: Path):
+     def handler(request: httpx.Request) -> httpx.Response:
+-        return httpx.Response(200, json={
+-            "schema": "phase-a-2", "signing": "valid", "retention_job": "scheduled",
+-            "retention_state": "overdue", "retention_last_success": "2026-10-04T10:00:00+00:00",
+-            "retention_last_run_status": "succeeded", "retention_overdue": "true",
+-        })
++        return httpx.Response(
++            200,
++            json={
++                "schema": "guided-action-1",
++                "activities": "ready",
++                "signing": "valid",
++                "retention_job": "scheduled",
++                "retention_state": "overdue",
++                "retention_last_success": "2026-10-04T10:00:00+00:00",
++                "retention_last_run_status": "succeeded",
++                "retention_overdue": "true",
++            },
++        )
+ 
+     checks = supabase_readiness(
+         settings(tmp_path), client=httpx.Client(transport=httpx.MockTransport(handler))

@@ -5,11 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ActionTimer } from "@/components/action-timer";
+import { ActivitySessionWorkspace } from "@/components/activity-session-workspace";
 import { Luna, type LunaMood } from "@/components/luna";
 import { Icon } from "@/components/nav-icon";
 import { ApiError, apiRequest } from "@/lib/api";
+import { currentActivityCard } from "@/lib/activity-card";
+import { discoveryHref } from "@/lib/discovery";
 import {
+  canApplyConversation,
   chatStage,
+  isCurrentChatRequest,
+  journalSourceId,
+  needsNewJournalChat,
   readOpenConversationId,
   readyForSomething,
   writeOpenConversationId,
@@ -34,15 +41,20 @@ import type {
   ConversationDetail,
   ConversationMessage,
   ConversationTurn,
+  JournalEntry,
   ReflectionRecord,
   Resource,
+  SystemStatus,
 } from "@/lib/types";
 
 const CHAT_TIMEOUT_MS = 60_000;
+const CHAT_MESSAGE_LIMIT = 20;
 const THINKING_LINES = ["Luna is thinking…", "Mulling it over…", "Finding the right words…"];
 
 type Busy = "send" | "accept" | "close" | null;
 type Outgoing = { text: string; goal?: GoalOption["id"]; moodScore?: number; feelings?: string[] };
+type PendingSend = { id: string; text: string; status: "sending" | "failed" };
+type PendingCommand = { id: string; payload: string; outgoing: Outgoing };
 
 function ChatWorkspace() {
   const router = useRouter();
@@ -66,42 +78,251 @@ function ChatWorkspace() {
   const [retain, setRetain] = useState<boolean | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
-  const [dismissedReady, setDismissedReady] = useState(0);
+  const [preferenceBusy, setPreferenceBusy] = useState(false);
+  const [preferenceRetry, setPreferenceRetry] = useState<"listen" | "act" | null>(null);
   const [answering, setAnswering] = useState(false);
   const [thinkingLine, setThinkingLine] = useState(0);
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+  const [loadedSource, setLoadedSource] = useState<Pick<JournalEntry, "id" | "created_at"> | null>(null);
+  const [sourceFailure, setSourceFailure] = useState<{ id: string; message: string } | null>(null);
+  const [guidedNotice, setGuidedNotice] = useState(false);
+  const [aiAvailable, setAiAvailable] = useState<boolean | null>(null);
+  const [resuming, setResuming] = useState(true);
+  const [resumeFailure, setResumeFailure] = useState<string | null>(null);
+  const [resumeAttempt, setResumeAttempt] = useState(0);
+  const [pendingSend, setPendingSend] = useState<PendingSend | null>(null);
+  const [activityBusy, setActivityBusy] = useState(false);
 
-  const pendingMessageId = useRef<string | null>(null);
+  const pendingMessage = useRef<PendingCommand | null>(null);
+  const pendingByChat = useRef(new Map<string, PendingCommand>());
+  const pendingCreation = useRef<{ id: string; payload: string } | null>(null);
+  const resumeTarget = useRef<string | null | undefined>(undefined);
+  const sendInFlight = useRef(false);
+  const draftsByChat = useRef(new Map<string, string>());
   const acceptRequestId = useRef("");
   const loadedId = useRef<string | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const privacyRef = useRef<HTMLDivElement>(null);
+  const privacyOpener = useRef<HTMLElement | null>(null);
+  const latestConversation = useRef<Conversation | null>(null);
+  const preferenceInFlight = useRef(false);
+  const workspaceGeneration = useRef(0);
+  const preferenceCommand = useRef<{
+    client_request_id: string; expected_revision: number; preference: "listen" | "act";
+  } | null>(null);
 
   const useAi = consent ?? preferences.llmConsent;
   const keepText = retain ?? preferences.retainText;
+  const requestedEntry = searchParams.get("entry");
+  const requestedSourceId = journalSourceId(requestedEntry);
+  const activeSourceId = conversation?.source_entry_id ?? selectedSourceId;
+  const visibleSourceId = requestedSourceId ?? activeSourceId;
+  const sourceEntry = loadedSource?.id === visibleSourceId ? loadedSource : null;
+  const sourceError = requestedEntry && !requestedSourceId
+    ? "This journal entry link is invalid. Open an entry from your journal."
+    : sourceFailure?.id === visibleSourceId ? sourceFailure?.message : null;
+  const sourceNeedsNewChat = visibleSourceId
+    ? needsNewJournalChat(conversation, visibleSourceId) : false;
+  const sourcePending = Boolean(requestedSourceId && !conversation && requestedSourceId !== selectedSourceId);
+  const linkedSourceUnavailable = Boolean(activeSourceId && ((!conversation && !useAi) || aiAvailable === false));
+
+  useEffect(() => () => {
+    // Leaving this workspace must also invalidate sends, not only resume reads.
+    workspaceGeneration.current += 1;
+  }, []);
 
   useEffect(() => {
-    const requested = searchParams.get("c") ?? readOpenConversationId(window.localStorage);
-    if (!requested || loadedId.current === requested) return;
+    if (!menuOpen) return;
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>("[role=menuitem]") ?? []);
+    let returnFocus: HTMLElement | null = menuTriggerRef.current;
+    items[0]?.focus();
+    function keydown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMenuOpen(false);
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        const outside = Array.from(document.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex="0"]',
+        )).filter((element) => !menuRef.current?.contains(element));
+        const position = outside.indexOf(menuTriggerRef.current!);
+        returnFocus = outside[position + (event.shiftKey ? -1 : 1)] ?? menuTriggerRef.current;
+        setMenuOpen(false);
+      } else if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+        if (!menuRef.current?.contains(document.activeElement)) return;
+        event.preventDefault();
+        const current = items.indexOf(document.activeElement as HTMLButtonElement);
+        const next = event.key === "Home" ? 0 : event.key === "End" ? items.length - 1
+          : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+        items[next]?.focus();
+      }
+    }
+    document.addEventListener("keydown", keydown);
+    return () => {
+      document.removeEventListener("keydown", keydown);
+      if (returnFocus?.isConnected) returnFocus.focus();
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!privacyOpen) return;
+    const dialog = privacyRef.current;
+    if (!dialog) return;
+    const controls = () => Array.from(dialog.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex="0"]',
+    ));
+    // aria-modal must match keyboard behavior: focus enters the sheet, stays
+    // inside it, then returns to the control that opened it.
+    controls()[0]?.focus();
+    function keydown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setPrivacyOpen(false);
+      } else if (event.key === "Tab") {
+        const items = controls();
+        const first = items[0], last = items.at(-1);
+        if (!first || !last) return;
+        if (!dialog!.contains(document.activeElement)
+          || (event.shiftKey && document.activeElement === first)
+          || (!event.shiftKey && document.activeElement === last)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first).focus();
+        }
+      }
+    }
+    document.addEventListener("keydown", keydown);
+    return () => {
+      document.removeEventListener("keydown", keydown);
+      if (privacyOpener.current?.isConnected) privacyOpener.current.focus();
+    };
+  }, [privacyOpen]);
+
+  useEffect(() => {
     let cancelled = false;
+    apiRequest<SystemStatus>("/v1/system/status")
+      .then((status) => { if (!cancelled) setAiAvailable(status.analysis_mode === "ai_configured"); })
+      .catch(() => { if (!cancelled) setAiAvailable(null); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (requestedEntry && !requestedSourceId) return;
+    if (!visibleSourceId) return;
+    apiRequest<JournalEntry>(`/v1/journal/entries/${visibleSourceId}`)
+      .then((entry) => {
+        // Keep identity and date only. The original words remain on the journal page.
+        if (!cancelled) {
+          setLoadedSource({ id: entry.id, created_at: entry.created_at });
+          setSourceFailure(null);
+        }
+      })
+      .catch((reason) => {
+        if (!cancelled) setSourceFailure({ id: visibleSourceId, message: reason instanceof ApiError && reason.status === 404
+          ? "This journal entry is no longer available."
+          : "We couldn’t load this journal entry. Open your journal and try again." });
+      });
+    return () => { cancelled = true; };
+  }, [requestedEntry, requestedSourceId, visibleSourceId]);
+
+  useEffect(() => {
+    const requested = searchParams.get("c") ?? readOpenConversationId();
+    let cancelled = false;
+    const switching = resumeTarget.current !== undefined && resumeTarget.current !== requested
+      && requested !== latestConversation.current?.id;
+    resumeTarget.current = requested;
+    if (switching) {
+      workspaceGeneration.current += 1;
+      latestConversation.current = null;
+      loadedId.current = null;
+      pendingMessage.current = requested ? pendingByChat.current.get(requested) ?? null : null;
+      pendingCreation.current = null;
+      acceptRequestId.current = "";
+      sendInFlight.current = false;
+      preferenceCommand.current = null;
+      preferenceInFlight.current = false;
+    }
+    const generation = workspaceGeneration.current;
+    queueMicrotask(() => {
+      if (!cancelled && isCurrentChatRequest(generation, workspaceGeneration.current)) {
+        if (switching) {
+          setConversation(null);
+          setMessages([]);
+          setDraft(requested ? draftsByChat.current.get(requested) ?? "" : "");
+          setBusy(null);
+          setPendingSend(null);
+          setRetryText(null);
+          setStep(null);
+          setSaved(null);
+          setFeelings([]);
+          setMoodValence(null);
+          setSelectedAction("");
+          setSelectedSourceId(null);
+          setPreferenceBusy(false);
+          setPreferenceRetry(null);
+          setEnded(false);
+          setError(null);
+        }
+        setResumeFailure(null);
+        setResuming(Boolean(requested && loadedId.current !== requested));
+      }
+    });
+    if (!requested || loadedId.current === requested) return () => { cancelled = true; };
     apiRequest<ConversationDetail>(`/v1/conversations/${requested}`)
       .then((detail) => {
-        if (cancelled) return;
+        if (cancelled || !isCurrentChatRequest(generation, workspaceGeneration.current)) return;
         if (detail.conversation.status !== "open") {
-          writeOpenConversationId(window.localStorage, null);
+          writeOpenConversationId(null);
+          setEnded(true);
+          setError("This chat has ended. Start a new chat to keep talking.");
           return;
         }
         loadedId.current = detail.conversation.id;
-        writeOpenConversationId(window.localStorage, detail.conversation.id);
-        applyServerState(detail.conversation);
-        setMessages(detail.messages);
+        writeOpenConversationId(detail.conversation.id);
+        setEnded(false);
+        if (applyServerState(detail.conversation)) {
+          setMessages(detail.messages);
+          const pending = pendingByChat.current.get(detail.conversation.id);
+          if (pending) {
+            if (detail.messages.some((message) => message.client_message_id === pending.id)) {
+              pendingByChat.current.delete(detail.conversation.id);
+              pendingMessage.current = null;
+              setPendingSend(null);
+              setRetryText(null);
+            } else {
+              // A submitted message is separate from an unsent draft. Recover its
+              // original receipt only after checking whether the server saved it.
+              pendingMessage.current = pending;
+              setDraft(draftsByChat.current.get(detail.conversation.id) ?? pending.outgoing.text);
+              setPendingSend({ id: pending.id, text: pending.outgoing.text, status: "failed" });
+              setRetryText(pending.outgoing);
+              setError("The earlier message’s delivery is not confirmed. You can retry it.");
+            }
+          }
+        }
       })
-      .catch(() => {
-        if (!cancelled) writeOpenConversationId(window.localStorage, null);
+      .catch((reason) => {
+        if (!cancelled && isCurrentChatRequest(generation, workspaceGeneration.current)) {
+          if (reason instanceof ApiError && reason.status === 404) {
+            writeOpenConversationId(null);
+            setEnded(true);
+            setError("This chat is no longer available. Start a new chat to keep talking.");
+          } else {
+            // Losing a read is not evidence that the saved chat disappeared.
+            setResumeFailure("We couldn’t load this chat. Try again to continue where you left off.");
+          }
+        }
+      })
+      .finally(() => {
+        if (!cancelled && isCurrentChatRequest(generation, workspaceGeneration.current)) setResuming(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [searchParams]);
+  }, [searchParams, resumeAttempt]);
 
   useEffect(() => {
     if (busy !== "send") return;
@@ -112,21 +333,24 @@ function ChatWorkspace() {
   useEffect(() => {
     const log = logRef.current;
     if (log) log.scrollTop = log.scrollHeight;
-  }, [messages, step, busy, error, saved]);
+  }, [messages, pendingSend, step, busy, activityBusy, error, saved]);
 
   const userMessages = messages.filter((message) => message.role === "user").length;
   const stage = chatStage({
     saved: Boolean(saved),
     status: conversation?.status,
     safetyMode: conversation?.safety_mode,
-    hasCard: Boolean(conversation?.card),
+    // AI activities remain in the open chat; the guided path keeps its legacy accept flow.
+    hasCard: Boolean(currentActivityCard(conversation)) && conversation?.mode !== "ai",
     step,
   });
   const showReady =
-    stage === "chat" &&
+    stage === "chat" && conversation?.mode !== "ai" &&
     busy === null &&
-    dismissedReady < userMessages &&
-    readyForSomething({ readyForAction: conversation?.ready_for_action, userMessages });
+    readyForSomething({
+      readyForAction: conversation?.ready_for_action, userMessages,
+      preference: conversation?.interaction_preference,
+    });
 
   const mood: LunaMood = useMemo(() => {
     if (stage === "support") return "support";
@@ -140,97 +364,211 @@ function ChatWorkspace() {
 
   const remember = useCallback(
     (next: Conversation) => {
+      if (!canApplyConversation(latestConversation.current, next)) return false;
+      latestConversation.current = next;
       loadedId.current = next.id;
-      writeOpenConversationId(window.localStorage, next.id);
-      if (searchParams.get("c") !== next.id) router.replace(`/talk?c=${next.id}`);
+      writeOpenConversationId(next.id);
+      if (searchParams.get("c") !== next.id) {
+        const entry = requestedSourceId ?? next.source_entry_id;
+        router.replace(`/talk?c=${next.id}${entry ? `&entry=${entry}` : ""}`);
+      }
       setConversation(next);
+      return true;
     },
-    [router, searchParams],
+    [router, searchParams, requestedSourceId],
   );
 
   /** Take the person's own report from the server, never Luna's suggestion, after a reload. */
   function applyServerState(next: Conversation) {
+    if (!canApplyConversation(latestConversation.current, next)) return false;
+    latestConversation.current = next;
     setConversation(next);
     if (next.confirmed_feelings) setFeelings(next.confirmed_feelings);
     const mood = moodByScore(next.reported_mood);
     if (mood) setMoodValence(mood.valence);
-    if (next.card) setSelectedAction(next.card.decision_preview.action_id);
+    setSelectedAction(currentActivityCard(next)?.decision_preview.action_id ?? "");
+    if (next.interaction_preference === "listen" || next.safety_mode === "support") setStep(null);
+    return true;
   }
 
-  async function refreshConversation(id: string) {
+  async function refreshConversation(id: string, generation = workspaceGeneration.current): Promise<ConversationDetail | null> {
     try {
       const detail = await apiRequest<ConversationDetail>(`/v1/conversations/${id}`);
-      if (detail.conversation.status !== "open") {
-        writeOpenConversationId(window.localStorage, null);
-        setEnded(true);
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return null;
+      if (applyServerState(detail.conversation)) {
+        setMessages(detail.messages);
+        if (detail.conversation.status !== "open") {
+          writeOpenConversationId(null);
+          setEnded(true);
+        }
+        return detail;
       }
-      applyServerState(detail.conversation);
-      setMessages(detail.messages);
-    } catch {
-      writeOpenConversationId(window.localStorage, null);
-      setEnded(true);
+    } catch (reason) {
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return null;
+      if (latestConversation.current?.id !== id) return null;
+      if (reason instanceof ApiError && reason.status === 404) {
+        writeOpenConversationId(null);
+        setEnded(true);
+      } else {
+        // A failed read is not evidence that the chat was closed or deleted.
+        setError("We couldn’t refresh this chat. Your draft is still on this page.");
+      }
     }
+    return null;
   }
 
-  async function ensureConversation(): Promise<Conversation> {
+  async function ensureConversation(generation: number): Promise<Conversation> {
     if (conversation && conversation.status === "open") return conversation;
+    const fields = {
+      llm_consent: useAi, retain_text: keepText, locale: preferences.locale,
+      ...(selectedSourceId ? { source_entry_id: selectedSourceId } : {}),
+    };
+    const payload = JSON.stringify(fields);
+    if (pendingCreation.current?.payload !== payload) {
+      pendingCreation.current = { id: crypto.randomUUID(), payload };
+    }
     const created = await apiRequest<Conversation>("/v1/conversations", {
       method: "POST",
       retry: true,
       timeoutMs: CHAT_TIMEOUT_MS,
       body: JSON.stringify({
-        client_request_id: crypto.randomUUID(),
-        llm_consent: useAi,
-        retain_text: keepText,
-        locale: preferences.locale,
+        // A lost first response must recover the same chat, not create another.
+        client_request_id: pendingCreation.current.id,
+        ...fields,
       }),
     });
+    if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return created;
+    pendingCreation.current = null;
+    latestConversation.current = null;
     remember(created);
     setMessages([]);
+    setEnded(false);
     return created;
   }
 
   async function send(outgoing: Outgoing) {
     const trimmed = outgoing.text.trim();
-    if (!trimmed || busy) return;
+    if (!trimmed || userMessages >= CHAT_MESSAGE_LIMIT || busy || activityBusy || sendInFlight.current || preferenceInFlight.current || resuming || resumeFailure || sourcePending || linkedSourceUnavailable
+      || (activeSourceId && (!sourceEntry || sourceError))) return;
+    const generation = workspaceGeneration.current;
+    const sendingComposerDraft = draft.trim() === trimmed;
+    sendInFlight.current = true;
     setBusy("send");
     setError(null);
     setRetryText(null);
-    const messageId = pendingMessageId.current ?? crypto.randomUUID();
-    pendingMessageId.current = messageId;
-    let active: Conversation | null = null;
+    const messageFields = {
+      text: trimmed,
+      ...(outgoing.goal ? { goal: outgoing.goal, confirmed_feelings: outgoing.feelings ?? [] } : {}),
+      ...(outgoing.moodScore ? { mood_score: outgoing.moodScore } : {}),
+    };
+    const payload = JSON.stringify(messageFields);
+    // Only an identical retry shares a receipt. Edited wording is a new message.
+    const messageId = pendingMessage.current?.payload === payload ? pendingMessage.current.id : crypto.randomUUID();
+    const editedRetry = Boolean(pendingMessage.current && pendingMessage.current.payload !== payload);
+    const command = { id: messageId, payload, outgoing: { ...outgoing, text: trimmed } };
+    if (!editedRetry) pendingMessage.current = command;
+    setPendingSend({ id: messageId, text: trimmed, status: "sending" });
+    let active = conversation?.status === "open" ? conversation : null;
+    if (active && !editedRetry) {
+      pendingByChat.current.set(active.id, command);
+      if (sendingComposerDraft) draftsByChat.current.delete(active.id);
+    }
     try {
-      active = await ensureConversation();
+      active = await ensureConversation(generation);
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      if (editedRetry) {
+        // Recover any earlier committed pair before sending changed wording as
+        // a new message, so the transcript never quietly omits that prior turn.
+        const recovered = await refreshConversation(active.id, generation);
+        if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+        if (!recovered) throw new Error("We couldn’t confirm the earlier message. Your updated wording is still in the editor. Try again.");
+      }
+      pendingMessage.current = command;
+      pendingByChat.current.set(active.id, command);
+      if (sendingComposerDraft) draftsByChat.current.delete(active.id);
       const turn = await apiRequest<ConversationTurn>(`/v1/conversations/${active.id}/messages`, {
         method: "POST",
         retry: true,
         timeoutMs: CHAT_TIMEOUT_MS,
         body: JSON.stringify({
           client_message_id: messageId,
-          text: trimmed,
-          ...(outgoing.goal ? { goal: outgoing.goal, confirmed_feelings: outgoing.feelings ?? [] } : {}),
-          ...(outgoing.moodScore ? { mood_score: outgoing.moodScore } : {}),
+          ...messageFields,
         }),
       });
-      pendingMessageId.current = null;
-      setDraft("");
-      setMessages((current) => [...current, turn.user_message, turn.assistant_message]);
-      remember(turn.conversation);
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      if (!remember(turn.conversation)) {
+        // The turn may have committed before the preference command but arrived
+        // afterward. Reload its messages without replacing newer canonical state.
+        pendingMessage.current = null;
+        pendingByChat.current.delete(active.id);
+        setPendingSend(null);
+        // A successful HTTP turn contains the stored user message, so this draft
+        // is already saved even when its conversation snapshot is superseded.
+        if (sendingComposerDraft) setDraft("");
+        await refreshConversation(active.id, generation);
+        return;
+      }
+      pendingMessage.current = null;
+      pendingByChat.current.delete(active.id);
+      setPendingSend(null);
+      // Retrying an older message must not discard newer unsent wording.
+      if (sendingComposerDraft) {
+        setDraft("");
+        draftsByChat.current.delete(active.id);
+      }
+      // A refresh can discover a committed turn before its retry receipt arrives.
+      setMessages((current) => {
+        const ids = new Set(current.map((message) => message.id));
+        return [...current, ...[turn.user_message, turn.assistant_message].filter((message) => !ids.has(message.id))];
+      });
       applyServerState(turn.conversation);
       setAnswering(true);
-      window.setTimeout(() => setAnswering(false), 2600);
+      window.setTimeout(() => {
+        if (isCurrentChatRequest(generation, workspaceGeneration.current)) setAnswering(false);
+      }, 2600);
     } catch (reason) {
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
       const message = reason instanceof Error ? reason.message : "Luna couldn’t reply just now.";
+      if (reason instanceof ApiError && (selectedSourceId || active?.source_entry_id)) {
+        // Provider readiness can change after the page's status request. Keep the
+        // explicit guided alternative available when the server refuses source AI.
+        if (reason.status === 409 && message.includes("guided chat without")) setAiAvailable(false);
+        if (reason.status === 404 && !active && selectedSourceId) {
+          setSourceFailure({ id: selectedSourceId, message: "This journal entry is no longer available." });
+        }
+      }
       if (reason instanceof ApiError && (reason.status === 409 || reason.status === 404) && active) {
         // The chat moved on elsewhere (closed, deleted, or another reply landed first).
         // Nothing from this turn was saved; show the server's current state.
-        pendingMessageId.current = null;
-        await refreshConversation(active.id);
+        pendingMessage.current = null;
+        pendingByChat.current.delete(active.id);
+        await refreshConversation(active.id, generation);
+      } else if (active) {
+        const recovered = await refreshConversation(active.id, generation);
+        if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+        if (recovered?.messages.some((message) => message.client_message_id === messageId)) {
+          // The reply was lost in transit, but the canonical read confirms save.
+          pendingMessage.current = null;
+          pendingByChat.current.delete(active.id);
+          setPendingSend(null);
+          if (sendingComposerDraft) {
+            setDraft("");
+            draftsByChat.current.delete(active.id);
+          }
+          setRetryText(null);
+          setError(null);
+          return;
+        }
       }
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
       setRetryText(outgoing);
+      setPendingSend({ id: messageId, text: trimmed, status: "failed" });
       setError(message);
     } finally {
-      setBusy(null);
+      if (isCurrentChatRequest(generation, workspaceGeneration.current)) {
+        sendInFlight.current = false;
+        setBusy(null);
+      }
     }
   }
 
@@ -246,6 +584,58 @@ function ChatWorkspace() {
     setStep("feelings");
   }
 
+  async function changePreference(value: "listen" | "act") {
+    const active = latestConversation.current;
+    if (!active || active.status !== "open" || preferenceInFlight.current) return;
+    if (busy === "accept" || busy === "close") return;
+    const generation = workspaceGeneration.current;
+    preferenceInFlight.current = true;
+    setPreferenceBusy(true);
+    setPreferenceRetry(null);
+    setError(null);
+    if (preferenceCommand.current?.preference !== value) {
+      preferenceCommand.current = {
+        client_request_id: crypto.randomUUID(), expected_revision: active.revision ?? 0, preference: value,
+      };
+    }
+    try {
+      const next = await apiRequest<Conversation>(`/v1/conversations/${active.id}/preference`, {
+        method: "POST", retry: true, body: JSON.stringify(preferenceCommand.current),
+      });
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      preferenceCommand.current = null;
+      if (remember(next)) {
+        applyServerState(next);
+        acceptRequestId.current = "";
+        if (next.mode !== "ai" && next.interaction_preference === "act" && next.status === "open" && next.safety_mode !== "support") {
+          setFeelings(next.confirmed_feelings ?? next.feelings ?? []);
+          setStep("feelings");
+        } else {
+          setStep(null);
+          inputRef.current?.focus();
+        }
+      } else {
+        await refreshConversation(active.id, generation);
+      }
+    } catch (reason) {
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      if (reason instanceof ApiError && (reason.status === 409 || reason.status === 404)) {
+        preferenceCommand.current = null;
+        await refreshConversation(active.id, generation);
+      } else {
+        // Keep the same command ID/revision: a lost response may hide a successful
+        // write. A retry must discover that receipt rather than apply a new choice.
+        setPreferenceRetry(value);
+      }
+      setError(reason instanceof Error ? reason.message : "Your choice could not be confirmed.");
+    } finally {
+      if (isCurrentChatRequest(generation, workspaceGeneration.current)) {
+        preferenceInFlight.current = false;
+        setPreferenceBusy(false);
+      }
+    }
+  }
+
   function toggleFeeling(id: string) {
     setFeelings((current) =>
       current.includes(id) ? current.filter((item) => item !== id) : [...current, id].slice(-6),
@@ -258,8 +648,9 @@ function ChatWorkspace() {
   }
 
   async function accept() {
-    if (!conversation?.card || !selectedAction || busy) return;
+    if (!conversation?.card || !selectedAction || busy || preferenceInFlight.current) return;
     if (!acceptRequestId.current) acceptRequestId.current = crypto.randomUUID();
+    const generation = workspaceGeneration.current;
     setBusy("accept");
     setError(null);
     try {
@@ -270,9 +661,11 @@ function ChatWorkspace() {
         body: JSON.stringify({
           client_request_id: acceptRequestId.current,
           action_id: selectedAction,
+          expected_revision: conversation.revision,
           self_report: selfReport(feelings, moodValence),
         }),
       });
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
       const resource = conversation.card.actions.find((item) => item.id === record.decision.action_id) ?? null;
       saveReminder({
         decisionId: record.decision.decision_id,
@@ -280,22 +673,86 @@ function ChatWorkspace() {
         actionTitle: resource?.title ?? "Your small step",
         dueAt: new Date(Date.now() + preferences.followUpMinutes * 60_000).toISOString(),
       });
-      writeOpenConversationId(window.localStorage, null);
+      writeOpenConversationId(null);
       loadedId.current = null;
       setSaved({ record, resource });
     } catch (reason) {
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
       setError(reason instanceof Error ? reason.message : "Your choice wasn’t saved. Please try again.");
       if (reason instanceof ApiError && (reason.status === 409 || reason.status === 404)) {
         acceptRequestId.current = "";
-        await refreshConversation(conversation.id);
+        await refreshConversation(conversation.id, generation);
       }
     } finally {
-      setBusy(null);
+      if (isCurrentChatRequest(generation, workspaceGeneration.current)) setBusy(null);
+    }
+  }
+
+  async function startSelectedChat(withSource: boolean, aiWithoutSource = false) {
+    if (resuming || preferenceInFlight.current || busy === "accept" || busy === "close") return;
+    if (withSource && (!sourceEntry || !useAi || aiAvailable === false)) return;
+    const current = latestConversation.current;
+    if ((current || draft.trim() || step || saved) && !window.confirm(
+      "End the current chat and start a new one? Any unsent draft will be discarded. "
+      + "The current chat follows its existing message retention choice.",
+    )) return;
+    const generation = ++workspaceGeneration.current;
+    sendInFlight.current = false;
+    setPendingSend(null);
+    setBusy("close");
+    try {
+      if (current?.status === "open") {
+        try {
+          await apiRequest<Conversation>(`/v1/conversations/${current.id}/close`, { method: "POST", retry: true });
+        } catch (reason) {
+          // A deleted source also deletes its chat. There is no old flow left to close.
+          if (!(reason instanceof ApiError && reason.status === 404)) throw reason;
+        }
+      }
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      latestConversation.current = null;
+      loadedId.current = null;
+      pendingMessage.current = null;
+      pendingCreation.current = null;
+      sendInFlight.current = false;
+      acceptRequestId.current = "";
+      preferenceCommand.current = null;
+      preferenceInFlight.current = false;
+      writeOpenConversationId(null);
+      setConversation(null);
+      setMessages([]);
+      setPendingSend(null);
+      setDraft("");
+      setStep(null);
+      setFeelings([]);
+      setMoodValence(null);
+      setSelectedAction("");
+      setSaved(null);
+      setError(null);
+      setRetryText(null);
+      setPreferenceRetry(null);
+      setPreferenceBusy(false);
+      setEnded(false);
+      setAnswering(false);
+      setSelectedSourceId(withSource ? sourceEntry!.id : null);
+      setGuidedNotice(!withSource && !aiWithoutSource);
+      if (!withSource) setConsent(aiWithoutSource);
+      router.replace(withSource ? `/talk?entry=${sourceEntry!.id}` : "/talk");
+      inputRef.current?.focus();
+    } catch (reason) {
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      setError(reason instanceof Error ? reason.message : "The current chat could not be ended. Please try again.");
+      if (current) await refreshConversation(current.id, generation);
+    } finally {
+      if (isCurrentChatRequest(generation, workspaceGeneration.current)) setBusy(null);
     }
   }
 
   function startOver() {
-    writeOpenConversationId(window.localStorage, null);
+    writeOpenConversationId(null);
+    // A full reload discards private drafts and in-memory retry receipts, even
+    // when the fresh chat uses the same route and has no query string to change.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign("/talk");
   }
 
@@ -303,6 +760,13 @@ function ChatWorkspace() {
     setMenuOpen(false);
     if (!conversation) return;
     if (remove && !window.confirm("Delete this chat? This can’t be undone.")) return;
+    const generation = ++workspaceGeneration.current;
+    sendInFlight.current = false;
+    setPendingSend(null);
+    preferenceInFlight.current = false;
+    preferenceCommand.current = null;
+    setPreferenceBusy(false);
+    setPreferenceRetry(null);
     setBusy("close");
     setError(null);
     try {
@@ -311,13 +775,16 @@ function ChatWorkspace() {
       } else {
         await apiRequest<Conversation>(`/v1/conversations/${conversation.id}/close`, { method: "POST", retry: true });
       }
-      writeOpenConversationId(window.localStorage, null);
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      writeOpenConversationId(null);
       loadedId.current = null;
       router.replace("/");
     } catch (reason) {
+      if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
       setError(reason instanceof Error ? reason.message : "That didn’t work. Please try again.");
+      await refreshConversation(conversation.id, generation);
     } finally {
-      setBusy(null);
+      if (isCurrentChatRequest(generation, workspaceGeneration.current)) setBusy(null);
     }
   }
 
@@ -334,7 +801,7 @@ function ChatWorkspace() {
               ? "Private chat"
               : "Simple mode · no AI";
 
-  const card = conversation?.card ?? null;
+  const card = currentActivityCard(conversation);
   const lastLunaIndex = messages.map((message) => message.role).lastIndexOf("assistant");
 
   return (
@@ -347,21 +814,81 @@ function ChatWorkspace() {
           <small aria-live="polite">{status}</small>
         </div>
         {conversation && stage !== "saved" ? (
-          <button className="icon-btn" type="button" aria-label="Chat options" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
+          <button ref={menuTriggerRef} className="icon-btn" type="button" aria-label="Chat options" aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
             <Icon name="more" />
           </button>
         ) : <span />}
       </header>
 
       {menuOpen && (
-        <div className="menu" role="menu">
-          <button role="menuitem" type="button" onClick={() => { setMenuOpen(false); setPrivacyOpen(true); }}>How this chat is kept</button>
+        <div ref={menuRef} className="menu" role="menu">
+          <button role="menuitem" type="button" onClick={() => { privacyOpener.current = menuTriggerRef.current; setMenuOpen(false); setPrivacyOpen(true); }}>How this chat is kept</button>
           <button role="menuitem" type="button" onClick={() => void endConversation(false)}>End this chat</button>
           <button role="menuitem" type="button" className="danger" onClick={() => void endConversation(true)}>Delete this chat</button>
         </div>
       )}
 
+      {activeSourceId && (
+        <div className="chat-hint" role="status" style={{ display: "block", overflowWrap: "anywhere", padding: "8px 16px" }}>
+          Using your selected journal entry
+          {sourceEntry?.id === activeSourceId && ` · ${new Date(sourceEntry.created_at).toLocaleDateString()}`}
+          {" · "}<Link href={`/journal?entry=${activeSourceId}`}>Open entry</Link>
+          {" · "}<button type="button" className="link-btn" disabled={busy !== null || preferenceBusy}
+            onClick={() => void startSelectedChat(false, true)}>Start AI chat without the entry</button>
+        </div>
+      )}
+
       <div className="chat-log" ref={logRef} role="log" aria-live="polite" aria-label="Chat with Luna">
+        {resumeFailure && <div className="chat-panel">
+          <p className="note error" role="alert">{resumeFailure}</p>
+          <button className="btn btn-soft" type="button" onClick={() => setResumeAttempt((value) => value + 1)}>Try loading chat again</button>
+        </div>}
+        {(sourcePending || sourceNeedsNewChat || (requestedEntry && sourceError)) && (
+          <div className="chat-panel">
+            <div className="card" style={{ display: "grid", gap: 12 }}>
+              <h2>Talk about one journal entry</h2>
+              {sourceEntry && <p>Selected entry from {new Date(sourceEntry.created_at).toLocaleDateString()}.{" "}
+                <Link href={`/journal?entry=${sourceEntry.id}`}>Open original entry</Link></p>}
+              {sourceError ? <p className="note error" role="alert">{sourceError}</p>
+                : !sourceEntry ? <p role="status">Loading the selected entry…</p>
+                : <>
+                  {sourceNeedsNewChat && <p>Your current chat has different context. Start a new chat to use this entry.</p>}
+                  <p className="small muted">With your AI consent, only this entry and this chat are sent for replies.
+                    Other journal entries stay outside the conversation.</p>
+                  {!useAi && <p>AI help is off. You can keep the entry private and use guided prompts below.</p>}
+                  {aiAvailable === false && <p>AI help is unavailable. Guided chat is still available; your entry will not be sent.</p>}
+                  {!useAi && aiAvailable !== false && <button className="btn btn-soft" type="button"
+                    onClick={() => setConsent(true)}>Allow AI for this new chat</button>}
+                  <button className="btn btn-primary" type="button"
+                    disabled={resuming || !useAi || aiAvailable === false || busy !== null || preferenceBusy}
+                    onClick={() => void startSelectedChat(true)}>Use this entry in a new AI chat</button>
+                </>}
+              <button className="btn btn-soft" type="button" disabled={resuming || busy !== null || preferenceBusy}
+                onClick={() => void startSelectedChat(false)}>Start guided chat without sending the entry</button>
+              {conversation && <button className="btn btn-ghost" type="button" onClick={() => {
+                router.replace(`/talk?c=${conversation.id}${conversation.source_entry_id ? `&entry=${conversation.source_entry_id}` : ""}`);
+              }}>Keep current chat</button>}
+            </div>
+          </div>
+        )}
+        {activeSourceId && sourceError && !requestedEntry && (
+          <div className="chat-panel"><p className="note error" role="alert">{sourceError}</p>
+            <button className="btn btn-soft" type="button" disabled={busy !== null || preferenceBusy}
+              onClick={() => void startSelectedChat(false)}>Start guided chat without the entry</button></div>
+        )}
+        {linkedSourceUnavailable && !sourcePending && !sourceNeedsNewChat && (
+          <div className="chat-panel"><p className="note" role="status">
+            AI help is off or unavailable. Your entry will not be sent for a reply.
+            You can reflect on one detail using guided prompts.
+          </p><button className="btn btn-soft" type="button" disabled={busy !== null || preferenceBusy}
+            onClick={() => void startSelectedChat(false)}>Start guided chat without sending the entry</button></div>
+        )}
+        {guidedNotice && stage === "welcome" && (
+          <div className="chat-panel"><p className="note" role="status">
+            Guided chat uses no AI. Your journal entry is not sent. Think of one detail from your entry:
+            what feels most important about it now? You can answer with a mood below or type in your own words.
+          </p></div>
+        )}
         {stage === "welcome" && (
           <div className="chat-welcome">
             <Luna mood={mood} size={150} />
@@ -371,14 +898,14 @@ function ChatWorkspace() {
             <p>Tap a face or just type. There’s no wrong answer.</p>
             <div className="faces" role="group" aria-label="How are you feeling?" style={{ width: "100%", maxWidth: 420, marginTop: 8 }}>
               {MOODS.map((choice) => (
-                <button key={choice.score} className="face" type="button" disabled={busy !== null} aria-pressed={moodValence === choice.valence} onClick={() => tapMood(choice)}>
+                <button key={choice.score} className="face" type="button" disabled={busy !== null || resuming || Boolean(resumeFailure) || sourcePending} aria-pressed={moodValence === choice.valence} onClick={() => tapMood(choice)}>
                   <span aria-hidden="true">{choice.emoji}</span>
                   <span>{choice.label}</span>
                 </button>
               ))}
             </div>
             {preferencesLoaded && (
-              <button className="privacy-pill" type="button" onClick={() => setPrivacyOpen(true)}>
+              <button className="privacy-pill" type="button" onClick={(event) => { privacyOpener.current = event.currentTarget; setPrivacyOpen(true); }}>
                 <span aria-hidden="true">🔒</span>
                 {useAi ? "AI help on" : "AI help off"} · {keepText ? "messages kept" : "messages cleared after"}
                 <span className="sr-only">Change chat privacy</span>
@@ -401,6 +928,19 @@ function ChatWorkspace() {
           ) : null,
         )}
 
+        {pendingSend && !messages.some((message) => message.client_message_id === pendingSend.id) && (
+          <div className="msg from-me" data-message-status={pendingSend.status}>
+            <div className="bubble">
+              <span className="sr-only">You said: </span>{pendingSend.text}
+              <small className="small muted" style={{ display: "block" }}>
+                {pendingSend.status === "sending" ? "Sending…" : ended
+                  ? "Delivery not confirmed. Start a new chat to continue."
+                  : "Delivery not confirmed. You can retry."}
+              </small>
+            </div>
+          </div>
+        )}
+
         {busy === "send" && (
           <div className="msg from-luna" aria-label={THINKING_LINES[thinkingLine]}>
             <span className="msg-avatar"><Luna mood="thinking" size={34} decorative /></span>
@@ -409,11 +949,47 @@ function ChatWorkspace() {
         )}
         {busy === "send" && <div className="typing-note" aria-hidden="true">{THINKING_LINES[thinkingLine]}</div>}
 
-        {showReady && (
+        {conversation?.status === "open" && stage !== "support" && stage !== "saved" && (
+          <div className="chat-panel">
+            {conversation.interaction_preference === "listen" ? (
+              <>
+                <p className="note" role="status">Just talking. We’ll stay with your thoughts.</p>
+                <button className="chip" type="button" disabled={busy !== null || preferenceBusy}
+                  onClick={() => void changePreference("act")}>Find a small step</button>
+              </>
+            ) : (
+              <button className="chip" type="button"
+                disabled={preferenceBusy || busy === "accept" || busy === "close"}
+                onClick={() => void changePreference("listen")}>Just talk</button>
+            )}
+            {preferenceBusy && <p className="note" role="status">Saving your choice…</p>}
+            {stage === "chat" && <Link className="chip" href={discoveryHref()}>Find resources</Link>}
+          </div>
+        )}
+
+        {conversation?.mode === "ai" && conversation.status === "open" && conversation.safety_mode !== "support"
+          && (conversation as Conversation & { activity_move?: string }).activity_move !== "pause"
+          && conversation.interaction_preference !== "listen" && !sourcePending && !sourceNeedsNewChat
+          && !linkedSourceUnavailable && !sourceError && (
+          <div className="chat-panel">
+            <ActivitySessionWorkspace key={conversation.id} conversation={conversation}
+              ordinaryMessages={userMessages}
+              disabled={busy !== null || preferenceBusy || resuming || Boolean(resumeFailure)}
+              onBusyChange={setActivityBusy}
+              onRefresh={() => refreshConversation(conversation.id)} />
+          </div>
+        )}
+
+        {conversation?.status === "open" && userMessages >= CHAT_MESSAGE_LIMIT && (
+          <div className="chat-panel"><p className="note" role="status">This chat has reached its 20-message limit.
+            You can still finish a started activity and save its check-in.</p>
+            <button className="btn btn-soft" type="button" onClick={startOver}>Start a new chat</button></div>
+        )}
+
+        {showReady && !preferenceBusy && (
           <div className="chat-panel">
             <div className="chips">
               <button className="chip" type="button" onClick={startCheck}><span className="chip-emoji" aria-hidden="true">✨</span>Yes, let’s find one small thing</button>
-              <button className="chip" type="button" onClick={() => { setDismissedReady(userMessages); inputRef.current?.focus(); }}>Keep talking</button>
             </div>
           </div>
         )}
@@ -434,7 +1010,8 @@ function ChatWorkspace() {
               </div>
               <div className="row">
                 <button className="btn btn-primary" type="button" onClick={() => setStep("goal")}>{feelings.length ? "That’s it" : "I’m not sure"}</button>
-                <button className="btn btn-ghost" type="button" onClick={() => { setStep(null); setDismissedReady(userMessages); }}>Back to chatting</button>
+                <button className="btn btn-ghost" type="button" disabled={preferenceBusy}
+                  onClick={() => void changePreference("listen")}>Back to chatting</button>
               </div>
             </div>
           </>
@@ -461,6 +1038,7 @@ function ChatWorkspace() {
 
         {stage === "offer" && card && (
           <div className="chat-panel">
+            <p className="small muted">Saved resource collection</p>
             <div className="actions" role="group" aria-label="Small things to try">
               {card.actions.map((item) => (
                 <button key={item.id} className="action" type="button" aria-pressed={selectedAction === item.id} onClick={() => setSelectedAction(item.id)}>
@@ -474,8 +1052,10 @@ function ChatWorkspace() {
                 </button>
               ))}
             </div>
+            <Link className="btn btn-soft" href={discoveryHref(card.goal)}>Search for other resources</Link>
             <div className="row">
-              <button className="btn btn-primary btn-big" type="button" disabled={!selectedAction || busy !== null} onClick={accept}>
+              <button className="btn btn-primary btn-big" type="button"
+                disabled={!selectedAction || busy !== null || preferenceBusy} onClick={accept}>
                 {busy === "accept" ? "Saving…" : "Let’s try it"}
               </button>
               <button className="btn btn-ghost" type="button" onClick={() => setStep("goal")}>Show me other ideas</button>
@@ -509,6 +1089,7 @@ function ChatWorkspace() {
               <Luna mood="proud" size={110} />
               <h2>Nice choice.</h2>
               <p className="muted">{saved.resource?.title ?? "Your small step is saved."}</p>
+              <p className="small muted">Saved resource collection</p>
               {saved.resource?.url && (
                 <a className="btn btn-primary" href={saved.resource.url} target="_blank" rel="noreferrer">
                   Open the {saved.resource.resource_type}
@@ -517,6 +1098,7 @@ function ChatWorkspace() {
               <ActionTimer minutes={saved.resource?.duration_minutes ?? 5} />
               <p className="small muted">I’ll check in with you in about {preferences.followUpMinutes} minutes. You’ll find it on Home.</p>
               <div className="row" style={{ justifyContent: "center" }}>
+                <Link className="btn btn-soft" href={discoveryHref(saved.record.target.goal)}>Search for other resources</Link>
                 <Link className="btn btn-soft" href={`/check-in?decision=${saved.record.decision.decision_id}`}>I’m done, check in now</Link>
                 <Link className="btn btn-ghost" href="/">Back home</Link>
               </div>
@@ -527,10 +1109,16 @@ function ChatWorkspace() {
         {error && (
           <div className="chat-panel">
             <p className="note error" role="alert">{error}</p>
+            {preferenceRetry && (
+              <button className="btn btn-soft" type="button" disabled={preferenceBusy}
+                onClick={() => void changePreference(preferenceRetry)}>Try saving choice again</button>
+            )}
             {ended ? (
               <button className="btn btn-primary" type="button" onClick={startOver}>Start a new chat</button>
             ) : retryText && (
-              <button className="btn btn-soft" type="button" onClick={() => void send(retryText)}>Try again</button>
+              <button className="btn btn-soft" type="button" onClick={() => void send(retryText)}>
+                {draft.trim() && draft.trim() !== retryText.text.trim() ? "Retry original message" : "Try again"}
+              </button>
             )}
           </div>
         )}
@@ -549,23 +1137,29 @@ function ChatWorkspace() {
             id="chat-input"
             ref={inputRef}
             rows={1}
+            maxLength={2000}
             value={draft}
-            disabled={busy !== null}
+            disabled={userMessages >= CHAT_MESSAGE_LIMIT || busy !== null || activityBusy || preferenceBusy || resuming || Boolean(resumeFailure) || sourcePending || linkedSourceUnavailable || Boolean(activeSourceId && sourceError)}
             placeholder={stage === "welcome" ? "Or tell Luna what’s going on…" : "Type something…"}
-            onChange={(event) => setDraft(event.target.value)}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              if (conversation) draftsByChat.current.set(conversation.id, event.target.value);
+            }}
             onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
+              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) {
                 event.preventDefault();
                 void send({ text: draft });
               }
             }}
           />
-          <button className="send-btn" type="submit" aria-label="Send" disabled={busy !== null || !draft.trim()}>
+          <button className="send-btn" type="submit" aria-label="Send"
+            disabled={userMessages >= CHAT_MESSAGE_LIMIT || busy !== null || activityBusy || preferenceBusy || resuming || Boolean(resumeFailure) || sourcePending || linkedSourceUnavailable || Boolean(activeSourceId && sourceError) || !draft.trim()}>
             <Icon name="send" />
           </button>
         </form>
       )}
-      {stage === "chat" && userMessages >= 1 && !showReady && busy === null && (
+      {stage === "chat" && conversation?.mode !== "ai" && conversation?.interaction_preference !== "listen"
+        && userMessages >= 1 && !showReady && busy === null && !preferenceBusy && (
         <div className="chat-hint" style={{ paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}>
           <button className="link-btn" type="button" onClick={startCheck}>Skip ahead: find one small thing to try</button>
         </div>
@@ -573,7 +1167,7 @@ function ChatWorkspace() {
 
       {privacyOpen && (
         <div className="sheet-backdrop" onClick={() => setPrivacyOpen(false)}>
-          <div className="sheet" role="dialog" aria-modal="true" aria-labelledby="privacy-title" onClick={(event) => event.stopPropagation()}>
+          <div ref={privacyRef} className="sheet" role="dialog" aria-modal="true" aria-labelledby="privacy-title" onClick={(event) => event.stopPropagation()}>
             <h2 id="privacy-title">How this chat is kept</h2>
             {conversation ? (
               <p className="muted">

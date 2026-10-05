@@ -1,0 +1,134 @@
+Building wheel...
+running egg_info
+writing src/journalpulse.egg-info/PKG-INFO
+writing dependency_links to src/journalpulse.egg-info/dependency_links.txt
+writing requirements to src/journalpulse.egg-info/requires.txt
+writing top-level names to src/journalpulse.egg-info/top_level.txt
+reading manifest file 'src/journalpulse.egg-info/SOURCES.txt'
+writing manifest file 'src/journalpulse.egg-info/SOURCES.txt'
+running bdist_wheel
+running build
+running build_py
+creating build/lib/journalpulse
+copying src/journalpulse/__init__.py -> build/lib/journalpulse
+copying src/journalpulse/api.py -> build/lib/journalpulse
+copying src/journalpulse/auth.py -> build/lib/journalpulse
+copying src/journalpulse/config.py -> build/lib/journalpulse
+copying src/journalpulse/conversations.py -> build/lib/journalpulse
+copying src/journalpulse/domain.py -> build/lib/journalpulse
+copying src/journalpulse/guided.py -> build/lib/journalpulse
+copying src/journalpulse/intelligence.py -> build/lib/journalpulse
+copying src/journalpulse/middleware.py -> build/lib/journalpulse
+copying src/journalpulse/persistence.py -> build/lib/journalpulse
+copying src/journalpulse/policy.py -> build/lib/journalpulse
+copying src/journalpulse/resources.py -> build/lib/journalpulse
+copying src/journalpulse/safety.py -> build/lib/journalpulse
+copying src/journalpulse/self_report.py -> build/lib/journalpulse
+copying src/journalpulse/signing.py -> build/lib/journalpulse
+copying src/journalpulse/guided_action.py -> build/lib/journalpulse
+copying src/journalpulse/evaluation.py -> build/lib/journalpulse
+copying src/journalpulse/inline_discovery.py -> build/lib/journalpulse
+copying src/journalpulse/activity_sessions.py -> build/lib/journalpulse
+copying src/journalpulse/reflection_prompts.py -> build/lib/journalpulse
+copying src/journalpulse/activity_resources.py -> build/lib/journalpulse
+copying src/journalpulse/activity_chat.py -> build/lib/journalpulse
+copying src/journalpulse/discovery_prompts.py -> build/lib/journalpulse
+copying src/journalpulse/journal_models.py -> build/lib/journalpulse
+copying src/journalpulse/http_clients.py -> build/lib/journalpulse
+copying src/journalpulse/activity_lifecycle.py -> build/lib/journalpulse
+copying src/journalpulse/guided_evaluation.py -> build/lib/journalpulse
+copying src/journalpulse/journals.py -> build/lib/journalpulse
+copying src/journalpulse/discovery_models.py -> build/lib/journalpulse
+copying src/journalpulse/activity_models.py -> build/lib/journalpulse
+copying src/journalpulse/discovery.py -> build/lib/journalpulse
+running egg_info
+writing src/journalpulse.egg-info/PKG-INFO
+writing dependency_links to src/journalpulse.egg-info/dependency_links.txt
+writing requirements to src/journalpulse.egg-info/requires.txt
+writing top-level names to src/journalpulse.egg-info/top_level.txt
+reading manifest file 'src/journalpulse.egg-info/SOURCES.txt'
+writing manifest file 'src/journalpulse.egg-info/SOURCES.txt'
+creating build/lib/journalpulse/skills/guided_action
+copying src/journalpulse/skills/guided_action/SKILL.md -> build/lib/journalpulse/skills/guided_action
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/journalpulse
+copying build/lib/journalpulse/signing.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/guided_action.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/middleware.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/guided.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/evaluation.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/inline_discovery.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/activity_sessions.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/reflection_prompts.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/activity_resources.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/activity_chat.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/discovery_prompts.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/journal_models.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/persistence.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/self_report.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/http_clients.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/activity_lifecycle.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/auth.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+creating build/bdist.linux-x86_64/wheel/journalpulse/skills
+creating build/bdist.linux-x86_64/wheel/journalpulse/skills/guided_action
+copying build/lib/journalpulse/skills/guided_action/SKILL.md -> build/bdist.linux-x86_64/wheel/./journalpulse/skills/guided_action
+copying build/lib/journalpulse/domain.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/policy.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/resources.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/guided_evaluation.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/intelligence.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/journals.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/config.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/safety.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/discovery_models.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/__init__.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/api.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/activity_models.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/conversations.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+copying build/lib/journalpulse/discovery.py -> build/bdist.linux-x86_64/wheel/./journalpulse
+running install_egg_info
+Copying src/journalpulse.egg-info to build/bdist.linux-x86_64/wheel/./journalpulse-1.0.0-py3.12.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/journalpulse-1.0.0.dist-info/WHEEL
+creating '/workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/wheel/.tmp-2lbzsgbq/journalpulse-1.0.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'journalpulse/__init__.py'
+adding 'journalpulse/activity_chat.py'
+adding 'journalpulse/activity_lifecycle.py'
+adding 'journalpulse/activity_models.py'
+adding 'journalpulse/activity_resources.py'
+adding 'journalpulse/activity_sessions.py'
+adding 'journalpulse/api.py'
+adding 'journalpulse/auth.py'
+adding 'journalpulse/config.py'
+adding 'journalpulse/conversations.py'
+adding 'journalpulse/discovery.py'
+adding 'journalpulse/discovery_models.py'
+adding 'journalpulse/discovery_prompts.py'
+adding 'journalpulse/domain.py'
+adding 'journalpulse/evaluation.py'
+adding 'journalpulse/guided.py'
+adding 'journalpulse/guided_action.py'
+adding 'journalpulse/guided_evaluation.py'
+adding 'journalpulse/http_clients.py'
+adding 'journalpulse/inline_discovery.py'
+adding 'journalpulse/intelligence.py'
+adding 'journalpulse/journal_models.py'
+adding 'journalpulse/journals.py'
+adding 'journalpulse/middleware.py'
+adding 'journalpulse/persistence.py'
+adding 'journalpulse/policy.py'
+adding 'journalpulse/reflection_prompts.py'
+adding 'journalpulse/resources.py'
+adding 'journalpulse/safety.py'
+adding 'journalpulse/self_report.py'
+adding 'journalpulse/signing.py'
+adding 'journalpulse/skills/guided_action/SKILL.md'
+adding 'journalpulse-1.0.0.dist-info/METADATA'
+adding 'journalpulse-1.0.0.dist-info/WHEEL'
+adding 'journalpulse-1.0.0.dist-info/top_level.txt'
+adding 'journalpulse-1.0.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built /workspace/journalpulse-planning/guided-action-search-fix-2026-10-05/wheel/journalpulse-1.0.0-py3-none-any.whl

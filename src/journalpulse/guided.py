@@ -12,17 +12,34 @@ import re
 from .domain import FEELINGS, Goal, ModelRun
 from .intelligence import ConversationCompletion
 
-GUIDED_PROMPT_VERSION = "guided-2026-09-27.1"
+GUIDED_PROMPT_VERSION = "guided-2026-10-04.2"
 
 GUIDED_REPLIES: tuple[str, ...] = (
     "Thank you for telling me. What part of that is sitting with you most right now?",
     "That makes sense. When you notice it, where does it show up most: in your body, your "
     "thoughts, or your energy?",
-    "Thank you for sharing that with me. I think I have a sense of it. Want to find one small "
-    "thing to try together?",
+    "We can keep talking. What feels most important to say next?",
 )
 
 GUIDED_SUMMARY = "You checked in with Luna and talked through what was on your mind."
+
+# These match a few clear commands, not general emotional meaning. When a
+# request is ambiguous, leave readiness false and let the person use the
+# explicit small-step control rather than inferring readiness from turn count.
+_STOP_COMMAND = re.compile(
+    r"^(?:please )?(?:stop|pause)(?: (?:here|now))?[.!]?$|"
+    r"\b(?:please stop|let's (?:stop|pause)|leave it here|that's enough|"
+    r"no more questions|don't ask (?:another|any more) questions?)\b"
+)
+_ACTION_REFUSAL = re.compile(
+    r"\b(?:don't|do not|not ready|no)\b.{0,35}"
+    r"\b(?:actions?|activit(?:y|ies)|exercises?|resources?|small (?:thing|step))\b|"
+    r"\bjust (?:talk|listen|help me understand)\b"
+)
+_ACTION_REQUEST = re.compile(
+    r"\b(?:find|try|choose|suggest|show me|give me) "
+    r"(?:(?:me|one|a|an|some) )?(?:small (?:thing|step)|activit(?:y|ies)|exercise|resource)\b"
+)
 
 _FEELING_PATTERNS: dict[str, re.Pattern[str]] = {
     "tired": re.compile(r"\b(tired|exhaust\w*|drained|sleepy|worn out|fatigue\w*)\b"),
@@ -58,11 +75,24 @@ def guess_feelings(texts: list[str]) -> list[str]:
     return ordered[:3]
 
 
-def guided_completion(user_texts: list[str]) -> ConversationCompletion:
+def guided_completion(user_texts: list[str], *, listening: bool = False) -> ConversationCompletion:
     """Reply for the next turn. user_texts includes the message being answered."""
     turn = max(len(user_texts) - 1, 0)
-    reply = GUIDED_REPLIES[min(turn, len(GUIDED_REPLIES) - 1)]
-    ready = turn >= len(GUIDED_REPLIES) - 1
+    latest = (user_texts[-1] if user_texts else "").lower().replace("’", "'").strip()
+    stopping = bool(_STOP_COMMAND.search(latest))
+    ready = (
+        not listening and not stopping and not _ACTION_REFUSAL.search(latest)
+        and bool(_ACTION_REQUEST.search(latest))
+    )
+    if stopping:
+        reply = "Of course. We can leave it here."
+    elif ready:
+        reply = "You can choose one small thing using the next control when you're ready."
+    else:
+        reply = (
+            "We can keep talking. What feels most important to say next?"
+            if listening else GUIDED_REPLIES[min(turn, len(GUIDED_REPLIES) - 1)]
+        )
     return ConversationCompletion(
         reply=reply,
         offer_action=ready,

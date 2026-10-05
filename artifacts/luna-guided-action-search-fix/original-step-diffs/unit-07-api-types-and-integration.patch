@@ -1,0 +1,3084 @@
+--- a/web/lib/generated-api.ts
++++ b/web/lib/generated-api.ts
+@@ -66,6 +66,74 @@
+         put?: never;
+         /** Preview Actions */
+         post: operations["preview_actions_v1_actions_preview_post"];
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
++    "/v1/activity-sessions/{session_id}": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Read Activity */
++        get: operations["read_activity_v1_activity_sessions__session_id__get"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
++    "/v1/activity-sessions/{session_id}/commands": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        get?: never;
++        put?: never;
++        /** Control Activity */
++        post: operations["control_activity_v1_activity_sessions__session_id__commands_post"];
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
++    "/v1/activity-sessions/{session_id}/follow-up": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        get?: never;
++        put?: never;
++        /** Follow Up Activity */
++        post: operations["follow_up_activity_v1_activity_sessions__session_id__follow_up_post"];
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
++    "/v1/activity-sessions/{session_id}/report": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        get?: never;
++        put?: never;
++        /** Report Activity */
++        post: operations["report_activity_v1_activity_sessions__session_id__report_post"];
+         delete?: never;
+         options?: never;
+         head?: never;
+@@ -124,6 +192,24 @@
+         patch?: never;
+         trace?: never;
+     };
++    "/v1/conversations/{conversation_id}/activity-sessions": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Latest Activity */
++        get: operations["latest_activity_v1_conversations__conversation_id__activity_sessions_get"];
++        put?: never;
++        /** Offer Activity */
++        post: operations["offer_activity_v1_conversations__conversation_id__activity_sessions_post"];
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
+     "/v1/conversations/{conversation_id}/close": {
+         parameters: {
+             query?: never;
+@@ -135,6 +221,23 @@
+         put?: never;
+         /** Close Conversation */
+         post: operations["close_conversation_v1_conversations__conversation_id__close_post"];
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
++    "/v1/conversations/{conversation_id}/discover": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        get?: never;
++        put?: never;
++        /** Discover */
++        post: operations["discover_v1_conversations__conversation_id__discover_post"];
+         delete?: never;
+         options?: never;
+         head?: never;
+@@ -434,6 +537,244 @@
+             state: components["schemas"]["AffectiveState"];
+             target: components["schemas"]["TargetState"];
+         };
++        /** ActivityCommandRequest */
++        ActivityCommandRequest: {
++            /**
++             * Client Request Id
++             * Format: uuid
++             */
++            client_request_id: string;
++            /**
++             * Command
++             * @enum {string}
++             */
++            command: "start" | "pause" | "resume" | "finish_early" | "expire" | "stop" | "decline";
++            /** Expected Conversation Revision */
++            expected_conversation_revision: number;
++            /** Expected Revision */
++            expected_revision: number;
++        };
++        /**
++         * ActivityConstraintInputs
++         * @description Correctable activity limits; no free-form private text enters search context.
++         */
++        ActivityConstraintInputs: {
++            /**
++             * Avoid Breath Focus
++             * @default false
++             */
++            avoid_breath_focus: boolean;
++            /**
++             * No Audio
++             * @default false
++             */
++            no_audio: boolean;
++            /**
++             * No Video
++             * @default false
++             */
++            no_video: boolean;
++            /**
++             * Seated
++             * @default false
++             */
++            seated: boolean;
++            /** Time Minutes */
++            time_minutes?: number | null;
++        };
++        /** ActivityFollowUpRequest */
++        ActivityFollowUpRequest: {
++            /**
++             * Client Request Id
++             * Format: uuid
++             */
++            client_request_id: string;
++            /** Expected Conversation Revision */
++            expected_conversation_revision: number;
++            /** Expected Revision */
++            expected_revision: number;
++        };
++        /** ActivityReport */
++        ActivityReport: {
++            /** After Rating */
++            after_rating?: number | null;
++            /** Before Rating */
++            before_rating?: number | null;
++            /** Effort */
++            effort?: number | null;
++            /** Fit */
++            fit?: ("good" | "mixed" | "poor" | "unsure") | null;
++            /** Goal Progress */
++            goal_progress?: ("closer" | "same" | "further" | "unsure") | null;
++            /** Helpfulness */
++            helpfulness?: number | null;
++            /** Note */
++            note?: string | null;
++            /**
++             * Participation
++             * @enum {string}
++             */
++            participation: "completed" | "partial" | "not_tried" | "stopped";
++            /** State Change */
++            state_change?: ("toward_target" | "same" | "away_from_target" | "unsure") | null;
++        };
++        /** ActivityReportRequest */
++        ActivityReportRequest: {
++            /** After Rating */
++            after_rating?: number | null;
++            /** Before Rating */
++            before_rating?: number | null;
++            /**
++             * Client Request Id
++             * Format: uuid
++             */
++            client_request_id: string;
++            /** Effort */
++            effort?: number | null;
++            /** Expected Conversation Revision */
++            expected_conversation_revision: number;
++            /** Expected Revision */
++            expected_revision: number;
++            /** Fit */
++            fit?: ("good" | "mixed" | "poor" | "unsure") | null;
++            /** Goal Progress */
++            goal_progress?: ("closer" | "same" | "further" | "unsure") | null;
++            /** Helpfulness */
++            helpfulness?: number | null;
++            /** Note */
++            note?: string | null;
++            /**
++             * Participation
++             * @enum {string}
++             */
++            participation: "completed" | "partial" | "not_tried" | "stopped";
++            /** State Change */
++            state_change?: ("toward_target" | "same" | "away_from_target" | "unsure") | null;
++        };
++        /**
++         * ActivitySelectionProvenance
++         * @description These are LLM/user choices, not randomized research-policy assignments.
++         */
++        ActivitySelectionProvenance: {
++            /**
++             * Eligible For Ope
++             * @default false
++             * @constant
++             */
++            eligible_for_ope: false;
++            model_run?: components["schemas"]["ModelRun"] | null;
++            /** Propensity */
++            propensity?: null;
++            /** Recommended Resource Id */
++            recommended_resource_id: string;
++            /** Selected Resource Id */
++            selected_resource_id: string;
++            /**
++             * Selection Source
++             * @enum {string}
++             */
++            selection_source: "llm" | "guided" | "user" | "search";
++        };
++        /** ActivitySession */
++        ActivitySession: {
++            /**
++             * Check In Issued
++             * @default false
++             */
++            check_in_issued: boolean;
++            /**
++             * Conversation Id
++             * Format: uuid
++             */
++            conversation_id: string;
++            /** Conversation Revision */
++            conversation_revision?: number | null;
++            /**
++             * Created At
++             * Format: date-time
++             */
++            created_at?: string;
++            /**
++             * Duration Seconds
++             * @default 0
++             */
++            duration_seconds: number;
++            /** Expires At */
++            expires_at?: string | null;
++            /**
++             * Final Follow Up
++             * @default false
++             */
++            final_follow_up: boolean;
++            /**
++             * Follow Up Attempts
++             * @default 0
++             */
++            follow_up_attempts: number;
++            /** Follow Up Lease Until */
++            follow_up_lease_until?: string | null;
++            /** Follow Up Message Id */
++            follow_up_message_id?: string | null;
++            follow_up_model_run?: components["schemas"]["ModelRun"] | null;
++            /** Follow Up Reply */
++            follow_up_reply?: string | null;
++            /** Follow Up Request Id */
++            follow_up_request_id?: string | null;
++            /**
++             * Follow Up Status
++             * @default none
++             * @enum {string}
++             */
++            follow_up_status: "none" | "pending" | "generating" | "ready" | "failed";
++            goal?: components["schemas"]["Goal"] | null;
++            /**
++             * Id
++             * Format: uuid
++             */
++            id?: string;
++            /** Offered Message Id */
++            offered_message_id?: string | null;
++            /** Recommendation Reason */
++            recommendation_reason?: string | null;
++            /**
++             * Remaining Seconds
++             * @default 0
++             */
++            remaining_seconds: number;
++            report?: components["schemas"]["ActivityReport"] | null;
++            /** Reported At */
++            reported_at?: string | null;
++            resource: components["schemas"]["journalpulse__activity_models__ActivityResource"];
++            /**
++             * Revision
++             * @default 0
++             */
++            revision: number;
++            selection: components["schemas"]["ActivitySelectionProvenance"];
++            /** Server Now */
++            server_now?: string | null;
++            /** Source Entry Id */
++            source_entry_id?: string | null;
++            /** Started At */
++            started_at?: string | null;
++            /** @default offered */
++            status: components["schemas"]["ActivityStatus"];
++            /**
++             * Updated At
++             * Format: date-time
++             */
++            updated_at?: string;
++            /**
++             * User Id
++             * Format: uuid
++             */
++            user_id: string;
++        };
++        /**
++         * ActivityStatus
++         * @enum {string}
++         */
++        ActivityStatus: "offered" | "active" | "paused" | "awaiting_report" | "completed" | "stopped" | "declined";
+         /** AffectiveState */
+         AffectiveState: {
+             /** Agency */
+@@ -487,6 +828,17 @@
+         };
+         /** Conversation */
+         Conversation: {
++            activity_card?: components["schemas"]["ActionCard"] | null;
++            activity_constraints?: components["schemas"]["ActivityConstraintInputs"];
++            activity_goal?: components["schemas"]["Goal"] | null;
++            /**
++             * Activity Move
++             * @default reflect
++             * @enum {string}
++             */
++            activity_move: "reflect" | "clarify" | "propose" | "negotiate" | "outcome" | "pause";
++            /** Activity Search Topic */
++            activity_search_topic?: string | null;
+             card?: components["schemas"]["ActionCard"] | null;
+             /** Confirmed Feelings */
+             confirmed_feelings?: string[] | null;
+@@ -627,6 +979,22 @@
+             conversation: components["schemas"]["Conversation"];
+             user_message: components["schemas"]["ConversationMessage"];
+         };
++        /** CreateActivitySessionRequest */
++        CreateActivitySessionRequest: {
++            /**
++             * Client Request Id
++             * Format: uuid
++             */
++            client_request_id: string;
++            /** Duration Seconds */
++            duration_seconds?: number | null;
++            /** Expected Conversation Revision */
++            expected_conversation_revision: number;
++            /** Resource Id */
++            resource_id: string;
++            /** Resource Token */
++            resource_token?: string | null;
++        };
+         /** CreateJournalEntryRequest */
+         CreateJournalEntryRequest: {
+             /** Client Request Id */
+@@ -747,6 +1115,54 @@
+         HTTPValidationError: {
+             /** Detail */
+             detail?: components["schemas"]["ValidationError"][];
++        };
++        /** InlineDiscoveryRequest */
++        InlineDiscoveryRequest: {
++            constraints?: components["schemas"]["ActivityConstraintInputs"] | null;
++            /** Excluded Urls */
++            excluded_urls?: string[];
++            /** Expected Revision */
++            expected_revision: number;
++            /** Feedback */
++            feedback?: string | null;
++            goal?: components["schemas"]["Goal"] | null;
++            /**
++             * Llm Consent
++             * @default false
++             */
++            llm_consent: boolean;
++            /** Original Query */
++            original_query?: string | null;
++            /** Previous Query */
++            previous_query?: string | null;
++            /**
++             * Style
++             * @default ground
++             * @enum {string}
++             */
++            style: "ground" | "move" | "connect" | "reflect" | "play" | "watch" | "read" | "pause";
++        };
++        /** InlineDiscoveryResponse */
++        InlineDiscoveryResponse: {
++            /** Candidates */
++            candidates: components["schemas"]["DiscoveryCandidate"][];
++            /** Conversation Revision */
++            conversation_revision: number;
++            /** Limitations */
++            limitations: string[];
++            /** Offers */
++            offers: components["schemas"]["InlineResourceOffer"][];
++            /** Original Query */
++            original_query: string;
++            provenance: components["schemas"]["DiscoveryProvenance"];
++            /** Updated Query */
++            updated_query: string;
++        };
++        /** InlineResourceOffer */
++        InlineResourceOffer: {
++            resource: components["schemas"]["journalpulse__activity_resources__ActivityResource"];
++            /** Resource Token */
++            resource_token: string;
+         };
+         /** InsightsResponse */
+         InsightsResponse: {
+@@ -863,6 +1279,10 @@
+             provider: string;
+             /** Schema Valid */
+             schema_valid: boolean;
++            /** Skill Hash */
++            skill_hash?: string | null;
++            /** Skill Version */
++            skill_version?: string | null;
+             /**
+              * Used Fallback
+              * @default false
+@@ -954,7 +1374,7 @@
+             /** Policy Version */
+             policy_version: string;
+             /** Propensity */
+-            propensity: number;
++            propensity?: number | null;
+             /** Recommended Action Id */
+             recommended_action_id?: string | null;
+             /** Safe Action Ids */
+@@ -1177,6 +1597,128 @@
+             /** Error Type */
+             type: string;
+         };
++        /**
++         * ActivityResource
++         * @description A server-approved descriptor. Search provenance never implies page review.
++         */
++        journalpulse__activity_models__ActivityResource: {
++            discovery_provenance?: components["schemas"]["DiscoveryProvenance"] | null;
++            /** Duration Seconds */
++            duration_seconds?: number | null;
++            /**
++             * Format
++             * @enum {string}
++             */
++            format: "timer" | "external" | "manual";
++            /** Id */
++            id: string;
++            /** Instructions */
++            instructions?: string[];
++            /**
++             * Kind
++             * @enum {string}
++             */
++            kind: "meditation" | "movement" | "reflection" | "connection" | "focus" | "video" | "reading" | "other";
++            /**
++             * Provenance
++             * @enum {string}
++             */
++            provenance: "builtin" | "catalog" | "search_snippet";
++            /**
++             * Provider
++             * @default JournalPulse
++             */
++            provider: string;
++            /**
++             * Resource Type
++             * @default activity
++             */
++            resource_type: string;
++            /** Title */
++            title: string;
++            /** Url */
++            url?: string | null;
++        };
++        /** ActivityResource */
++        journalpulse__activity_resources__ActivityResource: {
++            /**
++             * Breath Focus
++             * @default false
++             */
++            breath_focus: boolean;
++            /**
++             * Coping Style
++             * @enum {string}
++             */
++            coping_style: "watch" | "move" | "read" | "play" | "connect" | "ground" | "reflect";
++            discovery_provenance?: components["schemas"]["DiscoveryProvenance"] | null;
++            /** Duration Minutes */
++            duration_minutes?: number | null;
++            /** Duration Seconds */
++            duration_seconds?: number | null;
++            /** Emotion Tags */
++            emotion_tags?: string[];
++            /**
++             * Evidence Kind
++             * @enum {string}
++             */
++            evidence_kind: "app_guidance" | "catalog_review" | "search_snippet";
++            /** Goal Tags */
++            goal_tags?: string[];
++            /** Id */
++            id: string;
++            /** Instructions */
++            instructions?: string[];
++            /**
++             * Kind
++             * @enum {string}
++             */
++            kind: "meditation" | "movement" | "reading" | "video" | "social" | "play" | "reflection" | "focus";
++            /**
++             * No Audio
++             * @default false
++             */
++            no_audio: boolean;
++            /**
++             * No Video
++             * @default false
++             */
++            no_video: boolean;
++            /** Provider */
++            provider: string;
++            /**
++             * Resource Type
++             * @enum {string}
++             */
++            resource_type: "activity" | "video" | "website" | "game";
++            /** Reviewed At */
++            reviewed_at?: string | null;
++            /**
++             * Seated
++             * @default false
++             */
++            seated: boolean;
++            /**
++             * Source
++             * @enum {string}
++             */
++            source: "builtin" | "catalog" | "search_snippet";
++            /** Source Tier */
++            source_tier?: string | null;
++            /** Summary */
++            summary: string;
++            /**
++             * Timer Enabled
++             * @default false
++             */
++            timer_enabled: boolean;
++            /** Title */
++            title: string;
++            /** Url */
++            url?: string | null;
++            /** Why Selected */
++            why_selected?: string | null;
++        };
+     };
+     responses: never;
+     parameters: never;
+@@ -1296,6 +1838,154 @@
+             };
+         };
+     };
++    read_activity_v1_activity_sessions__session_id__get: {
++        parameters: {
++            query?: never;
++            header?: {
++                authorization?: string | null;
++                "X-JournalPulse-User"?: string | null;
++            };
++            path: {
++                session_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ActivitySession"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
++    control_activity_v1_activity_sessions__session_id__commands_post: {
++        parameters: {
++            query?: never;
++            header?: {
++                authorization?: string | null;
++                "X-JournalPulse-User"?: string | null;
++            };
++            path: {
++                session_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody: {
++            content: {
++                "application/json": components["schemas"]["ActivityCommandRequest"];
++            };
++        };
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ActivitySession"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
++    follow_up_activity_v1_activity_sessions__session_id__follow_up_post: {
++        parameters: {
++            query?: never;
++            header?: {
++                authorization?: string | null;
++                "X-JournalPulse-User"?: string | null;
++            };
++            path: {
++                session_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody: {
++            content: {
++                "application/json": components["schemas"]["ActivityFollowUpRequest"];
++            };
++        };
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ActivitySession"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
++    report_activity_v1_activity_sessions__session_id__report_post: {
++        parameters: {
++            query?: never;
++            header?: {
++                authorization?: string | null;
++                "X-JournalPulse-User"?: string | null;
++            };
++            path: {
++                session_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody: {
++            content: {
++                "application/json": components["schemas"]["ActivityReportRequest"];
++            };
++        };
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ActivitySession"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
+     start_conversation_v1_conversations_post: {
+         parameters: {
+             query?: never;
+@@ -1436,7 +2126,7 @@
+             };
+         };
+     };
+-    close_conversation_v1_conversations__conversation_id__close_post: {
++    latest_activity_v1_conversations__conversation_id__activity_sessions_get: {
+         parameters: {
+             query?: never;
+             header?: {
+@@ -1456,7 +2146,117 @@
+                     [name: string]: unknown;
+                 };
+                 content: {
++                    "application/json": components["schemas"]["ActivitySession"] | null;
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
++    offer_activity_v1_conversations__conversation_id__activity_sessions_post: {
++        parameters: {
++            query?: never;
++            header?: {
++                authorization?: string | null;
++                "X-JournalPulse-User"?: string | null;
++            };
++            path: {
++                conversation_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody: {
++            content: {
++                "application/json": components["schemas"]["CreateActivitySessionRequest"];
++            };
++        };
++        responses: {
++            /** @description Successful Response */
++            201: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ActivitySession"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
++    close_conversation_v1_conversations__conversation_id__close_post: {
++        parameters: {
++            query?: never;
++            header?: {
++                authorization?: string | null;
++                "X-JournalPulse-User"?: string | null;
++            };
++            path: {
++                conversation_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
+                     "application/json": components["schemas"]["Conversation"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
++    discover_v1_conversations__conversation_id__discover_post: {
++        parameters: {
++            query?: never;
++            header?: {
++                authorization?: string | null;
++                "X-JournalPulse-User"?: string | null;
++            };
++            path: {
++                conversation_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody: {
++            content: {
++                "application/json": components["schemas"]["InlineDiscoveryRequest"];
++            };
++        };
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["InlineDiscoveryResponse"];
+                 };
+             };
+             /** @description Validation Error */
+--- a/web/openapi.json
++++ b/web/openapi.json
+@@ -159,6 +159,742 @@
+         "title": "ActionPreviewRequest",
+         "type": "object"
+       },
++      "ActivityCommandRequest": {
++        "additionalProperties": false,
++        "properties": {
++          "client_request_id": {
++            "format": "uuid",
++            "title": "Client Request Id",
++            "type": "string"
++          },
++          "command": {
++            "enum": [
++              "start",
++              "pause",
++              "resume",
++              "finish_early",
++              "expire",
++              "stop",
++              "decline"
++            ],
++            "title": "Command",
++            "type": "string"
++          },
++          "expected_conversation_revision": {
++            "minimum": 0.0,
++            "title": "Expected Conversation Revision",
++            "type": "integer"
++          },
++          "expected_revision": {
++            "minimum": 0.0,
++            "title": "Expected Revision",
++            "type": "integer"
++          }
++        },
++        "required": [
++          "client_request_id",
++          "expected_revision",
++          "expected_conversation_revision",
++          "command"
++        ],
++        "title": "ActivityCommandRequest",
++        "type": "object"
++      },
++      "ActivityConstraintInputs": {
++        "additionalProperties": false,
++        "description": "Correctable activity limits; no free-form private text enters search context.",
++        "properties": {
++          "avoid_breath_focus": {
++            "default": false,
++            "title": "Avoid Breath Focus",
++            "type": "boolean"
++          },
++          "no_audio": {
++            "default": false,
++            "title": "No Audio",
++            "type": "boolean"
++          },
++          "no_video": {
++            "default": false,
++            "title": "No Video",
++            "type": "boolean"
++          },
++          "seated": {
++            "default": false,
++            "title": "Seated",
++            "type": "boolean"
++          },
++          "time_minutes": {
++            "anyOf": [
++              {
++                "maximum": 20.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Time Minutes"
++          }
++        },
++        "title": "ActivityConstraintInputs",
++        "type": "object"
++      },
++      "ActivityFollowUpRequest": {
++        "additionalProperties": false,
++        "properties": {
++          "client_request_id": {
++            "format": "uuid",
++            "title": "Client Request Id",
++            "type": "string"
++          },
++          "expected_conversation_revision": {
++            "minimum": 0.0,
++            "title": "Expected Conversation Revision",
++            "type": "integer"
++          },
++          "expected_revision": {
++            "minimum": 0.0,
++            "title": "Expected Revision",
++            "type": "integer"
++          }
++        },
++        "required": [
++          "client_request_id",
++          "expected_revision",
++          "expected_conversation_revision"
++        ],
++        "title": "ActivityFollowUpRequest",
++        "type": "object"
++      },
++      "ActivityReport": {
++        "additionalProperties": false,
++        "properties": {
++          "after_rating": {
++            "anyOf": [
++              {
++                "maximum": 5.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "After Rating"
++          },
++          "before_rating": {
++            "anyOf": [
++              {
++                "maximum": 5.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Before Rating"
++          },
++          "effort": {
++            "anyOf": [
++              {
++                "maximum": 5.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Effort"
++          },
++          "fit": {
++            "anyOf": [
++              {
++                "enum": [
++                  "good",
++                  "mixed",
++                  "poor",
++                  "unsure"
++                ],
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Fit"
++          },
++          "goal_progress": {
++            "anyOf": [
++              {
++                "enum": [
++                  "closer",
++                  "same",
++                  "further",
++                  "unsure"
++                ],
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Goal Progress"
++          },
++          "helpfulness": {
++            "anyOf": [
++              {
++                "maximum": 5.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Helpfulness"
++          },
++          "note": {
++            "anyOf": [
++              {
++                "maxLength": 1000,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Note"
++          },
++          "participation": {
++            "enum": [
++              "completed",
++              "partial",
++              "not_tried",
++              "stopped"
++            ],
++            "title": "Participation",
++            "type": "string"
++          },
++          "state_change": {
++            "anyOf": [
++              {
++                "enum": [
++                  "toward_target",
++                  "same",
++                  "away_from_target",
++                  "unsure"
++                ],
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "State Change"
++          }
++        },
++        "required": [
++          "participation"
++        ],
++        "title": "ActivityReport",
++        "type": "object"
++      },
++      "ActivityReportRequest": {
++        "additionalProperties": false,
++        "properties": {
++          "after_rating": {
++            "anyOf": [
++              {
++                "maximum": 5.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "After Rating"
++          },
++          "before_rating": {
++            "anyOf": [
++              {
++                "maximum": 5.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Before Rating"
++          },
++          "client_request_id": {
++            "format": "uuid",
++            "title": "Client Request Id",
++            "type": "string"
++          },
++          "effort": {
++            "anyOf": [
++              {
++                "maximum": 5.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Effort"
++          },
++          "expected_conversation_revision": {
++            "minimum": 0.0,
++            "title": "Expected Conversation Revision",
++            "type": "integer"
++          },
++          "expected_revision": {
++            "minimum": 0.0,
++            "title": "Expected Revision",
++            "type": "integer"
++          },
++          "fit": {
++            "anyOf": [
++              {
++                "enum": [
++                  "good",
++                  "mixed",
++                  "poor",
++                  "unsure"
++                ],
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Fit"
++          },
++          "goal_progress": {
++            "anyOf": [
++              {
++                "enum": [
++                  "closer",
++                  "same",
++                  "further",
++                  "unsure"
++                ],
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Goal Progress"
++          },
++          "helpfulness": {
++            "anyOf": [
++              {
++                "maximum": 5.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Helpfulness"
++          },
++          "note": {
++            "anyOf": [
++              {
++                "maxLength": 1000,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Note"
++          },
++          "participation": {
++            "enum": [
++              "completed",
++              "partial",
++              "not_tried",
++              "stopped"
++            ],
++            "title": "Participation",
++            "type": "string"
++          },
++          "state_change": {
++            "anyOf": [
++              {
++                "enum": [
++                  "toward_target",
++                  "same",
++                  "away_from_target",
++                  "unsure"
++                ],
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "State Change"
++          }
++        },
++        "required": [
++          "participation",
++          "client_request_id",
++          "expected_revision",
++          "expected_conversation_revision"
++        ],
++        "title": "ActivityReportRequest",
++        "type": "object"
++      },
++      "ActivitySelectionProvenance": {
++        "additionalProperties": false,
++        "description": "These are LLM/user choices, not randomized research-policy assignments.",
++        "properties": {
++          "eligible_for_ope": {
++            "const": false,
++            "default": false,
++            "title": "Eligible For Ope",
++            "type": "boolean"
++          },
++          "model_run": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/ModelRun"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "propensity": {
++            "title": "Propensity",
++            "type": "null"
++          },
++          "recommended_resource_id": {
++            "maxLength": 120,
++            "minLength": 1,
++            "title": "Recommended Resource Id",
++            "type": "string"
++          },
++          "selected_resource_id": {
++            "maxLength": 120,
++            "minLength": 1,
++            "title": "Selected Resource Id",
++            "type": "string"
++          },
++          "selection_source": {
++            "enum": [
++              "llm",
++              "guided",
++              "user",
++              "search"
++            ],
++            "title": "Selection Source",
++            "type": "string"
++          }
++        },
++        "required": [
++          "selection_source",
++          "recommended_resource_id",
++          "selected_resource_id"
++        ],
++        "title": "ActivitySelectionProvenance",
++        "type": "object"
++      },
++      "ActivitySession": {
++        "additionalProperties": false,
++        "properties": {
++          "check_in_issued": {
++            "default": false,
++            "title": "Check In Issued",
++            "type": "boolean"
++          },
++          "conversation_id": {
++            "format": "uuid",
++            "title": "Conversation Id",
++            "type": "string"
++          },
++          "conversation_revision": {
++            "anyOf": [
++              {
++                "minimum": 0.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Conversation Revision"
++          },
++          "created_at": {
++            "format": "date-time",
++            "title": "Created At",
++            "type": "string"
++          },
++          "duration_seconds": {
++            "default": 0,
++            "maximum": 3600.0,
++            "minimum": 0.0,
++            "title": "Duration Seconds",
++            "type": "integer"
++          },
++          "expires_at": {
++            "anyOf": [
++              {
++                "format": "date-time",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Expires At"
++          },
++          "final_follow_up": {
++            "default": false,
++            "title": "Final Follow Up",
++            "type": "boolean"
++          },
++          "follow_up_attempts": {
++            "default": 0,
++            "maximum": 3.0,
++            "minimum": 0.0,
++            "title": "Follow Up Attempts",
++            "type": "integer"
++          },
++          "follow_up_lease_until": {
++            "anyOf": [
++              {
++                "format": "date-time",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Follow Up Lease Until"
++          },
++          "follow_up_message_id": {
++            "anyOf": [
++              {
++                "format": "uuid",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Follow Up Message Id"
++          },
++          "follow_up_model_run": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/ModelRun"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "follow_up_reply": {
++            "anyOf": [
++              {
++                "maxLength": 1200,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Follow Up Reply"
++          },
++          "follow_up_request_id": {
++            "anyOf": [
++              {
++                "format": "uuid",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Follow Up Request Id"
++          },
++          "follow_up_status": {
++            "default": "none",
++            "enum": [
++              "none",
++              "pending",
++              "generating",
++              "ready",
++              "failed"
++            ],
++            "title": "Follow Up Status",
++            "type": "string"
++          },
++          "goal": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/Goal"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "id": {
++            "format": "uuid",
++            "title": "Id",
++            "type": "string"
++          },
++          "offered_message_id": {
++            "anyOf": [
++              {
++                "format": "uuid",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Offered Message Id"
++          },
++          "recommendation_reason": {
++            "anyOf": [
++              {
++                "maxLength": 240,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Recommendation Reason"
++          },
++          "remaining_seconds": {
++            "default": 0,
++            "maximum": 3600.0,
++            "minimum": 0.0,
++            "title": "Remaining Seconds",
++            "type": "integer"
++          },
++          "report": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/ActivityReport"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "reported_at": {
++            "anyOf": [
++              {
++                "format": "date-time",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Reported At"
++          },
++          "resource": {
++            "$ref": "#/components/schemas/journalpulse__activity_models__ActivityResource"
++          },
++          "revision": {
++            "default": 0,
++            "minimum": 0.0,
++            "title": "Revision",
++            "type": "integer"
++          },
++          "selection": {
++            "$ref": "#/components/schemas/ActivitySelectionProvenance"
++          },
++          "server_now": {
++            "anyOf": [
++              {
++                "format": "date-time",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Server Now"
++          },
++          "source_entry_id": {
++            "anyOf": [
++              {
++                "format": "uuid",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Source Entry Id"
++          },
++          "started_at": {
++            "anyOf": [
++              {
++                "format": "date-time",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Started At"
++          },
++          "status": {
++            "$ref": "#/components/schemas/ActivityStatus",
++            "default": "offered"
++          },
++          "updated_at": {
++            "format": "date-time",
++            "title": "Updated At",
++            "type": "string"
++          },
++          "user_id": {
++            "format": "uuid",
++            "title": "User Id",
++            "type": "string"
++          }
++        },
++        "required": [
++          "user_id",
++          "conversation_id",
++          "resource",
++          "selection"
++        ],
++        "title": "ActivitySession",
++        "type": "object"
++      },
++      "ActivityStatus": {
++        "enum": [
++          "offered",
++          "active",
++          "paused",
++          "awaiting_report",
++          "completed",
++          "stopped",
++          "declined"
++        ],
++        "title": "ActivityStatus",
++        "type": "string"
++      },
+       "AffectiveState": {
+         "properties": {
+           "agency": {
+@@ -298,6 +1034,54 @@
+       },
+       "Conversation": {
+         "properties": {
++          "activity_card": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/ActionCard"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "activity_constraints": {
++            "$ref": "#/components/schemas/ActivityConstraintInputs"
++          },
++          "activity_goal": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/Goal"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "activity_move": {
++            "default": "reflect",
++            "enum": [
++              "reflect",
++              "clarify",
++              "propose",
++              "negotiate",
++              "outcome",
++              "pause"
++            ],
++            "title": "Activity Move",
++            "type": "string"
++          },
++          "activity_search_topic": {
++            "anyOf": [
++              {
++                "maxLength": 160,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Activity Search Topic"
++          },
+           "card": {
+             "anyOf": [
+               {
+@@ -713,6 +1497,60 @@
+           "assistant_message"
+         ],
+         "title": "ConversationTurnResult",
++        "type": "object"
++      },
++      "CreateActivitySessionRequest": {
++        "additionalProperties": false,
++        "properties": {
++          "client_request_id": {
++            "format": "uuid",
++            "title": "Client Request Id",
++            "type": "string"
++          },
++          "duration_seconds": {
++            "anyOf": [
++              {
++                "maximum": 3600.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Duration Seconds"
++          },
++          "expected_conversation_revision": {
++            "minimum": 0.0,
++            "title": "Expected Conversation Revision",
++            "type": "integer"
++          },
++          "resource_id": {
++            "maxLength": 120,
++            "minLength": 1,
++            "title": "Resource Id",
++            "type": "string"
++          },
++          "resource_token": {
++            "anyOf": [
++              {
++                "maxLength": 12000,
++                "minLength": 1,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Resource Token"
++          }
++        },
++        "required": [
++          "client_request_id",
++          "expected_conversation_revision",
++          "resource_id"
++        ],
++        "title": "CreateActivitySessionRequest",
+         "type": "object"
+       },
+       "CreateJournalEntryRequest": {
+@@ -1009,6 +1847,175 @@
+           }
+         },
+         "title": "HTTPValidationError",
++        "type": "object"
++      },
++      "InlineDiscoveryRequest": {
++        "additionalProperties": false,
++        "properties": {
++          "constraints": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/ActivityConstraintInputs"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "excluded_urls": {
++            "items": {
++              "type": "string"
++            },
++            "maxItems": 30,
++            "title": "Excluded Urls",
++            "type": "array"
++          },
++          "expected_revision": {
++            "minimum": 0.0,
++            "title": "Expected Revision",
++            "type": "integer"
++          },
++          "feedback": {
++            "anyOf": [
++              {
++                "maxLength": 160,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Feedback"
++          },
++          "goal": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/Goal"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "llm_consent": {
++            "default": false,
++            "title": "Llm Consent",
++            "type": "boolean"
++          },
++          "original_query": {
++            "anyOf": [
++              {
++                "maxLength": 160,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Original Query"
++          },
++          "previous_query": {
++            "anyOf": [
++              {
++                "maxLength": 400,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Previous Query"
++          },
++          "style": {
++            "default": "ground",
++            "enum": [
++              "ground",
++              "move",
++              "connect",
++              "reflect",
++              "play",
++              "watch",
++              "read",
++              "pause"
++            ],
++            "title": "Style",
++            "type": "string"
++          }
++        },
++        "required": [
++          "expected_revision"
++        ],
++        "title": "InlineDiscoveryRequest",
++        "type": "object"
++      },
++      "InlineDiscoveryResponse": {
++        "properties": {
++          "candidates": {
++            "items": {
++              "$ref": "#/components/schemas/DiscoveryCandidate"
++            },
++            "maxItems": 3,
++            "title": "Candidates",
++            "type": "array"
++          },
++          "conversation_revision": {
++            "title": "Conversation Revision",
++            "type": "integer"
++          },
++          "limitations": {
++            "items": {
++              "type": "string"
++            },
++            "title": "Limitations",
++            "type": "array"
++          },
++          "offers": {
++            "items": {
++              "$ref": "#/components/schemas/InlineResourceOffer"
++            },
++            "maxItems": 3,
++            "title": "Offers",
++            "type": "array"
++          },
++          "original_query": {
++            "title": "Original Query",
++            "type": "string"
++          },
++          "provenance": {
++            "$ref": "#/components/schemas/DiscoveryProvenance"
++          },
++          "updated_query": {
++            "title": "Updated Query",
++            "type": "string"
++          }
++        },
++        "required": [
++          "original_query",
++          "updated_query",
++          "candidates",
++          "provenance",
++          "limitations",
++          "offers",
++          "conversation_revision"
++        ],
++        "title": "InlineDiscoveryResponse",
++        "type": "object"
++      },
++      "InlineResourceOffer": {
++        "properties": {
++          "resource": {
++            "$ref": "#/components/schemas/journalpulse__activity_resources__ActivityResource"
++          },
++          "resource_token": {
++            "title": "Resource Token",
++            "type": "string"
++          }
++        },
++        "required": [
++          "resource",
++          "resource_token"
++        ],
++        "title": "InlineResourceOffer",
+         "type": "object"
+       },
+       "InsightsResponse": {
+@@ -1266,6 +2273,30 @@
+             "title": "Schema Valid",
+             "type": "boolean"
+           },
++          "skill_hash": {
++            "anyOf": [
++              {
++                "pattern": "^[a-f0-9]{64}$",
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Skill Hash"
++          },
++          "skill_version": {
++            "anyOf": [
++              {
++                "maxLength": 80,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Skill Version"
++          },
+           "used_fallback": {
+             "default": false,
+             "title": "Used Fallback",
+@@ -1518,10 +2549,17 @@
+             "type": "string"
+           },
+           "propensity": {
+-            "exclusiveMinimum": 0.0,
+-            "maximum": 1.0,
+-            "title": "Propensity",
+-            "type": "number"
++            "anyOf": [
++              {
++                "exclusiveMinimum": 0.0,
++                "maximum": 1.0,
++                "type": "number"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Propensity"
+           },
+           "recommended_action_id": {
+             "anyOf": [
+@@ -1548,7 +2586,6 @@
+         },
+         "required": [
+           "action_id",
+-          "propensity",
+           "policy_name",
+           "policy_version",
+           "safe_action_ids",
+@@ -2155,6 +3192,352 @@
+           "type"
+         ],
+         "title": "ValidationError",
++        "type": "object"
++      },
++      "journalpulse__activity_models__ActivityResource": {
++        "additionalProperties": false,
++        "description": "A server-approved descriptor. Search provenance never implies page review.",
++        "properties": {
++          "discovery_provenance": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/DiscoveryProvenance"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "duration_seconds": {
++            "anyOf": [
++              {
++                "maximum": 3600.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Duration Seconds"
++          },
++          "format": {
++            "enum": [
++              "timer",
++              "external",
++              "manual"
++            ],
++            "title": "Format",
++            "type": "string"
++          },
++          "id": {
++            "maxLength": 120,
++            "minLength": 1,
++            "title": "Id",
++            "type": "string"
++          },
++          "instructions": {
++            "items": {
++              "type": "string"
++            },
++            "maxItems": 8,
++            "title": "Instructions",
++            "type": "array"
++          },
++          "kind": {
++            "enum": [
++              "meditation",
++              "movement",
++              "reflection",
++              "connection",
++              "focus",
++              "video",
++              "reading",
++              "other"
++            ],
++            "title": "Kind",
++            "type": "string"
++          },
++          "provenance": {
++            "enum": [
++              "builtin",
++              "catalog",
++              "search_snippet"
++            ],
++            "title": "Provenance",
++            "type": "string"
++          },
++          "provider": {
++            "default": "JournalPulse",
++            "maxLength": 120,
++            "minLength": 1,
++            "title": "Provider",
++            "type": "string"
++          },
++          "resource_type": {
++            "default": "activity",
++            "maxLength": 40,
++            "minLength": 1,
++            "title": "Resource Type",
++            "type": "string"
++          },
++          "title": {
++            "maxLength": 200,
++            "minLength": 1,
++            "title": "Title",
++            "type": "string"
++          },
++          "url": {
++            "anyOf": [
++              {
++                "maxLength": 2048,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Url"
++          }
++        },
++        "required": [
++          "id",
++          "title",
++          "format",
++          "kind",
++          "provenance"
++        ],
++        "title": "ActivityResource",
++        "type": "object"
++      },
++      "journalpulse__activity_resources__ActivityResource": {
++        "additionalProperties": false,
++        "properties": {
++          "breath_focus": {
++            "default": false,
++            "title": "Breath Focus",
++            "type": "boolean"
++          },
++          "coping_style": {
++            "enum": [
++              "watch",
++              "move",
++              "read",
++              "play",
++              "connect",
++              "ground",
++              "reflect"
++            ],
++            "title": "Coping Style",
++            "type": "string"
++          },
++          "discovery_provenance": {
++            "anyOf": [
++              {
++                "$ref": "#/components/schemas/DiscoveryProvenance"
++              },
++              {
++                "type": "null"
++              }
++            ]
++          },
++          "duration_minutes": {
++            "anyOf": [
++              {
++                "maximum": 20.0,
++                "minimum": 1.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Duration Minutes"
++          },
++          "duration_seconds": {
++            "anyOf": [
++              {
++                "maximum": 1200.0,
++                "minimum": 30.0,
++                "type": "integer"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Duration Seconds"
++          },
++          "emotion_tags": {
++            "items": {
++              "type": "string"
++            },
++            "maxItems": 8,
++            "title": "Emotion Tags",
++            "type": "array"
++          },
++          "evidence_kind": {
++            "enum": [
++              "app_guidance",
++              "catalog_review",
++              "search_snippet"
++            ],
++            "title": "Evidence Kind",
++            "type": "string"
++          },
++          "goal_tags": {
++            "items": {
++              "type": "string"
++            },
++            "maxItems": 8,
++            "title": "Goal Tags",
++            "type": "array"
++          },
++          "id": {
++            "maxLength": 120,
++            "minLength": 1,
++            "title": "Id",
++            "type": "string"
++          },
++          "instructions": {
++            "items": {
++              "type": "string"
++            },
++            "maxItems": 8,
++            "title": "Instructions",
++            "type": "array"
++          },
++          "kind": {
++            "enum": [
++              "meditation",
++              "movement",
++              "reading",
++              "video",
++              "social",
++              "play",
++              "reflection",
++              "focus"
++            ],
++            "title": "Kind",
++            "type": "string"
++          },
++          "no_audio": {
++            "default": false,
++            "title": "No Audio",
++            "type": "boolean"
++          },
++          "no_video": {
++            "default": false,
++            "title": "No Video",
++            "type": "boolean"
++          },
++          "provider": {
++            "maxLength": 120,
++            "minLength": 1,
++            "title": "Provider",
++            "type": "string"
++          },
++          "resource_type": {
++            "enum": [
++              "activity",
++              "video",
++              "website",
++              "game"
++            ],
++            "title": "Resource Type",
++            "type": "string"
++          },
++          "reviewed_at": {
++            "anyOf": [
++              {
++                "maxLength": 80,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Reviewed At"
++          },
++          "seated": {
++            "default": false,
++            "title": "Seated",
++            "type": "boolean"
++          },
++          "source": {
++            "enum": [
++              "builtin",
++              "catalog",
++              "search_snippet"
++            ],
++            "title": "Source",
++            "type": "string"
++          },
++          "source_tier": {
++            "anyOf": [
++              {
++                "maxLength": 80,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Source Tier"
++          },
++          "summary": {
++            "maxLength": 800,
++            "minLength": 1,
++            "title": "Summary",
++            "type": "string"
++          },
++          "timer_enabled": {
++            "default": false,
++            "title": "Timer Enabled",
++            "type": "boolean"
++          },
++          "title": {
++            "maxLength": 200,
++            "minLength": 1,
++            "title": "Title",
++            "type": "string"
++          },
++          "url": {
++            "anyOf": [
++              {
++                "maxLength": 2048,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Url"
++          },
++          "why_selected": {
++            "anyOf": [
++              {
++                "maxLength": 420,
++                "type": "string"
++              },
++              {
++                "type": "null"
++              }
++            ],
++            "title": "Why Selected"
++          }
++        },
++        "required": [
++          "id",
++          "title",
++          "summary",
++          "provider",
++          "resource_type",
++          "coping_style",
++          "kind",
++          "source",
++          "evidence_kind"
++        ],
++        "title": "ActivityResource",
+         "type": "object"
+       }
+     }
+@@ -2337,6 +3720,324 @@
+         "summary": "Preview Actions"
+       }
+     },
++    "/v1/activity-sessions/{session_id}": {
++      "get": {
++        "operationId": "read_activity_v1_activity_sessions__session_id__get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "session_id",
++            "required": true,
++            "schema": {
++              "format": "uuid",
++              "title": "Session Id",
++              "type": "string"
++            }
++          },
++          {
++            "in": "header",
++            "name": "authorization",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "Authorization"
++            }
++          },
++          {
++            "in": "header",
++            "name": "X-JournalPulse-User",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "X-Journalpulse-User"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/ActivitySession"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Read Activity"
++      }
++    },
++    "/v1/activity-sessions/{session_id}/commands": {
++      "post": {
++        "operationId": "control_activity_v1_activity_sessions__session_id__commands_post",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "session_id",
++            "required": true,
++            "schema": {
++              "format": "uuid",
++              "title": "Session Id",
++              "type": "string"
++            }
++          },
++          {
++            "in": "header",
++            "name": "authorization",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "Authorization"
++            }
++          },
++          {
++            "in": "header",
++            "name": "X-JournalPulse-User",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "X-Journalpulse-User"
++            }
++          }
++        ],
++        "requestBody": {
++          "content": {
++            "application/json": {
++              "schema": {
++                "$ref": "#/components/schemas/ActivityCommandRequest"
++              }
++            }
++          },
++          "required": true
++        },
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/ActivitySession"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Control Activity"
++      }
++    },
++    "/v1/activity-sessions/{session_id}/follow-up": {
++      "post": {
++        "operationId": "follow_up_activity_v1_activity_sessions__session_id__follow_up_post",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "session_id",
++            "required": true,
++            "schema": {
++              "format": "uuid",
++              "title": "Session Id",
++              "type": "string"
++            }
++          },
++          {
++            "in": "header",
++            "name": "authorization",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "Authorization"
++            }
++          },
++          {
++            "in": "header",
++            "name": "X-JournalPulse-User",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "X-Journalpulse-User"
++            }
++          }
++        ],
++        "requestBody": {
++          "content": {
++            "application/json": {
++              "schema": {
++                "$ref": "#/components/schemas/ActivityFollowUpRequest"
++              }
++            }
++          },
++          "required": true
++        },
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/ActivitySession"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Follow Up Activity"
++      }
++    },
++    "/v1/activity-sessions/{session_id}/report": {
++      "post": {
++        "operationId": "report_activity_v1_activity_sessions__session_id__report_post",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "session_id",
++            "required": true,
++            "schema": {
++              "format": "uuid",
++              "title": "Session Id",
++              "type": "string"
++            }
++          },
++          {
++            "in": "header",
++            "name": "authorization",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "Authorization"
++            }
++          },
++          {
++            "in": "header",
++            "name": "X-JournalPulse-User",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "X-Journalpulse-User"
++            }
++          }
++        ],
++        "requestBody": {
++          "content": {
++            "application/json": {
++              "schema": {
++                "$ref": "#/components/schemas/ActivityReportRequest"
++              }
++            }
++          },
++          "required": true
++        },
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/ActivitySession"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Report Activity"
++      }
++    },
+     "/v1/conversations": {
+       "post": {
+         "operationId": "start_conversation_v1_conversations_post",
+@@ -2626,6 +4327,166 @@
+         "summary": "Accept Card"
+       }
+     },
++    "/v1/conversations/{conversation_id}/activity-sessions": {
++      "get": {
++        "operationId": "latest_activity_v1_conversations__conversation_id__activity_sessions_get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "conversation_id",
++            "required": true,
++            "schema": {
++              "format": "uuid",
++              "title": "Conversation Id",
++              "type": "string"
++            }
++          },
++          {
++            "in": "header",
++            "name": "authorization",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "Authorization"
++            }
++          },
++          {
++            "in": "header",
++            "name": "X-JournalPulse-User",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "X-Journalpulse-User"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "anyOf": [
++                    {
++                      "$ref": "#/components/schemas/ActivitySession"
++                    },
++                    {
++                      "type": "null"
++                    }
++                  ],
++                  "title": "Response Latest Activity V1 Conversations  Conversation Id  Activity Sessions Get"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Latest Activity"
++      },
++      "post": {
++        "operationId": "offer_activity_v1_conversations__conversation_id__activity_sessions_post",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "conversation_id",
++            "required": true,
++            "schema": {
++              "format": "uuid",
++              "title": "Conversation Id",
++              "type": "string"
++            }
++          },
++          {
++            "in": "header",
++            "name": "authorization",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "Authorization"
++            }
++          },
++          {
++            "in": "header",
++            "name": "X-JournalPulse-User",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "X-Journalpulse-User"
++            }
++          }
++        ],
++        "requestBody": {
++          "content": {
++            "application/json": {
++              "schema": {
++                "$ref": "#/components/schemas/CreateActivitySessionRequest"
++              }
++            }
++          },
++          "required": true
++        },
++        "responses": {
++          "201": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/ActivitySession"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Offer Activity"
++      }
++    },
+     "/v1/conversations/{conversation_id}/close": {
+       "post": {
+         "operationId": "close_conversation_v1_conversations__conversation_id__close_post",
+@@ -2696,6 +4557,88 @@
+           }
+         },
+         "summary": "Close Conversation"
++      }
++    },
++    "/v1/conversations/{conversation_id}/discover": {
++      "post": {
++        "operationId": "discover_v1_conversations__conversation_id__discover_post",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "conversation_id",
++            "required": true,
++            "schema": {
++              "format": "uuid",
++              "title": "Conversation Id",
++              "type": "string"
++            }
++          },
++          {
++            "in": "header",
++            "name": "authorization",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "Authorization"
++            }
++          },
++          {
++            "in": "header",
++            "name": "X-JournalPulse-User",
++            "required": false,
++            "schema": {
++              "anyOf": [
++                {
++                  "type": "string"
++                },
++                {
++                  "type": "null"
++                }
++              ],
++              "title": "X-Journalpulse-User"
++            }
++          }
++        ],
++        "requestBody": {
++          "content": {
++            "application/json": {
++              "schema": {
++                "$ref": "#/components/schemas/InlineDiscoveryRequest"
++              }
++            }
++          },
++          "required": true
++        },
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/InlineDiscoveryResponse"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Discover"
+       }
+     },
+     "/v1/conversations/{conversation_id}/messages": {
+--- /dev/null
++++ b/web/tests/integration/guided-action.spec.ts
+@@ -0,0 +1,151 @@
++// Real UI/API/PostgREST/PostgreSQL. Auth, Luna and Brave remain named local
++// test doubles; these checks establish the activity loop, not emotional benefit.
++import { expect, type APIRequestContext, type Page, test } from "@playwright/test";
++
++type Session = { user_id: string; access_token: string };
++type Activity = {
++  id: string;
++  status: string;
++  remaining_seconds: number;
++  follow_up_status: string;
++  report: { participation: string; state_change: string | null } | null;
++};
++
++async function sessionFor(request: APIRequestContext, name: string): Promise<Session> {
++  const response = await request.get(`http://127.0.0.1:54321/test/session/${name}`);
++  expect(response.ok()).toBeTruthy();
++  return response.json();
++}
++
++function headers(who: Session) {
++  return { Authorization: `Bearer ${who.access_token}` };
++}
++
++async function clearAccount(request: APIRequestContext, who: Session) {
++  expect((await request.delete("/v1/account/data", { headers: headers(who) })).ok()).toBeTruthy();
++}
++
++async function signIn(page: Page, who: Session) {
++  await page.addInitScript((session: Session) => {
++    window.localStorage.setItem(`journalpulse_preferences_v1:${session.user_id}`, JSON.stringify({
++      onboarded: true, llmConsent: true, retainText: false, encryptedDrafts: false,
++      followUpMinutes: 10, locale: "CA",
++    }));
++    window.localStorage.setItem("sb-127-auth-token", JSON.stringify({
++      access_token: session.access_token, refresh_token: "integration-refresh",
++      token_type: "bearer", expires_in: 86400,
++      expires_at: Math.floor(Date.now() / 1000) + 86400,
++      user: { id: session.user_id, aud: "authenticated", role: "authenticated" },
++    }));
++  }, who);
++}
++
++async function getActivity(request: APIRequestContext, who: Session, chatId: string): Promise<Activity> {
++  const response = await request.get(`/v1/conversations/${chatId}/activity-sessions`, { headers: headers(who) });
++  expect(response.ok()).toBeTruthy();
++  return response.json();
++}
++
++async function askForQuietPause(page: Page) {
++  await page.goto("/talk/");
++  await page.getByLabel("Message Luna").fill("A fictional busy afternoon has left my head feeling crowded.");
++  await page.getByRole("button", { name: "Send", exact: true }).click();
++  await expect(page.getByLabel("Message Luna")).toHaveValue("");
++  await expect(page.getByLabel("Message Luna")).toBeEnabled();
++  await page.getByLabel("Message Luna").fill("I have two minutes and would like a quiet seated pause, without audio.");
++  await expect(page.getByRole("button", { name: "Send", exact: true })).toBeEnabled();
++  await page.getByRole("button", { name: "Send", exact: true }).click();
++  await expect(page.getByLabel("Message Luna")).toHaveValue("");
++  await expect(page.getByRole("button", { name: "Start activity", exact: true })).toBeVisible();
++}
++
++test("meditation stays in chat and a paused session survives reload before an honest check-in", async ({ page, request }, testInfo) => {
++  const who = await sessionFor(request, "grace");
++  await clearAccount(request, who);
++  try {
++    await signIn(page, who);
++    await askForQuietPause(page);
++    const chatId = new URL(page.url()).searchParams.get("c");
++    expect(chatId).toBeTruthy();
++    const activityPanel = page.getByRole("region", { name: "Activity with Luna", exact: true });
++    await expect(activityPanel.getByRole("heading", { name: "Two-minute quiet meditation", exact: true })).toBeVisible();
++    // A keyboard activation follows the same owner-bound start command as a tap.
++    const start = activityPanel.getByRole("button", { name: "Start activity", exact: true });
++    await start.focus();
++    await page.keyboard.press("Enter");
++    await expect(activityPanel.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
++    await expect(activityPanel.getByRole("timer")).toHaveAttribute("aria-live", "off");
++    let activity = await getActivity(request, who, chatId!);
++    expect(activity.status).toBe("active");
++    const chat = await (await request.get(`/v1/conversations/${chatId}`, { headers: headers(who) })).json();
++    expect(chat.conversation.status).toBe("open");
++    expect(chat.messages.some((message: { content: string | null }) => message.content?.includes("fictional busy afternoon"))).toBeTruthy();
++
++    await activityPanel.getByRole("button", { name: "Pause", exact: true }).click();
++    await expect(activityPanel.getByRole("button", { name: "Resume", exact: true })).toBeVisible();
++    activity = await getActivity(request, who, chatId!);
++    expect(activity.status).toBe("paused");
++    const pausedRemaining = activity.remaining_seconds;
++    await page.reload();
++    await expect(activityPanel.getByRole("button", { name: "Resume", exact: true })).toBeVisible();
++    const recovered = await getActivity(request, who, chatId!);
++    expect(recovered.id).toBe(activity.id);
++    expect(recovered.remaining_seconds).toBe(pausedRemaining);
++    expect(recovered.report).toBeNull();
++
++    await activityPanel.getByRole("button", { name: "Finish early", exact: true }).click();
++    await expect(activityPanel.getByText("Did you try it?", { exact: true })).toHaveCount(1);
++    await activityPanel.getByRole("radio", { name: "Not tried", exact: true }).check();
++    await activityPanel.getByRole("button", { name: "Save check-in", exact: true }).click();
++    await expect.poll(async () => (await getActivity(request, who, chatId!)).follow_up_status).toBe("ready");
++    const reported = await getActivity(request, who, chatId!);
++    expect(reported.report?.participation).toBe("not_tried");
++    // Opening or timing an activity cannot create a legacy completed outcome.
++    const exported = await (await request.get("/v1/export", { headers: headers(who) })).json();
++    expect(exported.outcomes).toEqual([]);
++    expect(exported.activity_sessions).toHaveLength(1);
++    await expect(page.getByLabel("Message Luna")).toBeEnabled();
++    const stillOpen = await (await request.get(`/v1/conversations/${chatId}`, { headers: headers(who) })).json();
++    expect(stillOpen.conversation.status).toBe("open");
++    await page.screenshot({ path: testInfo.outputPath("guided-action-mobile-check-in.png"), fullPage: true });
++  } finally {
++    await clearAccount(request, who);
++  }
++});
++
++test("changing account while an activity is running removes its private panel and controls", async ({ page, request }) => {
++  const first = await sessionFor(request, "grace");
++  const second = await sessionFor(request, "frank");
++  for (const who of [first, second]) await clearAccount(request, who);
++  try {
++    await signIn(page, first);
++    await askForQuietPause(page);
++    await page.getByRole("button", { name: "Start activity", exact: true }).click();
++    await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
++    const chatId = new URL(page.url()).searchParams.get("c");
++    expect(chatId).toBeTruthy();
++    const activity = await getActivity(request, first, chatId!);
++    const originalUrl = page.url();
++    await page.evaluate((who: Session) => {
++      const nextSession = {
++        access_token: who.access_token, refresh_token: "integration-refresh", token_type: "bearer",
++        expires_in: 86400, expires_at: Math.floor(Date.now() / 1000) + 86400,
++        user: { id: who.user_id, aud: "authenticated", role: "authenticated" },
++      };
++      window.localStorage.setItem("sb-127-auth-token", JSON.stringify(nextSession));
++      const channel = new BroadcastChannel("sb-127-auth-token");
++      channel.postMessage({ event: "SIGNED_IN", session: nextSession });
++      channel.close();
++    }, second);
++    await expect(page.getByRole("region", { name: "Activity with Luna", exact: true })).toHaveCount(0);
++    await expect(page.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
++    await expect(page.getByText("Did you try it?", { exact: true })).toHaveCount(0);
++    await expect(page.getByText("A fictional busy afternoon has left my head feeling crowded.", { exact: true })).toHaveCount(0);
++    expect(page.url()).toBe(originalUrl);
++    // UI disappearance is backed by owner enforcement on the real API.
++    expect((await request.get(`/v1/activity-sessions/${activity.id}`, { headers: headers(second) })).status()).toBe(404);
++    expect((await request.get(`/v1/activity-sessions/${activity.id}`, { headers: headers(first) })).status()).toBe(200);
++  } finally {
++    for (const who of [first, second]) await clearAccount(request, who);
++  }
++});

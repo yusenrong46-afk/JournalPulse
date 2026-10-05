@@ -1,0 +1,8 @@
+{
+  "changed_files": [
+    "vercel.json"
+  ],
+  "exclusion_length": 227,
+  "luna_runtime_changed": false,
+  "reason": "Vercel function excludeFiles has 256-character limit"
+}

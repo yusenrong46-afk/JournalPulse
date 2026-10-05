@@ -1,0 +1,13 @@
+{
+  "corrections": [
+    {
+      "issue": "New runner syntax typo caught during compile; corrected before any paid model request.",
+      "extra_paid_calls": 0
+    },
+    {
+      "issue": "Judge helper takes case and two observations, without dataset positional argument. Corrected before any paid teacher request.",
+      "extra_paid_calls": 0
+    }
+  ],
+  "product_source_changed": false
+}

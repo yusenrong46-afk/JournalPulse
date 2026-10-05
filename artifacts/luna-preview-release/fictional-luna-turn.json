@@ -1,0 +1,155 @@
+{
+  "assistant_message": {
+    "client_message_id": null,
+    "content": "A one-minute quiet meditation is available. You could sit and notice the chair beneath you or a sound nearby; it\u2019s silent and seated, and you can stop whenever you like.",
+    "conversation_id": "16e8d183-828e-41c5-bc1a-139a8b9fdb48",
+    "created_at": "2026-10-05T20:59:53.833011Z",
+    "id": "b5154392-d780-4192-bec0-09be32f557e7",
+    "model_run": {
+      "completion_tokens": 227,
+      "fallback_reason": null,
+      "latency_ms": 2128,
+      "model": "openai/gpt-6-luna",
+      "prompt_tokens": 4627,
+      "prompt_version": "guided-action-2026-10-05.3",
+      "provider": "Azure",
+      "schema_valid": true,
+      "skill_hash": "abb73f69089a8591e5f30f1ac62e4557cd0a62f45d408d8fdf718f1bd4808270",
+      "skill_version": "guided-action-2026-10-05.3",
+      "used_fallback": false
+    },
+    "request_inputs": null,
+    "role": "assistant",
+    "safety_mode": "normal"
+  },
+  "conversation": {
+    "activity_card": {
+      "actions": [
+        {
+          "breath_focus": false,
+          "coping_style": "ground",
+          "discovery_provenance": null,
+          "duration_minutes": 1,
+          "duration_seconds": 60,
+          "emotion_tags": [],
+          "evidence_kind": "app_guidance",
+          "goal_tags": [
+            "settle",
+            "ground"
+          ],
+          "id": "guided_meditation_1m",
+          "instructions": [
+            "Sit comfortably, with your eyes open or closed as you prefer.",
+            "Notice the contact of the chair or floor, or a sound around you. Breathe naturally.",
+            "Gently return your attention when it wanders. You can stop at any point."
+          ],
+          "kind": "meditation",
+          "no_audio": true,
+          "no_video": true,
+          "provider": "JournalPulse",
+          "resource_type": "activity",
+          "reviewed_at": null,
+          "seated": true,
+          "source": "builtin",
+          "source_tier": null,
+          "summary": "A shorter, silent pause when only one minute is available.",
+          "timer_enabled": true,
+          "title": "One-minute quiet meditation",
+          "url": null,
+          "why_selected": null
+        }
+      ],
+      "card_reason": "It matches your request for a brief, silent, seated pause to feel more settled.",
+      "decision_preview": {
+        "action_id": "guided_meditation_1m",
+        "context_snapshot": {
+          "model_run": {
+            "completion_tokens": 227,
+            "fallback_reason": null,
+            "latency_ms": 2128,
+            "model": "openai/gpt-6-luna",
+            "prompt_tokens": 4627,
+            "prompt_version": "guided-action-2026-10-05.3",
+            "provider": "Azure",
+            "schema_valid": true,
+            "skill_hash": "abb73f69089a8591e5f30f1ac62e4557cd0a62f45d408d8fdf718f1bd4808270",
+            "skill_version": "guided-action-2026-10-05.3",
+            "used_fallback": false
+          },
+          "source": "luna-guided-action"
+        },
+        "decision_id": "10b7039c-64ce-4a60-8605-48303999bc9f",
+        "eligible_for_ope": false,
+        "explanation": "It matches your request for a brief, silent, seated pause to feel more settled.",
+        "policy_name": "luna-guided-action",
+        "policy_version": "guided-action-2026-10-05.3",
+        "propensity": null,
+        "recommended_action_id": null,
+        "safe_action_ids": [
+          "guided_meditation_1m"
+        ],
+        "selection_source": "policy"
+      },
+      "goal": "settle",
+      "offered_message_id": "b5154392-d780-4192-bec0-09be32f557e7",
+      "resource_intent": "ground"
+    },
+    "activity_constraints": {
+      "avoid_breath_focus": true,
+      "no_audio": true,
+      "no_video": true,
+      "seated": true,
+      "time_minutes": 1
+    },
+    "activity_goal": "settle",
+    "activity_move": "propose",
+    "activity_search_topic": null,
+    "card": null,
+    "confirmed_feelings": null,
+    "created_at": "2026-10-05T20:59:53.125314Z",
+    "feelings": [
+      "overwhelmed"
+    ],
+    "id": "16e8d183-828e-41c5-bc1a-139a8b9fdb48",
+    "interaction_preference": "auto",
+    "llm_consent": true,
+    "locale": "CA",
+    "mode": "ai",
+    "prompt_version": "guided-action-2026-10-05.3",
+    "ready_for_action": true,
+    "reflection_id": null,
+    "reported_mood": null,
+    "retain_text": true,
+    "revision": 1,
+    "safety": {
+      "exploration_allowed": true,
+      "locale": "CA",
+      "mode": "normal",
+      "reasons": [],
+      "resource_ids": [],
+      "support_message": null
+    },
+    "safety_mode": "normal",
+    "source_entry_created_at": null,
+    "source_entry_id": null,
+    "status": "open",
+    "summary": "Your head feels crowded after a busy workday, and you\u2019d like a brief quiet pause.",
+    "updated_at": "2026-10-05T20:59:53.833011Z",
+    "user_id": "111cafa9-4bab-45e9-a4ed-e69c7bbd0ec3"
+  },
+  "user_message": {
+    "client_message_id": "0cd43dcc-f7b7-49f4-9328-6b13d9d199b1",
+    "content": "My head feels crowded after a busy workday. I would like a one-minute silent meditation, seated, without audio or video, to feel more settled. Please suggest the available one-minute activity.",
+    "conversation_id": "16e8d183-828e-41c5-bc1a-139a8b9fdb48",
+    "created_at": "2026-10-05T20:59:53.833010Z",
+    "id": "cb450e49-e993-4b21-aa6f-06dd3fd45c3b",
+    "model_run": null,
+    "request_inputs": {
+      "confirmed_feelings": null,
+      "goal": null,
+      "mood_score": null
+    },
+    "role": "user",
+    "safety_mode": "normal"
+  }
+}

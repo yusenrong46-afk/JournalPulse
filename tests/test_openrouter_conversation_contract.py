@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 
 import httpx
@@ -9,6 +10,7 @@ from journalpulse.domain import FEELINGS
 from journalpulse.intelligence import (
     CONVERSATION_JSON_SCHEMA,
     CONVERSATION_PROMPT_VERSION,
+    CompletionDiagnostic,
     ConversationProviderError,
     OpenRouterConversationClient,
     UnsupportedProviderResponse,
@@ -88,7 +90,7 @@ def test_luna_request_uses_only_documented_parameters(tmp_path: Path):
         ]
     )
     assert observed["model"] == "openai/gpt-6-luna"
-    assert observed["provider"] == {"zdr": True}
+    assert observed["provider"] == {"zdr": True, "require_parameters": True}
     assert "temperature" not in observed
     assert set(observed) == ALLOWED_BODY_KEYS
     assert observed["reasoning"] == {"effort": "medium"}
@@ -133,7 +135,7 @@ def test_upstream_rate_limit_raises_instead_of_crashing(tmp_path: Path):
             json={"error": {"message": "rate-limited upstream", "code": 429}},
         )
 
-    with pytest.raises(ConversationProviderError, match="rate-limited upstream") as caught:
+    with pytest.raises(ConversationProviderError, match="temporarily unavailable") as caught:
         OpenRouterConversationClient(
             settings(tmp_path),
             client=httpx.Client(transport=httpx.MockTransport(handler)),
@@ -214,3 +216,248 @@ def test_suggested_feelings_come_only_from_the_allowed_list(tmp_path: Path):
             settings(tmp_path),
             client=httpx.Client(transport=httpx.MockTransport(invented)),
         ).complete([{"role": "user", "content": "Hello."}])
+
+
+@pytest.mark.parametrize("payload", [
+    [], {}, {"choices": []}, {"choices": [None]}, {"choices": ["reply"]},
+    {"choices": [{"message": None}]},
+    {"choices": [{"message": {"content": json.dumps(_payload())}}], "usage": None},
+    {"choices": [{"message": {"content": json.dumps(_payload())}}], "usage": {"prompt_tokens": -1}},
+])
+def test_malformed_provider_envelope_is_a_controlled_error(tmp_path: Path, payload: object):
+    with pytest.raises(ConversationProviderError):
+        OpenRouterConversationClient(
+            settings(tmp_path),
+            client=httpx.Client(transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, json=payload),
+            )),
+        ).complete([{"role": "user", "content": "Hello."}])
+
+
+@pytest.mark.parametrize("changed", [
+    {"offer_action": "yes", "card_reason": "An unrequested action."},
+    {"offer_action": 1, "card_reason": "An unrequested action."},
+    {"resource_intent": "invented"}, {"unexpected": "untrusted field"},
+    {"reply": " \n "}, {"summary": " "},
+])
+def test_schema_valid_means_exact_output_contract(tmp_path: Path, changed: dict):
+    with pytest.raises(ConversationProviderError, match="schema"):
+        OpenRouterConversationClient(
+            settings(tmp_path),
+            client=httpx.Client(transport=httpx.MockTransport(
+                lambda _: _response(json.dumps(_payload(**changed))),
+            )),
+        ).complete([{"role": "user", "content": "Hello."}])
+
+
+@pytest.mark.parametrize("missing", ["card_reason", "feelings"])
+def test_provider_must_return_all_required_schema_fields(tmp_path: Path, missing: str):
+    output = _payload()
+    del output[missing]
+    with pytest.raises(ConversationProviderError, match="schema"):
+        OpenRouterConversationClient(
+            settings(tmp_path),
+            client=httpx.Client(transport=httpx.MockTransport(
+                lambda _: _response(json.dumps(output)),
+            )),
+        ).complete([{"role": "user", "content": "Hello."}])
+
+
+@pytest.mark.parametrize("status", [200, 401, 429, 500])
+def test_provider_diagnostics_are_not_exposed_to_the_user(tmp_path: Path, status: int):
+    with pytest.raises(ConversationProviderError) as caught:
+        OpenRouterConversationClient(
+            settings(tmp_path, openrouter_max_attempts=1),
+            client=httpx.Client(transport=httpx.MockTransport(
+                lambda _: httpx.Response(status, json={
+                    "error": {"code": 429, "message": "PRIVATE_PROVIDER_DIAGNOSTIC"},
+                }),
+            )),
+        ).complete([{"role": "user", "content": "Hello."}])
+    assert "PRIVATE_PROVIDER_DIAGNOSTIC" not in str(caught.value)
+
+
+def test_provider_response_size_is_bounded(tmp_path: Path):
+    valid_json = json.dumps({"choices": [{"message": {"content": json.dumps(_payload())}}]}).encode()
+    with pytest.raises(ConversationProviderError):
+        OpenRouterConversationClient(
+            settings(tmp_path, openrouter_max_attempts=1),
+            client=httpx.Client(transport=httpx.MockTransport(
+                lambda _: httpx.Response(200, content=valid_json + b" " * 256_001),
+            )),
+        ).complete([{"role": "user", "content": "Hello."}])
+
+
+def test_provider_stream_obeys_total_deadline(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    # Advancing a controlled clock reproduces slow trickling without a slow test.
+    clock = iter([0.0, 3.0])
+    monkeypatch.setattr("journalpulse.intelligence.time.monotonic", lambda: next(clock))
+    with pytest.raises(ConversationProviderError, match="respond in time"):
+        OpenRouterConversationClient(
+            settings(tmp_path, openrouter_max_attempts=1, chat_timeout_seconds=2),
+            client=httpx.Client(transport=httpx.MockTransport(
+                lambda _: _response(json.dumps(_payload())),
+            )),
+        ).complete([{"role": "user", "content": "Hello."}])
+
+
+def test_stream_read_failure_is_controlled(tmp_path: Path):
+    def failed(_: httpx.Request) -> httpx.Response:
+        raise httpx.ReadError("PRIVATE_STREAM_ERROR")
+
+    with pytest.raises(ConversationProviderError) as caught:
+        OpenRouterConversationClient(
+            settings(tmp_path, openrouter_max_attempts=1),
+            client=httpx.Client(transport=httpx.MockTransport(failed)),
+        ).complete([{"role": "user", "content": "Hello."}])
+    assert "PRIVATE_STREAM_ERROR" not in str(caught.value)
+
+
+@pytest.mark.parametrize("content,expected_field,expected_type", [
+    (json.dumps(_payload(feelings=["PRIVATE_MODEL_VALUE"])), "feelings", "value_error"),
+    (json.dumps(_payload(**{"PRIVATE_UNKNOWN_KEY": "PRIVATE_MODEL_VALUE"})),
+     "unrecognized_field", "extra_forbidden"),
+    ("PRIVATE_RAW_MODEL_REPLY", "root", "json_invalid"),
+])
+def test_rejection_diagnostics_log_only_safe_field_and_error_types(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture,
+    content: str, expected_field: str, expected_type: str,
+):
+    with caplog.at_level(logging.WARNING, logger="journalpulse.intelligence"):
+        with pytest.raises(ConversationProviderError):
+            OpenRouterConversationClient(
+                settings(tmp_path),
+                client=httpx.Client(transport=httpx.MockTransport(lambda _: _response(content))),
+            ).complete([{"role": "user", "content": "PRIVATE_JOURNAL_INPUT"}])
+    records = [record for record in caplog.records if record.name == "journalpulse.intelligence"]
+    assert len(records) == 1
+    diagnostic = json.loads(records[0].getMessage().split(" ", 1)[1])
+    assert diagnostic["stage"] == "output_schema"
+    assert {"field": expected_field, "type": expected_type} in diagnostic["errors"]
+    assert "PRIVATE_" not in records[0].getMessage()
+    assert "test-only-key" not in records[0].getMessage()
+    assert records[0].exc_info is None
+
+
+@pytest.mark.parametrize("payload,expected_stage", [
+    ({"choices": []}, "envelope"),
+    ({"choices": [{"message": {"content": json.dumps(_payload())}}], "usage": None}, "usage_metadata"),
+])
+def test_rejection_diagnostics_distinguish_envelope_from_metadata(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, payload: dict, expected_stage: str,
+):
+    with caplog.at_level(logging.WARNING, logger="journalpulse.intelligence"):
+        with pytest.raises(ConversationProviderError):
+            OpenRouterConversationClient(
+                settings(tmp_path),
+                client=httpx.Client(transport=httpx.MockTransport(
+                    lambda _: httpx.Response(200, json=payload),
+                )),
+            ).complete([{"role": "user", "content": "PRIVATE_JOURNAL_INPUT"}])
+    diagnostic = json.loads(caplog.records[-1].getMessage().split(" ", 1)[1])
+    assert diagnostic["stage"] == expected_stage
+    assert "PRIVATE_" not in caplog.records[-1].getMessage()
+
+
+def test_cross_field_semantic_rejection_is_identified_without_output(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture,
+):
+    with caplog.at_level(logging.WARNING, logger="journalpulse.intelligence"):
+        with pytest.raises(ConversationProviderError):
+            OpenRouterConversationClient(
+                settings(tmp_path),
+                client=httpx.Client(transport=httpx.MockTransport(
+                    lambda _: _response(json.dumps(_payload(offer_action=True, card_reason=""))),
+                )),
+            ).complete([{"role": "user", "content": "PRIVATE_JOURNAL_INPUT"}])
+    diagnostic = json.loads(caplog.records[-1].getMessage().split(" ", 1)[1])
+    assert diagnostic["stage"] == "output_semantics"
+    assert diagnostic["errors"] == [{"field": "card_reason", "type": "nonblank_reason_required"}]
+
+
+def test_validation_diagnostics_are_bounded(tmp_path: Path, caplog: pytest.LogCaptureFixture):
+    output = _payload(**{f"PRIVATE_FIELD_{index}": "PRIVATE_VALUE" for index in range(30)})
+    with caplog.at_level(logging.WARNING, logger="journalpulse.intelligence"):
+        with pytest.raises(ConversationProviderError):
+            OpenRouterConversationClient(
+                settings(tmp_path),
+                client=httpx.Client(transport=httpx.MockTransport(
+                    lambda _: _response(json.dumps(output)),
+                )),
+            ).complete([{"role": "user", "content": "PRIVATE_JOURNAL_INPUT"}])
+    diagnostic = json.loads(caplog.records[-1].getMessage().split(" ", 1)[1])
+    assert len(diagnostic["errors"]) == 5
+    assert "PRIVATE_" not in caplog.records[-1].getMessage()
+
+
+def test_schema_failure_exposes_only_safe_diagnostic_headers(tmp_path: Path):
+    private = "private journal wording and model output"
+    body = _payload(reply=17, **{private: private})
+    with pytest.raises(ConversationProviderError) as caught:
+        OpenRouterConversationClient(
+            settings(tmp_path),
+            client=httpx.Client(transport=httpx.MockTransport(lambda _: _response(json.dumps(body)))),
+        ).complete([{"role": "user", "content": private}])
+    headers = caught.value.diagnostic_headers
+    assert headers["X-JournalPulse-Error-Stage"] == "output_schema"
+    assert "reply.string_type" in headers["X-JournalPulse-Error-Fields"]
+    assert "unrecognized_field.extra_forbidden" in headers["X-JournalPulse-Error-Fields"]
+    assert private not in json.dumps(headers)
+    assert "17" not in json.dumps(headers)
+
+
+def test_upstream_failure_is_distinguishable_from_invalid_model_output(tmp_path: Path):
+    with pytest.raises(ConversationProviderError) as caught:
+        OpenRouterConversationClient(
+            settings(tmp_path, openrouter_max_attempts=1),
+            client=httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(
+                200, json={"error": {"code": 502, "message": "private provider diagnostic"}},
+            ))),
+        ).complete([{"role": "user", "content": "Fictional writing."}])
+    assert caught.value.diagnostic_headers == {"X-JournalPulse-Error-Stage": "upstream_error"}
+
+
+def test_diagnostic_headers_remain_bounded_and_strip_unknown_values():
+    private = "PRIVATE_VALUE\r\nX-Evil: secret"
+    headers = CompletionDiagnostic(private, tuple((private, private) for _ in range(30))).headers
+    assert headers["X-JournalPulse-Error-Stage"] == "provider_response"
+    assert headers["X-JournalPulse-Error-Fields"].split(",") == [
+        "unrecognized_field.validation_error",
+    ] * 5
+    assert "PRIVATE" not in json.dumps(headers)
+    assert "secret" not in json.dumps(headers)
+
+
+@pytest.mark.parametrize("text,kind", [
+    ("", "empty"),
+    ("```json\nPRIVATE_MODEL_TEXT\n```", "markdown_fenced"),
+    ("PRIVATE_MODEL_TEXT", "plain_text"),
+    ('{"reply":"PRIVATE_MODEL_TEXT" trailing', "json_like"),
+])
+def test_invalid_json_shape_is_visible_without_response_text(tmp_path: Path, text: str, kind: str):
+    with pytest.raises(ConversationProviderError) as caught:
+        OpenRouterConversationClient(
+            settings(tmp_path),
+            client=httpx.Client(transport=httpx.MockTransport(lambda _: _response(text))),
+        ).complete([{"role": "user", "content": "PRIVATE_USER_TEXT"}])
+    headers = caught.value.diagnostic_headers
+    assert headers["X-JournalPulse-Error-Content"] == kind
+    assert headers["X-JournalPulse-Error-Finish"] == "stop"
+    assert "PRIVATE" not in json.dumps(headers)
+
+
+def test_provider_refusal_is_not_misreported_as_a_json_syntax_error(tmp_path: Path):
+    def refused(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={
+            "provider": "Azure", "choices": [{"finish_reason": "stop", "message": {
+                "content": "", "refusal": "PRIVATE_REFUSAL_TEXT",
+            }}],
+        })
+    with pytest.raises(ConversationProviderError) as caught:
+        OpenRouterConversationClient(
+            settings(tmp_path), client=httpx.Client(transport=httpx.MockTransport(refused)),
+        ).complete([{"role": "user", "content": "PRIVATE_USER_TEXT"}])
+    assert caught.value.diagnostic_headers["X-JournalPulse-Error-Stage"] == "provider_refusal"
+    assert caught.value.status_code == 422
+    assert caught.value.diagnostic_headers["X-JournalPulse-Error-Provider"] == "Azure"
+    assert "PRIVATE" not in json.dumps(caught.value.diagnostic_headers)

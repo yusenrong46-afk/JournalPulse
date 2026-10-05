@@ -77,7 +77,7 @@ def apply_user_choice(decision: PolicyDecision, chosen_action_id: str | None) ->
         update={
             "action_id": chosen_action_id,
             "recommended_action_id": recommended,
-            "propensity": 1.0,
+            "propensity": None if decision.propensity is None else 1.0,
             "policy_name": "user-choice",
             "policy_version": "1.0.0",
             "selection_source": SelectionSource.USER_OVERRIDE,

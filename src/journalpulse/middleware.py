@@ -34,7 +34,11 @@ class RequestContextMiddleware:
         content_length = headers.get(b"content-length")
         if content_length:
             try:
-                if int(content_length) > self.max_request_bytes:
+                length = int(content_length)
+                if length < 0:
+                    await self._bad_length(send, request_id)
+                    return
+                if length > self.max_request_bytes:
                     await self._too_large(send, request_id)
                     return
             except ValueError:
@@ -43,16 +47,14 @@ class RequestContextMiddleware:
 
         started = time.perf_counter()
         status_code = 500
-        received_bytes = 0
+        pending_body: Message | None = None
 
-        async def receive_with_limit() -> Message:
-            nonlocal received_bytes
-            message = await receive()
-            if message["type"] == "http.request":
-                received_bytes += len(message.get("body", b""))
-                if received_bytes > self.max_request_bytes:
-                    raise RequestBodyTooLarge
-            return message
+        async def receive_buffered() -> Message:
+            nonlocal pending_body
+            if pending_body is not None:
+                message, pending_body = pending_body, None
+                return message
+            return await receive()
 
         async def send_with_context(message: Message) -> None:
             nonlocal status_code
@@ -71,7 +73,22 @@ class RequestContextMiddleware:
             await send(message)
 
         try:
-            await self.app(scope, receive_with_limit, send_with_context)
+            # Buffer at most the configured small JSON-body limit before entering
+            # FastAPI. Its parser otherwise catches a receive exception as HTTP 400,
+            # hiding the size error for requests without Content-Length.
+            body = bytearray()
+            while True:
+                message = await receive()
+                if message["type"] == "http.disconnect":
+                    return
+                chunk = message.get("body", b"")
+                if len(body) + len(chunk) > self.max_request_bytes:
+                    raise RequestBodyTooLarge
+                body.extend(chunk)
+                if not message.get("more_body", False):
+                    break
+            pending_body = {"type": "http.request", "body": bytes(body), "more_body": False}
+            await self.app(scope, receive_buffered, send_with_context)
         except RequestBodyTooLarge:
             status_code = 413
             await self._too_large(send, request_id)
@@ -137,11 +154,22 @@ class SlidingWindowRateLimiter:
         self.window_seconds = window_seconds
         self._events: dict[str, list[float]] = {}
         self._lock = threading.Lock()
+        self._next_cleanup = 0.0
 
     def check(self, key: str, *, now: float | None = None) -> tuple[bool, int]:
         current = time.monotonic() if now is None else now
         cutoff = current - self.window_seconds
         with self._lock:
+            # Reclaim inactive identities once per window, without evicting active
+            # users and accidentally resetting their rate limits.
+            if current >= self._next_cleanup:
+                expired = [
+                    identity for identity, history in self._events.items()
+                    if not history or history[-1] <= cutoff
+                ]
+                for identity in expired:
+                    del self._events[identity]
+                self._next_cleanup = current + self.window_seconds
             events = [timestamp for timestamp in self._events.get(key, []) if timestamp > cutoff]
             if len(events) >= self.limit:
                 retry_after = max(1, round(events[0] + self.window_seconds - current))

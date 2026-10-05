@@ -1,0 +1,16 @@
+{
+  "source_hashes": {
+    "src/journalpulse/activity_resources.py": "04915b3cd97826a7468f5aeb5738565de07c81da6a6c6a7ede28bb34e2d73add",
+    "src/journalpulse/guided_action.py": "f25582d361f3b02c8ddca57b9f1bf96181b3cdd1ac77ff140a15bfb55d3e8da9",
+    "src/journalpulse/activity_chat.py": "ab4e59bdcbe048b1bb67b861f3d6b6571f30bac91316d2e007427b42b7d93785",
+    "src/journalpulse/intelligence.py": "059f70b8bd80a1f09b34c60a102e92ef4e05e15fb69ef07e850c7020ffa2741b",
+    "src/journalpulse/conversations.py": "fc28deb7e87edb3250ae7fa5ed9e6b257aba9ca59945e65f1dad554557996cea",
+    "src/journalpulse/skills/guided_action/SKILL.md": "6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49",
+    "assets/evaluation/luna-guided-action-v3.json": "ffbec1dec34d021122f4a05b4906b64c15c70cf9565c07a128e16e87b3baa990"
+  },
+  "skill_version": "guided-action-2026-10-05.2",
+  "skill_sha256": "6e521597f0ffb14c47ac1c893f3d2fa4ebd7b7605eed1daef9509812c57cda49",
+  "bundle_sha256": "212a511b36f1ec7e683565b695740096c00f5d6319c069ddbb380bfc32987307",
+  "fresh_holdout_outputs_observed": false,
+  "baseline_captured_before_prompt_change": true
+}

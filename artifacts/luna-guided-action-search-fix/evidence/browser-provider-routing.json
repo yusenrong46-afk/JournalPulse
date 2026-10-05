@@ -1,0 +1,11 @@
+{
+  "name": "provider-routing",
+  "url": "https://openrouter.ai/docs/guides/routing/provider-selection",
+  "final_url": "https://openrouter.ai/docs/guides/routing/provider-selection",
+  "status": 200,
+  "title": "Provider Routing - Smart Multi-Provider Request Management",
+  "checked_at": "2026-10-05T18:02:05.771Z",
+  "characters": 37720,
+  "browser": "/usr/bin/chromium",
+  "retrieval_method": "Playwright request with configured Node CA validation; exact HTML rendered in Chromium, assets blocked"
+}

@@ -1,0 +1,21 @@
+{
+  "dataset_sha256": "09160dfddabc1e9677400177ce3428fa733cf645b2a3094c5fa88ce819007cb5",
+  "raw_dataset_sha256": "ffbec1dec34d021122f4a05b4906b64c15c70cf9565c07a128e16e87b3baa990",
+  "holdout_count": 24,
+  "fresh_family_count": 24,
+  "candidate_contract_design": "Finite search categories; server compiles public query from category and constraints; never widen private-word filter.",
+  "adaptive_assistant_turn_cap": 2,
+  "adaptive_note": "The schema permits up to four turns; this run predeclares at most two per trajectory for both versions to respect the existing global budget.",
+  "budget": "Same original global 600 Luna / 180 teacher / 6 Brave / $25 estimated cap; existing attempts are included.",
+  "release_targets": {
+    "heldout_primary_gain": 0.3,
+    "heldout_nontied_win_fraction": 0.6,
+    "maximum_naturalness_decline": 0.2,
+    "critical_gates": "all pass",
+    "maximum_luna_attempts": 600,
+    "maximum_teacher_attempts": 180,
+    "maximum_brave_calls": 6,
+    "estimated_spend_usd": 25
+  },
+  "old_result_preserved": "/workspace/journalpulse-planning/guided-action-2026-10-05/comparison.html"
+}

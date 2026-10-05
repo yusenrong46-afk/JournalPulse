@@ -1,0 +1,8 @@
+{
+  "deployment_id": "dpl_9xFz5u928LMBgsiJuFQYecw7gV35",
+  "metadata_candidate_sha256": "58b2b5d5d6eed98eacf220643820e50f0bd2178246d1f871a775d3f368140d3f",
+  "node_version": "24.x",
+  "runtime_version": "guided-action-2026-10-05.3",
+  "status": "READY",
+  "target": null
+}

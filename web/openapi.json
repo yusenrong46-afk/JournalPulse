@@ -21,6 +21,18 @@
             ],
             "title": "Client Request Id"
           },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          },
           "self_report": {
             "anyOf": [
               {
@@ -147,6 +159,742 @@
         "title": "ActionPreviewRequest",
         "type": "object"
       },
+      "ActivityCommandRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "client_request_id": {
+            "format": "uuid",
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "command": {
+            "enum": [
+              "start",
+              "pause",
+              "resume",
+              "finish_early",
+              "expire",
+              "stop",
+              "decline"
+            ],
+            "title": "Command",
+            "type": "string"
+          },
+          "expected_conversation_revision": {
+            "minimum": 0.0,
+            "title": "Expected Conversation Revision",
+            "type": "integer"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "client_request_id",
+          "expected_revision",
+          "expected_conversation_revision",
+          "command"
+        ],
+        "title": "ActivityCommandRequest",
+        "type": "object"
+      },
+      "ActivityConstraintInputs": {
+        "additionalProperties": false,
+        "description": "Correctable activity limits; no free-form private text enters search context.",
+        "properties": {
+          "avoid_breath_focus": {
+            "default": false,
+            "title": "Avoid Breath Focus",
+            "type": "boolean"
+          },
+          "no_audio": {
+            "default": false,
+            "title": "No Audio",
+            "type": "boolean"
+          },
+          "no_video": {
+            "default": false,
+            "title": "No Video",
+            "type": "boolean"
+          },
+          "seated": {
+            "default": false,
+            "title": "Seated",
+            "type": "boolean"
+          },
+          "time_minutes": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Minutes"
+          }
+        },
+        "title": "ActivityConstraintInputs",
+        "type": "object"
+      },
+      "ActivityFollowUpRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "client_request_id": {
+            "format": "uuid",
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "expected_conversation_revision": {
+            "minimum": 0.0,
+            "title": "Expected Conversation Revision",
+            "type": "integer"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "client_request_id",
+          "expected_revision",
+          "expected_conversation_revision"
+        ],
+        "title": "ActivityFollowUpRequest",
+        "type": "object"
+      },
+      "ActivityReport": {
+        "additionalProperties": false,
+        "properties": {
+          "after_rating": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After Rating"
+          },
+          "before_rating": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Rating"
+          },
+          "effort": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effort"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "good",
+                  "mixed",
+                  "poor",
+                  "unsure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fit"
+          },
+          "goal_progress": {
+            "anyOf": [
+              {
+                "enum": [
+                  "closer",
+                  "same",
+                  "further",
+                  "unsure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal Progress"
+          },
+          "helpfulness": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Helpfulness"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "participation": {
+            "enum": [
+              "completed",
+              "partial",
+              "not_tried",
+              "stopped"
+            ],
+            "title": "Participation",
+            "type": "string"
+          },
+          "state_change": {
+            "anyOf": [
+              {
+                "enum": [
+                  "toward_target",
+                  "same",
+                  "away_from_target",
+                  "unsure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State Change"
+          }
+        },
+        "required": [
+          "participation"
+        ],
+        "title": "ActivityReport",
+        "type": "object"
+      },
+      "ActivityReportRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "after_rating": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After Rating"
+          },
+          "before_rating": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Rating"
+          },
+          "client_request_id": {
+            "format": "uuid",
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "effort": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effort"
+          },
+          "expected_conversation_revision": {
+            "minimum": 0.0,
+            "title": "Expected Conversation Revision",
+            "type": "integer"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "good",
+                  "mixed",
+                  "poor",
+                  "unsure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fit"
+          },
+          "goal_progress": {
+            "anyOf": [
+              {
+                "enum": [
+                  "closer",
+                  "same",
+                  "further",
+                  "unsure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal Progress"
+          },
+          "helpfulness": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Helpfulness"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "participation": {
+            "enum": [
+              "completed",
+              "partial",
+              "not_tried",
+              "stopped"
+            ],
+            "title": "Participation",
+            "type": "string"
+          },
+          "state_change": {
+            "anyOf": [
+              {
+                "enum": [
+                  "toward_target",
+                  "same",
+                  "away_from_target",
+                  "unsure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State Change"
+          }
+        },
+        "required": [
+          "participation",
+          "client_request_id",
+          "expected_revision",
+          "expected_conversation_revision"
+        ],
+        "title": "ActivityReportRequest",
+        "type": "object"
+      },
+      "ActivitySelectionProvenance": {
+        "additionalProperties": false,
+        "description": "These are LLM/user choices, not randomized research-policy assignments.",
+        "properties": {
+          "eligible_for_ope": {
+            "const": false,
+            "default": false,
+            "title": "Eligible For Ope",
+            "type": "boolean"
+          },
+          "model_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "propensity": {
+            "title": "Propensity",
+            "type": "null"
+          },
+          "recommended_resource_id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Recommended Resource Id",
+            "type": "string"
+          },
+          "selected_resource_id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Selected Resource Id",
+            "type": "string"
+          },
+          "selection_source": {
+            "enum": [
+              "llm",
+              "guided",
+              "user",
+              "search"
+            ],
+            "title": "Selection Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "selection_source",
+          "recommended_resource_id",
+          "selected_resource_id"
+        ],
+        "title": "ActivitySelectionProvenance",
+        "type": "object"
+      },
+      "ActivitySession": {
+        "additionalProperties": false,
+        "properties": {
+          "check_in_issued": {
+            "default": false,
+            "title": "Check In Issued",
+            "type": "boolean"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "conversation_revision": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Revision"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "duration_seconds": {
+            "default": 0,
+            "maximum": 3600.0,
+            "minimum": 0.0,
+            "title": "Duration Seconds",
+            "type": "integer"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "final_follow_up": {
+            "default": false,
+            "title": "Final Follow Up",
+            "type": "boolean"
+          },
+          "follow_up_attempts": {
+            "default": 0,
+            "maximum": 3.0,
+            "minimum": 0.0,
+            "title": "Follow Up Attempts",
+            "type": "integer"
+          },
+          "follow_up_lease_until": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Lease Until"
+          },
+          "follow_up_message_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Message Id"
+          },
+          "follow_up_model_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "follow_up_reply": {
+            "anyOf": [
+              {
+                "maxLength": 1200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Reply"
+          },
+          "follow_up_request_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Follow Up Request Id"
+          },
+          "follow_up_status": {
+            "default": "none",
+            "enum": [
+              "none",
+              "pending",
+              "generating",
+              "ready",
+              "failed"
+            ],
+            "title": "Follow Up Status",
+            "type": "string"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "offered_message_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offered Message Id"
+          },
+          "recommendation_reason": {
+            "anyOf": [
+              {
+                "maxLength": 240,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation Reason"
+          },
+          "remaining_seconds": {
+            "default": 0,
+            "maximum": 3600.0,
+            "minimum": 0.0,
+            "title": "Remaining Seconds",
+            "type": "integer"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivityReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reported_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported At"
+          },
+          "resource": {
+            "$ref": "#/components/schemas/journalpulse__activity_models__ActivityResource"
+          },
+          "revision": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "selection": {
+            "$ref": "#/components/schemas/ActivitySelectionProvenance"
+          },
+          "server_now": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Now"
+          },
+          "source_entry_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Entry Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ActivityStatus",
+            "default": "offered"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "conversation_id",
+          "resource",
+          "selection"
+        ],
+        "title": "ActivitySession",
+        "type": "object"
+      },
+      "ActivityStatus": {
+        "enum": [
+          "offered",
+          "active",
+          "paused",
+          "awaiting_report",
+          "completed",
+          "stopped",
+          "declined"
+        ],
+        "title": "ActivityStatus",
+        "type": "string"
+      },
       "AffectiveState": {
         "properties": {
           "agency": {
@@ -255,8 +1003,85 @@
         "title": "AnalysisRequest",
         "type": "object"
       },
+      "ChangeConversationPreferenceRequest": {
+        "properties": {
+          "client_request_id": {
+            "format": "uuid",
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "preference": {
+            "enum": [
+              "listen",
+              "act"
+            ],
+            "title": "Preference",
+            "type": "string"
+          }
+        },
+        "required": [
+          "client_request_id",
+          "expected_revision",
+          "preference"
+        ],
+        "title": "ChangeConversationPreferenceRequest",
+        "type": "object"
+      },
       "Conversation": {
         "properties": {
+          "activity_card": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActionCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "activity_constraints": {
+            "$ref": "#/components/schemas/ActivityConstraintInputs"
+          },
+          "activity_goal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "activity_move": {
+            "default": "reflect",
+            "enum": [
+              "reflect",
+              "clarify",
+              "propose",
+              "negotiate",
+              "outcome",
+              "pause"
+            ],
+            "title": "Activity Move",
+            "type": "string"
+          },
+          "activity_search_topic": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activity Search Topic"
+          },
           "card": {
             "anyOf": [
               {
@@ -299,6 +1124,10 @@
             "format": "uuid",
             "title": "Id",
             "type": "string"
+          },
+          "interaction_preference": {
+            "$ref": "#/components/schemas/InteractionPreference",
+            "default": "auto"
           },
           "llm_consent": {
             "title": "Llm Consent",
@@ -374,6 +1203,30 @@
           "safety_mode": {
             "$ref": "#/components/schemas/SafetyMode",
             "default": "normal"
+          },
+          "source_entry_created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Entry Created At"
+          },
+          "source_entry_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Entry Id"
           },
           "status": {
             "$ref": "#/components/schemas/ConversationStatus",
@@ -481,6 +1334,16 @@
               }
             ]
           },
+          "request_inputs": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationRequestInputs"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "role": {
             "$ref": "#/components/schemas/MessageRole"
           },
@@ -503,6 +1366,51 @@
         ],
         "title": "ConversationMode",
         "type": "string"
+      },
+      "ConversationRequestInputs": {
+        "description": "Explicit taps accompanying a turn; no text or text digest is retained here.",
+        "properties": {
+          "confirmed_feelings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 6,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed Feelings"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mood_score": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mood Score"
+          }
+        },
+        "title": "ConversationRequestInputs",
+        "type": "object"
       },
       "ConversationStatus": {
         "enum": [
@@ -591,6 +1499,88 @@
         "title": "ConversationTurnResult",
         "type": "object"
       },
+      "CreateActivitySessionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "client_request_id": {
+            "format": "uuid",
+            "title": "Client Request Id",
+            "type": "string"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "maximum": 3600.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "expected_conversation_revision": {
+            "minimum": 0.0,
+            "title": "Expected Conversation Revision",
+            "type": "integer"
+          },
+          "resource_id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Resource Id",
+            "type": "string"
+          },
+          "resource_token": {
+            "anyOf": [
+              {
+                "maxLength": 12000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Token"
+          }
+        },
+        "required": [
+          "client_request_id",
+          "expected_conversation_revision",
+          "resource_id"
+        ],
+        "title": "CreateActivitySessionRequest",
+        "type": "object"
+      },
+      "CreateJournalEntryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "client_request_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Request Id"
+          },
+          "text": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "CreateJournalEntryRequest",
+        "type": "object"
+      },
       "DeletionResponse": {
         "properties": {
           "auth_identity_deleted": {
@@ -612,6 +1602,227 @@
           "deleted_records"
         ],
         "title": "DeletionResponse",
+        "type": "object"
+      },
+      "DiscoveryCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "maxLength": 800,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "evidence_kind": {
+            "const": "search_snippet",
+            "default": "search_snippet",
+            "title": "Evidence Kind",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          },
+          "why_selected": {
+            "maxLength": 420,
+            "minLength": 1,
+            "title": "Why Selected",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "url",
+          "description",
+          "why_selected"
+        ],
+        "title": "DiscoveryCandidate",
+        "type": "object"
+      },
+      "DiscoveryProvenance": {
+        "properties": {
+          "candidate_count": {
+            "maximum": 6.0,
+            "minimum": 0.0,
+            "title": "Candidate Count",
+            "type": "integer"
+          },
+          "model_runs": {
+            "items": {
+              "$ref": "#/components/schemas/ModelRun"
+            },
+            "maxItems": 2,
+            "title": "Model Runs",
+            "type": "array"
+          },
+          "page_fetches": {
+            "const": 0,
+            "default": 0,
+            "title": "Page Fetches",
+            "type": "integer"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "string"
+          },
+          "retrieved_at": {
+            "title": "Retrieved At",
+            "type": "string"
+          },
+          "search_calls": {
+            "const": 1,
+            "default": 1,
+            "title": "Search Calls",
+            "type": "integer"
+          },
+          "search_provider": {
+            "const": "brave",
+            "default": "brave",
+            "title": "Search Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt_version",
+          "retrieved_at",
+          "candidate_count",
+          "model_runs"
+        ],
+        "title": "DiscoveryProvenance",
+        "type": "object"
+      },
+      "DiscoveryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "excluded_urls": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30,
+            "title": "Excluded Urls",
+            "type": "array"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "llm_consent": {
+            "default": false,
+            "title": "Llm Consent",
+            "type": "boolean"
+          },
+          "locale": {
+            "default": "CA",
+            "maxLength": 8,
+            "minLength": 2,
+            "title": "Locale",
+            "type": "string"
+          },
+          "original_query": {
+            "maxLength": 160,
+            "minLength": 3,
+            "title": "Original Query",
+            "type": "string"
+          },
+          "previous_query": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "minLength": 3,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Query"
+          }
+        },
+        "required": [
+          "original_query"
+        ],
+        "title": "DiscoveryRequest",
+        "type": "object"
+      },
+      "DiscoveryResponse": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryCandidate"
+            },
+            "maxItems": 3,
+            "title": "Candidates",
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "original_query": {
+            "title": "Original Query",
+            "type": "string"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DiscoveryProvenance"
+          },
+          "updated_query": {
+            "title": "Updated Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "original_query",
+          "updated_query",
+          "candidates",
+          "provenance",
+          "limitations"
+        ],
+        "title": "DiscoveryResponse",
+        "type": "object"
+      },
+      "GenerationErrorResponse": {
+        "description": "422 can carry a provider-decline message or FastAPI input-validation details.",
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "GenerationErrorResponse",
         "type": "object"
       },
       "Goal": {
@@ -636,6 +1847,175 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InlineDiscoveryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "constraints": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivityConstraintInputs"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "excluded_urls": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 30,
+            "title": "Excluded Urls",
+            "type": "array"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "llm_consent": {
+            "default": false,
+            "title": "Llm Consent",
+            "type": "boolean"
+          },
+          "original_query": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Query"
+          },
+          "previous_query": {
+            "anyOf": [
+              {
+                "maxLength": 400,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Query"
+          },
+          "style": {
+            "default": "ground",
+            "enum": [
+              "ground",
+              "move",
+              "connect",
+              "reflect",
+              "play",
+              "watch",
+              "read",
+              "pause"
+            ],
+            "title": "Style",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "InlineDiscoveryRequest",
+        "type": "object"
+      },
+      "InlineDiscoveryResponse": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/DiscoveryCandidate"
+            },
+            "maxItems": 3,
+            "title": "Candidates",
+            "type": "array"
+          },
+          "conversation_revision": {
+            "title": "Conversation Revision",
+            "type": "integer"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "offers": {
+            "items": {
+              "$ref": "#/components/schemas/InlineResourceOffer"
+            },
+            "maxItems": 3,
+            "title": "Offers",
+            "type": "array"
+          },
+          "original_query": {
+            "title": "Original Query",
+            "type": "string"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/DiscoveryProvenance"
+          },
+          "updated_query": {
+            "title": "Updated Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "original_query",
+          "updated_query",
+          "candidates",
+          "provenance",
+          "limitations",
+          "offers",
+          "conversation_revision"
+        ],
+        "title": "InlineDiscoveryResponse",
+        "type": "object"
+      },
+      "InlineResourceOffer": {
+        "properties": {
+          "resource": {
+            "$ref": "#/components/schemas/journalpulse__activity_resources__ActivityResource"
+          },
+          "resource_token": {
+            "title": "Resource Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "resource",
+          "resource_token"
+        ],
+        "title": "InlineResourceOffer",
         "type": "object"
       },
       "InsightsResponse": {
@@ -714,6 +2094,111 @@
         "title": "InsightsResponse",
         "type": "object"
       },
+      "InteractionPreference": {
+        "description": "An explicit choice for this chat, independent of AI/guided provider mode.",
+        "enum": [
+          "auto",
+          "listen",
+          "act"
+        ],
+        "title": "InteractionPreference",
+        "type": "string"
+      },
+      "JournalEntry": {
+        "additionalProperties": false,
+        "description": "An immutable saved entry; AI output is never folded into its source text.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "text"
+        ],
+        "title": "JournalEntry",
+        "type": "object"
+      },
+      "JournalEntryPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/JournalEntry"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "offset"
+        ],
+        "title": "JournalEntryPage",
+        "type": "object"
+      },
+      "JournalReflectionResult": {
+        "description": "A transient reflection. Deleting or exporting the source has no AI row to retain.",
+        "properties": {
+          "entry_id": {
+            "format": "uuid",
+            "title": "Entry Id",
+            "type": "string"
+          },
+          "generated_text_retained": {
+            "const": false,
+            "default": false,
+            "title": "Generated Text Retained",
+            "type": "boolean"
+          },
+          "model_run": {
+            "$ref": "#/components/schemas/ModelRun"
+          },
+          "reply": {
+            "maxLength": 1200,
+            "minLength": 1,
+            "title": "Reply",
+            "type": "string"
+          },
+          "safety": {
+            "$ref": "#/components/schemas/SafetyResult"
+          }
+        },
+        "required": [
+          "entry_id",
+          "reply",
+          "model_run",
+          "safety"
+        ],
+        "title": "JournalReflectionResult",
+        "type": "object"
+      },
       "MessageRole": {
         "enum": [
           "user",
@@ -787,6 +2272,30 @@
           "schema_valid": {
             "title": "Schema Valid",
             "type": "boolean"
+          },
+          "skill_hash": {
+            "anyOf": [
+              {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Hash"
+          },
+          "skill_version": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Version"
           },
           "used_fallback": {
             "default": false,
@@ -1040,10 +2549,17 @@
             "type": "string"
           },
           "propensity": {
-            "exclusiveMinimum": 0.0,
-            "maximum": 1.0,
-            "title": "Propensity",
-            "type": "number"
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Propensity"
           },
           "recommended_action_id": {
             "anyOf": [
@@ -1070,7 +2586,6 @@
         },
         "required": [
           "action_id",
-          "propensity",
           "policy_name",
           "policy_version",
           "safe_action_ids",
@@ -1130,6 +2645,27 @@
           "checks"
         ],
         "title": "ReadinessResponse",
+        "type": "object"
+      },
+      "ReflectJournalEntryRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "llm_consent": {
+            "title": "Llm Consent",
+            "type": "boolean"
+          },
+          "locale": {
+            "default": "CA",
+            "maxLength": 8,
+            "minLength": 2,
+            "title": "Locale",
+            "type": "string"
+          }
+        },
+        "required": [
+          "llm_consent"
+        ],
+        "title": "ReflectJournalEntryRequest",
         "type": "object"
       },
       "ReflectionCopy": {
@@ -1490,6 +3026,18 @@
             "default": false,
             "title": "Retain Text",
             "type": "boolean"
+          },
+          "source_entry_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Entry Id"
           }
         },
         "title": "StartConversationRequest",
@@ -1644,6 +3192,352 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "journalpulse__activity_models__ActivityResource": {
+        "additionalProperties": false,
+        "description": "A server-approved descriptor. Search provenance never implies page review.",
+        "properties": {
+          "discovery_provenance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiscoveryProvenance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "maximum": 3600.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "format": {
+            "enum": [
+              "timer",
+              "external",
+              "manual"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "instructions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Instructions",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "meditation",
+              "movement",
+              "reflection",
+              "connection",
+              "focus",
+              "video",
+              "reading",
+              "other"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "provenance": {
+            "enum": [
+              "builtin",
+              "catalog",
+              "search_snippet"
+            ],
+            "title": "Provenance",
+            "type": "string"
+          },
+          "provider": {
+            "default": "JournalPulse",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Provider",
+            "type": "string"
+          },
+          "resource_type": {
+            "default": "activity",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "format",
+          "kind",
+          "provenance"
+        ],
+        "title": "ActivityResource",
+        "type": "object"
+      },
+      "journalpulse__activity_resources__ActivityResource": {
+        "additionalProperties": false,
+        "properties": {
+          "breath_focus": {
+            "default": false,
+            "title": "Breath Focus",
+            "type": "boolean"
+          },
+          "coping_style": {
+            "enum": [
+              "watch",
+              "move",
+              "read",
+              "play",
+              "connect",
+              "ground",
+              "reflect"
+            ],
+            "title": "Coping Style",
+            "type": "string"
+          },
+          "discovery_provenance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiscoveryProvenance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes"
+          },
+          "duration_seconds": {
+            "anyOf": [
+              {
+                "maximum": 1200.0,
+                "minimum": 30.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Seconds"
+          },
+          "emotion_tags": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Emotion Tags",
+            "type": "array"
+          },
+          "evidence_kind": {
+            "enum": [
+              "app_guidance",
+              "catalog_review",
+              "search_snippet"
+            ],
+            "title": "Evidence Kind",
+            "type": "string"
+          },
+          "goal_tags": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Goal Tags",
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "instructions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Instructions",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "meditation",
+              "movement",
+              "reading",
+              "video",
+              "social",
+              "play",
+              "reflection",
+              "focus"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "no_audio": {
+            "default": false,
+            "title": "No Audio",
+            "type": "boolean"
+          },
+          "no_video": {
+            "default": false,
+            "title": "No Video",
+            "type": "boolean"
+          },
+          "provider": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Provider",
+            "type": "string"
+          },
+          "resource_type": {
+            "enum": [
+              "activity",
+              "video",
+              "website",
+              "game"
+            ],
+            "title": "Resource Type",
+            "type": "string"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "seated": {
+            "default": false,
+            "title": "Seated",
+            "type": "boolean"
+          },
+          "source": {
+            "enum": [
+              "builtin",
+              "catalog",
+              "search_snippet"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "source_tier": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Tier"
+          },
+          "summary": {
+            "maxLength": 800,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "timer_enabled": {
+            "default": false,
+            "title": "Timer Enabled",
+            "type": "boolean"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "why_selected": {
+            "anyOf": [
+              {
+                "maxLength": 420,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Why Selected"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "provider",
+          "resource_type",
+          "coping_style",
+          "kind",
+          "source",
+          "evidence_kind"
+        ],
+        "title": "ActivityResource",
         "type": "object"
       }
     }
@@ -1824,6 +3718,324 @@
           }
         },
         "summary": "Preview Actions"
+      }
+    },
+    "/v1/activity-sessions/{session_id}": {
+      "get": {
+        "operationId": "read_activity_v1_activity_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivitySession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Activity"
+      }
+    },
+    "/v1/activity-sessions/{session_id}/commands": {
+      "post": {
+        "operationId": "control_activity_v1_activity_sessions__session_id__commands_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityCommandRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivitySession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Control Activity"
+      }
+    },
+    "/v1/activity-sessions/{session_id}/follow-up": {
+      "post": {
+        "operationId": "follow_up_activity_v1_activity_sessions__session_id__follow_up_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityFollowUpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivitySession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Follow Up Activity"
+      }
+    },
+    "/v1/activity-sessions/{session_id}/report": {
+      "post": {
+        "operationId": "report_activity_v1_activity_sessions__session_id__report_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivitySession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report Activity"
       }
     },
     "/v1/conversations": {
@@ -2115,6 +4327,166 @@
         "summary": "Accept Card"
       }
     },
+    "/v1/conversations/{conversation_id}/activity-sessions": {
+      "get": {
+        "operationId": "latest_activity_v1_conversations__conversation_id__activity_sessions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ActivitySession"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Activity V1 Conversations  Conversation Id  Activity Sessions Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest Activity"
+      },
+      "post": {
+        "operationId": "offer_activity_v1_conversations__conversation_id__activity_sessions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateActivitySessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivitySession"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Offer Activity"
+      }
+    },
     "/v1/conversations/{conversation_id}/close": {
       "post": {
         "operationId": "close_conversation_v1_conversations__conversation_id__close_post",
@@ -2185,6 +4557,88 @@
           }
         },
         "summary": "Close Conversation"
+      }
+    },
+    "/v1/conversations/{conversation_id}/discover": {
+      "post": {
+        "operationId": "discover_v1_conversations__conversation_id__discover_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InlineDiscoveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InlineDiscoveryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discover"
       }
     },
     "/v1/conversations/{conversation_id}/messages": {
@@ -2259,6 +4713,88 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "$ref": "#/components/schemas/GenerationErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid input or provider decline"
+          }
+        },
+        "summary": "Continue Conversation"
+      }
+    },
+    "/v1/conversations/{conversation_id}/preference": {
+      "post": {
+        "operationId": "change_preference_v1_conversations__conversation_id__preference_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeConversationPreferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Conversation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
@@ -2266,7 +4802,79 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Continue Conversation"
+        "summary": "Change Preference"
+      }
+    },
+    "/v1/discovery/search": {
+      "post": {
+        "operationId": "search_resources_v1_discovery_search_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid input, support routing, or provider decline"
+          }
+        },
+        "summary": "Search Resources"
       }
     },
     "/v1/export": {
@@ -2393,6 +5001,378 @@
           }
         },
         "summary": "Insights"
+      }
+    },
+    "/v1/journal/entries": {
+      "get": {
+        "operationId": "list_entries_v1_journal_entries_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JournalEntryPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Entries"
+      },
+      "post": {
+        "operationId": "create_entry_v1_journal_entries_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateJournalEntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JournalEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Entry"
+      }
+    },
+    "/v1/journal/entries/{entry_id}": {
+      "delete": {
+        "operationId": "delete_entry_v1_journal_entries__entry_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Entry"
+      },
+      "get": {
+        "operationId": "read_entry_v1_journal_entries__entry_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JournalEntry"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Entry"
+      }
+    },
+    "/v1/journal/entries/{entry_id}/reflect": {
+      "post": {
+        "operationId": "reflect_entry_v1_journal_entries__entry_id__reflect_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "entry_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Entry Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReflectJournalEntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JournalReflectionResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerationErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid input or provider decline"
+          }
+        },
+        "summary": "Reflect Entry"
       }
     },
     "/v1/outcomes": {

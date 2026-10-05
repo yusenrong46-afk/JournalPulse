@@ -2,6 +2,8 @@
 
 import { useMemo, useSyncExternalStore } from "react";
 
+import { ACCOUNT_CHANGED_EVENT, readAccountStorage, writeAccountStorage } from "./account-storage";
+
 const STORAGE_KEY = "journalpulse_reminders_v1";
 const EMPTY_SNAPSHOT = "[]";
 
@@ -15,27 +17,34 @@ export type FollowUpReminder = {
 function subscribe(callback: () => void) {
   window.addEventListener("journalpulse-reminders", callback);
   window.addEventListener("storage", callback);
+  window.addEventListener(ACCOUNT_CHANGED_EVENT, callback);
   return () => {
     window.removeEventListener("journalpulse-reminders", callback);
     window.removeEventListener("storage", callback);
+    window.removeEventListener(ACCOUNT_CHANGED_EVENT, callback);
   };
 }
 
 function snapshot() {
-  return window.localStorage.getItem(STORAGE_KEY) ?? EMPTY_SNAPSHOT;
+  return readAccountStorage(STORAGE_KEY) ?? EMPTY_SNAPSHOT;
 }
 
 function parsed(value: string): FollowUpReminder[] {
   try {
-    const reminders = JSON.parse(value) as FollowUpReminder[];
-    return Array.isArray(reminders) ? reminders : [];
+    const reminders: unknown = JSON.parse(value);
+    if (!Array.isArray(reminders)) return [];
+    return reminders.filter((item): item is FollowUpReminder => Boolean(
+      item && typeof item === "object" && typeof item.decisionId === "string"
+      && typeof item.actionId === "string" && typeof item.actionTitle === "string"
+      && typeof item.dueAt === "string" && Number.isFinite(Date.parse(item.dueAt)),
+    ));
   } catch {
     return [];
   }
 }
 
 function write(reminders: FollowUpReminder[]) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
+  writeAccountStorage(STORAGE_KEY, JSON.stringify(reminders));
   window.dispatchEvent(new Event("journalpulse-reminders"));
 }
 
@@ -45,6 +54,10 @@ export function saveReminder(reminder: FollowUpReminder): void {
 
 export function clearReminder(decisionId: string): void {
   write(parsed(snapshot()).filter((item) => item.decisionId !== decisionId));
+}
+
+export function clearReminders(): void {
+  write([]);
 }
 
 export function useReminders(): FollowUpReminder[] {

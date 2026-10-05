@@ -1,27 +1,36 @@
 # JournalPulse
 
-JournalPulse is a calm check-in companion. You talk with **Luna** for a minute, confirm how you feel,
-pick one small thing to try from a reviewed list, and later tell Luna whether it helped. Over time your
-Journey shows which small steps help you most.
+JournalPulse is a journaling and reflection companion. You can write, talk with **Luna**, and choose
+a small activity to try. AI chat and the scripted, no-AI mode are separate choices.
 
 Live site: <https://journalpulse.vercel.app>
 
-> JournalPulse is not therapy, diagnosis, treatment, or crisis care. When a message suggests possible
-> danger, Luna skips the AI and points to people who can help right away (9-8-8 in Canada).
+**Current workspace:** the guided chat–activity–report slice and pre-evaluation audit fixes are local.
+The existing Preview and production serve earlier versions. The new activity migration has not been
+applied to the shared database, and the model-quality release evaluation is incomplete. See the
+[audit and readiness report](docs/PRE_EVALUATION_AUDIT_2026-10-05.md) before evaluating or deploying.
+
+> JournalPulse is not therapy, diagnosis, treatment, or crisis care. A limited phrase check routes
+> certain explicit risk statements to human support (9-8-8 in Canada). It can miss distress.
 
 ## How it works
 
-1. **Talk.** Luna asks how you're arriving. Tap a mood face or type.
-2. **Check the feeling.** Luna suggests up to three feelings; you keep, remove, or add your own.
-3. **Choose what would help.** *Calm down*, *Get some energy back*, *Make sense of it*, *Feel less
-   alone*, or *Take one small step*.
-4. **Try one small thing.** Three options from the reviewed catalog, with Luna's pick first. An
-   optional timer helps you give it a fair go.
-5. **Check in.** Later, Home asks "Did it help?" with five faces. Each check-in grows a plant in your
-   Journey garden.
+1. **Write or talk.** A chat can use one explicitly selected journal entry. Unlinked chats cannot
+   read the full journal collection.
+2. **Reflect.** Luna can acknowledge, ask a useful question, or propose an optional activity. You can
+   correct its interpretation, negotiate the suggestion, choose **Just talk**, or stop.
+3. **Choose whether to try it.** The current candidate keeps approved activities inside chat. Only
+   your explicit start begins the activity; the server owns its timer and state.
+4. **Find another resource.** With separate consent, Brave searches general activity words. Results
+   are based on snippets; full pages and their claims are not independently verified. Saving a
+   returned activity is a separate choice from opening its link.
+5. **Report honestly.** The candidate saves whether you tried the activity and any reported change
+   before generating Luna's follow-up. Its inline reports currently stay in chat; Home/Journey
+   still display the legacy check-in flow and do not yet combine both kinds of outcome.
 
 With AI allowed, Luna's replies come from `openai/gpt-6-luna` through OpenRouter with zero data
-retention. Without AI, a scripted Luna asks the same questions, so the app never dead-ends.
+retention routing. Without AI, a scripted flow supports the existing feelings, goal, catalog and
+check-in steps. It does not provide the AI candidate's conversational capabilities.
 
 ## Screens
 
@@ -45,20 +54,24 @@ flowchart LR
   SAFE -->|support| HUMAN["Human support resources"]
   SAFE -->|normal + AI allowed| LLM["Luna on OpenRouter (ZDR)"]
   SAFE -->|normal, no AI| GUIDED["Scripted Luna"]
-  LLM --> GOAL["Chosen goal"]
-  GUIDED --> GOAL
-  GOAL --> CATALOG["Reviewed catalog: three options"]
-  CATALOG --> POLICY["Fixed baseline pick + your choice"]
-  POLICY --> DB["Supabase (RLS)"]
-  DB --> OUTCOME["Check-in"]
+  LLM --> VALIDATE["Server validates structured activity choice"]
+  VALIDATE --> CATALOG["Built-in / reviewed catalog"]
+  VALIDATE -->|separate consent| SEARCH["Brave snippets + Luna selection"]
+  CATALOG --> START["User starts activity"]
+  SEARCH -->|signed save| START
+  START --> DB["Supabase: owner-bound state, timer, report"]
+  DB --> LLM
+  GUIDED --> LEGACY["Feelings, goal, fixed catalog pick, legacy check-in"]
 ```
 
 - **Frontend:** Next.js 16, React 19, TypeScript, exported as static files.
 - **Backend:** FastAPI on Python 3.12. The same app serves the API and, in production, the static site.
 - **Data:** Supabase Auth (email magic link) and Postgres with row-level security. Local development uses
   SQLite.
-- **AI:** OpenRouter with a strict JSON schema and zero-data-retention routing. The model never picks
-  links; every action comes from `assets/resources/catalog.json`.
+- **AI:** OpenRouter with strict response schemas and zero-data-retention routing. The server checks
+  resource IDs and constraints; search selections must refer to actual retrieved candidates.
+- **NLP:** explicit phrase safety rules, structured model output and deterministic policy checks.
+  There is no newly trained custom NLP model in this slice; research flags remain off.
 
 Details are in [the architecture document](docs/ARCHITECTURE.md).
 
@@ -126,13 +139,18 @@ Never commit real keys. Rotate any key that has been pasted into chat, an issue,
 
 ## Deploy
 
+The commands below describe the hosting setup. They do not waive the candidate's evaluation and
+migration gates. Freeze and verify the current source before a release; old benchmark artifacts
+describe older prompts and are not proof that the audited candidate passes.
+
 **Vercel (current production).** `vercel.json`, `app.py`, and `scripts/build_vercel_web.py` build the
 site into `web-dist/` and run FastAPI as one function. Set the server variables above on the Vercel
 project, then run `vercel deploy --prod`. After the first deploy, add the Vercel URL to Supabase under
 **Authentication → URL configuration** (Site URL and `https://<your-domain>/**` as a redirect URL).
 
 **Render (alternative).** `render.yaml` defines a free Docker web service from `Dockerfile.api`. Create
-a Blueprint from this repository and paste `JOURNALPULSE_LLM_API_KEY` and `SUPABASE_ANON_KEY` when asked.
+a Blueprint from this repository and supply `JOURNALPULSE_LLM_API_KEY`, `SUPABASE_ANON_KEY`, and
+`JOURNALPULSE_WRITE_SIGNING_KEY` through its secret fields. Use the same signing key stored in the database.
 
 Apply `supabase/migrations/` in filename order and store the signing key in the database and on the
 host before deploying. The full sequence is in the [operations runbook](docs/OPERATIONS.md).

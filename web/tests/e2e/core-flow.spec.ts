@@ -93,6 +93,80 @@ async function seed(page: Page, preferences: Record<string, unknown> | null = on
   }, preferences);
 }
 
+test("the chat composer keeps pasted messages within the API's limit", async ({ page }) => {
+  await seed(page);
+  let sentText = "";
+  await page.route(`${API}/**`, (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/v1/conversations") return fulfilJson(route, conversation(), 201);
+    if (path === `/v1/conversations/${CONVERSATION_ID}/messages`) {
+      sentText = route.request().postDataJSON().text;
+      return fulfilJson(route, {
+        conversation: conversation(), user_message: message("user", sentText),
+        assistant_message: message("assistant", "I hear you."),
+      });
+    }
+    return fulfilJson(route, { items: [] });
+  });
+  await page.goto("/talk");
+  const input = page.getByLabel("Message Luna");
+  await input.fill("a".repeat(2001));
+  await expect(input).toHaveValue("a".repeat(2000));
+  await page.keyboard.press("End");
+  await page.keyboard.insertText("b");
+  await expect(input).toHaveValue("a".repeat(2000));
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.getByRole("log")).toContainText("Luna said: I hear you.");
+  expect(sentText).toHaveLength(2000);
+  await expect(input).toHaveValue("");
+});
+
+test("chat privacy and options support keyboard focus and dismissal", async ({ page }) => {
+  await seed(page);
+  await page.route(`${API}/**`, (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/v1/system/status") return fulfilJson(route, { analysis_mode: "ai_configured" });
+    if (path === `/v1/conversations/${CONVERSATION_ID}`) {
+      return fulfilJson(route, { conversation: conversation(), messages: [] });
+    }
+    return fulfilJson(route, { items: [] });
+  });
+  await page.goto("/talk");
+  const privacy = page.getByRole("button", { name: /Change chat privacy/ });
+  await privacy.click();
+  const dialog = page.getByRole("dialog", { name: "How this chat is kept" });
+  const first = dialog.getByRole("checkbox").first();
+  const done = dialog.getByRole("button", { name: "Done", exact: true });
+  await expect(first).toBeFocused();
+  await done.focus();
+  await page.keyboard.press("Tab");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(done).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(privacy).toBeFocused();
+
+  await page.goto(`/talk?c=${CONVERSATION_ID}`);
+  const options = page.getByRole("button", { name: "Chat options" });
+  await options.click();
+  const menu = page.getByRole("menu");
+  const details = menu.getByRole("menuitem", { name: "How this chat is kept" });
+  await expect(details).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(menu.getByRole("menuitem", { name: "End this chat" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(options).toBeFocused();
+  await options.click();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toBeVisible();
+  await expect(done).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(options).toBeFocused();
+});
+
 test("a new person meets Luna and chooses how Luna replies", async ({ page }) => {
   await seed(page, null);
   await page.route(`${API}/**`, (route) => fulfilJson(route, { items: [] }));
@@ -225,7 +299,11 @@ test("a reply to a chat that closed elsewhere is not shown as saved", async ({ p
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.locator("p[role=alert]")).toHaveText("This conversation is closed.");
   await expect(page.getByRole("button", { name: "Start a new chat" })).toBeVisible();
-  await expect(page.locator(".msg .bubble", { hasText: "Are you still there?" })).toHaveCount(0);
+  // Submitted writing stays visible, but must never look like a confirmed save.
+  await expect(page.locator(".msg.from-me:not([data-message-status]) .bubble", { hasText: "Are you still there?" })).toHaveCount(0);
+  await expect(page.locator(".msg.from-me[data-message-status='failed'] .bubble")).toContainText("Are you still there?");
+  await expect(page.locator(".msg.from-me[data-message-status='failed'] .bubble"))
+    .toContainText("Delivery not confirmed. Start a new chat to continue.");
   await expect(page.getByLabel("Message Luna")).toHaveValue("Are you still there?");
 });
 

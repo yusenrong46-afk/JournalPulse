@@ -1,0 +1,8 @@
+{
+  "pyproject.toml": "1f19710e9cba44077ab91fec3cefbba4f4aaf6896fde0366f03da0286c1bc413",
+  "src/journalpulse/activity_resources.py": "eaf38eb7cd8e07f4d84485379d8d62f8ddf776d31cd7ea003af3dcd1ed0262e0",
+  "src/journalpulse/guided_action.py": "88bd072d47b504259cbfff8b2f4a2343e6d774608eb38b4882397400fe365f3a",
+  "src/journalpulse/intelligence.py": "059f70b8bd80a1f09b34c60a102e92ef4e05e15fb69ef07e850c7020ffa2741b",
+  "src/journalpulse/skills/guided_action/SKILL.md": "a737ef81ccf7ed4e91e7983bf8bdd83b9159ef3c21fbace676d93d66eb3993d4",
+  "tests/test_guided_action_prompt.py": "e167196f422d952afcc9ce32b263ded8d224199bf5eb19f1241c0ac687c379b3"
+}

@@ -1,0 +1,11 @@
+{
+  "name": "errors",
+  "url": "https://openrouter.ai/docs/api/reference/errors-and-debugging",
+  "final_url": "https://openrouter.ai/docs/api/reference/errors-and-debugging",
+  "status": 200,
+  "title": "API Error Handling and Debugging - Complete Guide",
+  "checked_at": "2026-10-05T18:02:06.077Z",
+  "characters": 28005,
+  "browser": "/usr/bin/chromium",
+  "retrieval_method": "Playwright request with configured Node CA validation; exact HTML rendered in Chromium, assets blocked"
+}

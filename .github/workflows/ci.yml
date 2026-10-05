@@ -46,6 +46,18 @@ jobs:
         env:
           JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
         run: uv run python scripts/verify_postgres_schema.py
+      - name: Verify standalone journal ownership and source lifecycle
+        env:
+          JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+        run: uv run python scripts/verify_journal_schema.py
+      - name: Verify signed usage policy and request replay integrity
+        env:
+          JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+        run: uv run python scripts/verify_integrity_upgrade.py
+      - name: Verify guided activity ownership, receipts, timer, and report lifecycle
+        env:
+          JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+        run: uv run python scripts/verify_activity_schema.py
 
   frontend:
     runs-on: ubuntu-latest

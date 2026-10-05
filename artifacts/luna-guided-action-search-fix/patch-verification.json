@@ -1,0 +1,8 @@
+{
+  "fix_changed_files": 10,
+  "combined_changed_files": 54,
+  "fix_applies_to_frozen_pre_fix_candidate": true,
+  "combined_patch_base": "complete original dirty source snapshot, not Git HEAD",
+  "both_patches_reverse_check_against_current_source": true,
+  "status": "pass"
+}
