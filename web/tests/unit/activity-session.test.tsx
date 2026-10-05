@@ -213,7 +213,8 @@ describe("inline activity lifecycle", () => {
     })));
     expect(button("Finish early").disabled).toBe(false); await click("Finish early");
     expect(container.querySelector<HTMLInputElement>('input[value="not_tried"]')?.disabled).toBe(false);
-    expect(button("Find another resource").disabled).toBe(true);
+    // A started activity has nothing to replace, so the search entry is not offered at all.
+    expect([...container.querySelectorAll("button")].some((item) => item.textContent?.trim() === "Find another resource")).toBe(false);
   });
 
   test("a stop conversation suppresses a stale expired timer and later cannot restore its old question", async () => {

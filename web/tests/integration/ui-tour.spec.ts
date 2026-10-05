@@ -3,6 +3,7 @@
 // model quality. Runs only when JP_SCREENSHOT_DIR is set, so CI time is unchanged.
 // Selectors accept both the original and the redesigned labels, so one script produces
 // comparable before/after images.
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type APIRequestContext, type Page, test } from "@playwright/test";
 import path from "node:path";
 
@@ -49,6 +50,10 @@ async function shot(page: Page, label: string, name: string) {
   // Let entry animations settle so images compare like for like.
   await page.waitForTimeout(700);
   await page.screenshot({ path: path.join(OUT!, `${label}-${name}.png`), fullPage: false });
+  // Each captured state is also checked for serious automated accessibility violations.
+  const results = await new AxeBuilder({ page }).analyze();
+  const serious = results.violations.filter((item) => ["serious", "critical"].includes(item.impact ?? ""));
+  expect(serious.map((item) => `${name}: ${item.id} ${item.nodes.map((node) => node.target).join(" | ")}`)).toEqual([]);
 }
 
 async function finishEarly(page: Page) {
@@ -120,6 +125,9 @@ for (const [label, use] of [
           headers: headers(who), data: { text: "A fictional meeting left me stressed and tired." },
         });
         const entry = await saved.json();
+        // Accept "end the current chat?" so the entry really starts a new chat. The baseline
+        // run dismissed it, which exposed the composer-under-chooser bug fixed in this audit.
+        page.on("dialog", (dialog) => void dialog.accept());
         await page.goto(`/journal/?entry=${entry.id}`);
         await page.getByRole("link", { name: "Discuss with Luna" }).click();
         await page.getByRole("button", { name: "Use this entry in a new AI chat" }).click();

@@ -156,7 +156,7 @@ function SavedEntry({ entryId, invalid, onDeleted }: {
               Chat uses your saved entry only if you choose to share it; the temporary reflection is not carried into the conversation.
               You’ll choose whether to share this entry on the next screen.
             </p>
-            <Link className="btn btn-secondary" href={`/talk?entry=${entry.id}`}>Discuss with Luna</Link>
+            <Link className="btn btn-soft" href={`/talk?entry=${entry.id}`}>Discuss with Luna</Link>
           </div>
         </>
       ) : <p className="muted">Choose a saved entry below to reread it or request a reflection.</p>}
@@ -298,7 +298,7 @@ function JournalWorkspace() {
           ))}
         </ul>
         {listLoading && <p role="status">Loading entries…</p>}
-        {hasMore && <button className="btn btn-secondary" disabled={listLoading}
+        {hasMore && <button className="btn btn-soft" disabled={listLoading}
           onClick={() => void loadEntries(entries.length)}>Load older entries</button>}
         {error && !listLoading && <button className="btn btn-ghost" onClick={() => void loadEntries()}>Reload entries</button>}
       </section>

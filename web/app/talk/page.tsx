@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ActionTimer } from "@/components/action-timer";
-import { ActivitySessionWorkspace } from "@/components/activity-session-workspace";
+import { type ActivityPresence, ActivitySessionWorkspace } from "@/components/activity-session-workspace";
 import { Luna, type LunaMood } from "@/components/luna";
 import { Icon } from "@/components/nav-icon";
 import { ApiError, apiRequest } from "@/lib/api";
@@ -35,7 +35,9 @@ import {
 } from "@/lib/feelings";
 import { usePreferences } from "@/lib/preferences";
 import { saveReminder } from "@/lib/reminders";
+import { entryDateLabel } from "@/lib/journal";
 import { greeting, useTimeOfDay } from "@/lib/time-of-day";
+import { useStickToBottom, useVisualViewportHeight } from "@/lib/use-chat-scroll";
 import type {
   Conversation,
   ConversationDetail,
@@ -95,6 +97,7 @@ function ChatWorkspace() {
   const [resumeAttempt, setResumeAttempt] = useState(0);
   const [pendingSend, setPendingSend] = useState<PendingSend | null>(null);
   const [activityBusy, setActivityBusy] = useState(false);
+  const [activityPresence, setActivityPresence] = useState<ActivityPresence>("idle");
 
   const pendingMessage = useRef<PendingCommand | null>(null);
   const pendingByChat = useRef(new Map<string, PendingCommand>());
@@ -104,7 +107,9 @@ function ChatWorkspace() {
   const draftsByChat = useRef(new Map<string, string>());
   const acceptRequestId = useRef("");
   const loadedId = useRef<string | null>(null);
-  const logRef = useRef<HTMLDivElement>(null);
+  // The activity bar renders into this slot above the composer, outside the scrolling log,
+  // while its state stays in the single ActivitySessionWorkspace inside the log.
+  const [activityDock, setActivityDock] = useState<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -333,10 +338,16 @@ function ChatWorkspace() {
     return () => window.clearInterval(interval);
   }, [busy]);
 
+  const { logRef, contentRef: logContentRef, unseen, scrollToLatest } = useStickToBottom();
+  const chatRef = useVisualViewportHeight();
+
   useEffect(() => {
-    const log = logRef.current;
-    if (log) log.scrollTop = log.scrollHeight;
-  }, [messages, pendingSend, step, busy, activityBusy, error, saved]);
+    // Grow with the draft up to the CSS max-height, then scroll inside the field.
+    const input = inputRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
+  }, [draft]);
 
   const userMessages = messages.filter((message) => message.role === "user").length;
   const stage = chatStage({
@@ -451,7 +462,7 @@ function ChatWorkspace() {
 
   async function send(outgoing: Outgoing) {
     const trimmed = outgoing.text.trim();
-    if (!trimmed || userMessages >= CHAT_MESSAGE_LIMIT || busy || activityBusy || sendInFlight.current || preferenceInFlight.current || resuming || resumeFailure || sourcePending || linkedSourceUnavailable
+    if (!trimmed || userMessages >= CHAT_MESSAGE_LIMIT || busy || activityBusy || sendInFlight.current || preferenceInFlight.current || resuming || resumeFailure || sourcePending || sourceNeedsNewChat || linkedSourceUnavailable
       || (activeSourceId && (!sourceEntry || sourceError))) return;
     const generation = workspaceGeneration.current;
     const sendingComposerDraft = draft.trim() === trimmed;
@@ -459,6 +470,7 @@ function ChatWorkspace() {
     setBusy("send");
     setError(null);
     setRetryText(null);
+    scrollToLatest();
     const messageFields = {
       text: trimmed,
       ...(outgoing.goal ? { goal: outgoing.goal, confirmed_feelings: outgoing.feelings ?? [] } : {}),
@@ -805,16 +817,25 @@ function ChatWorkspace() {
               : "Simple mode · no AI";
 
   const card = currentActivityCard(conversation);
+  // Conditions that make typing pointless (limit, missing chat or source) disable the field.
+  // A reply or activity change in progress only pauses sending.
+  // An open entry chooser must be answered first: a message typed under it would go to the
+  // current chat without the entry the screen is offering.
+  const composerBlocked = userMessages >= CHAT_MESSAGE_LIMIT || resuming || Boolean(resumeFailure) || sourcePending
+    || sourceNeedsNewChat || linkedSourceUnavailable || Boolean(activeSourceId && sourceError);
+  const composerWaiting = busy !== null || activityBusy || preferenceBusy;
   const lastLunaIndex = messages.map((message) => message.role).lastIndexOf("assistant");
 
   return (
-    <div className="chat">
+    <div className="chat" ref={chatRef}>
       <header className="chat-top">
         <Link className="icon-btn" href="/" aria-label="Back to home"><Icon name="back" /></Link>
         <div className="chat-who">
-          {stage !== "welcome" && <Luna mood={mood} size={80} />}
-          <strong>Luna</strong>
-          <small aria-live="polite">{status}</small>
+          {stage !== "welcome" && <Luna mood={mood} size={44} />}
+          <span className="chat-who-text">
+            <strong>Luna</strong>
+            <small aria-live="polite">{status}</small>
+          </span>
         </div>
         {conversation && stage !== "saved" ? (
           <button ref={menuTriggerRef} className="icon-btn" type="button" aria-label="Chat options" aria-haspopup="menu" aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
@@ -824,7 +845,7 @@ function ChatWorkspace() {
       </header>
 
       {menuOpen && (
-        <div ref={menuRef} className="menu" role="menu">
+        <div ref={menuRef} className="menu" role="menu" aria-label="Chat options">
           <button role="menuitem" type="button" onClick={() => { privacyOpener.current = menuTriggerRef.current; setMenuOpen(false); setPrivacyOpen(true); }}>How this chat is kept</button>
           <button role="menuitem" type="button" onClick={() => void endConversation(false)}>End this chat</button>
           <button role="menuitem" type="button" className="danger" onClick={() => void endConversation(true)}>Delete this chat</button>
@@ -832,16 +853,26 @@ function ChatWorkspace() {
       )}
 
       {activeSourceId && (
-        <div className="chat-hint" role="status" style={{ display: "block", overflowWrap: "anywhere", padding: "8px 16px" }}>
-          Using your selected journal entry
-          {sourceEntry?.id === activeSourceId && ` · ${new Date(sourceEntry.created_at).toLocaleDateString()}`}
-          {" · "}<Link href={`/journal?entry=${activeSourceId}`}>Open entry</Link>
-          {" · "}<button type="button" className="link-btn" disabled={busy !== null || preferenceBusy}
-            onClick={() => void startSelectedChat(false, true)}>Start AI chat without the entry</button>
-        </div>
+        <section className="source-strip" aria-label="Journal entry in this chat">
+          <span className="source-strip-icon" aria-hidden="true">📓</span>
+          <div className="source-strip-text" role="status">
+            <strong>Using your selected journal entry{sourceEntry?.id === activeSourceId
+              ? ` from ${entryDateLabel(sourceEntry.created_at).date}` : ""}</strong>
+            <small>
+              {sourceEntry?.id === activeSourceId ? `${entryDateLabel(sourceEntry.created_at).age} · ` : ""}
+              Luna reads only this entry. How you feel now may be different.
+            </small>
+          </div>
+          <div className="source-strip-actions">
+            <Link className="link-btn" href={`/journal?entry=${activeSourceId}`}>Open entry</Link>
+            <button type="button" className="link-btn" disabled={busy !== null || preferenceBusy}
+              onClick={() => void startSelectedChat(false, true)}>New chat without it</button>
+          </div>
+        </section>
       )}
 
       <div className="chat-log" ref={logRef} role="log" aria-live="polite" aria-label="Chat with Luna">
+        <div className="chat-log-content" ref={logContentRef}>
         {resumeFailure && <div className="chat-panel">
           <p className="note error" role="alert">{resumeFailure}</p>
           <button className="btn btn-soft" type="button" onClick={() => setResumeAttempt((value) => value + 1)}>Try loading chat again</button>
@@ -850,7 +881,7 @@ function ChatWorkspace() {
           <div className="chat-panel">
             <div className="card" style={{ display: "grid", gap: 12 }}>
               <h2>Talk about one journal entry</h2>
-              {sourceEntry && <p>Selected entry from {new Date(sourceEntry.created_at).toLocaleDateString()}.{" "}
+              {sourceEntry && <p>Selected entry from {entryDateLabel(sourceEntry.created_at).date} ({entryDateLabel(sourceEntry.created_at).age}).{" "}
                 <Link href={`/journal?entry=${sourceEntry.id}`}>Open original entry</Link></p>}
               {sourceError ? <p className="note error" role="alert">{sourceError}</p>
                 : !sourceEntry ? <p role="status">Loading the selected entry…</p>
@@ -945,15 +976,34 @@ function ChatWorkspace() {
         )}
 
         {busy === "send" && (
-          <div className="msg from-luna" aria-label={THINKING_LINES[thinkingLine]}>
+          <div className="msg from-luna" role="status">
             <span className="msg-avatar"><Luna mood="thinking" size={34} decorative /></span>
+            <span className="sr-only">Luna is replying</span>
             <div className="typing" aria-hidden="true"><i /><i /><i /></div>
           </div>
         )}
         {busy === "send" && <div className="typing-note" aria-hidden="true">{THINKING_LINES[thinkingLine]}</div>}
 
-        {conversation?.status === "open" && stage !== "support" && stage !== "saved" && (
+        {conversation?.mode === "ai" && conversation.status === "open" && conversation.safety_mode !== "support"
+          && (conversation as Conversation & { activity_move?: string }).activity_move !== "pause"
+          && conversation.interaction_preference !== "listen" && !sourcePending && !sourceNeedsNewChat
+          && !linkedSourceUnavailable && !sourceError && (
           <div className="chat-panel">
+            <ActivitySessionWorkspace key={conversation.id} conversation={conversation}
+              ordinaryMessages={userMessages}
+              disabled={busy !== null || preferenceBusy || resuming || Boolean(resumeFailure)}
+              onBusyChange={setActivityBusy}
+              onRefresh={() => refreshConversation(conversation.id)}
+              dock={activityDock} onPresenceChange={setActivityPresence}
+              onJustTalk={() => void changePreference("listen")} />
+          </div>
+        )}
+
+        {/* An offer card carries its own Just talk / Something else, and a started activity
+            keeps the chat open without competing choices, so chat-level chips step aside. */}
+        {conversation?.status === "open" && stage !== "support" && stage !== "saved"
+          && (conversation.mode !== "ai" || activityPresence === "idle" || conversation.interaction_preference === "listen") && (
+          <div className="chat-panel chat-choices">
             {conversation.interaction_preference === "listen" ? (
               <>
                 <p className="note" role="status">Just talking. We’ll stay with your thoughts.</p>
@@ -966,20 +1016,8 @@ function ChatWorkspace() {
                 onClick={() => void changePreference("listen")}>Just talk</button>
             )}
             {preferenceBusy && <p className="note" role="status">Saving your choice…</p>}
-            {stage === "chat" && <Link className="chip" href={discoveryHref()}>Find resources</Link>}
-          </div>
-        )}
-
-        {conversation?.mode === "ai" && conversation.status === "open" && conversation.safety_mode !== "support"
-          && (conversation as Conversation & { activity_move?: string }).activity_move !== "pause"
-          && conversation.interaction_preference !== "listen" && !sourcePending && !sourceNeedsNewChat
-          && !linkedSourceUnavailable && !sourceError && (
-          <div className="chat-panel">
-            <ActivitySessionWorkspace key={conversation.id} conversation={conversation}
-              ordinaryMessages={userMessages}
-              disabled={busy !== null || preferenceBusy || resuming || Boolean(resumeFailure)}
-              onBusyChange={setActivityBusy}
-              onRefresh={() => refreshConversation(conversation.id)} />
+            {/* AI chats search inline, inside the activity flow; the separate library stays on Home. */}
+            {stage === "chat" && conversation.mode !== "ai" && <Link className="chip" href={discoveryHref()}>Find resources</Link>}
           </div>
         )}
 
@@ -1125,6 +1163,16 @@ function ChatWorkspace() {
             )}
           </div>
         )}
+        </div>
+      </div>
+
+      <div className="chat-dock">
+        {unseen && (
+          <button className="jump-latest" type="button" onClick={() => scrollToLatest(true)}>
+            New messages <span aria-hidden="true">↓</span>
+          </button>
+        )}
+        <div ref={setActivityDock} />
       </div>
 
       {(stage === "welcome" || stage === "chat") && (
@@ -1142,7 +1190,9 @@ function ChatWorkspace() {
             rows={1}
             maxLength={2000}
             value={draft}
-            disabled={userMessages >= CHAT_MESSAGE_LIMIT || busy !== null || activityBusy || preferenceBusy || resuming || Boolean(resumeFailure) || sourcePending || linkedSourceUnavailable || Boolean(activeSourceId && sourceError)}
+            disabled={composerBlocked}
+            readOnly={composerWaiting}
+            aria-busy={composerWaiting}
             placeholder={stage === "welcome" ? "Or tell Luna what’s going on…" : "Type something…"}
             onChange={(event) => {
               setDraft(event.target.value);
@@ -1156,7 +1206,7 @@ function ChatWorkspace() {
             }}
           />
           <button className="send-btn" type="submit" aria-label="Send"
-            disabled={userMessages >= CHAT_MESSAGE_LIMIT || busy !== null || activityBusy || preferenceBusy || resuming || Boolean(resumeFailure) || sourcePending || linkedSourceUnavailable || Boolean(activeSourceId && sourceError) || !draft.trim()}>
+            disabled={composerBlocked || composerWaiting || !draft.trim()}>
             <Icon name="send" />
           </button>
         </form>

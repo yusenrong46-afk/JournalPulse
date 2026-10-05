@@ -25,7 +25,9 @@ export const metadata: Metadata = {
   applicationName: "JournalPulse",
 };
 
-export const viewport: Viewport = { themeColor: "#fbf5ec", colorScheme: "light" };
+// resizes-content lets Android Chrome shrink the page for the keyboard; /talk also follows the
+// visual viewport for iOS, which ignores this hint.
+export const viewport: Viewport = { themeColor: "#fbf5ec", colorScheme: "light", interactiveWidget: "resizes-content" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

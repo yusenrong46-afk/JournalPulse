@@ -242,9 +242,16 @@ describe("explicit journal selection", () => {
       if (path === `/v1/conversations/${OLD_CHAT_ID}/messages`) return delayed.promise;
       return fallback(path, options);
     });
+    // Send in the old chat first; an entry link opened while its reply is pending must not
+    // let that late reply revive the chat. (Sending under an open entry chooser is blocked.)
+    navigation.query = `c=${OLD_CHAT_ID}`;
     await mount();
     await writeDraft("A thought for the old chat.");
     await submit();
+    await act(async () => {
+      navigation.query = `entry=${ENTRY_ID}`;
+      navigation.listeners.forEach((listener) => listener());
+    });
     expect(button("Use this entry in a new AI chat").disabled).toBe(true);
     // The end-chat control stays available while generation is pending. Its epoch
     // invalidates the outstanding response even if the provider later succeeds.
@@ -606,6 +613,8 @@ describe("resource discovery handoff", () => {
       if (path === `/v1/conversations/${OLD_CHAT_ID}`) {
         const existing = turn(conversation(OLD_CHAT_ID, ENTRY_ID));
         existing.user_message.content = "A private detail about my friend.";
+        // AI chats search inline; the library link remains for guided chats.
+        existing.conversation.mode = "guided";
         return { conversation: existing.conversation, messages: [existing.user_message, existing.assistant_message] };
       }
       return fallback(path, options);
@@ -655,5 +664,57 @@ describe("resource discovery handoff", () => {
     await mount();
     expect(container.querySelectorAll("a[href^='/discover']")).toHaveLength(0);
     expect(container.textContent).toContain("You don’t have to handle this alone.");
+  });
+});
+
+describe("composer during a reply", () => {
+  beforeEach(() => { navigation.query = `c=${OLD_CHAT_ID}`; });
+
+  test("keeps focus and the draft field enabled while Luna replies, but blocks a second send", async () => {
+    const delayed = deferred<ConversationTurn>();
+    const fallback = requested.getMockImplementation()!;
+    requested.mockImplementation(async (path, options) => {
+      if (path.endsWith("/messages")) return delayed.promise;
+      return fallback(path, options);
+    });
+    await mount();
+    const input = container.querySelector("textarea")!;
+    await act(async () => { input.focus(); });
+    await writeDraft("First thought.");
+    await submit();
+    // Disabling the field would drop focus and close a mobile keyboard after every message.
+    expect(input.disabled).toBe(false);
+    expect(input.readOnly).toBe(true);
+    expect(document.activeElement).toBe(input);
+    expect(container.querySelector("[role=status]")?.textContent).toContain("Luna is replying");
+    await submit();
+    expect(requested.mock.calls.filter(([path]) => path.endsWith("/messages"))).toHaveLength(1);
+    const completed = turn(conversation(OLD_CHAT_ID));
+    completed.user_message.content = "First thought.";
+    await act(async () => { delayed.resolve(completed); });
+    expect(input.readOnly).toBe(false);
+    expect(document.activeElement).toBe(input);
+  });
+});
+
+describe("AI chat search entry", () => {
+  test("an AI chat offers one inline search instead of also linking to the separate library", async () => {
+    navigation.query = `c=${OLD_CHAT_ID}`;
+    await mount();
+    expect(container.querySelectorAll("a[href^='/discover']")).toHaveLength(0);
+  });
+});
+
+describe("entry chooser over an open chat", () => {
+  test("the composer waits for a choice instead of sending into the unrelated chat", async () => {
+    window.localStorage.setItem(OPEN_CONVERSATION_KEY, OLD_CHAT_ID);
+    navigation.query = `entry=${ENTRY_ID}`;
+    await mount();
+    expect(container.textContent).toContain("Start a new chat to use this entry");
+    // Typing here would go to the old chat without the entry while the screen offers the entry.
+    expect(container.querySelector("textarea")!.disabled).toBe(true);
+    await click("Keep current chat");
+    expect(container.textContent).not.toContain("Start a new chat to use this entry");
+    expect(container.querySelector("textarea")!.disabled).toBe(false);
   });
 });

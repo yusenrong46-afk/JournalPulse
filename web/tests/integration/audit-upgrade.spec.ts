@@ -86,7 +86,10 @@ test("a linked chat opens an editable general search and returns with its source
   const chat = new URL(page.url()).searchParams.get("c");
   expect(chat).toBeTruthy();
   await expect(page.getByRole("button", { name: "Yes, let’s find one small thing" })).toHaveCount(0);
-  await page.getByRole("link", { name: "Find resources", exact: true }).click();
+  // AI chats search inline now; the separate library is reached from Home and must still
+  // return to the linked chat without carrying its source or chat identity.
+  await page.goto("/");
+  await page.getByRole("link", { name: "Explore useful resources", exact: true }).click();
   await expect(page.getByLabel("General topic to search")).toHaveValue("");
   await expect(page.getByRole("checkbox", { name: /I approve sending this topic/ })).not.toBeChecked();
   expect(page.url()).not.toContain(entry.id);

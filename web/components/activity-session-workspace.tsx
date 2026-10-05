@@ -1,28 +1,38 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { ApiError } from "@/lib/api";
 import { currentActivityCard } from "@/lib/activity-card";
-import Link from "next/link";
-import { discoveryHref } from "@/lib/discovery";
 import {
   activityClock, activityReceipt, activitySecondsLeft, canApplyActivity, commandActivity,
   createActivity, followUpActivity, readCurrentActivity, reportActivity,
   type ActivityClock, type ActivityCommand, type ActivityReport, type ActivityResource, type ActivitySession,
 } from "@/lib/activity-session";
 import type { Conversation } from "@/lib/types";
+import { ActivityBar } from "./activity-bar";
 import { ActivitySessionDiscovery } from "./activity-session-discovery";
-import { ActivitySessionPanel } from "./activity-session-panel";
+import { ActivitySessionPanel, OfferCard } from "./activity-session-panel";
+
+/** What the activity flow currently asks of the person, so the page can hide duplicate choices. */
+export type ActivityPresence = "idle" | "offer" | "running" | "check-in";
 
 type Props = {
   conversation: Conversation; disabled: boolean; onRefresh(): Promise<unknown>; onBusyChange(value: boolean): void;
   ordinaryMessages?: number;
+  /** Slot above the composer for the running-activity bar. Without one, the bar renders inline. */
+  dock?: HTMLElement | null;
+  onPresenceChange?(presence: ActivityPresence): void;
+  /** "Just talk" on Luna's offer: the same server preference as the chat-level choice. */
+  onJustTalk?(): void;
 };
 type PendingOperation = { key: string; payload: string };
 
 /** All authoritative state lives on the server. This component keeps only display clocks and retry receipts. */
-export function ActivitySessionWorkspace({ conversation, disabled, onRefresh, onBusyChange, ordinaryMessages = 0 }: Props) {
+export function ActivitySessionWorkspace({
+  conversation, disabled, onRefresh, onBusyChange, ordinaryMessages = 0, dock = null, onPresenceChange, onJustTalk,
+}: Props) {
   const pausedByConversation = (conversation as Conversation & { activity_move?: string }).activity_move === "pause";
   const [session, setSession] = useState<ActivitySession | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
@@ -44,11 +54,15 @@ export function ActivitySessionWorkspace({ conversation, disabled, onRefresh, on
   const inFlight = useRef(false);
   const busyCallback = useRef(onBusyChange);
   const refreshCallback = useRef(onRefresh);
+  const presenceCallback = useRef(onPresenceChange);
+  const checkInRef = useRef<HTMLFormElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     chat.current = conversation;
     busyCallback.current = onBusyChange;
     refreshCallback.current = onRefresh;
-  }, [conversation, onBusyChange, onRefresh]);
+    presenceCallback.current = onPresenceChange;
+  }, [conversation, onBusyChange, onRefresh, onPresenceChange]);
 
   const apply = useCallback((next: ActivitySession | null) => {
     if (!mounted.current) return false;
@@ -105,6 +119,7 @@ export function ActivitySessionWorkspace({ conversation, disabled, onRefresh, on
       pending.current?.abort();
       readPending.current?.abort();
       busyCallback.current(false);
+      presenceCallback.current?.("idle");
       window.clearInterval(poll);
       window.removeEventListener("focus", resume);
       document.removeEventListener("visibilitychange", resume);
@@ -261,14 +276,15 @@ export function ActivitySessionWorkspace({ conversation, disabled, onRefresh, on
   const sessionNeedsSync = Boolean(session && (session.conversation_revision ?? 0) < (conversation.revision ?? 0));
   const expiryPending = !disabled && !pausedByConversation && !sessionNeedsSync
     && Boolean(session?.status === "active" && session.resource.format === "timer" && secondsLeft === 0);
+  const expiryKey = expiryPending && session && !disabled && !busy ? `${session.id}:${session.revision}` : null;
+  const controlRef = useRef(control);
+  controlRef.current = control;
   useEffect(() => {
-    if (!expiryPending || !session || disabled || busy) return;
-    const key = `${session.id}:${session.revision}`;
-    if (expiryAttempt.current === key) return;
-    expiryAttempt.current = key;
+    if (!expiryKey || expiryAttempt.current === expiryKey) return;
+    expiryAttempt.current = expiryKey;
     // One deterministic question is rendered locally; the server receipt makes tabs/retries converge.
-    void control("expire");
-  });
+    void controlRef.current("expire");
+  }, [expiryKey]);
 
   const terminal = session && ["completed", "stopped", "declined"].includes(session.status);
   const card = currentActivityCard(conversation);
@@ -281,36 +297,70 @@ export function ActivitySessionWorkspace({ conversation, disabled, onRefresh, on
   async function saveSearch(resource: ActivityResource, token: string) {
     const saved = await saveOffer(resource.id, token);
     if (!saved) throw new Error("The resource save is not confirmed. Check the activity status and retry.");
+    setSearchOpen(false);
   }
+
+  function openSearch() {
+    setSearchOpen(true);
+    // The panel mounts on the next render; bring it into view for keyboard and screen-reader users.
+    queueMicrotask(() => searchRef.current?.scrollIntoView?.({ block: "nearest" }));
+  }
+
+  function goToCheckIn() {
+    const form = checkInRef.current;
+    form?.scrollIntoView?.({ block: "center" });
+    form?.querySelector<HTMLInputElement>("input[type=radio]")?.focus();
+  }
+
+  const running = Boolean(session && (session.status === "active" || session.status === "paused"));
+  const waiting = Boolean(session && !disabled && !pausedByConversation && !sessionNeedsSync && (
+    session.status === "awaiting_report" || expiryPending
+    || (session.status === "stopped" && session.check_in_issued && Boolean(session.started_at) && !session.report)));
+  const presence: ActivityPresence = waiting ? "check-in" : running ? "running"
+    : showOffer || session?.status === "offered" ? "offer" : "idle";
+  useEffect(() => { presenceCallback.current?.(presence); }, [presence]);
+
+  // While a check-in is due, the form in the chat is the one place to answer; the bar only
+  // remains for the brief moment the expiry is being confirmed.
+  const bar = session && ((running && !waiting) || expiryPending) ? (
+    <ActivityBar session={session} secondsLeft={secondsLeft}
+      busy={busy || disabled || pausedByConversation || sessionNeedsSync}
+      waiting={waiting} expiryPending={expiryPending}
+      onCommand={(command) => void control(command)} onGoToCheckIn={goToCheckIn} />
+  ) : null;
+  // Search is one choice, offered when nothing else is on screen; an offer card has its own
+  // "Something else", and a running activity has nothing to replace.
+  const searchEntry = presence === "idle" && !searchOpen;
 
   return (
     <div className="stack">
       {loading && <p className="small muted" role="status">Syncing your activity…</p>}
-      {showOffer && primary && <section className="card stack" aria-label="Activity with Luna">
-        <h2>{primary.title}</h2><p>{card?.card_reason ?? primary.summary}</p>
-        {!primary.id.startsWith("guided_") && <p className="small muted">Saved resource collection</p>}
-        {primary.duration_minutes && <p className="small muted">About {primary.duration_minutes} minutes</p>}
-        <div className="row"><button className="btn btn-primary" type="button" disabled={busy || disabled || loading}
-          onClick={() => void saveOffer(primary.id, undefined, true)}>Start activity</button>
-          <button className="btn btn-ghost" type="button" disabled={busy || disabled || loading}
-            onClick={() => void saveOffer(primary.id).then((saved) => { if (saved) void control("decline"); })}>Not now</button></div>
-        <p className="small muted">You can tell Luna what would fit better in the chat.</p>
-        <Link className="small muted" href={discoveryHref(card?.goal)}>Search for other resources</Link>
-      </section>}
-      {session && <ActivitySessionPanel session={session} secondsLeft={secondsLeft} busy={busy || disabled || pausedByConversation || sessionNeedsSync}
+      {showOffer && primary && <OfferCard title={primary.title} reason={card?.card_reason ?? primary.summary}
+        minutes={primary.duration_minutes} busy={busy || disabled || loading} canStart
+        onStart={() => void saveOffer(primary.id, undefined, true)}
+        onSomethingElse={canStart ? openSearch : undefined}
+        dismiss={onJustTalk ? { label: "Just talk", onClick: onJustTalk } : {
+          label: "Not now", onClick: () => void saveOffer(primary.id).then((saved) => { if (saved) void control("decline"); }),
+        }} />}
+      {session && <ActivitySessionPanel ref={checkInRef} session={session} secondsLeft={secondsLeft}
+        busy={busy || disabled || pausedByConversation || sessionNeedsSync}
         suppressQuestions={disabled || pausedByConversation || sessionNeedsSync}
-        canStart={canStart}
+        canStart={canStart} onSomethingElse={canStart ? openSearch : undefined}
         expiryPending={expiryPending} onCommand={(command) => void control(command)}
         onReport={(report) => void saveReport(report)} onFollowUp={() => void followUp()} />}
-      <button className="chip" type="button" disabled={busy || disabled || !canStart} onClick={() => setSearchOpen((value) => !value)}>
-        {searchOpen ? "Close activity search" : "Find another resource"}
-      </button>
-      {searchOpen && <ActivitySessionDiscovery conversation={conversation} disabled={busy || disabled || !canStart} onSave={saveSearch} />}
+      {searchEntry && <button className="chip" type="button" disabled={busy || disabled || !canStart} onClick={openSearch}>
+        Find another resource
+      </button>}
+      {searchOpen && <div ref={searchRef} className="stack">
+        <ActivitySessionDiscovery conversation={conversation} disabled={busy || disabled || !canStart} onSave={saveSearch} />
+        <button className="btn btn-ghost" type="button" onClick={() => setSearchOpen(false)}>Close activity search</button>
+      </div>}
       {error && <div className="stack"><p role="alert" className="note error">{error}</p>
         {retryOperation && <button className="btn btn-soft" type="button" disabled={busy || disabled}
           onClick={() => void retryOperation()}>Retry activity change</button>}
         <button className="btn btn-ghost" type="button" disabled={busy || disabled} onClick={() => void sync()}>Sync activity</button>
       </div>}
+      {bar && (dock ? createPortal(bar, dock) : bar)}
     </div>
   );
 }

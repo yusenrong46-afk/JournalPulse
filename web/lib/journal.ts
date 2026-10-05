@@ -43,3 +43,16 @@ export function reflectJournalEntry(
     signal,
   });
 }
+
+/**
+ * "Sat, Sep 28" plus how long ago it was written, so an old entry is not mistaken for how
+ * the person feels today. `now` is injectable for tests.
+ */
+export function entryDateLabel(createdAt: string, now: Date = new Date()): { date: string; age: string } {
+  const written = new Date(createdAt);
+  const date = written.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  const startOf = (value: Date) => new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+  const days = Math.round((startOf(now) - startOf(written)) / 86_400_000);
+  const age = days <= 0 ? "written today" : days === 1 ? "written yesterday" : `written ${days} days ago`;
+  return { date, age };
+}

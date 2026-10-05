@@ -206,3 +206,11 @@ describe("journal save, reflection and discussion", () => {
     expect(container.querySelector<HTMLInputElement>("input[type=checkbox]")!.checked).toBe(false);
   });
 });
+
+test("entry dates say how long ago they were written", async () => {
+  const { entryDateLabel } = await import("@/lib/journal");
+  const now = new Date(2026, 9, 5, 9);
+  expect(entryDateLabel(new Date(2026, 9, 5, 1).toISOString(), now).age).toBe("written today");
+  expect(entryDateLabel(new Date(2026, 9, 4, 23).toISOString(), now).age).toBe("written yesterday");
+  expect(entryDateLabel(new Date(2026, 8, 28, 12).toISOString(), now).age).toBe("written 7 days ago");
+});

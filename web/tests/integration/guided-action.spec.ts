@@ -73,30 +73,34 @@ test("meditation stays in chat and a paused session survives reload before an ho
     const start = activityPanel.getByRole("button", { name: "Start activity", exact: true });
     await start.focus();
     await page.keyboard.press("Enter");
-    await expect(activityPanel.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
-    await expect(activityPanel.getByRole("timer")).toHaveAttribute("aria-live", "off");
+    // Once started, controls live in the compact bar above the composer, outside the chat log.
+    const activityBar = page.getByRole("region", { name: "Current activity", exact: true });
+    await expect(activityBar.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+    await expect(activityBar.getByRole("timer")).toHaveAttribute("aria-live", "off");
+    await expect(page.getByRole("log").getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
     let activity = await getActivity(request, who, chatId!);
     expect(activity.status).toBe("active");
     const chat = await (await request.get(`/v1/conversations/${chatId}`, { headers: headers(who) })).json();
     expect(chat.conversation.status).toBe("open");
     expect(chat.messages.some((message: { content: string | null }) => message.content?.includes("fictional busy afternoon"))).toBeTruthy();
 
-    await activityPanel.getByRole("button", { name: "Pause", exact: true }).click();
-    await expect(activityPanel.getByRole("button", { name: "Resume", exact: true })).toBeVisible();
+    await activityBar.getByRole("button", { name: "Pause", exact: true }).click();
+    await expect(activityBar.getByRole("button", { name: "Resume", exact: true })).toBeVisible();
     activity = await getActivity(request, who, chatId!);
     expect(activity.status).toBe("paused");
     const pausedRemaining = activity.remaining_seconds;
     await page.reload();
-    await expect(activityPanel.getByRole("button", { name: "Resume", exact: true })).toBeVisible();
+    await expect(activityBar.getByRole("button", { name: "Resume", exact: true })).toBeVisible();
     const recovered = await getActivity(request, who, chatId!);
     expect(recovered.id).toBe(activity.id);
     expect(recovered.remaining_seconds).toBe(pausedRemaining);
     expect(recovered.report).toBeNull();
 
-    await activityPanel.getByRole("button", { name: "Finish early", exact: true }).click();
-    await expect(activityPanel.getByText("Did you try it?", { exact: true })).toHaveCount(1);
-    await activityPanel.getByRole("radio", { name: "Not tried", exact: true }).check();
-    await activityPanel.getByRole("button", { name: "Save check-in", exact: true }).click();
+    await activityBar.getByRole("button", { name: "Finish early", exact: true }).click();
+    const checkIn = page.getByRole("form", { name: "Activity check-in", exact: true });
+    await expect(page.getByText("Did you try it?", { exact: true })).toHaveCount(1);
+    await checkIn.getByRole("radio", { name: "Not tried", exact: true }).check();
+    await checkIn.getByRole("button", { name: "Save check-in", exact: true }).click();
     await expect.poll(async () => (await getActivity(request, who, chatId!)).follow_up_status).toBe("ready");
     const reported = await getActivity(request, who, chatId!);
     expect(reported.report?.participation).toBe("not_tried");
@@ -203,7 +207,8 @@ test("inline search uses the real request contract and saves a refined signed of
     const panel = page.getByRole("region", { name: "Activity with Luna", exact: true });
     await expect(panel.getByRole("heading", { name: "Fictional reflection resource 3", exact: true })).toBeVisible();
     await panel.getByRole("button", { name: "Start activity", exact: true }).click();
-    await expect(panel.getByRole("button", { name: "Done / check in", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Current activity", exact: true })
+      .getByRole("button", { name: "Done / check in", exact: true })).toBeVisible();
     const chatId = new URL(page.url()).searchParams.get("c")!;
     expect((await getActivity(request, who, chatId)).status).toBe("active");
     const exported = await (await request.get("/v1/export", { headers: headers(who) })).json();
@@ -250,7 +255,8 @@ test("a newer recommendation replaces an unstarted saved search offer", async ({
     await expect(newOffer.getByRole("button", { name: "Start activity", exact: true })).toBeVisible();
     expect((await getActivity(request, who, chat.id)).status).toBe("stopped");
     await newOffer.getByRole("button", { name: "Start activity", exact: true }).click();
-    await expect(newOffer.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Current activity", exact: true })
+      .getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     const activity = await getActivity(request, who, chat.id);
     expect(activity.id).not.toBe(oldOffer.id);
     expect(activity.status).toBe("active");
