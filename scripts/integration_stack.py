@@ -18,11 +18,14 @@ import hashlib
 import hmac
 import json
 import os
+import platform
+import re
 import shutil
 import signal
 import subprocess
 import sys
 import tarfile
+import tempfile
 import threading
 import time
 import urllib.request
@@ -61,6 +64,20 @@ JWT_SECRET = "integration-only-jwt-secret-0123456789abcdef"
 SIGNING_KEY = "integration-only-signing-key-0123456789abcdef"
 AUTHENTICATOR_PASSWORD = "integration-authenticator"
 POSTGREST_VERSION = "v12.2.12"
+# SHA-256 of the official GitHub release archives, recorded by the maintainers on 2026-10-05.
+# PostgREST publishes no checksums for these assets, so this pins the reviewed bytes (trust on
+# first use); it does not prove upstream authenticity. Add a platform only with its own hash.
+POSTGREST_ASSETS: dict[tuple[str, str], tuple[str, str]] = {
+    ("Linux", "x86_64"): (
+        "linux-static-x86-64",
+        "5de4092f1719da3353c40bf96c8dec6913f2254a7cd0b61cc05f233153b557d5",
+    ),
+    ("Darwin", "arm64"): (
+        "macos-aarch64",
+        "66eb150109409caea1b90c819418d326b2a5fd59789209e0dd45c87078c71909",
+    ),
+}
+POSTGREST_DOWNLOAD_TIMEOUT_SECONDS = 60
 POSTGREST_PORT = int(os.getenv("JP_POSTGREST_PORT", "3301"))
 GATEWAY_PORT = int(os.getenv("JP_GATEWAY_PORT", "54321"))
 API_PORT = int(os.getenv("JP_API_PORT", "8100"))
@@ -188,24 +205,59 @@ def prepare_database() -> None:
 # PostgREST --------------------------------------------------------------------------------
 
 
+def postgrest_version_matches(binary: Path) -> bool:
+    """A binary on PATH or in the cache is used only if it reports the pinned release."""
+    try:
+        result = subprocess.run(
+            [str(binary), "--version"], capture_output=True, text=True, timeout=10, check=False
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    expected = re.escape(POSTGREST_VERSION.removeprefix("v"))
+    return re.match(rf"PostgREST {expected}\b", result.stdout.strip()) is not None
+
+
 def postgrest_binary() -> Path:
     found = shutil.which("postgrest")
-    if found:
+    if found and postgrest_version_matches(Path(found)):
         return Path(found)
+    if found:
+        print(f"Ignoring {found}: it is not PostgREST {POSTGREST_VERSION}.", file=sys.stderr)
+    asset = POSTGREST_ASSETS.get((platform.system(), platform.machine()))
+    if asset is None:
+        raise RuntimeError(
+            f"No pinned PostgREST download for {platform.system()} {platform.machine()}; "
+            f"put PostgREST {POSTGREST_VERSION.removeprefix('v')} on PATH instead."
+        )
+    name, expected_sha256 = asset
     cache = Path.home() / ".cache" / "journalpulse" / POSTGREST_VERSION
     binary = cache / "postgrest"
-    if binary.exists():
+    if binary.exists() and postgrest_version_matches(binary):
         return binary
     cache.mkdir(parents=True, exist_ok=True)
-    archive = cache / "postgrest.tar.xz"
     url = (
         f"https://github.com/PostgREST/postgrest/releases/download/{POSTGREST_VERSION}/"
-        f"postgrest-{POSTGREST_VERSION}-linux-static-x86-64.tar.xz"
+        f"postgrest-{POSTGREST_VERSION}-{name}.tar.xz"
     )
-    urllib.request.urlretrieve(url, archive)
-    with tarfile.open(archive, "r:xz") as bundle:
-        bundle.extract("postgrest", cache, filter="data")
-    binary.chmod(0o755)
+    # Verify the archive before extracting anything, and only rename a finished binary into
+    # place so an interrupted or tampered download never becomes the cached executable.
+    with tempfile.TemporaryDirectory(dir=cache) as staging:
+        archive = Path(staging) / "postgrest.tar.xz"
+        digest = hashlib.sha256()
+        with urllib.request.urlopen(url, timeout=POSTGREST_DOWNLOAD_TIMEOUT_SECONDS) as response:
+            with archive.open("wb") as output:
+                while chunk := response.read(1 << 16):
+                    digest.update(chunk)
+                    output.write(chunk)
+        if not hmac.compare_digest(digest.hexdigest(), expected_sha256):
+            raise RuntimeError(f"PostgREST download {name} failed its pinned SHA-256 check.")
+        with tarfile.open(archive, "r:xz") as bundle:
+            bundle.extract("postgrest", staging, filter="data")
+        extracted = Path(staging) / "postgrest"
+        extracted.chmod(0o755)
+        if not postgrest_version_matches(extracted):
+            raise RuntimeError(f"The verified archive did not contain PostgREST {POSTGREST_VERSION}.")
+        os.replace(extracted, binary)
     return binary
 
 
