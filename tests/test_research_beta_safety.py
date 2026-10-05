@@ -81,13 +81,14 @@ def test_unrecognised_negation_errs_toward_support():
 @pytest.mark.parametrize(
     "text",
     [
-        "I've been thinking about ending it all",
-        "Everyone would be better off without me",
+        "I can't see any way out of this",
+        "I just want everything to stop for good",
     ],
 )
 def test_known_gaps_are_documented_not_hidden(text: str):
-    # Indirect language is outside the pattern list. The gate is not a classifier, and
-    # docs/ARCHITECTURE.md says so; these assertions record the current gap.
+    # Some indirect language is still outside the pattern list. The gate is not a
+    # classifier, and docs/ARCHITECTURE.md says so; these assertions record the current
+    # gap. Earlier gaps now covered are in test_safety_indirect_and_historical.py.
     assert assess_safety(text, "CA").mode == SafetyMode.NORMAL
 
 

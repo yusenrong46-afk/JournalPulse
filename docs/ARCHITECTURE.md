@@ -193,9 +193,13 @@ exist only behind flags that stay off until the gates in the [research track](RE
 
 `journalpulse.safety` matches a short list of explicit risk phrases, with negation that applies only
 to the matched phrase it contains. It routes clear risk language to human support before any model call, and errs
-toward support when negation is phrased in a way it does not recognise. It is not a classifier and does
-not understand meaning: indirect language such as "ending it all" is not detected. The tests in
-`tests/test_research_beta_safety.py` pin both the intended behaviour and these known gaps.
+toward support when negation is phrased in a way it does not recognise. Some indirect first-person
+phrasings ("better off without me", "ending it all", "suicidal") are listed too. A phrase preceded in its
+clause by a past marker ("used to", "years ago") is treated as history unless the same clause also has a
+present marker ("now", "again", "still", "tonight"). Reported risk about someone else still routes to
+support. It is not a classifier, covers English only and does not understand meaning: other indirect
+language ("I can't see any way out") is not detected. The tests in `tests/test_research_beta_safety.py`
+and `tests/test_safety_indirect_and_historical.py` pin the intended behaviour and these known gaps.
 
 ## API
 
