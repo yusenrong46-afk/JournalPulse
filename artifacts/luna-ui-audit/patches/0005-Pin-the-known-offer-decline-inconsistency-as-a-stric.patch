@@ -1,0 +1,81 @@
+From 6b60067d1e6581039fb2dd2833dd87806730b218 Mon Sep 17 00:00:00 2001
+From: Thomas <yusenrong46@gmail.com>
+Date: Mon, 5 Oct 2026 20:21:10 -0300
+Subject: [PATCH 5/8] Pin the known offer-decline inconsistency as a strict
+ expected failure
+
+Saving a different offer marks the earlier unstarted offer 'declined' (SQLite and
+the PostgreSQL function), which then excludes it from later Luna choices, unlike the
+supersede path that records 'stopped'. Fixing PostgreSQL needs a new shared-project
+migration, so the fix is deferred and the test documents it until both stores change.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ tests/test_inline_discovery.py | 54 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+
+diff --git a/tests/test_inline_discovery.py b/tests/test_inline_discovery.py
+index a27c18f..963d13b 100644
+--- a/tests/test_inline_discovery.py
++++ b/tests/test_inline_discovery.py
+@@ -323,3 +323,57 @@ def test_a_capped_chat_cannot_spend_another_inline_search(tmp_path: Path) -> Non
+         )
+         assert response.status_code == 409
+         assert discovery.requests == []
++
++
++class TwoResultDiscovery(DiscoveryDouble):
++    def search(self, payload: DiscoveryRequest) -> DiscoveryResponse:
++        first = result(payload)
++        second = first.candidates[0].model_copy(update={
++            "title": "Fictional second resource", "url": "https://resources.example.org/second",
++        })
++        return first.model_copy(update={
++            "candidates": [first.candidates[0], second],
++            "provenance": first.provenance.model_copy(update={"candidate_count": 2}),
++        })
++
++
++@pytest.mark.xfail(
++    strict=True,
++    reason=(
++        "Known P3 (2026-10-05 UI audit): saving a different offer marks the earlier unstarted "
++        "offer 'declined' in both SQLite and the PostgreSQL function, and chat_activity_context "
++        "then excludes it from Luna's later choices, unlike the supersede path ('stopped'). "
++        "Fixing PostgreSQL needs a new migration on the shared project, so it is deferred; "
++        "remove this marker when both stores are fixed."
++    ),
++)
++def test_saving_another_offer_is_not_recorded_as_a_rejection(tmp_path: Path) -> None:
++    settings = configured(tmp_path)
++    with TestClient(create_app(
++        settings=settings, discovery_client=TwoResultDiscovery(), clock=lambda: NOW,
++    )) as client:
++        conversation = start(client)
++        response = client.post(
++            f"/v1/conversations/{conversation['id']}/discover", headers=HEADERS, json=request_body()
++        )
++        assert response.status_code == 200, response.text
++        offers = response.json()["offers"]
++        assert len(offers) == 2
++        saved = []
++        for offer in offers:
++            verified = verify_resource_token(
++                settings, offer["resource_token"], user_id=OWNER,
++                conversation_id=UUID(conversation["id"]), conversation_revision=0, now=NOW,
++            )
++            created = client.post(
++                f"/v1/conversations/{conversation['id']}/activity-sessions",
++                headers=HEADERS,
++                json={
++                    "client_request_id": str(uuid4()), "expected_conversation_revision": 0,
++                    "resource_id": verified["id"], "resource_token": offer["resource_token"],
++                },
++            )
++            assert created.status_code == 201, created.text
++            saved.append(created.json()["id"])
++        first = client.get(f"/v1/activity-sessions/{saved[0]}", headers=HEADERS).json()
++        assert first["status"] != "declined", "choosing another option is not a rejection"
+-- 
+2.50.1 (Apple Git-155)
+

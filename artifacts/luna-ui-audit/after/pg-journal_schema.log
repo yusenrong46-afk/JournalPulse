@@ -1,0 +1,18 @@
+ok: journal replay returns the original timestamp
+ok: changed journal replay cannot overwrite writing
+ok: unsigned journal insertion is denied
+ok: direct deletion cannot bypass derived-content cleanup
+ok: journal source is hidden by owner RLS
+ok: a chat cannot attach another person's source
+ok: source creation time is checked atomically
+ok: linked action reflection was saved before source deletion
+ok: source deletion succeeds
+ok: source deletion removes linked conversation
+ok: source deletion removes derived messages
+ok: source deletion removes the accepted derived reflection
+ok: source deletion preserves unrelated conversations
+ok: a delayed turn cannot recreate deleted source context
+ok: a delayed start cannot create an orphan source chat
+ok: global journal deletion includes standalone writing
+ok: global deletion preserves the other person's writing
+Connected journal schema verification passed

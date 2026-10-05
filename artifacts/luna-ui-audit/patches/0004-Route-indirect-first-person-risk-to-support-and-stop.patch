@@ -1,0 +1,233 @@
+From a328408330089e83431481cbf82e37a711ede85d Mon Sep 17 00:00:00 2001
+From: Thomas <yusenrong46@gmail.com>
+Date: Mon, 5 Oct 2026 20:20:33 -0300
+Subject: [PATCH 4/8] Route indirect first-person risk to support and stop
+ clearly past risk locking chat
+
+The English phrase router missed indirect risk ("better off without me", "ending
+it all", "suicidal", "won't be around much longer") and sent clearly historical
+statements ("I used to want to die but therapy helped") into sticky support mode,
+which closes the composer. Indirect phrasings are added; a past marker before a risk
+phrase is treated as history only when the same clause has no present marker.
+Reported risk about someone else still routes to support. Still not a classifier.
+
+Tests: tests/test_safety_indirect_and_historical.py (17 failed on the previous
+router), with replacement known-gap cases. Skill .3 is unchanged.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ docs/ARCHITECTURE.md                         |  10 +-
+ src/journalpulse/safety.py                   |  34 ++++++-
+ tests/test_research_beta_safety.py           |   9 +-
+ tests/test_safety_indirect_and_historical.py | 102 +++++++++++++++++++
+ 4 files changed, 145 insertions(+), 10 deletions(-)
+ create mode 100644 tests/test_safety_indirect_and_historical.py
+
+diff --git a/docs/ARCHITECTURE.md b/docs/ARCHITECTURE.md
+index 2cbb5d6..ccfb46a 100644
+--- a/docs/ARCHITECTURE.md
++++ b/docs/ARCHITECTURE.md
+@@ -193,9 +193,13 @@ exist only behind flags that stay off until the gates in the [research track](RE
+ 
+ `journalpulse.safety` matches a short list of explicit risk phrases, with negation that applies only
+ to the matched phrase it contains. It routes clear risk language to human support before any model call, and errs
+-toward support when negation is phrased in a way it does not recognise. It is not a classifier and does
+-not understand meaning: indirect language such as "ending it all" is not detected. The tests in
+-`tests/test_research_beta_safety.py` pin both the intended behaviour and these known gaps.
++toward support when negation is phrased in a way it does not recognise. Some indirect first-person
++phrasings ("better off without me", "ending it all", "suicidal") are listed too. A phrase preceded in its
++clause by a past marker ("used to", "years ago") is treated as history unless the same clause also has a
++present marker ("now", "again", "still", "tonight"). Reported risk about someone else still routes to
++support. It is not a classifier, covers English only and does not understand meaning: other indirect
++language ("I can't see any way out") is not detected. The tests in `tests/test_research_beta_safety.py`
++and `tests/test_safety_indirect_and_historical.py` pin the intended behaviour and these known gaps.
+ 
+ ## API
+ 
+diff --git a/src/journalpulse/safety.py b/src/journalpulse/safety.py
+index 20f9e98..7247825 100644
+--- a/src/journalpulse/safety.py
++++ b/src/journalpulse/safety.py
+@@ -12,6 +12,28 @@ HIGH_RISK_PATTERNS = (
+     r"\bi (?:have|made) a suicide plan\b",
+     r"\bi might act on (?:it|these thoughts)\b",
+     r"\boverdose (?:myself|tonight|today)\b",
++    # Indirect first-person phrasings (2026-10-05 audit). Bare idioms such as "killing
++    # myself at work" stay out because support mode closes the composer for the chat.
++    r"\b(?:everyone|everybody|people|they|the world|my (?:family|friends|kids|children|partner|parents)) "
++    r"(?:would|will|'d) be better off without me\b",
++    r"\bbetter off if i (?:was|were) (?:dead|gone|not here|not around)\b",
++    r"\b(?:end|ending) it all\b",
++    r"\bi (?:won't|will not|'m not going to|am not going to) be (?:around|here) much longer\b",
++    r"\bsuicidal\b",
++    r"\b(?:thinking|thoughts?) (?:about|of) (?:killing myself|suicide|ending my life)\b",
++    r"\bi wish i (?:was|were) dead\b",
++    r"\bi (?:don't|do not) want to (?:be alive|live|exist) anymore\b",
++)
++
++# A risk phrase preceded in its clause by one of these reads as history ("I used to want
++# to die"). It still routes to support if the clause also has a present-time marker, so
++# "I used to want to die and now I want to die again" is never treated as past.
++HISTORICAL_PREFIX = re.compile(
++    r"\b(?:used to|years ago|months ago|long ago|in the past|back then|"
++    r"when i was (?:a |an )?(?:kid|child|teen|teenager|younger|student|\d+))\b"
++)
++PRESENT_MARKER = re.compile(
++    r"\b(?:now|again|still|today|tonight|currently|lately|these days|this (?:week|month))\b"
+ )
+ 
+ NEGATED_PATTERNS = (
+@@ -52,10 +74,16 @@ def _clause_has_unnegated_risk(clause: str) -> bool:
+     ]
+     # A denial applies only to the phrase it contains. "I don't want to die and
+     # I might act on these thoughts" still contains a separate affirmative risk.
++    present = PRESENT_MARKER.search(clause) is not None
++
++    def is_risk(match: re.Match[str]) -> bool:
++        if any(start <= match.start() and match.end() <= end for start, end in negated_spans):
++            return False
++        historical = HISTORICAL_PREFIX.search(clause, 0, match.start()) is not None
++        return present or not historical
++
+     return any(
+-        not any(start <= match.start() and match.end() <= end for start, end in negated_spans)
+-        for pattern in HIGH_RISK_PATTERNS
+-        for match in re.finditer(pattern, clause)
++        is_risk(match) for pattern in HIGH_RISK_PATTERNS for match in re.finditer(pattern, clause)
+     )
+ 
+ 
+diff --git a/tests/test_research_beta_safety.py b/tests/test_research_beta_safety.py
+index cc0856a..4be1f6d 100644
+--- a/tests/test_research_beta_safety.py
++++ b/tests/test_research_beta_safety.py
+@@ -81,13 +81,14 @@ def test_unrecognised_negation_errs_toward_support():
+ @pytest.mark.parametrize(
+     "text",
+     [
+-        "I've been thinking about ending it all",
+-        "Everyone would be better off without me",
++        "I can't see any way out of this",
++        "I just want everything to stop for good",
+     ],
+ )
+ def test_known_gaps_are_documented_not_hidden(text: str):
+-    # Indirect language is outside the pattern list. The gate is not a classifier, and
+-    # docs/ARCHITECTURE.md says so; these assertions record the current gap.
++    # Some indirect language is still outside the pattern list. The gate is not a
++    # classifier, and docs/ARCHITECTURE.md says so; these assertions record the current
++    # gap. Earlier gaps now covered are in test_safety_indirect_and_historical.py.
+     assert assess_safety(text, "CA").mode == SafetyMode.NORMAL
+ 
+ 
+diff --git a/tests/test_safety_indirect_and_historical.py b/tests/test_safety_indirect_and_historical.py
+new file mode 100644
+index 0000000..b8a1ae0
+--- /dev/null
++++ b/tests/test_safety_indirect_and_historical.py
+@@ -0,0 +1,102 @@
++"""Indirect first-person risk reaches support; clearly past risk does not lock the chat.
++
++The router is still an English phrase list, not a classifier. These cases pin two
++corrections from the 2026-10-05 UI audit and the deliberately cautious limits around them.
++"""
++
++from pathlib import Path
++
++import pytest
++from fastapi.testclient import TestClient
++
++from journalpulse.api import create_app
++from journalpulse.domain import SafetyMode
++from journalpulse.safety import assess_safety
++from test_conversations_api import ScriptedClient, chat_settings, say, start
++
++INDIRECT_RISK = [
++    "Everyone would be better off without me",
++    "my family would be better off without me.",
++    "I've been thinking about ending it all",
++    "I won't be around much longer",
++    "I will not be here much longer",
++    "I feel suicidal tonight",
++    "I'm suicidal",
++    "I am feeling suicidal again",
++    "I keep thinking about killing myself",
++    "I wish I were dead",
++    "I don't want to be alive anymore",
++]
++
++PAST_RISK = [
++    "I used to want to die but therapy helped",
++    "Years ago I wanted to hurt myself; now I am fine",
++    "When I was a teenager I would hurt myself. That is behind me.",
++    "I used to feel suicidal, and that changed with support",
++]
++
++PAST_RISK_THAT_IS_ALSO_PRESENT = [
++    "I used to want to die and now I want to die again",
++    "Years ago I wanted to hurt myself and I still do",
++    "When I was younger I would hurt myself, and tonight I want to hurt myself",
++    "I used to want to die. I want to die.",
++    "I used to feel suicidal and I feel suicidal again",
++]
++
++# Reported risk about someone else keeps the cautious support route: crisis lines also
++# help people who are worried about another person.
++REPORTED_RISK = [
++    'My friend said "I want to die"',
++    "In the movie he says I will kill myself",
++]
++
++
++@pytest.mark.parametrize("text", INDIRECT_RISK)
++def test_indirect_first_person_risk_routes_to_support(text: str):
++    assert assess_safety(text, "CA").mode == SafetyMode.SUPPORT
++
++
++@pytest.mark.parametrize("text", PAST_RISK)
++def test_clearly_past_risk_stays_in_normal_chat(text: str):
++    assert assess_safety(text, "CA").mode == SafetyMode.NORMAL
++
++
++@pytest.mark.parametrize("text", PAST_RISK_THAT_IS_ALSO_PRESENT)
++def test_a_past_marker_never_hides_present_risk(text: str):
++    assert assess_safety(text, "CA").mode == SafetyMode.SUPPORT
++
++
++@pytest.mark.parametrize("text", REPORTED_RISK)
++def test_reported_risk_still_errs_toward_support(text: str):
++    assert assess_safety(text, "CA").mode == SafetyMode.SUPPORT
++
++
++@pytest.mark.parametrize("text", [
++    "This job is killing me.",
++    "The commute will be the end of me.",
++    "I'll be around later if you want to talk.",
++    "We would be better off without this meeting.",
++    "My suitcase won't be around much longer, it is falling apart.",
++])
++def test_everyday_phrases_near_the_new_patterns_stay_normal(text: str):
++    assert assess_safety(text, "CA").mode == SafetyMode.NORMAL
++
++
++def test_indirect_risk_api_routes_to_support_without_a_model_call(tmp_path: Path):
++    model = ScriptedClient(offers=[True])
++    with TestClient(create_app(settings=chat_settings(tmp_path), conversation_client=model)) as client:
++        chat = start(client)
++        body = say(client, chat["id"], "Honestly everyone would be better off without me.").json()
++        assert body["conversation"]["safety_mode"] == "support"
++        assert body["assistant_message"]["model_run"]["model"] == "safety-router"
++        assert model.calls == []
++
++
++def test_past_risk_api_keeps_the_conversation_open_to_luna(tmp_path: Path):
++    model = ScriptedClient(offers=[False])
++    with TestClient(create_app(settings=chat_settings(tmp_path), conversation_client=model)) as client:
++        chat = start(client)
++        text = "I used to want to die but therapy helped. Work is stressful now."
++        body = say(client, chat["id"], text).json()
++        assert body["conversation"]["safety_mode"] == "normal"
++        assert len(model.calls) == 1
+-- 
+2.50.1 (Apple Git-155)
+

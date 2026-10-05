@@ -1,0 +1,244 @@
+From bbf914aa7a90ca330ae5349d47f2481c7d6e585f Mon Sep 17 00:00:00 2001
+From: Thomas <yusenrong46@gmail.com>
+Date: Mon, 5 Oct 2026 20:15:54 -0300
+Subject: [PATCH 2/8] Verify the PostgREST download before using it in the
+ integration stack
+
+The stack trusted any postgrest on PATH or in the cache and extracted an
+unverified Linux-only archive. It now checks the reported version, pins
+maintainer-recorded SHA-256 hashes per platform (PostgREST publishes none, so this
+is trust-on-first-use), adds the macOS arm64 asset, uses a download timeout, and
+renames only a verified binary into the cache.
+
+Tests: tests/test_integration_stack_download.py (tampered archive, wrong version
+on PATH/cache, pinned happy path, unsupported platform).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ scripts/integration_stack.py             |  68 +++++++++++++--
+ tests/test_integration_stack_download.py | 105 +++++++++++++++++++++++
+ 2 files changed, 165 insertions(+), 8 deletions(-)
+ create mode 100644 tests/test_integration_stack_download.py
+
+diff --git a/scripts/integration_stack.py b/scripts/integration_stack.py
+index dc548b7..f5f32bc 100644
+--- a/scripts/integration_stack.py
++++ b/scripts/integration_stack.py
+@@ -18,11 +18,14 @@ import hashlib
+ import hmac
+ import json
+ import os
++import platform
++import re
+ import shutil
+ import signal
+ import subprocess
+ import sys
+ import tarfile
++import tempfile
+ import threading
+ import time
+ import urllib.request
+@@ -61,6 +64,20 @@ JWT_SECRET = "integration-only-jwt-secret-0123456789abcdef"
+ SIGNING_KEY = "integration-only-signing-key-0123456789abcdef"
+ AUTHENTICATOR_PASSWORD = "integration-authenticator"
+ POSTGREST_VERSION = "v12.2.12"
++# SHA-256 of the official GitHub release archives, recorded by the maintainers on 2026-10-05.
++# PostgREST publishes no checksums for these assets, so this pins the reviewed bytes (trust on
++# first use); it does not prove upstream authenticity. Add a platform only with its own hash.
++POSTGREST_ASSETS: dict[tuple[str, str], tuple[str, str]] = {
++    ("Linux", "x86_64"): (
++        "linux-static-x86-64",
++        "5de4092f1719da3353c40bf96c8dec6913f2254a7cd0b61cc05f233153b557d5",
++    ),
++    ("Darwin", "arm64"): (
++        "macos-aarch64",
++        "66eb150109409caea1b90c819418d326b2a5fd59789209e0dd45c87078c71909",
++    ),
++}
++POSTGREST_DOWNLOAD_TIMEOUT_SECONDS = 60
+ POSTGREST_PORT = int(os.getenv("JP_POSTGREST_PORT", "3301"))
+ GATEWAY_PORT = int(os.getenv("JP_GATEWAY_PORT", "54321"))
+ API_PORT = int(os.getenv("JP_API_PORT", "8100"))
+@@ -188,24 +205,59 @@ def prepare_database() -> None:
+ # PostgREST --------------------------------------------------------------------------------
+ 
+ 
++def postgrest_version_matches(binary: Path) -> bool:
++    """A binary on PATH or in the cache is used only if it reports the pinned release."""
++    try:
++        result = subprocess.run(
++            [str(binary), "--version"], capture_output=True, text=True, timeout=10, check=False
++        )
++    except (OSError, subprocess.SubprocessError):
++        return False
++    expected = re.escape(POSTGREST_VERSION.removeprefix("v"))
++    return re.match(rf"PostgREST {expected}\b", result.stdout.strip()) is not None
++
++
+ def postgrest_binary() -> Path:
+     found = shutil.which("postgrest")
+-    if found:
++    if found and postgrest_version_matches(Path(found)):
+         return Path(found)
++    if found:
++        print(f"Ignoring {found}: it is not PostgREST {POSTGREST_VERSION}.", file=sys.stderr)
++    asset = POSTGREST_ASSETS.get((platform.system(), platform.machine()))
++    if asset is None:
++        raise RuntimeError(
++            f"No pinned PostgREST download for {platform.system()} {platform.machine()}; "
++            f"put PostgREST {POSTGREST_VERSION.removeprefix('v')} on PATH instead."
++        )
++    name, expected_sha256 = asset
+     cache = Path.home() / ".cache" / "journalpulse" / POSTGREST_VERSION
+     binary = cache / "postgrest"
+-    if binary.exists():
++    if binary.exists() and postgrest_version_matches(binary):
+         return binary
+     cache.mkdir(parents=True, exist_ok=True)
+-    archive = cache / "postgrest.tar.xz"
+     url = (
+         f"https://github.com/PostgREST/postgrest/releases/download/{POSTGREST_VERSION}/"
+-        f"postgrest-{POSTGREST_VERSION}-linux-static-x86-64.tar.xz"
++        f"postgrest-{POSTGREST_VERSION}-{name}.tar.xz"
+     )
+-    urllib.request.urlretrieve(url, archive)
+-    with tarfile.open(archive, "r:xz") as bundle:
+-        bundle.extract("postgrest", cache, filter="data")
+-    binary.chmod(0o755)
++    # Verify the archive before extracting anything, and only rename a finished binary into
++    # place so an interrupted or tampered download never becomes the cached executable.
++    with tempfile.TemporaryDirectory(dir=cache) as staging:
++        archive = Path(staging) / "postgrest.tar.xz"
++        digest = hashlib.sha256()
++        with urllib.request.urlopen(url, timeout=POSTGREST_DOWNLOAD_TIMEOUT_SECONDS) as response:
++            with archive.open("wb") as output:
++                while chunk := response.read(1 << 16):
++                    digest.update(chunk)
++                    output.write(chunk)
++        if not hmac.compare_digest(digest.hexdigest(), expected_sha256):
++            raise RuntimeError(f"PostgREST download {name} failed its pinned SHA-256 check.")
++        with tarfile.open(archive, "r:xz") as bundle:
++            bundle.extract("postgrest", staging, filter="data")
++        extracted = Path(staging) / "postgrest"
++        extracted.chmod(0o755)
++        if not postgrest_version_matches(extracted):
++            raise RuntimeError(f"The verified archive did not contain PostgREST {POSTGREST_VERSION}.")
++        os.replace(extracted, binary)
+     return binary
+ 
+ 
+diff --git a/tests/test_integration_stack_download.py b/tests/test_integration_stack_download.py
+new file mode 100644
+index 0000000..3bcd698
+--- /dev/null
++++ b/tests/test_integration_stack_download.py
+@@ -0,0 +1,105 @@
++"""The integration stack must only run the reviewed PostgREST build it pins."""
++
++import importlib
++import io
++import tarfile
++from pathlib import Path
++
++import pytest
++
++SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
++FAKE_POSTGREST = b"#!/bin/sh\necho 'PostgREST 12.2.12 (fake)'\n"
++WRONG_POSTGREST = b"#!/bin/sh\necho 'PostgREST 16.4 (fake)'\n"
++
++
++def load_stack(monkeypatch: pytest.MonkeyPatch, home: Path):
++    monkeypatch.syspath_prepend(str(SCRIPTS))
++    module = importlib.import_module("integration_stack")
++    monkeypatch.setattr(module.Path, "home", staticmethod(lambda: home))
++    monkeypatch.setattr(module.platform, "system", lambda: "Linux")
++    monkeypatch.setattr(module.platform, "machine", lambda: "x86_64")
++    monkeypatch.setattr(module.shutil, "which", lambda name: None)
++    return module
++
++
++def archive(script: bytes) -> bytes:
++    buffer = io.BytesIO()
++    with tarfile.open(fileobj=buffer, mode="w:xz") as bundle:
++        info = tarfile.TarInfo("postgrest")
++        info.size = len(script)
++        info.mode = 0o755
++        bundle.addfile(info, io.BytesIO(script))
++    return buffer.getvalue()
++
++
++def serve(monkeypatch: pytest.MonkeyPatch, module, payload: bytes) -> list[str]:
++    requested: list[str] = []
++
++    def fake_urlopen(url, *args, **kwargs):
++        requested.append(url if isinstance(url, str) else url.full_url)
++        response = io.BytesIO(payload)
++        response.__enter__ = lambda self=response: self  # type: ignore[method-assign]
++        response.__exit__ = lambda *a: None  # type: ignore[method-assign]
++        response.headers = {}  # type: ignore[attr-defined]
++        response.info = lambda: {}  # type: ignore[attr-defined]
++        return response
++
++    monkeypatch.setattr(module.urllib.request, "urlopen", fake_urlopen)
++    return requested
++
++
++def write_binary(path: Path, script: bytes) -> Path:
++    path.parent.mkdir(parents=True, exist_ok=True)
++    path.write_bytes(script)
++    path.chmod(0o755)
++    return path
++
++
++def test_tampered_download_is_rejected_and_never_installed(monkeypatch, tmp_path):
++    module = load_stack(monkeypatch, tmp_path)
++    serve(monkeypatch, module, archive(FAKE_POSTGREST))
++    with pytest.raises(RuntimeError, match="SHA-256"):
++        module.postgrest_binary()
++    assert not list(tmp_path.rglob("postgrest"))
++
++
++def test_pinned_download_is_verified_then_installed(monkeypatch, tmp_path):
++    module = load_stack(monkeypatch, tmp_path)
++    payload = archive(FAKE_POSTGREST)
++    digest = module.hashlib.sha256(payload).hexdigest()
++    monkeypatch.setitem(module.POSTGREST_ASSETS, ("Linux", "x86_64"), ("linux-static-x86-64", digest))
++    requested = serve(monkeypatch, module, payload)
++    binary = module.postgrest_binary()
++    assert binary.read_bytes() == FAKE_POSTGREST
++    assert requested and requested[0].endswith("postgrest-v12.2.12-linux-static-x86-64.tar.xz")
++    assert not list(binary.parent.glob("*.tar.xz")), "the verified archive is not left behind"
++
++
++def test_wrong_version_on_path_or_in_cache_is_not_used(monkeypatch, tmp_path):
++    module = load_stack(monkeypatch, tmp_path)
++    on_path = write_binary(tmp_path / "bin" / "postgrest", WRONG_POSTGREST)
++    monkeypatch.setattr(module.shutil, "which", lambda name: str(on_path))
++    write_binary(tmp_path / ".cache" / "journalpulse" / "v12.2.12" / "postgrest", WRONG_POSTGREST)
++    payload = archive(FAKE_POSTGREST)
++    digest = module.hashlib.sha256(payload).hexdigest()
++    monkeypatch.setitem(module.POSTGREST_ASSETS, ("Linux", "x86_64"), ("linux-static-x86-64", digest))
++    serve(monkeypatch, module, payload)
++    binary = module.postgrest_binary()
++    assert binary != on_path
++    assert binary.read_bytes() == FAKE_POSTGREST
++
++
++def test_matching_version_on_path_is_used_without_download(monkeypatch, tmp_path):
++    module = load_stack(monkeypatch, tmp_path)
++    on_path = write_binary(tmp_path / "bin" / "postgrest", FAKE_POSTGREST)
++    monkeypatch.setattr(module.shutil, "which", lambda name: str(on_path))
++    requested = serve(monkeypatch, module, b"")
++    assert module.postgrest_binary() == on_path
++    assert requested == []
++
++
++def test_unsupported_platform_names_the_manual_option(monkeypatch, tmp_path):
++    module = load_stack(monkeypatch, tmp_path)
++    monkeypatch.setattr(module.platform, "system", lambda: "Plan9")
++    with pytest.raises(RuntimeError, match="PostgREST 12.2.12 on PATH"):
++        module.postgrest_binary()
+-- 
+2.50.1 (Apple Git-155)
+

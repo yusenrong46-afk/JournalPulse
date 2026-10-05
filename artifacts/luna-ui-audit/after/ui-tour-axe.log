@@ -1,0 +1,9 @@
+
+Running 4 tests using 1 worker
+
+  ✓  1 [integration-chromium] › tests/integration/ui-tour.spec.ts:76:9 › mobile › mobile activity loop (8.9s)
+  ✓  2 [integration-chromium] › tests/integration/ui-tour.spec.ts:108:9 › mobile › mobile search and journal (6.6s)
+  ✓  3 [integration-chromium] › tests/integration/ui-tour.spec.ts:76:9 › desktop › desktop activity loop (8.3s)
+  ✓  4 [integration-chromium] › tests/integration/ui-tour.spec.ts:108:9 › desktop › desktop search and journal (5.7s)
+
+  4 passed (35.0s)

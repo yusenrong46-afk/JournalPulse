@@ -1,0 +1,336 @@
+From 0659d3404bbc3976762bd60dc9b1f3d59d7a1e35 Mon Sep 17 00:00:00 2001
+From: Thomas <yusenrong46@gmail.com>
+Date: Mon, 5 Oct 2026 20:18:35 -0300
+Subject: [PATCH 3/8] Keep Luna retries within one budget under Vercel's 120s
+ limit
+
+Each provider attempt used the full chat timeout regardless of time already spent,
+so the default worst case was about 110s and allowed settings reached about 375s.
+Attempts now share a 100s per-turn budget (later attempts get only what remains,
+and a retry starts only if it can still fit), connect/write phases are capped, and a
+chat timeout that cannot fit is reported by readiness. The browser waits 125s for
+chat and follow-up calls instead of retrying at 60s while the first call could
+still reach Luna.
+
+Tests: three budget cases in test_openrouter_conversation_contract.py (all fail on
+the previous loop: 110.15s worst case, extra retries) and the config readiness case.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ .env.example                                  |  1 +
+ src/journalpulse/config.py                    |  8 ++
+ src/journalpulse/intelligence.py              | 37 +++++++--
+ tests/test_config.py                          | 14 +++-
+ .../test_openrouter_conversation_contract.py  | 79 ++++++++++++++++++-
+ web/app/talk/page.tsx                         |  5 +-
+ web/lib/activity-session.ts                   |  3 +-
+ 7 files changed, 136 insertions(+), 11 deletions(-)
+
+diff --git a/.env.example b/.env.example
+index 25e9102..6e88221 100644
+--- a/.env.example
++++ b/.env.example
+@@ -6,6 +6,7 @@ JOURNALPULSE_LLM_API_KEY=
+ JOURNALPULSE_LLM_ENABLED=true
+ JOURNALPULSE_LLM_MODEL=openai/gpt-6-luna
+ JOURNALPULSE_CHAT_MODEL=openai/gpt-6-luna
++# Per attempt; all attempts share a 100s budget, so values above 95 are rejected.
+ JOURNALPULSE_CHAT_TIMEOUT_SECONDS=45
+ JOURNALPULSE_LLM_BASE_URL=https://openrouter.ai/api/v1
+ JOURNALPULSE_LLM_ZDR=true
+diff --git a/src/journalpulse/config.py b/src/journalpulse/config.py
+index c63c698..9cd6e7f 100644
+--- a/src/journalpulse/config.py
++++ b/src/journalpulse/config.py
+@@ -11,6 +11,12 @@ from urllib.parse import urlsplit
+ from dotenv import load_dotenv
+ 
+ PROJECT_ROOT = Path(__file__).resolve().parents[2]
++# Vercel stops the Python function at 120s (vercel.json maxDuration). Every provider attempt
++# for one chat turn shares this budget, leaving about 20s for auth and the database commit.
++# Per-attempt timeouts alone let retries stack past the platform limit.
++CHAT_PROVIDER_BUDGET_SECONDS = 100.0
++# The streaming deadline is checked between chunks, so one in-flight read can overrun it.
++STREAM_READ_GRACE_SECONDS = 5.0
+ 
+ 
+ def _flag(name: str, default: bool = False) -> bool:
+@@ -149,6 +155,8 @@ class Settings:
+             issues.append("llm_timeout_invalid")
+         if not isfinite(self.chat_timeout_seconds) or self.chat_timeout_seconds <= 0:
+             issues.append("chat_timeout_invalid")
++        elif self.chat_timeout_seconds + STREAM_READ_GRACE_SECONDS > CHAT_PROVIDER_BUDGET_SECONDS:
++            issues.append("chat_timeout_exceeds_budget")
+         if self.llm_feature_enabled and not self.chat_model.strip():
+             issues.append("chat_model_missing")
+         if self.search_feature_enabled and not self.discovery_enabled:
+diff --git a/src/journalpulse/intelligence.py b/src/journalpulse/intelligence.py
+index e17dde7..69de14d 100644
+--- a/src/journalpulse/intelligence.py
++++ b/src/journalpulse/intelligence.py
+@@ -11,7 +11,7 @@ import httpx
+ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+ 
+ from .activity_resources import activity_resource_matches_constraints
+-from .config import Settings
++from .config import CHAT_PROVIDER_BUDGET_SECONDS, STREAM_READ_GRACE_SECONDS, Settings
+ from .domain import FEELINGS, AffectiveState, ModelRun, ReflectionCopy
+ from .guided_action import (
+     GUIDED_ACTION_JSON_SCHEMA,
+@@ -147,6 +147,8 @@ class ConversationProviderError(Exception):
+ 
+ 
+ MAX_MODEL_RESPONSE_BYTES = 256_000
++# A retry shorter than this cannot plausibly return a full Luna reply, so it is not started.
++MIN_PROVIDER_ATTEMPT_SECONDS = 5.0
+ 
+ 
+ def _bounded_provider_post(
+@@ -159,8 +161,12 @@ def _bounded_provider_post(
+     Redirects are disabled so provider credentials cannot follow another host.
+     """
+     deadline = time.monotonic() + timeout
++    # Connecting and sending happen before the first chunk check, so cap them separately;
++    # otherwise each phase could spend the whole attempt deadline on its own.
++    setup = min(timeout, 10)
+     with client.stream(
+-        "POST", url, timeout=httpx.Timeout(timeout, read=min(timeout, 5)),
++        "POST", url,
++        timeout=httpx.Timeout(timeout, connect=setup, write=setup, pool=setup, read=min(timeout, 5)),
+         follow_redirects=False, **kwargs,
+     ) as response:
+         content = bytearray()
+@@ -606,6 +612,7 @@ class OpenRouterConversationClient:
+         settings: Settings,
+         client: httpx.Client | None = None,
+         sleeper: Callable[[float], None] = time.sleep,
++        clock: Callable[[], float] = time.monotonic,
+     ) -> None:
+         if not settings.openrouter_api_key or not settings.chat_model:
+             raise ValueError("OpenRouter is not configured")
+@@ -614,6 +621,7 @@ class OpenRouterConversationClient:
+         self.settings = settings
+         self.client = client
+         self.sleeper = sleeper
++        self.clock = clock
+ 
+     def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
+         # Parameter set is limited to what OpenRouter lists for openai/gpt-6-luna
+@@ -742,14 +750,25 @@ class OpenRouterConversationClient:
+         with managed_http_client(self.client, timeout=self.settings.chat_timeout_seconds) as client:
+             return self._post_with_client(client, body)
+ 
++    def _attempt_seconds(self, started: float) -> float:
++        left = CHAT_PROVIDER_BUDGET_SECONDS - (self.clock() - started) - STREAM_READ_GRACE_SECONDS
++        return min(self.settings.chat_timeout_seconds, left)
++
++    def _may_retry(self, attempt: int, started: float, delay: float) -> bool:
++        """Retry only if another attempt still fits the shared per-turn budget."""
++        if attempt + 1 >= self.settings.openrouter_max_attempts:
++            return False
++        return self._attempt_seconds(started) - delay >= MIN_PROVIDER_ATTEMPT_SECONDS
++
+     def _post_with_client(self, client: httpx.Client, body: dict[str, Any]) -> httpx.Response:
+         response: httpx.Response | None = None
++        started = self.clock()
+         for attempt in range(self.settings.openrouter_max_attempts):
+             try:
+                 response = _bounded_provider_post(
+                     client,
+                     f"{self.settings.openrouter_base_url}/chat/completions",
+-                    timeout=self.settings.chat_timeout_seconds,
++                    timeout=self._attempt_seconds(started),
+                     headers={
+                         "Authorization": f"Bearer {self.settings.openrouter_api_key}",
+                         "Content-Type": "application/json",
+@@ -759,20 +778,23 @@ class OpenRouterConversationClient:
+                     json=body,
+                 )
+             except (httpx.HTTPError, OSError) as exc:
+-                if attempt + 1 >= self.settings.openrouter_max_attempts:
++                response = None
++                delay = 0.15 * (2**attempt)
++                if not self._may_retry(attempt, started, delay):
+                     raise ConversationProviderError(
+                         "Luna did not respond in time. Nothing was saved.",
+                         status_code=503,
+                         diagnostic=CompletionDiagnostic("provider_transport"),
+                     ) from exc
+-                self.sleeper(0.15 * (2**attempt))
++                self.sleeper(delay)
+                 continue
+             body_error = _openrouter_body_error(response)
+             status = body_error[0] if body_error else response.status_code
+             if status not in {429, 500, 502, 503, 504}:
+                 break
+-            if attempt + 1 < self.settings.openrouter_max_attempts:
+-                self.sleeper(1.5 if status == 429 else 0.15 * (2**attempt))
++            delay = 1.5 if status == 429 else 0.15 * (2**attempt)
++            if self._may_retry(attempt, started, delay):
++                self.sleeper(delay)
+                 continue
+             if body_error is not None:
+                 raise ConversationProviderError(
+@@ -780,6 +802,7 @@ class OpenRouterConversationClient:
+                     status_code=429 if body_error[0] == 429 else 502,
+                     diagnostic=CompletionDiagnostic("upstream_error"),
+                 )
++            break
+         if response is None:
+             raise ConversationProviderError(
+                 "Luna did not respond in time. Nothing was saved.",
+diff --git a/tests/test_config.py b/tests/test_config.py
+index 1eea32e..e5a9f26 100644
+--- a/tests/test_config.py
++++ b/tests/test_config.py
+@@ -161,9 +161,21 @@ def test_invalid_provider_deadlines_are_not_ready(
+     assert issue in settings.configuration_issues
+ 
+ 
+-@pytest.mark.parametrize("value", [0.1, 45.0, 120.0])
++@pytest.mark.parametrize("value", [0.1, 45.0, 95.0])
+ def test_positive_finite_provider_deadlines_remain_valid(monkeypatch, tmp_path: Path, value: float):
+     _ready_production(monkeypatch, tmp_path)
+     monkeypatch.setenv("VERCEL_URL", "journalpulse-preview.vercel.app")
+     settings = replace(config.load_settings(), openrouter_timeout_seconds=value, chat_timeout_seconds=value)
+     assert settings.configuration_issues == []
++
++
++@pytest.mark.parametrize("value", [95.1, 120.0])
++def test_chat_timeout_that_cannot_fit_the_function_limit_is_not_ready(
++    monkeypatch, tmp_path: Path, value: float,
++):
++    # One attempt plus its final in-flight read must fit the shared per-turn budget,
++    # which itself leaves room under Vercel's 120s maxDuration for auth and the commit.
++    _ready_production(monkeypatch, tmp_path)
++    monkeypatch.setenv("VERCEL_URL", "journalpulse-preview.vercel.app")
++    settings = replace(config.load_settings(), chat_timeout_seconds=value)
++    assert "chat_timeout_exceeds_budget" in settings.configuration_issues
+diff --git a/tests/test_openrouter_conversation_contract.py b/tests/test_openrouter_conversation_contract.py
+index a26411e..babc0eb 100644
+--- a/tests/test_openrouter_conversation_contract.py
++++ b/tests/test_openrouter_conversation_contract.py
+@@ -5,7 +5,11 @@ from pathlib import Path
+ import httpx
+ import pytest
+ 
+-from journalpulse.config import Settings
++from journalpulse.config import (
++    CHAT_PROVIDER_BUDGET_SECONDS,
++    STREAM_READ_GRACE_SECONDS,
++    Settings,
++)
+ from journalpulse.domain import FEELINGS
+ from journalpulse.intelligence import (
+     CONVERSATION_JSON_SCHEMA,
+@@ -461,3 +465,76 @@ def test_provider_refusal_is_not_misreported_as_a_json_syntax_error(tmp_path: Pa
+     assert caught.value.status_code == 422
+     assert caught.value.diagnostic_headers["X-JournalPulse-Error-Provider"] == "Azure"
+     assert "PRIVATE" not in json.dumps(caught.value.diagnostic_headers)
++
++
++class SteppedClock:
++    """A controlled monotonic clock; each provider call advances it by a set amount."""
++
++    def __init__(self) -> None:
++        self.now = 0.0
++
++    def __call__(self) -> float:
++        return self.now
++
++
++def test_retries_share_one_budget_under_the_function_limit(tmp_path: Path):
++    # Vercel stops the function at 120s. A slow first attempt must shrink the second
++    # attempt's deadline instead of granting it another full chat timeout.
++    clock = SteppedClock()
++    timeouts: list[float] = []
++
++    def slow(request: httpx.Request) -> httpx.Response:
++        timeouts.append(request.extensions["timeout"]["connect"] or 0.0)
++        clock.now += 60.0
++        raise httpx.ReadTimeout("slow upstream")
++
++    with pytest.raises(ConversationProviderError, match="respond in time"):
++        OpenRouterConversationClient(
++            settings(tmp_path, chat_timeout_seconds=45.0, openrouter_max_attempts=2),
++            client=httpx.Client(transport=httpx.MockTransport(slow)),
++            sleeper=lambda delay: setattr(clock, "now", clock.now + delay),
++            clock=clock,
++        ).complete([{"role": "user", "content": "Hello."}])
++    assert len(timeouts) == 2
++    worst_case = 60.0 + 0.15 + timeouts[1] + STREAM_READ_GRACE_SECONDS
++    assert worst_case <= CHAT_PROVIDER_BUDGET_SECONDS
++
++
++def test_no_retry_starts_when_the_budget_is_spent(tmp_path: Path):
++    clock = SteppedClock()
++    calls = 0
++
++    def slow(_: httpx.Request) -> httpx.Response:
++        nonlocal calls
++        calls += 1
++        clock.now += 94.0
++        raise httpx.ReadTimeout("slow upstream")
++
++    with pytest.raises(ConversationProviderError, match="respond in time"):
++        OpenRouterConversationClient(
++            settings(tmp_path, chat_timeout_seconds=95.0, openrouter_max_attempts=3),
++            client=httpx.Client(transport=httpx.MockTransport(slow)),
++            sleeper=lambda _delay: None,
++            clock=clock,
++        ).complete([{"role": "user", "content": "Hello."}])
++    assert calls == 1
++
++
++def test_rate_limit_retry_is_skipped_when_it_cannot_fit(tmp_path: Path):
++    clock = SteppedClock()
++    calls = 0
++
++    def limited(_: httpx.Request) -> httpx.Response:
++        nonlocal calls
++        calls += 1
++        clock.now += 92.0
++        return httpx.Response(429, json={"error": {"message": "slow down", "code": 429}})
++
++    with pytest.raises(ConversationProviderError, match="temporarily unavailable"):
++        OpenRouterConversationClient(
++            settings(tmp_path, openrouter_max_attempts=2),
++            client=httpx.Client(transport=httpx.MockTransport(limited)),
++            sleeper=lambda _delay: None,
++            clock=clock,
++        ).complete([{"role": "user", "content": "Hello."}])
++    assert calls == 1
+diff --git a/web/app/talk/page.tsx b/web/app/talk/page.tsx
+index ff91aea..1862034 100644
+--- a/web/app/talk/page.tsx
++++ b/web/app/talk/page.tsx
+@@ -47,7 +47,10 @@ import type {
+   SystemStatus,
+ } from "@/lib/types";
+ 
+-const CHAT_TIMEOUT_MS = 60_000;
++// Wait past the server's 100s provider budget and Vercel's 120s function limit. Giving up
++// earlier made the browser retry while the first request could still reach Luna, so one
++// message could cost several provider calls on different serverless instances.
++const CHAT_TIMEOUT_MS = 125_000;
+ const CHAT_MESSAGE_LIMIT = 20;
+ const THINKING_LINES = ["Luna is thinking…", "Mulling it over…", "Finding the right words…"];
+ 
+diff --git a/web/lib/activity-session.ts b/web/lib/activity-session.ts
+index ef06c17..5dda4d4 100644
+--- a/web/lib/activity-session.ts
++++ b/web/lib/activity-session.ts
+@@ -64,8 +64,9 @@ export function reportActivity(sessionId: string, payload: ActivityReceipt & Act
+ 
+ /** Saving a report is separate from a paid follow-up; a timeout cannot erase the report. */
+ export function followUpActivity(sessionId: string, payload: ActivityReceipt, signal?: AbortSignal): Promise<ActivitySession> {
++  // Outlast the server's 100s Luna budget so a slow success is not shown as a failure.
+   return apiRequest(`/v1/activity-sessions/${sessionId}/follow-up`, {
+-    method: "POST", body: JSON.stringify(payload), timeoutMs: 60_000, retry: false, signal,
++    method: "POST", body: JSON.stringify(payload), timeoutMs: 125_000, retry: false, signal,
+   });
+ }
+ 
+-- 
+2.50.1 (Apple Git-155)
+

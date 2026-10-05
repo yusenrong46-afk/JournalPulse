@@ -1,0 +1,43 @@
+
+> journalpulse-web@1.0.0 build
+> next build
+
+▲ Next.js 16.3.8 (Turbopack)
+✓ Running next.config.ts took 1477ms
+- Experiments (use with caution):
+  ✓ inlineCss
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 841ms
+  Running TypeScript ...
+  Finished TypeScript in 1097ms ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/18) ...
+  Generating static pages using 9 workers (4/18) 
+  Generating static pages using 9 workers (8/18) 
+  Generating static pages using 9 workers (13/18) 
+✓ Generating static pages using 9 workers (18/18) in 225ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /action
+├ ○ /check-in
+├ ○ /discover
+├ ○ /history
+├ ○ /icon.svg
+├ ○ /journal
+├ ○ /journey
+├ ○ /login
+├ ○ /manifest.webmanifest
+├ ○ /me
+├ ○ /patterns
+├ ○ /privacy
+├ ○ /reflect
+├ ○ /talk
+└ ○ /welcome
+
+
+○  (Static)  prerendered as static content
+

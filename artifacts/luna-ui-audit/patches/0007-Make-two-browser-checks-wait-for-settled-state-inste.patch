@@ -1,0 +1,50 @@
+From a97a0a314ef085dee74132390695eb5a45616429 Mon Sep 17 00:00:00 2001
+From: Thomas <yusenrong46@gmail.com>
+Date: Mon, 5 Oct 2026 20:26:50 -0300
+Subject: [PATCH 7/8] Make two browser checks wait for settled state instead of
+ racing it
+
+The axe contrast check sampled text mid-fade (#8778a0 blended over the card), and
+the mood-tap flow read the recorded request before the stub received it. Both
+failed intermittently in the baseline and passed on rerun. The checks now wait for
+finite entrance animations and poll for the request; 138/138 over three repeats.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ web/tests/e2e/accessibility.spec.ts | 5 +++++
+ web/tests/e2e/core-flow.spec.ts     | 3 ++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/web/tests/e2e/accessibility.spec.ts b/web/tests/e2e/accessibility.spec.ts
+index 428b584..d34edec 100644
+--- a/web/tests/e2e/accessibility.spec.ts
++++ b/web/tests/e2e/accessibility.spec.ts
+@@ -22,6 +22,11 @@ for (const path of ["/", "/talk", "/journal", "/discover", "/journey", "/me", "/
+   test(`${path} has no serious automated accessibility violations`, async ({ page }) => {
+     await page.goto(path);
+     await page.waitForLoadState("networkidle");
++    // Axe samples colours as rendered. Mid-fade text blends with its background, which made
++    // this check flaky; wait for finite entrance animations so the settled design is tested.
++    await page.evaluate(() => Promise.all(document.getAnimations()
++      .filter((animation) => animation.effect?.getComputedTiming().iterations !== Infinity)
++      .map((animation) => animation.finished.catch(() => undefined))));
+     const results = await new AxeBuilder({ page }).analyze();
+     const serious = results.violations.filter((item) => ["serious", "critical"].includes(item.impact ?? ""));
+     expect(serious).toEqual([]);
+diff --git a/web/tests/e2e/core-flow.spec.ts b/web/tests/e2e/core-flow.spec.ts
+index d260d89..77f7c02 100644
+--- a/web/tests/e2e/core-flow.spec.ts
++++ b/web/tests/e2e/core-flow.spec.ts
+@@ -240,7 +240,8 @@ test("a chat goes from a mood tap to one saved small step", async ({ page }) =>
+   await page.getByRole("button", { name: "That’s it" }).click();
+   await page.getByRole("button", { name: /Calm down/ }).click();
+ 
+-  expect(turns.at(-1)).toMatchObject({
++  // The click returns before the stubbed request is recorded; wait for it.
++  await expect.poll(() => turns.at(-1)).toMatchObject({
+     goal: "settle",
+     text: "I'm feeling tired. I'd like to calm down.",
+     confirmed_feelings: ["tired"],
+-- 
+2.50.1 (Apple Git-155)
+
