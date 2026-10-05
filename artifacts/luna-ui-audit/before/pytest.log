@@ -1,0 +1,56 @@
+........................................................................ [ 10%]
+........................................................................ [ 20%]
+........................................................................ [ 30%]
+........................................................................ [ 40%]
+........................................................................ [ 51%]
+........................................................................ [ 61%]
+........................................................................ [ 71%]
+........................................................................ [ 81%]
+........................................................................ [ 92%]
+.......................................................                  [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/thomas/Documents/ChatGPT/JP/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                     Stmts   Miss Branch BrPart  Cover   Missing
+------------------------------------------------------------------------------------
+src/journalpulse/__init__.py                 2      0      0      0   100%
+src/journalpulse/activity_chat.py           58      2     16      2    95%   124, 199
+src/journalpulse/activity_lifecycle.py      48      3     30      4    91%   22, 30->78, 37, 63
+src/journalpulse/activity_models.py        127      3      6      3    95%   68, 74, 76
+src/journalpulse/activity_resources.py     190      7     64      8    94%   84, 99, 101, 223, 225, 324, 326->328, 398
+src/journalpulse/activity_sessions.py      184     27     56     17    82%   72, 77, 120, 124, 162, 164, 190-191, 228, 241, 246, 249, 252-253, 255, 257, 344, 349, 351, 374, 377, 389-390, 402-417
+src/journalpulse/api.py                    274     18     52      6    93%   139, 150, 222-223, 248, 258-259, 261-262, 325-326, 383-384, 429-430, 547-548, 553
+src/journalpulse/auth.py                    42      2     14      0    96%   64-65
+src/journalpulse/config.py                 125      5     46      6    94%   47->43, 141, 143, 145, 155, 157
+src/journalpulse/conversations.py          304     13     80      7    95%   267, 281, 308, 310, 312, 373->386, 407, 626, 668-669, 728, 777-778, 826
+src/journalpulse/discovery.py              184     14     54     13    89%   142, 148, 151, 171, 178, 265, 267, 272, 282, 332, 345, 347, 350, 353
+src/journalpulse/discovery_models.py        81      1     18      2    97%   62->68, 65
+src/journalpulse/discovery_prompts.py        2      0      0      0   100%
+src/journalpulse/domain.py                 275      6     14      6    96%   90, 161, 195, 371, 379, 381
+src/journalpulse/evaluation.py             130     24     42      8    81%   62, 64, 153->155, 155->163, 158-162, 176, 192-194, 207-221, 228
+src/journalpulse/guided.py                  36      1      6      1    95%   73
+src/journalpulse/guided_action.py          104     11     26     11    83%   46, 50, 102, 104, 106, 128, 154, 161, 167, 170, 172
+src/journalpulse/guided_evaluation.py      549     57    206     28    88%   98, 100, 102, 104, 106, 108, 110, 130, 141, 148, 152, 423, 425, 508, 516, 530, 572, 588->591, 622-623, 633-634, 661, 684, 719->681, 813, 977, 1041, 1072, 1122, 1440-1505, 1509
+src/journalpulse/http_clients.py             9      0      2      0   100%
+src/journalpulse/inline_discovery.py        92      4     28      4    93%   64, 120, 124, 170
+src/journalpulse/intelligence.py           359      8    124     10    96%   246, 260->313, 304-305, 310->260, 314, 375, 398->400, 400->402, 768-769, 784
+src/journalpulse/journal_models.py          48      1      4      1    96%   72
+src/journalpulse/journals.py                69      1     14      0    99%   177
+src/journalpulse/middleware.py             104      5     24      2    95%   44-46, 57, 83
+src/journalpulse/persistence.py            857     85    278     35    88%   362, 366, 372, 414, 416, 453, 527-533, 552, 673, 766, 814, 827, 850, 942, 1037, 1061-1062, 1079, 1144, 1297, 1367, 1377-1382, 1447, 1451-1462, 1465, 1467, 1472, 1680-1694, 1722-1723, 1733, 1821, 1823, 1839, 1848, 1850, 1853, 1863-1873, 1880, 1893-1913, 1923-1939, 1950-1969, 1979-1997, 2015-2051, 2063-2078, 2151-2154, 2316-2330, 2338-2339, 2404
+src/journalpulse/policy.py                  21      1      8      1    93%   34
+src/journalpulse/reflection_prompts.py       8      0      0      0   100%
+src/journalpulse/resources.py               54      9     18      7    78%   24, 30, 35-36, 39, 42, 44, 49, 54
+src/journalpulse/safety.py                  21      0      2      0   100%
+src/journalpulse/self_report.py             16      0      4      0   100%
+src/journalpulse/signing.py                 16      0      0      0   100%
+------------------------------------------------------------------------------------
+TOTAL                                     4389    308   1236    182    91%
+Required test coverage of 80.0% reached. Total coverage: 91.00%
+703 passed, 1 warning in 14.69s

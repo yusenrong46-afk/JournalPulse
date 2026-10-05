@@ -1,0 +1,6 @@
+
+> journalpulse-web@1.0.0 generate:api
+> openapi-typescript openapi.json -o lib/generated-api.ts
+
+✨ openapi-typescript 7.13.0
+🚀 openapi.json → lib/generated-api.ts [64ms]

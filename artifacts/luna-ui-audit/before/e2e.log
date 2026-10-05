@@ -1,0 +1,339 @@
+
+> journalpulse-web@1.0.0 test:e2e
+> playwright test
+
+
+Running 46 tests using 5 workers
+
+  ✘   5 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations (1.2s)
+  ✓   3 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /discover has no serious automated accessibility violations (1.8s)
+  ✓   4 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /talk has no serious automated accessibility violations (1.8s)
+  ✓   1 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journey has no serious automated accessibility violations (1.9s)
+  ✓   2 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journal has no serious automated accessibility violations (1.8s)
+  ✓  10 [mobile-chromium] › tests/e2e/core-flow.spec.ts:96:5 › the chat composer keeps pasted messages within the API's limit (442ms)
+  ✓   6 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /me has no serious automated accessibility violations (1.5s)
+  ✓  11 [mobile-chromium] › tests/e2e/core-flow.spec.ts:124:5 › chat privacy and options support keyboard focus and dismissal (736ms)
+  ✓   8 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /login has no serious automated accessibility violations (1.6s)
+  ✓   7 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /welcome has no serious automated accessibility violations (1.6s)
+  ✓   9 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /check-in has no serious automated accessibility violations (1.6s)
+  ✓  15 [mobile-chromium] › tests/e2e/core-flow.spec.ts:282:5 › a reply to a chat that closed elsewhere is not shown as saved (567ms)
+  ✓  16 [mobile-chromium] › tests/e2e/core-flow.spec.ts:310:5 › support mode puts people first and hides the chat box (545ms)
+  ✓  18 [mobile-chromium] › tests/e2e/core-flow.spec.ts:368:5 › journey grows a plant for each check-in and names what helped (330ms)
+  ✓  19 [mobile-chromium] › tests/e2e/core-flow.spec.ts:385:5 › the main navigation has three calm destinations (218ms)
+  ✓  12 [mobile-chromium] › tests/e2e/core-flow.spec.ts:170:5 › a new person meets Luna and chooses how Luna replies (1.7s)
+  ✓  14 [mobile-chromium] › tests/e2e/core-flow.spec.ts:261:5 › after a reload the chat keeps the feelings the person confirmed, not Luna's guess (1.5s)
+  ✓  20 [mobile-chromium] › tests/e2e/core-flow.spec.ts:399:7 › /reflect now leads to /talk (493ms)
+  ✓  21 [mobile-chromium] › tests/e2e/core-flow.spec.ts:399:7 › /history now leads to /journey (818ms)
+  ✓  22 [mobile-chromium] › tests/e2e/core-flow.spec.ts:399:7 › /patterns now leads to /journey (762ms)
+  ✓  23 [mobile-chromium] › tests/e2e/core-flow.spec.ts:399:7 › /privacy now leads to /me (712ms)
+  ✓  17 [mobile-chromium] › tests/e2e/core-flow.spec.ts:342:5 › a check-in records how much the step helped (2.7s)
+  ✘  13 [mobile-chromium] › tests/e2e/core-flow.spec.ts:188:5 › a chat goes from a mood tap to one saved small step (3.9s)
+  ✓  24 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations (1.2s)
+  ✓  25 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /talk has no serious automated accessibility violations (1.3s)
+  ✓  26 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journal has no serious automated accessibility violations (1.2s)
+  ✓  27 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /discover has no serious automated accessibility violations (1.2s)
+  ✓  28 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /me has no serious automated accessibility violations (1.2s)
+  ✓  30 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /welcome has no serious automated accessibility violations (1.1s)
+  ✓  31 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /login has no serious automated accessibility violations (1.1s)
+  ✓  29 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journey has no serious automated accessibility violations (1.2s)
+  ✓  33 [desktop-chromium] › tests/e2e/core-flow.spec.ts:96:5 › the chat composer keeps pasted messages within the API's limit (504ms)
+  ✓  32 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /check-in has no serious automated accessibility violations (1.2s)
+  ✓  34 [desktop-chromium] › tests/e2e/core-flow.spec.ts:124:5 › chat privacy and options support keyboard focus and dismissal (929ms)
+  ✓  38 [desktop-chromium] › tests/e2e/core-flow.spec.ts:282:5 › a reply to a chat that closed elsewhere is not shown as saved (487ms)
+  ✓  39 [desktop-chromium] › tests/e2e/core-flow.spec.ts:310:5 › support mode puts people first and hides the chat box (448ms)
+  ✓  35 [desktop-chromium] › tests/e2e/core-flow.spec.ts:170:5 › a new person meets Luna and chooses how Luna replies (1.4s)
+  ✓  41 [desktop-chromium] › tests/e2e/core-flow.spec.ts:368:5 › journey grows a plant for each check-in and names what helped (337ms)
+  ✓  37 [desktop-chromium] › tests/e2e/core-flow.spec.ts:261:5 › after a reload the chat keeps the feelings the person confirmed, not Luna's guess (1.5s)
+  ✓  42 [desktop-chromium] › tests/e2e/core-flow.spec.ts:385:5 › the main navigation has three calm destinations (325ms)
+  ✓  43 [desktop-chromium] › tests/e2e/core-flow.spec.ts:399:7 › /reflect now leads to /talk (428ms)
+  ✓  44 [desktop-chromium] › tests/e2e/core-flow.spec.ts:399:7 › /history now leads to /journey (386ms)
+  ✓  45 [desktop-chromium] › tests/e2e/core-flow.spec.ts:399:7 › /patterns now leads to /journey (402ms)
+  ✓  46 [desktop-chromium] › tests/e2e/core-flow.spec.ts:399:7 › /privacy now leads to /me (305ms)
+  ✓  40 [desktop-chromium] › tests/e2e/core-flow.spec.ts:342:5 › a check-in records how much the step helped (1.4s)
+  ✓  36 [desktop-chromium] › tests/e2e/core-flow.spec.ts:188:5 › a chat goes from a mood tap to one saved small step (5.7s)
+
+
+  1) [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  -   1
+    + Received  + 233
+
+    - Array []
+    + Array [
+    +   Object {
+    +     "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    +     "help": "Elements must meet minimum color contrast ratio thresholds",
+    +     "helpUrl": "https://dequeuniversity.com/rules/axe/4.13/color-contrast?application=playwright",
+    +     "id": "color-contrast",
+    +     "impact": "serious",
+    +     "nodes": Array [
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#f1ecfa",
+    +               "contrastRatio": 3.46,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#8778a0",
+    +               "fontSize": "9.6pt (12.8px)",
+    +               "fontWeight": "bold",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 3.46 (foreground color: #8778a0, background color: #f1ecfa, font size: 9.6pt (12.8px), font weight: bold). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<section class=\"card lav\" aria-labelledby=\"how-heading\"><span class=\"eyebrow\">How it works</span><h2 id=\"how-heading\">Talk, try one small thing, check in.</h2><p class=\"muted\">A quick chat with Luna, one gentle idea from a reviewed list, and a check-in later to see what helped.</p></section>",
+    +                 "target": Array [
+    +                   ".lav",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 3.46 (foreground color: #8778a0, background color: #f1ecfa, font size: 9.6pt (12.8px), font weight: bold). Expected contrast ratio of 4.5:1",
+    +         "html": "<span class=\"eyebrow\">How it works</span>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           "span",
+    +         ],
+    +       },
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#f1ecfa",
+    +               "contrastRatio": 3.89,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#7b7388",
+    +               "fontSize": "12.0pt (16px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 3.89 (foreground color: #7b7388, background color: #f1ecfa, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<section class=\"card lav\" aria-labelledby=\"how-heading\"><span class=\"eyebrow\">How it works</span><h2 id=\"how-heading\">Talk, try one small thing, check in.</h2><p class=\"muted\">A quick chat with Luna, one gentle idea from a reviewed list, and a check-in later to see what helped.</p></section>",
+    +                 "target": Array [
+    +                   ".lav",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 3.89 (foreground color: #7b7388, background color: #f1ecfa, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<p class=\"muted\">A quick chat with Luna, one gentle idea from a reviewed list, and a check-in later to see what helped.</p>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           ".lav > .muted",
+    +         ],
+    +       },
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#fefdfb",
+    +               "contrastRatio": 3.95,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#8778a0",
+    +               "fontSize": "12.0pt (16px)",
+    +               "fontWeight": "bold",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 3.95 (foreground color: #8778a0, background color: #fefdfb, font size: 12.0pt (16px), font weight: bold). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<section class=\"card\" aria-labelledby=\"garden-heading\">",
+    +                 "target": Array [
+    +                   "section[aria-labelledby=\"garden-heading\"]",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 3.95 (foreground color: #8778a0, background color: #fefdfb, font size: 12.0pt (16px), font weight: bold). Expected contrast ratio of 4.5:1",
+    +         "html": "<a class=\"link-btn\" href=\"/journey\">See your journey</a>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           ".link-btn",
+    +         ],
+    +       },
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#fefdfb",
+    +               "contrastRatio": 4.44,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#7b7388",
+    +               "fontSize": "12.0pt (16px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 4.44 (foreground color: #7b7388, background color: #fefdfb, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<section class=\"card\" aria-labelledby=\"garden-heading\">",
+    +                 "target": Array [
+    +                   "section[aria-labelledby=\"garden-heading\"]",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 4.44 (foreground color: #7b7388, background color: #fefdfb, font size: 12.0pt (16px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<p class=\"muted\">Each check-in plants something here. Your first one is a chat away.</p>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           "section[aria-labelledby=\"garden-heading\"] > .muted",
+    +         ],
+    +       },
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#fbf5ec",
+    +               "contrastRatio": 4.16,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#7b7388",
+    +               "fontSize": "10.3pt (13.76px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 4.16 (foreground color: #7b7388, background color: #fbf5ec, font size: 10.3pt (13.76px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<body>",
+    +                 "target": Array [
+    +                   "body",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 4.16 (foreground color: #7b7388, background color: #fbf5ec, font size: 10.3pt (13.76px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<p class=\"small muted\" style=\"text-align:center\">Luna is a companion, not a therapist. In a crisis in Canada, call or text <a href=\"https://988.ca/\" target=\"_blank\" rel=\"noreferrer\">9-8-8</a>.</p>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           ".small",
+    +         ],
+    +       },
+    +       Object {
+    +         "all": Array [],
+    +         "any": Array [
+    +           Object {
+    +             "data": Object {
+    +               "bgColor": "#fbf5ec",
+    +               "contrastRatio": 3.7,
+    +               "expectedContrastRatio": "4.5:1",
+    +               "fgColor": "#8778a0",
+    +               "fontSize": "10.3pt (13.76px)",
+    +               "fontWeight": "normal",
+    +               "messageKey": null,
+    +             },
+    +             "id": "color-contrast",
+    +             "impact": "serious",
+    +             "message": "Element has insufficient color contrast of 3.7 (foreground color: #8778a0, background color: #fbf5ec, font size: 10.3pt (13.76px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +             "relatedNodes": Array [
+    +               Object {
+    +                 "html": "<body>",
+    +                 "target": Array [
+    +                   "body",
+    +                 ],
+    +               },
+    +             ],
+    +           },
+    +         ],
+    +         "failureSummary": "Fix any of the following:
+    +   Element has insufficient color contrast of 3.7 (foreground color: #8778a0, background color: #fbf5ec, font size: 10.3pt (13.76px), font weight: normal). Expected contrast ratio of 4.5:1",
+    +         "html": "<a href=\"https://988.ca/\" target=\"_blank\" rel=\"noreferrer\">9-8-8</a>",
+    +         "impact": "serious",
+    +         "none": Array [],
+    +         "target": Array [
+    +           "a[href$=\"988.ca/\"]",
+    +         ],
+    +       },
+    +     ],
+    +     "tags": Array [
+    +       "cat.color",
+    +       "wcag2aa",
+    +       "wcag143",
+    +       "TTv5",
+    +       "TT13.c",
+    +       "EN-301-549",
+    +       "EN-9.1.4.3",
+    +       "ACT",
+    +       "RGAAv4",
+    +       "RGAA-3.2.1",
+    +     ],
+    +   },
+    + ]
+
+      25 |     const results = await new AxeBuilder({ page }).analyze();
+      26 |     const serious = results.violations.filter((item) => ["serious", "critical"].includes(item.impact ?? ""));
+    > 27 |     expect(serious).toEqual([]);
+         |                     ^
+      28 |   });
+      29 | }
+      30 |
+        at /Users/thomas/Documents/ChatGPT/JP/web/tests/e2e/accessibility.spec.ts:27:21
+
+    Error Context: test-results/accessibility--has-no-seri-67d99-ed-accessibility-violations-mobile-chromium/error-context.md
+
+  2) [mobile-chromium] › tests/e2e/core-flow.spec.ts:188:5 › a chat goes from a mood tap to one saved small step 
+
+    Error: expect(received).toMatchObject(expected)
+
+    - Expected  - 5
+    + Received  + 1
+
+      Object {
+    -   "confirmed_feelings": Array [
+    -     "tired",
+    -   ],
+    -   "goal": "settle",
+    -   "text": "I'm feeling tired. I'd like to calm down.",
+    +   "text": "Work is a lot and I'm worn out.",
+      }
+
+      241 |   await page.getByRole("button", { name: /Calm down/ }).click();
+      242 |
+    > 243 |   expect(turns.at(-1)).toMatchObject({
+          |                        ^
+      244 |     goal: "settle",
+      245 |     text: "I'm feeling tired. I'd like to calm down.",
+      246 |     confirmed_feelings: ["tired"],
+        at /Users/thomas/Documents/ChatGPT/JP/web/tests/e2e/core-flow.spec.ts:243:24
+
+    Error Context: test-results/core-flow-a-chat-goes-from-22ff1-tap-to-one-saved-small-step-mobile-chromium/error-context.md
+
+  2 failed
+    [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations 
+    [mobile-chromium] › tests/e2e/core-flow.spec.ts:188:5 › a chat goes from a mood tap to one saved small step 
+  44 passed (21.4s)

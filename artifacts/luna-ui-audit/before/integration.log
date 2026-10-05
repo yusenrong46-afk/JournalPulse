@@ -1,0 +1,89 @@
+
+> journalpulse-web@1.0.0 test:integration
+> playwright test -c playwright.integration.config.ts
+
+[WebServer] 05/Oct/2026:20:12:59 -0300: Starting PostgREST 12.2.12 (cd3cf9e)...
+[WebServer] 05/Oct/2026:20:12:59 -0300: Listening on port 3301
+[WebServer] 05/Oct/2026:20:12:59 -0300: Successfully connected to PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+[WebServer] 05/Oct/2026:20:12:59 -0300: Listening for notifications on the "pgrst" channel
+[WebServer] 05/Oct/2026:20:12:59 -0300: Config reloaded
+[WebServer] 127.0.0.1 - anon [05/Oct/2026:20:12:59 -0300] "GET / HTTP/1.1" 503 - "" "python-httpx/0.28.1"
+[WebServer] 127.0.0.1 - anon [05/Oct/2026:20:12:59 -0300] "GET / HTTP/1.1" 503 - "" "python-httpx/0.28.1"
+[WebServer] 127.0.0.1 - anon [05/Oct/2026:20:12:59 -0300] "GET / HTTP/1.1" 503 - "" "python-httpx/0.28.1"
+[WebServer] 127.0.0.1 - anon [05/Oct/2026:20:12:59 -0300] "GET / HTTP/1.1" 503 - "" "python-httpx/0.28.1"
+[WebServer] 127.0.0.1 - anon [05/Oct/2026:20:12:59 -0300] "GET / HTTP/1.1" 503 - "" "python-httpx/0.28.1"
+[WebServer] 05/Oct/2026:20:13:00 -0300: Schema cache queried in 6.0 milliseconds
+[WebServer] 05/Oct/2026:20:13:00 -0300: Schema cache loaded 17 Relations, 29 Relationships, 29 Functions, 0 Domain Representations, 4 Media Type Handlers, 1198 Timezones
+[WebServer] 05/Oct/2026:20:13:00 -0300: Schema cache loaded in 1.1 milliseconds
+[WebServer] 05/Oct/2026:20:13:00 -0300: Successfully connected to PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+[WebServer] 05/Oct/2026:20:13:00 -0300: Config reloaded
+[WebServer] 05/Oct/2026:20:13:00 -0300: Schema cache queried in 3.0 milliseconds
+[WebServer] 05/Oct/2026:20:13:00 -0300: Schema cache loaded 17 Relations, 29 Relationships, 29 Functions, 0 Domain Representations, 4 Media Type Handlers, 1198 Timezones
+[WebServer] 05/Oct/2026:20:13:00 -0300: Schema cache loaded in 0.7 milliseconds
+[WebServer] 
+[WebServer] > journalpulse-web@1.0.0 build
+[WebServer] > next build
+[WebServer] 
+[WebServer] ▲ Next.js 16.3.8 (Turbopack)
+[WebServer] ✓ Running next.config.ts took 54ms
+[WebServer] - Experiments (use with caution):
+[WebServer]   ✓ inlineCss
+[WebServer] 
+[WebServer]   Creating an optimized production build ...
+[WebServer] ✓ Compiled successfully in 1097ms
+[WebServer]   Running TypeScript ...
+[WebServer]   Finished TypeScript in 1937ms ...
+[WebServer]   Collecting page data using 9 workers ...
+[WebServer]   Generating static pages using 9 workers (0/18) ...
+[WebServer]   Generating static pages using 9 workers (4/18) 
+[WebServer]   Generating static pages using 9 workers (8/18) 
+[WebServer]   Generating static pages using 9 workers (13/18) 
+[WebServer] ✓ Generating static pages using 9 workers (18/18) in 236ms
+[WebServer]   Finalizing page optimization ...
+[WebServer] 
+[WebServer] Route (app)
+[WebServer] ┌ ○ /
+[WebServer] ├ ○ /_not-found
+[WebServer] ├ ○ /action
+[WebServer] ├ ○ /check-in
+[WebServer] ├ ○ /discover
+[WebServer] ├ ○ /history
+[WebServer] ├ ○ /icon.svg
+[WebServer] ├ ○ /journal
+[WebServer] ├ ○ /journey
+[WebServer] ├ ○ /login
+[WebServer] ├ ○ /manifest.webmanifest
+[WebServer] ├ ○ /me
+[WebServer] ├ ○ /patterns
+[WebServer] ├ ○ /privacy
+[WebServer] ├ ○ /reflect
+[WebServer] ├ ○ /talk
+[WebServer] └ ○ /welcome
+[WebServer] 
+[WebServer] 
+[WebServer] ○  (Static)  prerendered as static content
+[WebServer] 
+[WebServer] integration stack ready: api http://127.0.0.1:8100, gateway http://127.0.0.1:54321
+
+Running 18 tests using 1 worker
+
+  ✓   1 [integration-chromium] › tests/integration/audit-upgrade.spec.ts:4:5 › an account change on the same chat URL discards private replies, drafts and inherited consent (1.9s)
+  ✓   2 [integration-chromium] › tests/integration/audit-upgrade.spec.ts:64:5 › a linked chat opens an editable general search and returns with its source (3.1s)
+  ✓   3 [integration-chromium] › tests/integration/audit-upgrade.spec.ts:110:5 › retry after a committed turn loses its response keeps one stored turn (1.8s)
+  ✓   4 [integration-chromium] › tests/integration/connected-luna.spec.ts:28:5 › slice 1: save, reopen, reflect and delete standalone writing (4.2s)
+  ✓   5 [integration-chromium] › tests/integration/connected-luna.spec.ts:63:5 › slice 2: selected journal context survives chat reload and source deletion invalidates it (3.2s)
+  ✓   6 [integration-chromium] › tests/integration/connected-luna.spec.ts:92:5 › slice 3: approve a topic and refine results without repeating sources (1.4s)
+  ✓   7 [integration-chromium] › tests/integration/guided-action.spec.ts:62:5 › meditation stays in chat and a paused session survives reload before an honest check-in (3.4s)
+  ✓   8 [integration-chromium] › tests/integration/guided-action.spec.ts:116:5 › changing account while an activity is running removes its private panel and controls (1.2s)
+  ✓   9 [integration-chromium] › tests/integration/guided-action.spec.ts:153:5 › inline search uses the real request contract and saves a refined signed offer in chat (2.9s)
+  ✓  10 [integration-chromium] › tests/integration/guided-action.spec.ts:207:5 › a newer recommendation replaces an unstarted saved search offer (1.3s)
+  ✓  11 [integration-chromium] › tests/integration/loop.spec.ts:49:5 › the legacy guided loop runs against the real API and database (8.8s)
+  ✓  12 [integration-chromium] › tests/integration/loop.spec.ts:130:5 › each person sees only their own journal and cannot write provenance directly (363ms)
+  ✓  13 [integration-chromium] › tests/integration/loop.spec.ts:157:5 › Just talk survives reload and later AI flags, then resumes with a fresh activity offer (2.6s)
+  ✓  14 [integration-chromium] › tests/integration/loop.spec.ts:215:5 › a lost choice response can be retried without losing the draft or applying twice (2.8s)
+  ✓  15 [integration-chromium] › tests/integration/loop.spec.ts:251:5 › a delayed browser response cannot replace a newer listening choice (1.4s)
+  ✓  16 [integration-chromium] › tests/integration/loop.spec.ts:296:5 › idle chat text is purged by the scheduled job even if the person never returns (291ms)
+  ✓  17 [integration-chromium] › tests/integration/loop.spec.ts:311:5 › a reply to a chat closed in another tab is refused by the database (635ms)
+  ✓  18 [integration-chromium] › tests/integration/loop.spec.ts:329:5 › the generation limit is enforced by the database, not the browser (1.0s)
+
+  18 passed (54.2s)
