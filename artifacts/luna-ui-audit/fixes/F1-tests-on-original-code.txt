@@ -1,0 +1,7 @@
+E       assert 110.15 <= 100.0
+E       assert 3 == 1
+E       assert 2 == 1
+FAILED tests/test_openrouter_conversation_contract.py::test_retries_share_one_budget_under_the_function_limit
+FAILED tests/test_openrouter_conversation_contract.py::test_no_retry_starts_when_the_budget_is_spent
+FAILED tests/test_openrouter_conversation_contract.py::test_rate_limit_retry_is_skipped_when_it_cannot_fit
+3 failed, 46 deselected in 0.19s

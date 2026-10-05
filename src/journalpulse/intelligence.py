@@ -11,7 +11,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from .activity_resources import activity_resource_matches_constraints
-from .config import Settings
+from .config import CHAT_PROVIDER_BUDGET_SECONDS, STREAM_READ_GRACE_SECONDS, Settings
 from .domain import FEELINGS, AffectiveState, ModelRun, ReflectionCopy
 from .guided_action import (
     GUIDED_ACTION_JSON_SCHEMA,
@@ -147,6 +147,8 @@ class ConversationProviderError(Exception):
 
 
 MAX_MODEL_RESPONSE_BYTES = 256_000
+# A retry shorter than this cannot plausibly return a full Luna reply, so it is not started.
+MIN_PROVIDER_ATTEMPT_SECONDS = 5.0
 
 
 def _bounded_provider_post(
@@ -159,8 +161,12 @@ def _bounded_provider_post(
     Redirects are disabled so provider credentials cannot follow another host.
     """
     deadline = time.monotonic() + timeout
+    # Connecting and sending happen before the first chunk check, so cap them separately;
+    # otherwise each phase could spend the whole attempt deadline on its own.
+    setup = min(timeout, 10)
     with client.stream(
-        "POST", url, timeout=httpx.Timeout(timeout, read=min(timeout, 5)),
+        "POST", url,
+        timeout=httpx.Timeout(timeout, connect=setup, write=setup, pool=setup, read=min(timeout, 5)),
         follow_redirects=False, **kwargs,
     ) as response:
         content = bytearray()
@@ -606,6 +612,7 @@ class OpenRouterConversationClient:
         settings: Settings,
         client: httpx.Client | None = None,
         sleeper: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         if not settings.openrouter_api_key or not settings.chat_model:
             raise ValueError("OpenRouter is not configured")
@@ -614,6 +621,7 @@ class OpenRouterConversationClient:
         self.settings = settings
         self.client = client
         self.sleeper = sleeper
+        self.clock = clock
 
     def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
         # Parameter set is limited to what OpenRouter lists for openai/gpt-6-luna
@@ -742,14 +750,25 @@ class OpenRouterConversationClient:
         with managed_http_client(self.client, timeout=self.settings.chat_timeout_seconds) as client:
             return self._post_with_client(client, body)
 
+    def _attempt_seconds(self, started: float) -> float:
+        left = CHAT_PROVIDER_BUDGET_SECONDS - (self.clock() - started) - STREAM_READ_GRACE_SECONDS
+        return min(self.settings.chat_timeout_seconds, left)
+
+    def _may_retry(self, attempt: int, started: float, delay: float) -> bool:
+        """Retry only if another attempt still fits the shared per-turn budget."""
+        if attempt + 1 >= self.settings.openrouter_max_attempts:
+            return False
+        return self._attempt_seconds(started) - delay >= MIN_PROVIDER_ATTEMPT_SECONDS
+
     def _post_with_client(self, client: httpx.Client, body: dict[str, Any]) -> httpx.Response:
         response: httpx.Response | None = None
+        started = self.clock()
         for attempt in range(self.settings.openrouter_max_attempts):
             try:
                 response = _bounded_provider_post(
                     client,
                     f"{self.settings.openrouter_base_url}/chat/completions",
-                    timeout=self.settings.chat_timeout_seconds,
+                    timeout=self._attempt_seconds(started),
                     headers={
                         "Authorization": f"Bearer {self.settings.openrouter_api_key}",
                         "Content-Type": "application/json",
@@ -759,20 +778,23 @@ class OpenRouterConversationClient:
                     json=body,
                 )
             except (httpx.HTTPError, OSError) as exc:
-                if attempt + 1 >= self.settings.openrouter_max_attempts:
+                response = None
+                delay = 0.15 * (2**attempt)
+                if not self._may_retry(attempt, started, delay):
                     raise ConversationProviderError(
                         "Luna did not respond in time. Nothing was saved.",
                         status_code=503,
                         diagnostic=CompletionDiagnostic("provider_transport"),
                     ) from exc
-                self.sleeper(0.15 * (2**attempt))
+                self.sleeper(delay)
                 continue
             body_error = _openrouter_body_error(response)
             status = body_error[0] if body_error else response.status_code
             if status not in {429, 500, 502, 503, 504}:
                 break
-            if attempt + 1 < self.settings.openrouter_max_attempts:
-                self.sleeper(1.5 if status == 429 else 0.15 * (2**attempt))
+            delay = 1.5 if status == 429 else 0.15 * (2**attempt)
+            if self._may_retry(attempt, started, delay):
+                self.sleeper(delay)
                 continue
             if body_error is not None:
                 raise ConversationProviderError(
@@ -780,6 +802,7 @@ class OpenRouterConversationClient:
                     status_code=429 if body_error[0] == 429 else 502,
                     diagnostic=CompletionDiagnostic("upstream_error"),
                 )
+            break
         if response is None:
             raise ConversationProviderError(
                 "Luna did not respond in time. Nothing was saved.",

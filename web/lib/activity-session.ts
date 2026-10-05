@@ -64,8 +64,9 @@ export function reportActivity(sessionId: string, payload: ActivityReceipt & Act
 
 /** Saving a report is separate from a paid follow-up; a timeout cannot erase the report. */
 export function followUpActivity(sessionId: string, payload: ActivityReceipt, signal?: AbortSignal): Promise<ActivitySession> {
+  // Outlast the server's 100s Luna budget so a slow success is not shown as a failure.
   return apiRequest(`/v1/activity-sessions/${sessionId}/follow-up`, {
-    method: "POST", body: JSON.stringify(payload), timeoutMs: 60_000, retry: false, signal,
+    method: "POST", body: JSON.stringify(payload), timeoutMs: 125_000, retry: false, signal,
   });
 }
 

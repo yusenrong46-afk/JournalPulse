@@ -11,6 +11,12 @@ from urllib.parse import urlsplit
 from dotenv import load_dotenv
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+# Vercel stops the Python function at 120s (vercel.json maxDuration). Every provider attempt
+# for one chat turn shares this budget, leaving about 20s for auth and the database commit.
+# Per-attempt timeouts alone let retries stack past the platform limit.
+CHAT_PROVIDER_BUDGET_SECONDS = 100.0
+# The streaming deadline is checked between chunks, so one in-flight read can overrun it.
+STREAM_READ_GRACE_SECONDS = 5.0
 
 
 def _flag(name: str, default: bool = False) -> bool:
@@ -149,6 +155,8 @@ class Settings:
             issues.append("llm_timeout_invalid")
         if not isfinite(self.chat_timeout_seconds) or self.chat_timeout_seconds <= 0:
             issues.append("chat_timeout_invalid")
+        elif self.chat_timeout_seconds + STREAM_READ_GRACE_SECONDS > CHAT_PROVIDER_BUDGET_SECONDS:
+            issues.append("chat_timeout_exceeds_budget")
         if self.llm_feature_enabled and not self.chat_model.strip():
             issues.append("chat_model_missing")
         if self.search_feature_enabled and not self.discovery_enabled:

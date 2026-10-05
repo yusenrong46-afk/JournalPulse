@@ -5,7 +5,11 @@ from pathlib import Path
 import httpx
 import pytest
 
-from journalpulse.config import Settings
+from journalpulse.config import (
+    CHAT_PROVIDER_BUDGET_SECONDS,
+    STREAM_READ_GRACE_SECONDS,
+    Settings,
+)
 from journalpulse.domain import FEELINGS
 from journalpulse.intelligence import (
     CONVERSATION_JSON_SCHEMA,
@@ -461,3 +465,76 @@ def test_provider_refusal_is_not_misreported_as_a_json_syntax_error(tmp_path: Pa
     assert caught.value.status_code == 422
     assert caught.value.diagnostic_headers["X-JournalPulse-Error-Provider"] == "Azure"
     assert "PRIVATE" not in json.dumps(caught.value.diagnostic_headers)
+
+
+class SteppedClock:
+    """A controlled monotonic clock; each provider call advances it by a set amount."""
+
+    def __init__(self) -> None:
+        self.now = 0.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+def test_retries_share_one_budget_under_the_function_limit(tmp_path: Path):
+    # Vercel stops the function at 120s. A slow first attempt must shrink the second
+    # attempt's deadline instead of granting it another full chat timeout.
+    clock = SteppedClock()
+    timeouts: list[float] = []
+
+    def slow(request: httpx.Request) -> httpx.Response:
+        timeouts.append(request.extensions["timeout"]["connect"] or 0.0)
+        clock.now += 60.0
+        raise httpx.ReadTimeout("slow upstream")
+
+    with pytest.raises(ConversationProviderError, match="respond in time"):
+        OpenRouterConversationClient(
+            settings(tmp_path, chat_timeout_seconds=45.0, openrouter_max_attempts=2),
+            client=httpx.Client(transport=httpx.MockTransport(slow)),
+            sleeper=lambda delay: setattr(clock, "now", clock.now + delay),
+            clock=clock,
+        ).complete([{"role": "user", "content": "Hello."}])
+    assert len(timeouts) == 2
+    worst_case = 60.0 + 0.15 + timeouts[1] + STREAM_READ_GRACE_SECONDS
+    assert worst_case <= CHAT_PROVIDER_BUDGET_SECONDS
+
+
+def test_no_retry_starts_when_the_budget_is_spent(tmp_path: Path):
+    clock = SteppedClock()
+    calls = 0
+
+    def slow(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        clock.now += 94.0
+        raise httpx.ReadTimeout("slow upstream")
+
+    with pytest.raises(ConversationProviderError, match="respond in time"):
+        OpenRouterConversationClient(
+            settings(tmp_path, chat_timeout_seconds=95.0, openrouter_max_attempts=3),
+            client=httpx.Client(transport=httpx.MockTransport(slow)),
+            sleeper=lambda _delay: None,
+            clock=clock,
+        ).complete([{"role": "user", "content": "Hello."}])
+    assert calls == 1
+
+
+def test_rate_limit_retry_is_skipped_when_it_cannot_fit(tmp_path: Path):
+    clock = SteppedClock()
+    calls = 0
+
+    def limited(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        clock.now += 92.0
+        return httpx.Response(429, json={"error": {"message": "slow down", "code": 429}})
+
+    with pytest.raises(ConversationProviderError, match="temporarily unavailable"):
+        OpenRouterConversationClient(
+            settings(tmp_path, openrouter_max_attempts=2),
+            client=httpx.Client(transport=httpx.MockTransport(limited)),
+            sleeper=lambda _delay: None,
+            clock=clock,
+        ).complete([{"role": "user", "content": "Hello."}])
+    assert calls == 1

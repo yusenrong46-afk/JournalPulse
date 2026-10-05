@@ -47,7 +47,10 @@ import type {
   SystemStatus,
 } from "@/lib/types";
 
-const CHAT_TIMEOUT_MS = 60_000;
+// Wait past the server's 100s provider budget and Vercel's 120s function limit. Giving up
+// earlier made the browser retry while the first request could still reach Luna, so one
+// message could cost several provider calls on different serverless instances.
+const CHAT_TIMEOUT_MS = 125_000;
 const CHAT_MESSAGE_LIMIT = 20;
 const THINKING_LINES = ["Luna is thinking…", "Mulling it over…", "Finding the right words…"];
 

@@ -161,9 +161,21 @@ def test_invalid_provider_deadlines_are_not_ready(
     assert issue in settings.configuration_issues
 
 
-@pytest.mark.parametrize("value", [0.1, 45.0, 120.0])
+@pytest.mark.parametrize("value", [0.1, 45.0, 95.0])
 def test_positive_finite_provider_deadlines_remain_valid(monkeypatch, tmp_path: Path, value: float):
     _ready_production(monkeypatch, tmp_path)
     monkeypatch.setenv("VERCEL_URL", "journalpulse-preview.vercel.app")
     settings = replace(config.load_settings(), openrouter_timeout_seconds=value, chat_timeout_seconds=value)
     assert settings.configuration_issues == []
+
+
+@pytest.mark.parametrize("value", [95.1, 120.0])
+def test_chat_timeout_that_cannot_fit_the_function_limit_is_not_ready(
+    monkeypatch, tmp_path: Path, value: float,
+):
+    # One attempt plus its final in-flight read must fit the shared per-turn budget,
+    # which itself leaves room under Vercel's 120s maxDuration for auth and the commit.
+    _ready_production(monkeypatch, tmp_path)
+    monkeypatch.setenv("VERCEL_URL", "journalpulse-preview.vercel.app")
+    settings = replace(config.load_settings(), chat_timeout_seconds=value)
+    assert "chat_timeout_exceeds_budget" in settings.configuration_issues
