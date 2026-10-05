@@ -8,6 +8,7 @@ import { Luna } from "@/components/luna";
 import { Plant, plantStage } from "@/components/plant";
 import { apiRequest } from "@/lib/api";
 import { readOpenConversationId } from "@/lib/conversation";
+import { activityPlantStage, loadActivityHistory, PARTICIPATION_WORDS, type ActivityHistoryItem } from "@/lib/garden";
 import { usePreferences } from "@/lib/preferences";
 import { useReminders } from "@/lib/reminders";
 import { greeting, useTimeOfDay } from "@/lib/time-of-day";
@@ -34,6 +35,7 @@ export default function HomePage() {
   const [reflections, setReflections] = useState<ReflectionRecord[]>([]);
   const [outcomes, setOutcomes] = useState<OutcomeRecord[]>([]);
   const [catalog, setCatalog] = useState<Resource[]>([]);
+  const [activities, setActivities] = useState<ActivityHistoryItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [offline, setOffline] = useState(false);
   const openChat = useSyncExternalStore(
@@ -65,6 +67,7 @@ export default function HomePage() {
       })
       .catch(() => setOffline(true))
       .finally(() => setLoaded(true));
+    void loadActivityHistory(8).then((items) => setActivities(items ?? []));
   }, []);
 
   const outcomeByDecision = useMemo(
@@ -81,7 +84,17 @@ export default function HomePage() {
   const minutesLeft = reminder ? Math.ceil((new Date(reminder.dueAt).getTime() - now) / 60_000) : 0;
 
   const lunaMood = pending && minutesLeft <= 0 ? "checkin" : time === "night" ? "sleepy" : "idle";
-  const recent = reflections.slice(0, 8).reverse();
+  // Legacy check-ins and chat activity reports share one garden, oldest to newest.
+  const recent = [
+    ...reflections.slice(0, 8).map((item) => {
+      const outcome = outcomeByDecision.get(item.decision.decision_id);
+      return { key: item.id, at: item.created_at, stage: plantStage(outcome?.helpfulness, outcome?.completed), label: undefined as string | undefined };
+    }),
+    ...activities.map((item) => ({
+      key: item.id, at: item.reported_at, stage: activityPlantStage(item),
+      label: `${item.title}: ${PARTICIPATION_WORDS[item.participation]}`,
+    })),
+  ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 8).reverse();
 
   return (
     <>
@@ -140,10 +153,9 @@ export default function HomePage() {
               <div className="skeleton" style={{ minHeight: 70 }} />
             ) : recent.length ? (
               <div className="mini-garden">
-                {recent.map((item, index) => {
-                  const outcome = outcomeByDecision.get(item.decision.decision_id);
-                  return <Plant key={item.id} index={index} size={36} stage={plantStage(outcome?.helpfulness, outcome?.completed)} />;
-                })}
+                {recent.map((item, index) => (
+                  <Plant key={item.key} index={index} size={36} stage={item.stage} label={item.label} />
+                ))}
               </div>
             ) : (
               <p className="muted">Each check-in plants something here. Your first one is a chat away.</p>

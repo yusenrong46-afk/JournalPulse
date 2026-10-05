@@ -142,6 +142,44 @@ class ActivitySession(BaseModel):
         )
 
 
+class ActivityHistoryItem(BaseModel):
+    """One reported chat activity for the garden. It carries the person's own report
+    choices only: no note, link, instructions or model text, and no claim of benefit."""
+
+    model_config = ConfigDict(extra="forbid")
+    id: UUID
+    conversation_id: UUID
+    title: str
+    kind: str
+    goal: Goal | None
+    participation: Literal["completed", "partial", "not_tried", "stopped"]
+    fit: Literal["good", "mixed", "poor", "unsure"] | None
+    state_change: Literal["toward_target", "same", "away_from_target", "unsure"] | None
+    helpfulness: int | None
+    reported_at: datetime
+
+    @classmethod
+    def from_session(cls, session: ActivitySession) -> ActivityHistoryItem:
+        if session.report is None or session.reported_at is None:
+            raise ValueError("Only a reported activity belongs in the history")
+        return cls(
+            id=session.id,
+            conversation_id=session.conversation_id,
+            title=session.resource.title,
+            kind=session.resource.kind,
+            goal=session.goal,
+            participation=session.report.participation,
+            fit=session.report.fit,
+            state_change=session.report.state_change,
+            helpfulness=session.report.helpfulness,
+            reported_at=session.reported_at,
+        )
+
+
+class ActivityHistoryPage(BaseModel):
+    items: list[ActivityHistoryItem]
+
+
 class CreateActivitySessionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     client_request_id: UUID

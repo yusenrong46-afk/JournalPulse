@@ -108,6 +108,17 @@ test("meditation stays in chat and a paused session survives reload before an ho
     const stillOpen = await (await request.get(`/v1/conversations/${chatId}`, { headers: headers(who) })).json();
     expect(stillOpen.conversation.status).toBe("open");
     await page.screenshot({ path: testInfo.outputPath("guided-action-mobile-check-in.png"), fullPage: true });
+
+    // The report, not the timer, reaches the garden through PostgREST and owner RLS.
+    const history = await (await request.get("/v1/activity-history", { headers: headers(who) })).json();
+    expect(history.items).toHaveLength(1);
+    expect(history.items[0]).toMatchObject({ id: activity.id, participation: "not_tried" });
+    const stranger = await sessionFor(request, "frank");
+    expect((await (await request.get("/v1/activity-history", { headers: headers(stranger) })).json()).items).toEqual([]);
+    await page.goto("/journey/");
+    const fromChats = page.getByRole("region", { name: "Activities from your chats" });
+    await expect(fromChats.getByText("Two-minute quiet meditation", { exact: true })).toBeVisible();
+    await expect(fromChats.getByText(/Didn.t try it/)).toBeVisible();
   } finally {
     await clearAccount(request, who);
   }

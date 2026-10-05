@@ -11,12 +11,14 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid5
 
-from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Response
 
 from .activity_lifecycle import ActivityConflict, ActivityNotFound
 from .activity_models import (
     ActivityCommandRequest,
     ActivityFollowUpRequest,
+    ActivityHistoryItem,
+    ActivityHistoryPage,
     ActivityReportRequest,
     ActivityResource,
     ActivitySelectionProvenance,
@@ -199,6 +201,23 @@ def register_activity_routes(
         owned_chat(repository, auth, conversation_id, open_only=False)
         sessions = repository.list_activity_sessions(auth.user_id, conversation_id)
         return synced(repository, auth, sessions[0]) if sessions else None
+
+    @app.get("/v1/activity-history", response_model=ActivityHistoryPage)
+    def activity_history(
+        limit: int = Query(default=50, ge=1, le=100),
+        auth: AuthContext = Depends(auth_dependency),
+    ) -> ActivityHistoryPage:
+        # Read-only and owner-scoped (PostgreSQL RLS also applies). Only the person's own
+        # report reaches the garden; timer expiry or an unstarted offer adds nothing.
+        sessions = sweep(auth).list_activity_sessions(auth.user_id)
+        reported = sorted(
+            (item for item in sessions if item.report is not None and item.reported_at is not None),
+            key=lambda item: (item.reported_at, str(item.id)),
+            reverse=True,
+        )
+        return ActivityHistoryPage(
+            items=[ActivityHistoryItem.from_session(item) for item in reported[:limit]]
+        )
 
     @app.get("/v1/activity-sessions/{session_id}", response_model=ActivitySession)
     def read_activity(session_id: UUID, auth: AuthContext = Depends(auth_dependency)) -> ActivitySession:

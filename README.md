@@ -25,8 +25,9 @@ applied to the shared database, and the model-quality release evaluation is inco
    are based on snippets; full pages and their claims are not independently verified. Saving a
    returned activity is a separate choice from opening its link.
 5. **Report honestly.** The candidate saves whether you tried the activity and any reported change
-   before generating Luna's follow-up. Its inline reports currently stay in chat; Home/Journey
-   still display the legacy check-in flow and do not yet combine both kinds of outcome.
+   before generating Luna's follow-up. Reported chat activities also appear in the Home/Journey
+   garden (`GET /v1/activity-history`), next to legacy check-ins. Only your own report counts;
+   timer expiry adds nothing, and notes and model text are not shown there.
 
 With AI allowed, Luna's replies come from `openai/gpt-6-luna` through OpenRouter with zero data
 retention routing. Without AI, a scripted flow supports the existing feelings, goal, catalog and

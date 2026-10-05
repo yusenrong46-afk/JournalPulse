@@ -72,6 +72,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/activity-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Activity History */
+        get: operations["activity_history_v1_activity_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/activity-sessions/{session_id}": {
         parameters: {
             query?: never;
@@ -593,6 +610,49 @@ export interface components {
             expected_conversation_revision: number;
             /** Expected Revision */
             expected_revision: number;
+        };
+        /**
+         * ActivityHistoryItem
+         * @description One reported chat activity for the garden. It carries the person's own report
+         *     choices only: no note, link, instructions or model text, and no claim of benefit.
+         */
+        ActivityHistoryItem: {
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Fit */
+            fit: ("good" | "mixed" | "poor" | "unsure") | null;
+            goal: components["schemas"]["Goal"] | null;
+            /** Helpfulness */
+            helpfulness: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Participation
+             * @enum {string}
+             */
+            participation: "completed" | "partial" | "not_tried" | "stopped";
+            /**
+             * Reported At
+             * Format: date-time
+             */
+            reported_at: string;
+            /** State Change */
+            state_change: ("toward_target" | "same" | "away_from_target" | "unsure") | null;
+            /** Title */
+            title: string;
+        };
+        /** ActivityHistoryPage */
+        ActivityHistoryPage: {
+            /** Items */
+            items: components["schemas"]["ActivityHistoryItem"][];
         };
         /** ActivityReport */
         ActivityReport: {
@@ -1825,6 +1885,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ActionPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    activity_history_v1_activity_history_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityHistoryPage"];
                 };
             };
             /** @description Validation Error */

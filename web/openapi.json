@@ -268,6 +268,130 @@
         "title": "ActivityFollowUpRequest",
         "type": "object"
       },
+      "ActivityHistoryItem": {
+        "additionalProperties": false,
+        "description": "One reported chat activity for the garden. It carries the person's own report\nchoices only: no note, link, instructions or model text, and no claim of benefit.",
+        "properties": {
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "fit": {
+            "anyOf": [
+              {
+                "enum": [
+                  "good",
+                  "mixed",
+                  "poor",
+                  "unsure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fit"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Goal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "helpfulness": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Helpfulness"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "participation": {
+            "enum": [
+              "completed",
+              "partial",
+              "not_tried",
+              "stopped"
+            ],
+            "title": "Participation",
+            "type": "string"
+          },
+          "reported_at": {
+            "format": "date-time",
+            "title": "Reported At",
+            "type": "string"
+          },
+          "state_change": {
+            "anyOf": [
+              {
+                "enum": [
+                  "toward_target",
+                  "same",
+                  "away_from_target",
+                  "unsure"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State Change"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "conversation_id",
+          "title",
+          "kind",
+          "goal",
+          "participation",
+          "fit",
+          "state_change",
+          "helpfulness",
+          "reported_at"
+        ],
+        "title": "ActivityHistoryItem",
+        "type": "object"
+      },
+      "ActivityHistoryPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityHistoryItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "ActivityHistoryPage",
+        "type": "object"
+      },
       "ActivityReport": {
         "additionalProperties": false,
         "properties": {
@@ -3718,6 +3842,80 @@
           }
         },
         "summary": "Preview Actions"
+      }
+    },
+    "/v1/activity-history": {
+      "get": {
+        "operationId": "activity_history_v1_activity_history_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityHistoryPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Activity History"
       }
     },
     "/v1/activity-sessions/{session_id}": {

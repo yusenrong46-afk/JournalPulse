@@ -7,9 +7,16 @@ import { Luna } from "@/components/luna";
 import { Plant, plantStage } from "@/components/plant";
 import { apiRequest } from "@/lib/api";
 import { feelingById } from "@/lib/feelings";
+import { activityPlantStage, loadActivityHistory, PARTICIPATION_WORDS, type ActivityHistoryItem } from "@/lib/garden";
 import type { OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
 
 const HELP_WORDS = ["", "Didn’t help", "Helped a little", "Helped somewhat", "Helped", "Helped a lot"];
+const CHANGE_WORDS: Record<string, string> = {
+  toward_target: "felt closer to what you wanted",
+  same: "about the same",
+  away_from_target: "felt further away",
+  unsure: "not sure what changed",
+};
 
 function moodColor(valence: number) {
   if (valence >= 0.25) return "var(--sage)";
@@ -25,6 +32,8 @@ export default function JourneyPage() {
   const [reflections, setReflections] = useState<ReflectionRecord[]>([]);
   const [outcomes, setOutcomes] = useState<OutcomeRecord[]>([]);
   const [catalog, setCatalog] = useState<Resource[]>([]);
+  const [activities, setActivities] = useState<ActivityHistoryItem[]>([]);
+  const [activitiesFailed, setActivitiesFailed] = useState(false);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -34,11 +43,15 @@ export default function JourneyPage() {
       apiRequest<{ items: ReflectionRecord[] }>("/v1/reflections?limit=100"),
       apiRequest<{ items: OutcomeRecord[] }>("/v1/outcomes"),
       apiRequest<{ items: Resource[] }>("/v1/resources"),
+      // Loaded separately so an older API or a failure never hides legacy check-ins.
+      loadActivityHistory(100),
     ])
-      .then(([history, recorded, resources]) => {
+      .then(([history, recorded, resources, chatActivities]) => {
         setReflections(history.items);
         setOutcomes(recorded.items);
         setCatalog(resources.items);
+        setActivities(chatActivities ?? []);
+        setActivitiesFailed(chatActivities === null);
       })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -94,7 +107,23 @@ export default function JourneyPage() {
     }
   }
 
-  if (!loading && !error && reflections.length === 0) {
+  const garden = [
+    ...oldestFirst.map((item) => {
+      const outcome = outcomeByDecision.get(item.decision.decision_id);
+      const status = !outcome ? "check-in waiting" : outcome.completed ? HELP_WORDS[outcome.helpfulness ?? 0] || "tried it" : "skipped";
+      return {
+        key: item.id, at: item.created_at,
+        stage: plantStage(outcome?.helpfulness, outcome?.completed),
+        label: `${dateLabel(item.created_at)}: ${status}`,
+      };
+    }),
+    ...activities.map((item) => ({
+      key: item.id, at: item.reported_at, stage: activityPlantStage(item),
+      label: `${dateLabel(item.reported_at)}: ${item.title}, ${PARTICIPATION_WORDS[item.participation].toLowerCase()}`,
+    })),
+  ].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+
+  if (!loading && !error && reflections.length === 0 && activities.length === 0) {
     return (
       <div className="page">
         <header className="page-head"><h1>Your journey</h1></header>
@@ -122,12 +151,9 @@ export default function JourneyPage() {
           <div className="skeleton" />
         ) : (
           <div className="garden">
-            {oldestFirst.map((item, index) => {
-              const outcome = outcomeByDecision.get(item.decision.decision_id);
-              const stage = plantStage(outcome?.helpfulness, outcome?.completed);
-              const status = !outcome ? "check-in waiting" : outcome.completed ? HELP_WORDS[outcome.helpfulness ?? 0] || "tried it" : "skipped";
-              return <Plant key={item.id} index={index} stage={stage} size={48} label={`${dateLabel(item.created_at)}: ${status}`} />;
-            })}
+            {garden.map((item, index) => (
+              <Plant key={item.key} index={index} stage={item.stage} size={48} label={item.label} />
+            ))}
           </div>
         )}
       </section>
@@ -136,6 +162,30 @@ export default function JourneyPage() {
         <div className="stat"><strong>{reflections.length}</strong><span>check-ins with Luna</span></div>
         <div className="stat"><strong>{tried.length}</strong><span>small steps tried</span></div>
         <div className="stat"><strong>{helpedCount}</strong><span>really helped</span></div>
+        <div className="stat"><strong>{activities.length}</strong><span>activity check-ins from chats</span></div>
+      </section>
+
+      <section className="card" aria-labelledby="chat-activities-heading">
+        <h2 id="chat-activities-heading">Activities from your chats</h2>
+        {activitiesFailed ? (
+          <p className="muted" role="status">Activities from your chats couldn’t load. Nothing was changed.</p>
+        ) : activities.length ? (
+          <ul className="activity-history">
+            {activities.map((item) => (
+              <li key={item.id}>
+                <strong>{item.title}</strong>
+                <span className="small muted">
+                  <time dateTime={item.reported_at}>{dateLabel(item.reported_at)}</time>
+                  {" · "}{PARTICIPATION_WORDS[item.participation]}
+                  {item.state_change ? ` · ${CHANGE_WORDS[item.state_change]}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">When you try an activity with Luna and check in, it appears here in your own words.</p>
+        )}
+        <p className="small muted">These are your own check-ins. Finishing a timer is never counted as trying it.</p>
       </section>
 
       <div className="home-grid">
