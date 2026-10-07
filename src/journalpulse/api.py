@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
@@ -64,6 +65,10 @@ class ReflectionPage(BaseModel):
 
 class OutcomePage(BaseModel):
     items: list[OutcomeRecord]
+
+
+class CapabilitiesResponse(BaseModel):
+    discovery: Literal["configured", "unavailable"]
 
 
 class StatePoint(BaseModel):
@@ -170,7 +175,7 @@ def create_app(
             "Authorization", "Content-Type", "X-JournalPulse-User", "X-Request-ID",
             "X-JournalPulse-Data-Revision",
         ],
-        expose_headers=["X-Request-ID"],
+        expose_headers=["X-Request-ID", "Server-Timing"],
     )
 
     @app.exception_handler(DeletedObjectIdentity)
@@ -249,6 +254,11 @@ def create_app(
     @app.get("/health")
     def health() -> dict:
         return {"status": "ok"}
+
+    @app.get("/v1/capabilities", response_model=CapabilitiesResponse)
+    def capabilities(response: Response) -> CapabilitiesResponse:
+        response.headers["Cache-Control"] = "no-store"
+        return CapabilitiesResponse(discovery="configured" if settings.discovery_enabled else "unavailable")
 
     @app.get("/ready", response_model=ReadinessResponse)
     def ready(response: Response) -> ReadinessResponse:

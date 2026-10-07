@@ -35,10 +35,17 @@ function CheckInWorkspace() {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false);
   const [retryPending, setRetryPending] = useState(false);
   const [error, setError] = useState("");
   const pendingOutcome = useRef<string | null>(null);
   const submission = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (!busy) return;
+    const timeout = window.setTimeout(() => setSlow(true), 3000);
+    return () => window.clearTimeout(timeout);
+  }, [busy]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -70,7 +77,10 @@ function CheckInWorkspace() {
     if (!reflection || submission.current) return;
     const controller = new AbortController();
     submission.current = controller;
+    // Covers revision lookup and authentication as well as the write itself.
+    const deadline = window.setTimeout(() => controller.abort(), 15_000);
     setBusy(true);
+    setSlow(false);
     setError("");
     if (!pendingOutcome.current) {
       const elapsed = Math.round((Date.now() - new Date(reflection.created_at).getTime()) / 60_000);
@@ -88,7 +98,8 @@ function CheckInWorkspace() {
     try {
       await apiRequest<OutcomeRecord>("/v1/outcomes", {
         method: "POST",
-        retry: true,
+        retry: false,
+        timeoutMs: 15_000,
         signal: controller.signal,
         // The server stores one outcome per decision and replays the first
         // receipt. A lost response must retry these exact answers and timestamp.
@@ -107,6 +118,7 @@ function CheckInWorkspace() {
         setError(reason instanceof Error ? reason.message : "The save could not be confirmed. Please retry.");
       }
     } finally {
+      window.clearTimeout(deadline);
       if (!controller.signal.aborted) setBusy(false);
       if (submission.current === controller) submission.current = null;
     }
@@ -213,6 +225,7 @@ function CheckInWorkspace() {
       {retryPending && !saved && !alreadyDone && <p className="note" role="status">
         Your save is not confirmed. Your submitted answers are kept unchanged; retry to confirm the same check-in.
       </p>}
+      {busy && slow && <p className="note" role="status">Still saving your check-in. Your answers are kept here while we wait for confirmation.</p>}
     </div>
   );
 }

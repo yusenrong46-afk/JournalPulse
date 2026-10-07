@@ -39,6 +39,8 @@ import JournalPage from "@/app/journal/page";
 import { ApiError } from "@/lib/api";
 import { listJournalEntries, readJournalEntry, reflectJournalEntry, saveJournalEntry } from "@/lib/journal";
 import type { JournalEntry, JournalReflectionResult } from "@/lib/journal-types";
+import { clearTabSession } from "@/lib/tab-session";
+import { ACCOUNT_DATA_CHANGED_EVENT } from "@/lib/account-data";
 
 const entry: JournalEntry = {
   id: "10000000-0000-4000-8000-000000000001", user_id: "owner",
@@ -63,6 +65,8 @@ let container: HTMLDivElement;
 beforeEach(() => {
   (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   window.localStorage.clear();
+  window.sessionStorage.clear(); clearTabSession();
+  window.dispatchEvent(new Event(ACCOUNT_DATA_CHANGED_EVENT));
   navigation.query = `entry=${entry.id}`;
   navigation.replace.mockImplementation((url: string) => {
     navigation.query = url.split("?")[1] ?? "";
@@ -165,6 +169,30 @@ describe("journal save, reflection and discussion", () => {
     await act(async () => { delayed.resolve(entry); });
     expect(navigation.replace).not.toHaveBeenCalled();
     expect(container.textContent).toBe("Another page");
+  });
+
+  test("unsaved writing survives leaving and returning without a save", async () => {
+    navigation.query = "";
+    await mount(); await write(entry.text);
+    await act(async () => root.render(null));
+    await mount();
+    expect(container.querySelector("textarea")!.value).toBe(entry.text);
+    expect(vi.mocked(saveJournalEntry)).not.toHaveBeenCalled();
+  });
+
+  test("save completion reconciles a returned list and preserves newer writing", async () => {
+    navigation.query = "";
+    const delayed = deferred<JournalEntry>();
+    vi.mocked(saveJournalEntry).mockReturnValueOnce(delayed.promise);
+    await mount(); await write(entry.text); await click("Save entry");
+    await act(async () => root.render(null)); await mount();
+    await write("A newer unsaved thought.");
+    vi.mocked(listJournalEntries).mockResolvedValue({ items: [entry, other], limit: 50, offset: 0 });
+    await act(async () => delayed.resolve(entry));
+    expect(container.querySelector("textarea")!.value).toBe("A newer unsaved thought.");
+    expect(container.textContent).toContain("Entry saved.");
+    expect(container.querySelector(`a[href='/journal?entry=${entry.id}']`)).toBeTruthy();
+    expect(navigation.query).toBe("");
   });
 
   test("provider decline shows its explanation without hiding writing or inventing a reply", async () => {

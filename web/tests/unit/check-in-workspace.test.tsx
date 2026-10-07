@@ -40,6 +40,7 @@ afterEach(async () => {
   await act(async () => { root.unmount(); });
   container.remove();
   navigation.listeners.clear();
+  vi.useRealTimers();
 });
 async function mount() { await act(async () => { root.render(createElement(CheckInPage)); }); }
 async function navigate(query: string) { await act(async () => { navigation.query = query; navigation.listeners.forEach((callback) => callback()); }); }
@@ -48,6 +49,22 @@ async function click(label: string) {
 }
 
 describe("check-in identity", () => {
+  test("a slow save announces progress and uses a bounded explicit attempt", async () => {
+    vi.useFakeTimers();
+    const fallback = requested.getMockImplementation()!;
+    let fail!: (reason: Error) => void;
+    requested.mockImplementation(async (path, options) => {
+      if (path === "/v1/outcomes" && options?.method === "POST") return new Promise((_resolve, reject) => { fail = reject; });
+      return fallback(path, options);
+    });
+    await mount(); await click("Not yet"); await click("Skip this one");
+    await act(async () => vi.advanceTimersByTime(3000));
+    expect(container.textContent).toContain("Still saving your check-in");
+    const write = requested.mock.calls.find(([path, options]) => path === "/v1/outcomes" && options?.method === "POST")!;
+    expect(write[1]?.timeoutMs).toBe(15000); expect(write[1]?.retry).toBe(false);
+    await act(async () => fail(new Error("Timed out")));
+    expect(container.textContent).toContain("Your save is not confirmed");
+  });
   test("an old load cannot replace the check-in selected by a newer URL", async () => {
     let finish!: (value: typeof history) => void;
     requested.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));

@@ -26,6 +26,7 @@ from .activity_models import (
     ActivityStatus,
     CreateActivitySessionRequest,
 )
+from .activity_resources import ActivityConstraints, activity_candidates
 from .auth import AuthContext
 from .config import Settings
 from .domain import (
@@ -108,6 +109,26 @@ def register_activity_routes(
     follow_up: ActivityFollowUpGenerator | None = None,
     default_follow_up: DefaultActivityFollowUpGenerator | None = None,
 ) -> None:
+    @app.get("/v1/activity-resources")
+    def reviewed_resources(
+        goal: Goal | None = None,
+        time_minutes: int | None = Query(default=None, ge=1, le=20),
+        no_audio: bool = False,
+        no_video: bool = False,
+        seated: bool = False,
+        avoid_breath_focus: bool = False,
+        auth: AuthContext = Depends(auth_dependency),
+    ) -> dict[str, Any]:
+        del auth
+        constraints = ActivityConstraints(
+            time_minutes=time_minutes, no_audio=no_audio, no_video=no_video,
+            seated=seated, avoid_breath_focus=avoid_breath_focus,
+        )
+        return {"items": activity_candidates(
+            settings.resource_catalog_path, goal=goal.value if goal else None,
+            constraints=constraints, limit=16,
+        )}
+
     def sweep(auth: AuthContext) -> Repository:
         repository = repositories(auth)
         repository.close_stale_conversations(auth.user_id, now=clock())

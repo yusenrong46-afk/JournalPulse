@@ -197,6 +197,7 @@ export type JournalEntry = {
 export type ConversationDetail = {
   conversation: Conversation;
   messages: ConversationMessage[];
+  accepted_reflection?: ReflectionRecord | null;
 };
 
 export type ConversationTurn = {

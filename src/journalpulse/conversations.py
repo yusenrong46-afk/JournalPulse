@@ -99,6 +99,7 @@ class ConversationClient(Protocol):
 class ConversationDetail(BaseModel):
     conversation: Conversation
     messages: list[ConversationMessage]
+    accepted_reflection: ReflectionRecord | None = None
 
 
 class ConversationTurnResult(BaseModel):
@@ -206,6 +207,10 @@ def register_conversation_routes(
         return ConversationDetail(
             conversation=conversation,
             messages=repository.list_messages(auth.user_id, conversation_id),
+            accepted_reflection=(
+                repository.get_reflection(auth.user_id, conversation.reflection_id)
+                if conversation.reflection_id is not None else None
+            ),
         )
 
     @app.post(

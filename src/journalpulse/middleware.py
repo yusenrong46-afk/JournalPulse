@@ -64,6 +64,7 @@ class RequestContextMiddleware:
                 response_headers.extend(
                     [
                         (b"x-request-id", request_id.encode()),
+                        (b"server-timing", f"app;dur={(time.perf_counter() - started) * 1000:.2f}".encode()),
                         (b"x-content-type-options", b"nosniff"),
                         (b"referrer-policy", b"no-referrer"),
                         (b"permissions-policy", b"camera=(), microphone=(), geolocation=()"),

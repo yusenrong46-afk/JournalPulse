@@ -1,63 +1,60 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTabValue } from "@/lib/tab-session";
 
 const RADIUS = 64;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export function ActionTimer({ minutes, onDone }: { minutes: number; onDone?: () => void }) {
+type TimerState = { total: number; remaining: number; deadline: number | null };
+
+export function ActionTimer({ minutes, onDone, sessionKey }: { minutes: number; onDone?: () => void; sessionKey?: string }) {
   const total = Math.max(1, Math.round(minutes)) * 60;
+  const [stored, store] = useTabValue(`timer:${sessionKey ?? "unpersisted"}`);
+  const [local, setLocal] = useState<TimerState | null>(null);
+  const initial = useMemo(() => ({ total, remaining: total * 1000, deadline: null }), [total]);
+  const state = useMemo(() => {
+    if (!sessionKey) return local?.total === total ? local : initial;
+    try {
+      const value = JSON.parse(stored) as TimerState;
+      if (value.total === total && Number.isFinite(value.remaining) && value.remaining >= 0 && value.remaining <= total * 1000
+        && (value.deadline === null || (Number.isFinite(value.deadline) && value.deadline > 0))) return value;
+    } catch { /* An absent/invalid record starts a paused timer. */ }
+    return initial;
+  }, [stored, sessionKey, local, initial, total]);
   const [left, setLeft] = useState(total);
-  const [running, setRunning] = useState(false);
-  const remainingMillis = useRef(total * 1000);
-  const deadline = useRef<number | null>(null);
-  const completed = useRef(false);
+  const completed = useRef<number | null>(null);
   const onDoneRef = useRef(onDone);
   useEffect(() => { onDoneRef.current = onDone; }, [onDone]);
+  const running = state.deadline !== null && left > 0;
+  const now = () => sessionKey ? Date.now() : performance.now();
+
+  function save(next: TimerState) {
+    if (sessionKey) store(JSON.stringify(next));
+    else setLocal(next);
+    setLeft(Math.ceil((next.deadline === null ? next.remaining : Math.max(0, next.deadline - now())) / 1000));
+  }
 
   useEffect(() => {
-    remainingMillis.current = total * 1000;
-    deadline.current = null;
-    completed.current = false;
-    queueMicrotask(() => { setLeft(total); setRunning(false); });
-  }, [total]);
-
-  useEffect(() => {
-    if (!running) return;
-    function repaint() {
-      if (deadline.current === null) return;
-      remainingMillis.current = Math.max(0, deadline.current - performance.now());
-      const next = Math.ceil(remainingMillis.current / 1000);
+    const repaint = () => {
+      const next = Math.ceil((state.deadline === null ? state.remaining : Math.max(0, state.deadline - (sessionKey ? Date.now() : performance.now()))) / 1000);
       setLeft(next);
-      if (next === 0 && !completed.current) {
-        completed.current = true;
-        deadline.current = null;
-        setRunning(false);
-        // A side effect never runs inside a React state updater, including StrictMode replay.
+      if (next === 0 && state.deadline !== null && completed.current !== state.deadline) {
+        completed.current = state.deadline;
         onDoneRef.current?.();
       }
-    }
+    };
+    queueMicrotask(repaint);
     const interval = window.setInterval(repaint, 250);
     const wake = () => { if (document.visibilityState !== "hidden") repaint(); };
     window.addEventListener("focus", wake);
     document.addEventListener("visibilitychange", wake);
-    return () => {
-      window.clearInterval(interval);
-      window.removeEventListener("focus", wake);
-      document.removeEventListener("visibilitychange", wake);
-    };
-  }, [running]);
+    return () => { window.clearInterval(interval); window.removeEventListener("focus", wake); document.removeEventListener("visibilitychange", wake); };
+  }, [state, sessionKey]);
 
   function toggle() {
-    if (running) {
-      remainingMillis.current = Math.max(0, (deadline.current ?? performance.now()) - performance.now());
-      deadline.current = null;
-      setLeft(Math.ceil(remainingMillis.current / 1000));
-      setRunning(false);
-    } else {
-      deadline.current = performance.now() + remainingMillis.current;
-      setRunning(true);
-    }
+    if (running) save({ total, remaining: Math.max(0, state.deadline! - now()), deadline: null });
+    else save({ total, remaining: state.remaining, deadline: now() + state.remaining });
   }
 
   const progress = 1 - left / total;
@@ -86,15 +83,13 @@ export function ActionTimer({ minutes, onDone }: { minutes: number; onDone?: () 
           <span className="tag sage" role="status">Time’s up. You can check in when you’re ready.</span>
         ) : (
           <button className="btn btn-soft" type="button" onClick={toggle}>
-            {running ? "Pause" : left === total ? `Start a ${Math.round(total / 60)}-minute timer` : "Keep going"}
+            {running ? "Pause" : state.remaining === total * 1000 ? `Start a ${Math.round(total / 60)}-minute timer` : "Keep going"}
           </button>
         )}
-        {left !== total && (
+        {(left !== total || state.remaining !== total * 1000 || state.deadline !== null) && (
           <button className="btn btn-ghost" type="button" onClick={() => {
-            remainingMillis.current = total * 1000;
-            deadline.current = null;
-            completed.current = false;
-            setRunning(false); setLeft(total);
+            completed.current = null;
+            save(initial);
           }}>
             Reset
           </button>

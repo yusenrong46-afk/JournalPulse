@@ -1,0 +1,16 @@
+
+> journalpulse-web@1.0.0 test:unit
+> vitest run tests/unit/journal-chat.test.tsx tests/unit/journal-workspace.test.tsx tests/unit/journal-delete-order.test.tsx
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/thomas/Documents/ChatGPT/JP/web
+
+
+ Test Files  3 passed (3)
+      Tests  49 passed (49)
+   Start at  15:06:13
+   Duration  2.25s (transform 374ms, setup 118ms, import 1.40s, tests 1.07s, environment 1.99s)
+

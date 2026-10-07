@@ -174,6 +174,8 @@ test("a new person meets Luna and chooses how Luna replies", async ({ page }) =>
   await seed(page, null);
   await page.route(`${API}/**`, (route) => fulfilJson(route, { items: [] }));
   await page.goto("/");
+  await expect(page).toHaveURL(/\/$/);
+  await page.getByRole("link", { name: "Choose your optional setup preferences" }).click();
   await expect(page).toHaveURL(/\/welcome/);
   await expect(page.getByRole("heading", { name: "Hi, I’m Luna." })).toBeVisible();
   await page.getByRole("button", { name: "Nice to meet you" }).click();
@@ -182,6 +184,8 @@ test("a new person meets Luna and chooses how Luna replies", async ({ page }) =>
   await page.getByRole("button", { name: /Simple Luna/ }).click();
   await next.click();
   await page.getByRole("button", { name: "Let’s begin" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await page.getByRole("link", { name: "Chat", exact: true }).click();
   await expect(page).toHaveURL(/\/talk/);
   await expect(page.getByRole("button", { name: /AI help off/ })).toBeVisible();
   const saved = await page.evaluate(() => JSON.parse(window.localStorage.getItem("journalpulse_preferences_v1") ?? "{}"));

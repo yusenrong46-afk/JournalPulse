@@ -42,6 +42,58 @@ def chat_settings(tmp_path: Path, **overrides: object) -> Settings:
     return configured
 
 
+@pytest.mark.parametrize("enabled,expected", [(False, "unavailable"), (True, "configured")])
+def test_discovery_capability_never_calls_a_provider(tmp_path: Path, enabled: bool, expected: str):
+    model = ScriptedClient()
+    configured = chat_settings(tmp_path, search_feature_enabled=enabled, search_api_key="test-only")
+    with TestClient(create_app(settings=configured, conversation_client=model)) as client:
+        response = client.get("/v1/capabilities")
+        assert response.status_code == 200
+        assert response.json() == {"discovery": expected}
+        assert response.headers["cache-control"] == "no-store"
+        assert model.calls == []
+
+
+def test_reviewed_activity_browse_obeys_constraints_without_ai(tmp_path: Path):
+    from journalpulse.activity_resources import ActivityConstraints, activity_resource_matches_constraints
+
+    with TestClient(create_app(settings=chat_settings(tmp_path))) as client:
+        response = client.get(
+            "/v1/activity-resources?time_minutes=2&no_audio=true&no_video=true&seated=true&avoid_breath_focus=true",
+            headers={"X-JournalPulse-User": USER_A},
+        )
+        assert response.status_code == 200, response.text
+        items = response.json()["items"]
+        assert items
+        constraints = ActivityConstraints(
+            time_minutes=2, no_audio=True, no_video=True, seated=True, avoid_breath_focus=True,
+        )
+        assert all(activity_resource_matches_constraints(item, constraints) for item in items)
+        assert all(item["resource_type"] != "support" for item in items)
+
+
+def test_closed_choice_detail_recovers_only_the_owned_reflection(tmp_path: Path):
+    with TestClient(create_app(settings=chat_settings(tmp_path, llm_feature_enabled=False))) as client:
+        conversation = start(client, llm_consent=False)
+        turn = choose_goal(client, conversation["id"])
+        chosen = turn["conversation"]["card"]["actions"][0]["id"]
+        saved = client.post(
+            f"/v1/conversations/{conversation['id']}/accept",
+            headers={"X-JournalPulse-User": USER_A},
+            json={"client_request_id": str(uuid4()), "action_id": chosen},
+        )
+        assert saved.status_code == 201, saved.text
+        own = client.get(
+            f"/v1/conversations/{conversation['id']}", headers={"X-JournalPulse-User": USER_A},
+        )
+        assert own.json()["conversation"]["status"] == "closed"
+        assert own.json()["accepted_reflection"] == saved.json()
+        outsider = client.get(
+            f"/v1/conversations/{conversation['id']}", headers={"X-JournalPulse-User": USER_B},
+        )
+        assert outsider.status_code == 404
+
+
 def completion(*, offer: bool) -> ConversationCompletion:
     return ConversationCompletion(
         reply="That still sounds unsettled. What would make the next hour a little easier?",

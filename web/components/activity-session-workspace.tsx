@@ -376,7 +376,8 @@ export function ActivitySessionWorkspace({
         Find another resource
       </button>}
       {searchOpen && <div ref={searchRef} className="stack">
-        <ActivitySessionDiscovery conversation={conversation} disabled={busy || disabled || !canStart} onSave={saveSearch} />
+        <ActivitySessionDiscovery conversation={conversation} disabled={busy || disabled || !canStart} onSave={saveSearch}
+          onChooseApp={(id) => { void saveOffer(id).then((saved) => { if (saved) setSearchOpen(false); }); }} />
         <button className="btn btn-ghost" type="button" onClick={() => setSearchOpen(false)}>Close activity search</button>
       </div>}
       {error && <div className="stack"><p role="alert" className="note error">{error}</p>

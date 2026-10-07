@@ -1,0 +1,115 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/thomas/Documents/ChatGPT/JP
+configfile: pyproject.toml
+testpaths: tests
+plugins: cov-6.3.0, anyio-4.14.2
+collected 1263 items
+
+tests/test_action_readiness_current_turn.py ..                           [  0%]
+tests/test_activity_chat.py ............                                 [  1%]
+tests/test_activity_follow_up_recovery.py ...                            [  1%]
+tests/test_activity_history_api.py ...                                   [  1%]
+tests/test_activity_offer_supersession.py .....                          [  1%]
+tests/test_activity_resources.py .........................               [  3%]
+tests/test_activity_search_contract.py ........                          [  4%]
+tests/test_activity_sessions_repository.py ...........                   [  5%]
+tests/test_activity_stop.py ....                                         [  5%]
+tests/test_ai_provider_failure_atomicity.py ...                          [  6%]
+tests/test_auth_and_rls.py .....                                         [  6%]
+tests/test_backend_integrity_upgrade.py ..............                   [  7%]
+tests/test_config.py ........................................            [ 10%]
+tests/test_connected_luna_status.py .                                    [ 10%]
+tests/test_conversation_incarnation.py ...                               [ 11%]
+tests/test_conversation_preference.py .........                          [ 11%]
+tests/test_conversations_api.py ....................                     [ 13%]
+tests/test_discovery.py ................................................ [ 17%]
+.....................                                                    [ 18%]
+tests/test_erasure_replay.py ......................                      [ 20%]
+tests/test_foundation_api_audit.py ...........                           [ 21%]
+tests/test_guided_action_boundaries.py ............                      [ 22%]
+tests/test_guided_action_prompt.py ...................                   [ 23%]
+tests/test_guided_current_intent.py .............                        [ 24%]
+tests/test_guided_evaluation.py ........................................ [ 28%]
+.............................................................            [ 32%]
+tests/test_http_client_lifecycle.py .................................... [ 35%]
+...............                                                          [ 36%]
+tests/test_inline_discovery.py ..............                            [ 38%]
+tests/test_integration_stack_download.py .....                           [ 38%]
+tests/test_journal_chat.py ...................                           [ 39%]
+tests/test_journal_models.py .....                                       [ 40%]
+tests/test_journal_repository.py .......                                 [ 40%]
+tests/test_journals_api.py .................                             [ 42%]
+tests/test_luna_evaluation.py .......                                    [ 42%]
+tests/test_middleware_boundaries.py ....                                 [ 43%]
+tests/test_openrouter_contract.py .....                                  [ 43%]
+tests/test_openrouter_conversation_contract.py ......................... [ 45%]
+.........................                                                [ 47%]
+tests/test_phase_a_lifecycle.py ..................                       [ 48%]
+tests/test_readiness.py ........................                         [ 50%]
+tests/test_research_beta_api.py ..................                       [ 52%]
+tests/test_research_beta_safety.py ......................                [ 53%]
+tests/test_safety_direct_intent.py ...............                       [ 55%]
+tests/test_safety_indirect_and_historical.py ........................... [ 57%]
+........................................................................ [ 62%]
+........................................................................ [ 68%]
+........................................................................ [ 74%]
+........................................................................ [ 80%]
+........................................................................ [ 85%]
+................................................................         [ 90%]
+tests/test_scratch_postgres_safety.py ......................             [ 92%]
+tests/test_self_report.py .....                                          [ 92%]
+tests/test_sentinel_boundaries.py ..............                         [ 94%]
+tests/test_sqlite_connection_lifecycle.py .                              [ 94%]
+tests/test_sqlite_pagination_index.py .                                  [ 94%]
+tests/test_supabase_repository.py ...............                        [ 95%]
+tests/test_supabase_response_boundary.py ............................... [ 97%]
+...........................                                              [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/thomas/Documents/ChatGPT/JP/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.12.13-final-0 _______________
+
+Name                                     Stmts   Miss Branch BrPart  Cover   Missing
+------------------------------------------------------------------------------------
+src/journalpulse/__init__.py                 2      0      0      0   100%
+src/journalpulse/activity_chat.py           59      2     16      2    95%   129, 204
+src/journalpulse/activity_lifecycle.py      48      2     30      3    94%   22, 30->78, 37
+src/journalpulse/activity_models.py        146      4      8      4    95%   69, 75, 77, 165
+src/journalpulse/activity_resources.py     204      8     68      8    94%   99, 114, 116, 238, 240, 339, 422, 465
+src/journalpulse/activity_sessions.py      201     25     58     17    84%   76, 81, 144, 148, 186, 188, 214-215, 274, 290, 295, 298, 306, 308, 399, 404, 406, 429, 432, 444-445, 457-473
+src/journalpulse/api.py                    309     16     60      6    94%   150, 164, 271-272, 297, 307-308, 310-311, 381-382, 485-486, 603-604, 609
+src/journalpulse/auth.py                    43      2     14      0    96%   65-66
+src/journalpulse/config.py                 129      5     48      6    94%   53->49, 147, 149, 151, 163, 165
+src/journalpulse/conversations.py          321     12     92      7    95%   281, 295, 322, 324, 387->400, 421, 666, 708-709, 781, 834-835, 883
+src/journalpulse/discovery.py              184     14     54     13    89%   143, 149, 152, 172, 179, 266, 268, 273, 283, 334, 347, 349, 352, 355
+src/journalpulse/discovery_models.py        88      1     18      2    97%   62->68, 65
+src/journalpulse/discovery_prompts.py        2      0      0      0   100%
+src/journalpulse/domain.py                 279      6     14      6    96%   90, 161, 195, 377, 385, 387
+src/journalpulse/erasure.py                 23      1      4      1    93%   35
+src/journalpulse/evaluation.py             130     24     42      8    81%   62, 64, 153->155, 155->163, 158-162, 176, 192-194, 207-221, 228
+src/journalpulse/guided.py                  36      1      6      1    95%   73
+src/journalpulse/guided_action.py          108      8     26      8    88%   48, 52, 144, 176, 183, 189, 192, 194
+src/journalpulse/guided_evaluation.py      554     55    208     26    89%   98, 100, 102, 104, 106, 108, 110, 130, 141, 148, 152, 423, 425, 508, 516, 530, 572, 588->591, 622-623, 633-634, 661, 689, 738->686, 832, 996, 1091, 1459-1524, 1528
+src/journalpulse/http_clients.py             9      0      2      0   100%
+src/journalpulse/inline_discovery.py        92      4     28      4    93%   64, 120, 124, 172
+src/journalpulse/intelligence.py           375      6    126     10    97%   254, 268->321, 312-313, 318->268, 322, 383, 406->408, 408->410, 771->811, 812
+src/journalpulse/journal_models.py          55      1      6      1    97%   82
+src/journalpulse/journals.py                69      2     14      1    96%   178, 206
+src/journalpulse/middleware.py             104      5     24      2    95%   44-46, 57, 84
+src/journalpulse/persistence.py            889     83    298     40    89%   405, 409, 415, 457, 459, 496, 572, 573->577, 595, 718, 811, 861, 874, 897, 989, 1084, 1092, 1126, 1194, 1351, 1421, 1434, 1437-1442, 1516-1527, 1530, 1532, 1537, 1745-1759, 1787-1788, 1798, 1888, 1890, 1893, 1895, 1910, 1919, 1921, 1924, 1934, 1943-1953, 1960, 1973-1993, 2003-2019, 2030-2049, 2059-2077, 2096-2136, 2148-2163, 2236-2239, 2409-2423, 2431-2432, 2497
+src/journalpulse/policy.py                  21      1      8      1    93%   34
+src/journalpulse/reflection_prompts.py       8      0      0      0   100%
+src/journalpulse/resources.py               54      9     18      7    78%   24, 30, 35-36, 39, 42, 44, 49, 54
+src/journalpulse/safety.py                  66      0     22      0   100%
+src/journalpulse/self_report.py             16      0      4      0   100%
+src/journalpulse/signing.py                 16      0      0      0   100%
+------------------------------------------------------------------------------------
+TOTAL                                     4640    297   1316    184    92%
+Required test coverage of 80.0% reached. Total coverage: 91.72%
+======================= 1263 passed, 1 warning in 36.25s =======================

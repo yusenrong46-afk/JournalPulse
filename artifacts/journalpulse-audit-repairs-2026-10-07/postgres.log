@@ -1,0 +1,283 @@
+ok: signed-in user cannot insert a conversation directly
+ok: signed-in user cannot forge a policy decision
+ok: signed-in user cannot forge a model run
+ok: unsigned reflection function is gone
+ok: signed-in user cannot run the global purge
+ok: forged signature is rejected
+ok: signature from another key is rejected
+ok: a payload signed for another purpose is rejected
+ok: cannot create a conversation for someone else
+ok: create is idempotent
+ok: new chat is revision 0
+ok: signed-in user cannot update a conversation directly
+ok: retried turn is stored once
+ok: turn computed on an old revision is rejected
+ok: each commit bumps revision
+ok: close writes status
+ok: close clears message text
+ok: delayed reply after close is rejected
+ok: delayed reply cannot restore cleared text
+ok: delayed reply cannot reopen the chat
+ok: accept retry stores one reflection
+ok: conversation links the reflection
+ok: accept closes the chat
+ok: accept purges text when not retained
+ok: accept writes the decision row
+ok: accept writes the model run
+ok: a different acceptance is refused
+ok: refused acceptance writes nothing
+ok: accept against an old card is rejected
+ok: rejected accept leaves the chat open
+ok: accept keeps text when the person chose to keep it
+ok: reply after delete cannot recreate the chat
+ok: reply after delete stores no messages
+ok: one outcome per decision
+ok: third event is allowed
+ok: fourth event is refused
+ok: refusal carries retry_after within the window
+ok: buckets are independent
+ok: usage counters are not readable
+ok: B cannot see A conversations
+ok: B cannot see A reflections
+ok: B cannot attach a turn to A's chat
+ok: B cannot replay a payload signed for A
+ok: B cannot close A's chat
+ok: B cannot close A chat
+ok: purge closes idle chats
+ok: purge clears idle chat text
+ok: purge keeps text the person chose to keep
+ok: purge repairs text left on a closed chat
+ok: the existing API retains its readiness schema contract
+ok: the existing API can still verify its shared signing key
+ok: readiness detects a mismatched key
+ok: readiness reports the schema version
+ok: the preview API verifies the same shared signing key
+ok: anonymous callers read nothing
+ok: A deletion removes every A journal row
+ok: deleting a journal does not reset the generation limit
+ok: the scheduled job expires old usage counters
+ok: A deletion leaves B alone
+ok: a turn waiting on a concurrent close is rejected
+ok: concurrent accepts store exactly one reflection
+ok: a turn waiting on a concurrent preference choice is rejected
+ok: legacy JSON without preference keeps its original acceptance contract
+ok: preference persists in PostgreSQL
+ok: replayed Listen returns current Act without changing it
+ok: conflicting preference ID is refused
+ok: a delayed turn cannot restore the withdrawn card
+ok: rejected turn inserts no messages
+ok: older server turn cannot overwrite preference
+ok: database suppresses a model offer while listening
+ok: listening cannot accept an ordinary card
+ok: explicit choice requires client card revision
+ok: other owner cannot change preference
+ok: RLS hides another person's command receipts
+ok: direct preference receipt writes are forbidden
+ok: duplicate command after close returns closed state
+ok: new preference cannot reopen a closed chat
+ok: conversation deletion cascades to receipts
+ok: retention distinguishes a missing job
+ok: a schedule alone is never success
+ok: initial grace includes exactly 30 minutes
+ok: initial grace expires after 30 minutes
+ok: successful scheduled entry point records completion
+ok: manual entry point cannot masquerade as a successful scheduler
+ok: request-time cleanup cannot repair scheduler evidence
+ok: success is fresh at the 30-minute boundary
+ok: stale success is overdue after 30 minutes
+ok: failure after success is observable
+ok: manual completion cannot hide a cron failure
+ok: later completion recovers from failure
+ok: unavailable cron history is unknown
+ok: unreadable cron metadata is unknown
+ok: unexpected schedule is not called healthy
+ok: inactive cron job is missing
+ok: failed cleanup propagates rather than claiming success
+ok: failed cleanup leaves previous success unchanged
+ok: authenticated user cannot mark scheduler success
+ok: authenticated user cannot read or write private monitoring data
+ok: anonymous readiness exposes bounded operational status
+ok: public callers cannot choose the diagnostic clock
+note: retention clock/history checks use cron metadata stand-ins; no worker execution claimed
+PostgreSQL schema verification passed
+ok: journal replay returns the original timestamp
+ok: changed journal replay cannot overwrite writing
+ok: unsigned journal insertion is denied
+ok: direct deletion cannot bypass derived-content cleanup
+ok: journal source is hidden by owner RLS
+ok: a chat cannot attach another person's source
+ok: source creation time is checked atomically
+ok: linked action reflection was saved before source deletion
+ok: source deletion succeeds
+ok: source deletion removes linked conversation
+ok: source deletion removes derived messages
+ok: source deletion removes the accepted derived reflection
+ok: source deletion preserves unrelated conversations
+ok: a delayed turn cannot recreate deleted source context
+ok: a delayed start cannot create an orphan source chat
+ok: deleted journal request cannot restore writing
+ok: global journal deletion includes standalone writing
+ok: global deletion preserves the other person's writing
+Connected journal schema verification passed
+ok: legacy production generation policy still enforces the window
+ok: direct RPC cannot shorten and erase usage history
+ok: direct RPC cannot widen generation limits
+ok: signed usage RPC rejects a forged signature
+ok: signed and legacy generation calls share the same usage history
+ok: rejected policy changes never delete usage events
+ok: signed usage policy remains owner bound
+ok: identical creation retry returns the same conversation
+ok: creation retry cannot change retention choice
+ok: creation retry cannot change AI consent
+ok: creation retry cannot change locale
+ok: identical turn replay does not regenerate
+ok: changed text cannot reuse a turn ID
+ok: changed reported mood cannot reuse a turn ID
+ok: purged turn replay is refused without retaining text hashes
+ok: identical acceptance retry returns the same receipt
+ok: one acceptance receipt cannot be attached to another conversation
+ok: conflicting acceptance leaves the second conversation open
+ok: acceptance replay cannot change the selected action
+Audit integrity verification passed
+/Users/thomas/Documents/ChatGPT/JP/.venv/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+  PydanticSerializationUnexpectedValue(Expected `enum` - serialized value may not be as expected [field_name='activity_goal', input_value='move', input_type=str])
+  return self.__pydantic_serializer__.to_python(
+ok: offer retry is idempotent
+ok: unsigned activity insertion is denied
+ok: duplicate start does not restart the clock
+ok: starting an in-chat activity does not close its conversation
+ok: controls do not change the ordinary chat revision
+ok: one nonterminal activity per conversation
+ok: client cannot claim premature timer expiry
+ok: pause is persisted
+ok: finish early does not invent participant feedback
+ok: one deterministic check-in is issued
+ok: duplicate report stores one outcome
+ok: partial report remains distinct from completed
+ok: partial report never fabricates a legacy completed outcome
+ok: same request ID cannot change its report
+ok: activity RLS hides another owner's session
+ok: receipt RLS hides another owner's requests
+ok: owner cannot replay a different owner's signed command
+ok: one server obtains the generation lease
+ok: claim replay cannot obtain a second paid generation
+ok: listen preference returns the committed card withdrawal
+ok: listen retry returns current state
+ok: listen preserves the intended active-session lifecycle
+ok: act preference returns the committed card withdrawal
+ok: act retry returns current state
+ok: act preserves the intended active-session lifecycle
+ok: owner cannot reset the turn bound through partial message deletion
+ok: denied partial deletion preserves all twenty turn records
+ok: activity offer remains blocked at the preserved turn bound
+ok: existing full-conversation RPC still deletes all owned messages
+ok: new recommendation atomically withdraws the unstarted offer
+ok: new recommendation cannot start the withdrawn offer
+ok: shorter requested duration atomically withdraws the unstarted offer
+ok: shorter requested duration cannot start the withdrawn offer
+ok: changed goal atomically withdraws the unstarted offer
+ok: changed goal cannot start the withdrawn offer
+ok: new public search topic atomically withdraws the unstarted offer
+ok: new public search topic cannot start the withdrawn offer
+ok: withdrawn recommendation atomically withdraws the unstarted offer
+ok: withdrawn recommendation cannot start the withdrawn offer
+ok: ordinary updates preserve offered activity when withdrawal is not required
+ok: ordinary updates preserve active activity when withdrawal is not required
+ok: ordinary updates preserve paused activity when withdrawal is not required
+ok: ordinary updates preserve awaiting_report activity when withdrawal is not required
+ok: saving another offer withdraws without recording rejection or participation
+ok: replacement remains an unstarted offer
+ok: replacement retry does not withdraw the original twice
+ok: withdrawn offer cannot be started
+ok: explicit decline still records the participant choice
+ok: pause follow-up returns its actual saved report and successful reply
+ok: outcome reply persists the pause directive
+ok: outcome pause atomically stops a second active timer without a check-in
+ok: pause follow-up remains idempotent after activity invalidation
+ok: follow-up retry appends one assistant message
+ok: follow-up atomically advances the conversation revision
+ok: activity row does not duplicate journal-derived model text
+ok: legacy conversation card remains compatible with the old production parser
+ok: new LLM card has no fabricated propensity
+ok: revised card references the atomically stored assistant message
+ok: legacy policy-decision propensity schema stays unchanged
+ok: a chat stop preserves the already saved participation report
+ok: a chat stop withdraws further report questions
+ok: closing invalidates the additive recommendation too
+ok: closing an unretained chat clears outcome notes
+ok: unretained close clears request fingerprints
+ok: canonical follow-up and stop-turn text follow existing retention
+ok: signed ordinary-chat stop atomically cancels the active timer without a check-in
+ok: a stopped chat cannot restart activity controls
+ok: a stopped chat cannot offer a new activity before a new user turn
+ok: source deletion cascades activity sessions
+ok: source deletion cascades activity receipts
+ok: signed source deletion still cascades its message metadata
+ok: deleted source cannot be revived by an old command
+ok: new preview requires its additive readiness version
+ok: readiness verifies activity RPCs and retention integration
+ok: account data deletion includes activity sessions
+ok: account data deletion includes activity receipts
+ok: existing account deletion still removes owned message metadata
+Guided activity PostgreSQL verification passed (77 assertions)
+ok: deleted logical chat UUID cannot be recreated
+ok: late turn refused after retired UUID
+ok: deleted chat remains absent
+ok: no deleted messages reappear
+ok: support response clears ordinary activity card
+ok: immediate response matches trigger-normalized stored row
+ok: follow-up claim acquired
+ok: lease outlasts provider budget and host deadline
+ok: follow-up cannot cross parent incarnation
+ok: stale outcome stores no reply
+ok: correct incarnation finishes exactly once
+ok: readiness identifies repaired contract
+{"sentinel_postgres_checks": "passed", "provider_calls": 0}
+ok: chat: retired chat ID cannot be recreated
+ok: chat: delayed acceptance cannot restore a deleted summary
+ok: chat: delayed offer cannot attach to a deleted chat
+ok: chat: pre-read preference targets no replacement
+ok: chat: old activity start is rejected
+ok: chat: old activity report is rejected
+ok: chat: old follow-up claim is rejected
+ok: chat: session ID cannot be recreated on a new chat
+ok: chat: no old summary was stored
+ok: chat: no deleted message was restored
+ok: source: retired chat ID cannot be recreated
+ok: source: delayed acceptance cannot restore a deleted summary
+ok: source: delayed offer cannot attach to a deleted chat
+ok: source: pre-read preference targets no replacement
+ok: source: old activity start is rejected
+ok: source: old activity report is rejected
+ok: source: old follow-up claim is rejected
+ok: source: session ID cannot be recreated on a new chat
+ok: source: no old summary was stored
+ok: source: no deleted message was restored
+ok: account: retired chat ID cannot be recreated
+ok: account: delayed acceptance cannot restore a deleted summary
+ok: account: delayed offer cannot attach to a deleted chat
+ok: account: pre-read preference targets no replacement
+ok: account: old activity start is rejected
+ok: account: old activity report is rejected
+ok: account: old follow-up claim is rejected
+ok: account: session ID cannot be recreated on a new chat
+ok: account: no old summary was stored
+ok: account: no deleted message was restored
+ok: existing journal retry remains idempotent
+ok: entry deletion rejects a lost-response save retry
+ok: reflection deletion rejects a summary replay
+ok: account erasure retains the deleted entry marker
+ok: account erasure retains the deleted reflection marker
+ok: deletion markers are not client-readable
+ok: deletion markers cannot be reset by clients
+ok: another account cannot claim an erased global UUID
+ok: never-committed authenticated save is fenced by account erase
+ok: rejected new ID writes no text
+ok: fresh authenticated request after erasure can save
+ok: legacy readiness contract remains compatible
+ok: new readiness identifies erasure guard schema
+ok: new readiness verifies all identity triggers
+ok: auth identity deletion removes prior and cascading markers
+ok: auth identity deletion removes account revision
+ok: account erase and content writes serialize correctly in both transaction orders
+{"erasure_postgres_checks": "passed", "provider_calls": 0}

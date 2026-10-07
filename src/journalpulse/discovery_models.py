@@ -118,14 +118,24 @@ class DiscoveryCandidate(BaseModel):
         return checked_source_url(value)
 
 
+class DiscoveryModelRun(ModelRun):
+    generation_id: str | None = Field(default=None, max_length=200)
+    cost_usd: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+
+
 class DiscoveryProvenance(BaseModel):
     search_provider: Literal["brave"] = "brave"
     prompt_version: str
     retrieved_at: str
     candidate_count: int = Field(ge=0, le=MAX_CANDIDATES)
     search_calls: Literal[1] = 1
-    model_runs: list[ModelRun] = Field(max_length=2)
+    model_runs: list[DiscoveryModelRun] = Field(max_length=2)
     page_fetches: Literal[0] = 0
+
+    @field_validator("model_runs", mode="before")
+    @classmethod
+    def legacy_model_runs(cls, values: list) -> list:
+        return [value.model_dump() if isinstance(value, ModelRun) else value for value in values]
 
 
 class DiscoveryResponse(BaseModel):

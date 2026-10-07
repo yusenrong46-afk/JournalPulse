@@ -9,9 +9,14 @@ vi.mock("next/link", () => ({ default: ({ href, children, ...props }: { href: st
 vi.mock("@/lib/discovery", async (original) => ({
   ...await original<typeof import("@/lib/discovery")>(), searchDiscovery: vi.fn(),
 }));
+vi.mock("@/lib/api", async (original) => ({
+  ...await original<typeof import("@/lib/api")>(), apiRequest: vi.fn(),
+}));
 
 import DiscoverPage from "@/app/discover/page";
 import { searchDiscovery } from "@/lib/discovery";
+import { apiRequest } from "@/lib/api";
+import { clearTabSession } from "@/lib/tab-session";
 
 let root: Root;
 let container: HTMLDivElement;
@@ -20,6 +25,8 @@ const search = vi.mocked(searchDiscovery);
 beforeEach(() => {
   (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   window.localStorage.clear();
+  window.sessionStorage.clear(); clearTabSession();
+  vi.mocked(apiRequest).mockReset().mockImplementation(async (path) => path === "/v1/capabilities" ? { discovery: "configured" } : { items: [] });
   window.localStorage.setItem("journalpulse_open_conversation_v1", "private-conversation");
   navigation.query = "goal=settle&entry=private-entry&text=private-writing";
   search.mockReset();
@@ -31,6 +38,28 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 async function mount() { await act(async () => root.render(createElement(DiscoverPage))); }
 
 describe("discovery connected to chat", () => {
+  test("unavailable search is disclosed before consent and keeps the app collection usable", async () => {
+    vi.mocked(apiRequest).mockImplementation(async (path) => path === "/v1/capabilities" ? { discovery: "unavailable" } : { items: [] });
+    await mount();
+    expect(container.querySelector("input[type=checkbox]")).toBeNull();
+    expect(container.textContent).toContain("Web search isn’t available right now");
+    expect(container.textContent).toContain("Choose a reviewed app activity");
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  test("restores the topic and exclusions after returning but requires new consent", async () => {
+    await mount();
+    await act(async () => {
+      const input = container.querySelector<HTMLInputElement>("#discovery-topic")!;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "quiet reflection guides");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      container.querySelector<HTMLInputElement>("input[type=checkbox]")!.click();
+    });
+    await act(async () => root.render(null)); await mount();
+    expect(container.querySelector<HTMLInputElement>("#discovery-topic")!.value).toBe("quiet reflection guides");
+    expect(container.querySelector<HTMLInputElement>("input[type=checkbox]")!.checked).toBe(false);
+    expect(search).not.toHaveBeenCalled();
+  });
   test("prefills only a general goal and requires fresh search consent", async () => {
     await mount();
     expect(container.querySelector<HTMLInputElement>("#discovery-topic")!.value)

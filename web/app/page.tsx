@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { Icon } from "@/components/nav-icon";
@@ -31,7 +30,6 @@ function subscribeToStorage(callback: () => void) {
 }
 
 export default function HomePage() {
-  const router = useRouter();
   const time = useTimeOfDay();
   const [preferences, , preferencesLoaded] = usePreferences();
   const reminders = useReminders();
@@ -47,10 +45,6 @@ export default function HomePage() {
     () => false,
   );
   const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (preferencesLoaded && !preferences.onboarded) router.replace("/welcome");
-  }, [preferences.onboarded, preferencesLoaded, router]);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -120,6 +114,9 @@ export default function HomePage() {
       </section>
 
       <div className="page page-wide home-details">
+        {preferencesLoaded && !preferences.onboarded && <p className="note">
+          You can use JournalPulse with private defaults. <Link href="/welcome?next=%2F">Choose your optional setup preferences</Link> whenever you’re ready.
+        </p>}
         {offline && (
           <p className="note error" role="status">Luna can’t reach your journal right now. Your chat will still try when you’re back online.</p>
         )}

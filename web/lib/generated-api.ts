@@ -106,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/activity-resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reviewed Resources */
+        get: operations["reviewed_resources_v1_activity_resources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/activity-sessions/{session_id}": {
         parameters: {
             query?: never;
@@ -168,6 +185,23 @@ export interface paths {
         put?: never;
         /** Report Activity */
         post: operations["report_activity_v1_activity_sessions__session_id__report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capabilities */
+        get: operations["capabilities_v1_capabilities_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -893,6 +927,14 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** CapabilitiesResponse */
+        CapabilitiesResponse: {
+            /**
+             * Discovery
+             * @enum {string}
+             */
+            discovery: "configured" | "unavailable";
+        };
         /** ChangeConversationPreferenceRequest */
         ChangeConversationPreferenceRequest: {
             /**
@@ -991,6 +1033,7 @@ export interface components {
         };
         /** ConversationDetail */
         ConversationDetail: {
+            accepted_reflection?: components["schemas"]["ReflectionRecord"] | null;
             conversation: components["schemas"]["Conversation"];
             /** Messages */
             messages: components["schemas"]["ConversationMessage"][];
@@ -1122,12 +1165,47 @@ export interface components {
             /** Why Selected */
             why_selected: string;
         };
+        /** DiscoveryModelRun */
+        DiscoveryModelRun: {
+            /** Completion Tokens */
+            completion_tokens?: number | null;
+            /** Cost Usd */
+            cost_usd?: number | null;
+            /** Fallback Reason */
+            fallback_reason?: string | null;
+            /** Generation Id */
+            generation_id?: string | null;
+            /** Latency Ms */
+            latency_ms: number;
+            /** Model */
+            model: string;
+            /** Prompt Tokens */
+            prompt_tokens?: number | null;
+            /** Prompt Version */
+            prompt_version?: string | null;
+            /**
+             * Provider
+             * @default openrouter
+             */
+            provider: string;
+            /** Schema Valid */
+            schema_valid: boolean;
+            /** Skill Hash */
+            skill_hash?: string | null;
+            /** Skill Version */
+            skill_version?: string | null;
+            /**
+             * Used Fallback
+             * @default false
+             */
+            used_fallback: boolean;
+        };
         /** DiscoveryProvenance */
         DiscoveryProvenance: {
             /** Candidate Count */
             candidate_count: number;
             /** Model Runs */
-            model_runs: components["schemas"]["ModelRun"][];
+            model_runs: components["schemas"]["DiscoveryModelRun"][];
             /**
              * Page Fetches
              * @default 0
@@ -1998,6 +2076,48 @@ export interface operations {
             };
         };
     };
+    reviewed_resources_v1_activity_resources_get: {
+        parameters: {
+            query?: {
+                goal?: components["schemas"]["Goal"] | null;
+                time_minutes?: number | null;
+                no_audio?: boolean;
+                no_video?: boolean;
+                seated?: boolean;
+                avoid_breath_focus?: boolean;
+            };
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     read_activity_v1_activity_sessions__session_id__get: {
         parameters: {
             query?: never;
@@ -2146,6 +2266,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capabilities_v1_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapabilitiesResponse"];
                 };
             };
         };
