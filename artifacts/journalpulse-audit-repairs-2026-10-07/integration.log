@@ -2,63 +2,63 @@
 > journalpulse-web@1.0.0 test:integration
 > playwright test -c playwright.integration.config.ts
 
-[WebServer] 07/Oct/2026:15:01:11 -0300: Starting PostgREST 12.2.12 (cd3cf9e)...
-[WebServer] 07/Oct/2026:15:01:11 -0300: Listening on port 3301
-[WebServer] 127.0.0.1 - anon [07/Oct/2026:15:01:11 -0300] "GET / HTTP/1.1" 503 - "" "python-httpx/0.28.1"
-[WebServer] 07/Oct/2026:15:01:11 -0300: Listening for notifications on the "pgrst" channel
-[WebServer] 07/Oct/2026:15:01:11 -0300: Successfully connected to PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
-[WebServer] 07/Oct/2026:15:01:11 -0300: Config reloaded
-[WebServer] 07/Oct/2026:15:01:11 -0300: Schema cache queried in 2.4 milliseconds
-[WebServer] 07/Oct/2026:15:01:11 -0300: Schema cache loaded 17 Relations, 29 Relationships, 34 Functions, 0 Domain Representations, 4 Media Type Handlers, 1198 Timezones
-[WebServer] 07/Oct/2026:15:01:11 -0300: Schema cache loaded in 0.9 milliseconds
-[WebServer] 07/Oct/2026:15:01:11 -0300: Successfully connected to PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
-[WebServer] 07/Oct/2026:15:01:11 -0300: Config reloaded
-[WebServer] 07/Oct/2026:15:01:11 -0300: Schema cache queried in 9.2 milliseconds
-[WebServer] 07/Oct/2026:15:01:11 -0300: Schema cache loaded 17 Relations, 29 Relationships, 34 Functions, 0 Domain Representations, 4 Media Type Handlers, 1198 Timezones
-[WebServer] 07/Oct/2026:15:01:11 -0300: Schema cache loaded in 0.9 milliseconds
-[WebServer] 
+[WebServer] 07/Oct/2026:15:19:23 -0300: Starting PostgREST 12.2.12 (cd3cf9e)...
+[WebServer] 07/Oct/2026:15:19:23 -0300: Listening on port 3301
+[WebServer] 127.0.0.1 - anon [07/Oct/2026:15:19:23 -0300] "GET / HTTP/1.1" 503 - "" "python-httpx/0.28.1"
+[WebServer] 07/Oct/2026:15:19:23 -0300: Listening for notifications on the "pgrst" channel
+[WebServer] 07/Oct/2026:15:19:23 -0300: Successfully connected to PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+[WebServer] 07/Oct/2026:15:19:23 -0300: Config reloaded
+[WebServer] 07/Oct/2026:15:19:23 -0300: Schema cache queried in 1.4 milliseconds
+[WebServer] 07/Oct/2026:15:19:23 -0300: Schema cache loaded 17 Relations, 29 Relationships, 34 Functions, 0 Domain Representations, 4 Media Type Handlers, 1198 Timezones
+[WebServer] 07/Oct/2026:15:19:23 -0300: Schema cache loaded in 0.6 milliseconds
+[WebServer] 07/Oct/2026:15:19:23 -0300: Successfully connected to PostgreSQL 16.15 (Debian 16.15-1.pgdg12+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit
+[WebServer] 07/Oct/2026:15:19:23 -0300: Config reloaded
+[WebServer] 07/Oct/2026:15:19:23 -0300: Schema cache queried in 9.2 milliseconds
+[WebServer] 07/Oct/2026:15:19:23 -0300: Schema cache loaded 17 Relations, 29 Relationships, 34 Functions, 0 Domain Representations, 4 Media Type Handlers, 1198 Timezones
+[WebServer] 07/Oct/2026:15:19:23 -0300: Schema cache loaded in 0.3 milliseconds
+[WebServer]
 [WebServer] > journalpulse-web@1.0.0 build
 [WebServer] > next build
-[WebServer] 
+[WebServer]
 [WebServer] ▲ Next.js 16.3.8 (Turbopack)
-[WebServer] (node:42766) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] ✓ Running next.config.ts took 77ms
+[WebServer] ✓ Running next.config.ts took 53ms
 [WebServer] - Experiments (use with caution):
 [WebServer]   ✓ inlineCss
-[WebServer] 
+[WebServer]
 [WebServer]   Creating an optimized production build ...
-[WebServer] (node:42766) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44476) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] ✓ Compiled successfully in 953ms
+[WebServer] ✓ Compiled successfully in 708ms
 [WebServer]   Running TypeScript ...
-[WebServer]   Finished TypeScript in 3.9s ...
+[WebServer]   Finished TypeScript in 2.4s ...
 [WebServer]   Collecting page data using 9 workers ...
-[WebServer] (node:42792) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44494) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] (node:42799) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44493) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] (node:42797) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44497) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] (node:42793) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44499) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] (node:42795) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44498) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] (node:42796) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44495) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] (node:42798) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44500) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] (node:42794) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] (node:42800) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:44496) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
 [WebServer]   Generating static pages using 9 workers (0/18) ...
-[WebServer]   Generating static pages using 9 workers (4/18) 
-[WebServer]   Generating static pages using 9 workers (8/18) 
-[WebServer]   Generating static pages using 9 workers (13/18) 
-[WebServer] ✓ Generating static pages using 9 workers (18/18) in 293ms
+[WebServer]   Generating static pages using 9 workers (4/18)
+[WebServer]   Generating static pages using 9 workers (8/18)
+[WebServer]   Generating static pages using 9 workers (13/18)
+[WebServer] ✓ Generating static pages using 9 workers (18/18) in 298ms
 [WebServer]   Finalizing page optimization ...
-[WebServer] 
+[WebServer]
 [WebServer] Route (app)
 [WebServer] ┌ ○ /
 [WebServer] ├ ○ /_not-found
@@ -77,41 +77,42 @@
 [WebServer] ├ ○ /reflect
 [WebServer] ├ ○ /talk
 [WebServer] └ ○ /welcome
-[WebServer] 
-[WebServer] 
+[WebServer]
+[WebServer]
 [WebServer] ○  (Static)  prerendered as static content
-[WebServer] 
+[WebServer]
 [WebServer] integration stack ready: api http://127.0.0.1:8100, gateway http://127.0.0.1:54321
 
-Running 24 tests using 1 worker
+Running 25 tests using 1 worker
 
-(node:42832) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:44521) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-  ✓   1 [integration-chromium] › tests/integration/audit-repairs.spec.ts:19:5 › audit: draft recovery, optional Home and interrupted-save reconciliation (2.8s)
-{"check_in_timing":{"environment":"local PostgreSQL; auth stand-in","total_to_visible_confirmation_ms":82,"revision_and_auth_before_write_ms":48.655029296875,"request_to_headers_ms":30.574,"app_to_headers_ms":30.27,"transport_and_scheduling_ms":0.30400000000000205}}
-  ✓   2 [integration-chromium] › tests/integration/audit-repairs.spec.ts:46:5 › audit: accepted legacy activity and timer recover through refresh (2.1s)
-  ✓   3 [integration-chromium] › tests/integration/audit-upgrade.spec.ts:5:5 › an account change on the same chat URL discards private replies, drafts and inherited consent (1.3s)
-  ✓   4 [integration-chromium] › tests/integration/audit-upgrade.spec.ts:65:5 › a linked chat opens an editable general search and returns with its source (2.3s)
-  ✓   5 [integration-chromium] › tests/integration/audit-upgrade.spec.ts:114:5 › retry after a committed turn loses its response keeps one stored turn (1.7s)
-  ✓   6 [integration-chromium] › tests/integration/connected-luna.spec.ts:29:5 › slice 1: save, reopen, reflect and delete standalone writing (4.4s)
-  ✓   7 [integration-chromium] › tests/integration/connected-luna.spec.ts:64:5 › slice 2: selected journal context survives chat reload and source deletion invalidates it (3.0s)
-  ✓   8 [integration-chromium] › tests/integration/connected-luna.spec.ts:93:5 › slice 3: approve a topic and refine results without repeating sources (1.5s)
-  ✓   9 [integration-chromium] › tests/integration/guided-action.spec.ts:63:5 › meditation stays in chat and a paused session survives reload before an honest check-in (4.1s)
-  ✓  10 [integration-chromium] › tests/integration/guided-action.spec.ts:132:5 › changing account while an activity is running removes its private panel and controls (1.6s)
-  ✓  11 [integration-chromium] › tests/integration/guided-action.spec.ts:169:5 › inline search uses the real request contract and saves a refined signed offer in chat (2.1s)
-  ✓  12 [integration-chromium] › tests/integration/guided-action.spec.ts:224:5 › a newer recommendation replaces an unstarted saved search offer (1.7s)
-  ✓  13 [integration-chromium] › tests/integration/loop.spec.ts:50:5 › the legacy guided loop runs against the real API and database (6.2s)
-  ✓  14 [integration-chromium] › tests/integration/loop.spec.ts:133:5 › each person sees only their own journal and cannot write provenance directly (459ms)
-  ✓  15 [integration-chromium] › tests/integration/loop.spec.ts:160:5 › Just talk survives reload and later AI flags, then resumes with a fresh activity offer (3.2s)
-  ✓  16 [integration-chromium] › tests/integration/loop.spec.ts:218:5 › a lost choice response can be retried without losing the draft or applying twice (2.2s)
-  ✓  17 [integration-chromium] › tests/integration/loop.spec.ts:254:5 › a delayed browser response cannot replace a newer listening choice (1.3s)
-  ✓  18 [integration-chromium] › tests/integration/loop.spec.ts:299:5 › idle chat text is purged by the scheduled job even if the person never returns (403ms)
-  ✓  19 [integration-chromium] › tests/integration/loop.spec.ts:314:5 › a reply to a chat closed in another tab is refused by the database (819ms)
-  ✓  20 [integration-chromium] › tests/integration/loop.spec.ts:332:5 › the generation limit is enforced by the database, not the browser (1.6s)
-  -  21 [integration-chromium] › tests/integration/ui-tour.spec.ts:77:9 › mobile › mobile activity loop
-  -  22 [integration-chromium] › tests/integration/ui-tour.spec.ts:109:9 › mobile › mobile search and journal
-  -  23 [integration-chromium] › tests/integration/ui-tour.spec.ts:77:9 › desktop › desktop activity loop
-  -  24 [integration-chromium] › tests/integration/ui-tour.spec.ts:109:9 › desktop › desktop search and journal
+  ✓   1 [integration-chromium] › tests/integration/audit-repairs.spec.ts:19:5 › audit: draft recovery, optional Home and interrupted-save reconciliation (2.7s)
+  ✓   2 [integration-chromium] › tests/integration/audit-repairs.spec.ts:46:5 › stale application chunks in an old worker cache cannot replace the current runtime (251ms)
+{"check_in_timing":{"environment":"local PostgreSQL; auth stand-in","total_to_visible_confirmation_ms":114,"revision_and_auth_before_write_ms":63.546875,"request_to_headers_ms":45.609,"app_to_headers_ms":45.15,"transport_and_scheduling_ms":0.4590000000000032}}
+  ✓   3 [integration-chromium] › tests/integration/audit-repairs.spec.ts:61:5 › audit: accepted legacy activity and timer recover through refresh (2.2s)
+  ✓   4 [integration-chromium] › tests/integration/audit-upgrade.spec.ts:5:5 › an account change on the same chat URL discards private replies, drafts and inherited consent (1.6s)
+  ✓   5 [integration-chromium] › tests/integration/audit-upgrade.spec.ts:65:5 › a linked chat opens an editable general search and returns with its source (2.8s)
+  ✓   6 [integration-chromium] › tests/integration/audit-upgrade.spec.ts:114:5 › retry after a committed turn loses its response keeps one stored turn (1.7s)
+  ✓   7 [integration-chromium] › tests/integration/connected-luna.spec.ts:29:5 › slice 1: save, reopen, reflect and delete standalone writing (4.5s)
+  ✓   8 [integration-chromium] › tests/integration/connected-luna.spec.ts:64:5 › slice 2: selected journal context survives chat reload and source deletion invalidates it (3.0s)
+  ✓   9 [integration-chromium] › tests/integration/connected-luna.spec.ts:93:5 › slice 3: approve a topic and refine results without repeating sources (1.6s)
+  ✓  10 [integration-chromium] › tests/integration/guided-action.spec.ts:63:5 › meditation stays in chat and a paused session survives reload before an honest check-in (4.2s)
+  ✓  11 [integration-chromium] › tests/integration/guided-action.spec.ts:132:5 › changing account while an activity is running removes its private panel and controls (2.6s)
+  ✓  12 [integration-chromium] › tests/integration/guided-action.spec.ts:169:5 › inline search uses the real request contract and saves a refined signed offer in chat (2.2s)
+  ✓  13 [integration-chromium] › tests/integration/guided-action.spec.ts:224:5 › a newer recommendation replaces an unstarted saved search offer (1.8s)
+  ✓  14 [integration-chromium] › tests/integration/loop.spec.ts:50:5 › the legacy guided loop runs against the real API and database (6.2s)
+  ✓  15 [integration-chromium] › tests/integration/loop.spec.ts:133:5 › each person sees only their own journal and cannot write provenance directly (531ms)
+  ✓  16 [integration-chromium] › tests/integration/loop.spec.ts:160:5 › Just talk survives reload and later AI flags, then resumes with a fresh activity offer (3.1s)
+  ✓  17 [integration-chromium] › tests/integration/loop.spec.ts:218:5 › a lost choice response can be retried without losing the draft or applying twice (2.3s)
+  ✓  18 [integration-chromium] › tests/integration/loop.spec.ts:254:5 › a delayed browser response cannot replace a newer listening choice (1.3s)
+  ✓  19 [integration-chromium] › tests/integration/loop.spec.ts:299:5 › idle chat text is purged by the scheduled job even if the person never returns (376ms)
+  ✓  20 [integration-chromium] › tests/integration/loop.spec.ts:314:5 › a reply to a chat closed in another tab is refused by the database (657ms)
+  ✓  21 [integration-chromium] › tests/integration/loop.spec.ts:332:5 › the generation limit is enforced by the database, not the browser (1.6s)
+  -  22 [integration-chromium] › tests/integration/ui-tour.spec.ts:77:9 › mobile › mobile activity loop
+  -  23 [integration-chromium] › tests/integration/ui-tour.spec.ts:109:9 › mobile › mobile search and journal
+  -  24 [integration-chromium] › tests/integration/ui-tour.spec.ts:77:9 › desktop › desktop activity loop
+  -  25 [integration-chromium] › tests/integration/ui-tour.spec.ts:109:9 › desktop › desktop search and journal
 
   4 skipped
-  20 passed (56.7s)
+  21 passed (56.2s)

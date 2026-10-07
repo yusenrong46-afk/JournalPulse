@@ -1,0 +1,10 @@
+{
+  "source_commit": "920b173ae945da7a6041fd119019932410142ea1",
+  "staged_deployment": "dpl_98VuPAtmkiGGuoNzgCHgavJaUrPN",
+  "staged_url": "https://journalpulse-qn47m3ux7-yusenrong46-9212s-projects.vercel.app",
+  "rollback_deployment": "dpl_7hxiFv7SSDU9ccvdDybpf3EY7CXt",
+  "staged_ready": true,
+  "staged_search_configured": true,
+  "staged_private_api_unauthenticated_status": 401,
+  "hosted_authenticated_checks": "pending production alias"
+}

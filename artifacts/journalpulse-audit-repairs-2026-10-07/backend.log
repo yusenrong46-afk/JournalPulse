@@ -4,7 +4,7 @@ rootdir: /Users/thomas/Documents/ChatGPT/JP
 configfile: pyproject.toml
 testpaths: tests
 plugins: cov-6.3.0, anyio-4.14.2
-collected 1263 items
+collected 1264 items
 
 tests/test_action_readiness_current_turn.py ..                           [  0%]
 tests/test_activity_chat.py ............                                 [  1%]
@@ -20,7 +20,7 @@ tests/test_auth_and_rls.py .....                                         [  6%]
 tests/test_backend_integrity_upgrade.py ..............                   [  7%]
 tests/test_config.py ........................................            [ 10%]
 tests/test_connected_luna_status.py .                                    [ 10%]
-tests/test_conversation_incarnation.py ...                               [ 11%]
+tests/test_conversation_incarnation.py ...                               [ 10%]
 tests/test_conversation_preference.py .........                          [ 11%]
 tests/test_conversations_api.py ....................                     [ 13%]
 tests/test_discovery.py ................................................ [ 17%]
@@ -34,14 +34,14 @@ tests/test_guided_evaluation.py ........................................ [ 28%]
 .............................................................            [ 32%]
 tests/test_http_client_lifecycle.py .................................... [ 35%]
 ...............                                                          [ 36%]
-tests/test_inline_discovery.py ..............                            [ 38%]
+tests/test_inline_discovery.py ..............                            [ 37%]
 tests/test_integration_stack_download.py .....                           [ 38%]
 tests/test_journal_chat.py ...................                           [ 39%]
 tests/test_journal_models.py .....                                       [ 40%]
 tests/test_journal_repository.py .......                                 [ 40%]
 tests/test_journals_api.py .................                             [ 42%]
 tests/test_luna_evaluation.py .......                                    [ 42%]
-tests/test_middleware_boundaries.py ....                                 [ 43%]
+tests/test_middleware_boundaries.py .....                                [ 43%]
 tests/test_openrouter_contract.py .....                                  [ 43%]
 tests/test_openrouter_conversation_contract.py ......................... [ 45%]
 .........................                                                [ 47%]
@@ -83,7 +83,7 @@ src/journalpulse/activity_lifecycle.py      48      2     30      3    94%   22,
 src/journalpulse/activity_models.py        146      4      8      4    95%   69, 75, 77, 165
 src/journalpulse/activity_resources.py     204      8     68      8    94%   99, 114, 116, 238, 240, 339, 422, 465
 src/journalpulse/activity_sessions.py      201     25     58     17    84%   76, 81, 144, 148, 186, 188, 214-215, 274, 290, 295, 298, 306, 308, 399, 404, 406, 429, 432, 444-445, 457-473
-src/journalpulse/api.py                    309     16     60      6    94%   150, 164, 271-272, 297, 307-308, 310-311, 381-382, 485-486, 603-604, 609
+src/journalpulse/api.py                    318     16     60      6    94%   164, 178, 285-286, 311, 321-322, 324-325, 395-396, 499-500, 617-618, 623
 src/journalpulse/auth.py                    43      2     14      0    96%   65-66
 src/journalpulse/config.py                 129      5     48      6    94%   53->49, 147, 149, 151, 163, 165
 src/journalpulse/conversations.py          321     12     92      7    95%   281, 295, 322, 324, 387->400, 421, 666, 708-709, 781, 834-835, 883
@@ -110,6 +110,6 @@ src/journalpulse/safety.py                  66      0     22      0   100%
 src/journalpulse/self_report.py             16      0      4      0   100%
 src/journalpulse/signing.py                 16      0      0      0   100%
 ------------------------------------------------------------------------------------
-TOTAL                                     4640    297   1316    184    92%
-Required test coverage of 80.0% reached. Total coverage: 91.72%
-======================= 1263 passed, 1 warning in 36.25s =======================
+TOTAL                                     4649    297   1316    184    92%
+Required test coverage of 80.0% reached. Total coverage: 91.74%
+======================= 1264 passed, 1 warning in 30.17s =======================

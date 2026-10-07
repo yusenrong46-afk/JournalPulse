@@ -17,7 +17,10 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
       <h1>Oops, Luna tripped.</h1>
       <p>Something went wrong on this page. Nothing you wrote was included in the error.</p>
       <div className="stack">
-        <button className="btn btn-primary btn-block" type="button" onClick={reset}>Try again</button>
+        <button className="btn btn-primary btn-block" type="button" onClick={() => {
+          if (error.name === "ChunkLoadError") window.location.reload();
+          else reset();
+        }}>Try again</button>
         <Link className="btn btn-ghost btn-block" href="/">Go home</Link>
       </div>
     </div>

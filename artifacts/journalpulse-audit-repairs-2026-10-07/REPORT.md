@@ -20,10 +20,10 @@ Related concerns: initial retention copy aligned with Settings; reviewed app act
 
 ## Validation
 
-- Backend: 1,263 tests pass; 91.72% coverage. Ruff and mypy pass.
+- Backend: 1,264 tests pass; 91.74% coverage. Ruff and mypy pass.
 - Frontend: 216 unit tests pass. Lint/typecheck pass.
-- Desktop/mobile browser suite: 46 pass, including automated accessibility checks; final run in progress.
-- Integration: 20 pass; four opt-in UI tour scenarios are explicitly skipped by the existing suite. PostgreSQL, API, exported UI and PostgREST are real; auth and model/search providers are deterministic stand-ins.
+- Desktop/mobile browser suite: 46 pass, including automated accessibility checks; final cache-transition run in progress.
+- Integration: 21 pass; four opt-in UI tour scenarios are explicitly skipped by the existing suite. PostgreSQL, API, exported UI and PostgREST are real; auth and model/search providers are deterministic stand-ins.
 - All existing scratch PostgreSQL schema, ownership, integrity, activity, Sentinel and erasure gates pass. No hosted migration is needed or applied.
 
 ## Check-in timing
@@ -38,3 +38,9 @@ Live verification ceiling: US$5, using existing accounts/models; no purchases or
 Pricing sources: https://openrouter.ai/api/v1/models and https://brave.com/search/api/ .
 
 Session-storage recovery is tab-local and depends on browser session behavior; it is not a guarantee of secure physical erasure. Sign-out and account erasure explicitly clear the application’s tab records. Real personal entries were neither opened nor modified.
+
+## Release transition defect and repair
+
+The first staged candidate `dpl_98VuPAtmkiGGuoNzgCHgavJaUrPN` was briefly promoted, then rolled back immediately when the existing production browser reported `ChunkLoadError`. The requested chunk returned HTTP 200 on the prior deployment and 404 on the candidate; candidate HTML referenced a different current chunk. The service worker cached runtime chunks indefinitely. Export archives also normalize asset mtimes, making metadata-only ETags unsafe across equal-sized builds.
+
+The repair caches only the standalone offline page, advances the worker cache to v6 (clearing earlier asset caches), requests worker updates without HTTP cache reuse, and serves exported assets with no-store and without metadata-only 304 responses. Chunk error recovery performs a fresh document reload on explicit Try again. A real exported-UI integration test injects a stale chunk into the old worker cache and confirms it cannot replace the current runtime. An API regression test proves equal-size/equal-mtime assets return the new bytes instead of a stale 304. No user writing was entered during the failed production transition, and no paid provider call occurred.

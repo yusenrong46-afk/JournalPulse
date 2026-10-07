@@ -43,6 +43,21 @@ test("audit: draft recovery, optional Home and interrupted-save reconciliation",
   await expect(page).toHaveURL(/\/$/); await expect(page.getByText(/private defaults/)).toBeVisible();
 });
 
+test("stale application chunks in an old worker cache cannot replace the current runtime", async ({ page, request }) => {
+  await setup(page, request);
+  await page.goto("/journal/");
+  await expect(page.getByLabel("What would you like to remember?", { exact: true })).toBeVisible();
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+    const current = [...document.querySelectorAll<HTMLScriptElement>('script[src]')].find((script) => script.src.includes('/_next/static/chunks/'))!;
+    const old = await caches.open('journalpulse-shell-v5');
+    await old.put(current.src, new Response('throw new Error("QA stale runtime must never execute");', { headers: { 'Content-Type': 'application/javascript' } }));
+  });
+  await page.reload();
+  await expect(page.getByLabel("What would you like to remember?", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Oops, Luna tripped." })).toHaveCount(0);
+});
+
 test("audit: accepted legacy activity and timer recover through refresh", async ({ page, request }, info) => {
   const headers = await setup(page, request);
   const revisionHeaders = await currentDataRevisionHeaders(request, headers);

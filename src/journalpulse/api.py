@@ -16,7 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.datastructures import Headers
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.types import Scope
 
 from .activity_chat import generate_activity_follow_up
 from .activity_sessions import ActivityFollowUpGenerator, register_activity_routes
@@ -69,6 +71,18 @@ class OutcomePage(BaseModel):
 
 class CapabilitiesResponse(BaseModel):
     discovery: Literal["configured", "unavailable"]
+
+
+class FreshStaticFiles(StaticFiles):
+    """Export archives normalize mtimes; metadata-only ETags can collide across builds."""
+
+    def is_not_modified(self, response_headers: Headers, request_headers: Headers) -> bool:
+        return False
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 
 class StatePoint(BaseModel):
@@ -667,7 +681,7 @@ def create_app(
     )
 
     if web_dist is not None and web_dist.is_dir():
-        app.mount("/", StaticFiles(directory=web_dist, html=True), name="journalpulse-web")
+        app.mount("/", FreshStaticFiles(directory=web_dist, html=True), name="journalpulse-web")
 
     return app
 
