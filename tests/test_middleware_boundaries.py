@@ -9,6 +9,26 @@ from journalpulse.middleware import SlidingWindowRateLimiter
 from test_research_beta_api import settings
 
 
+def test_exported_assets_with_equal_size_and_mtime_cannot_reuse_stale_etag(tmp_path, monkeypatch):
+    import os
+
+    exported = tmp_path / "export"
+    exported.mkdir()
+    (exported / "index.html").write_text("<h1>Exported site</h1>")
+    chunk = exported / "runtime.js"
+    chunk.write_text("old-loader")
+    os.utime(chunk, (1_500_000_000, 1_500_000_000))
+    monkeypatch.setenv("JOURNALPULSE_WEB_DIST", str(exported))
+    with TestClient(create_app(settings=settings(tmp_path))) as client:
+        old = client.get("/runtime.js")
+        chunk.write_text("new-loader")
+        os.utime(chunk, (1_500_000_000, 1_500_000_000))
+        new = client.get("/runtime.js", headers={"If-None-Match": old.headers["etag"]})
+        assert new.status_code == 200
+        assert new.text == "new-loader"
+        assert new.headers["cache-control"] == "no-store"
+
+
 def test_chunked_request_uses_the_same_size_error_as_content_length(tmp_path):
     configured = replace(settings(tmp_path), max_request_bytes=5_000)
     app = create_app(settings=configured)

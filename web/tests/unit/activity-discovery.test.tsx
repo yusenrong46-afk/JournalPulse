@@ -24,10 +24,10 @@ let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
   (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
-  requested.mockReset().mockResolvedValue({
+  requested.mockReset().mockImplementation(async (path) => path === "/v1/capabilities" ? { discovery: "configured" } : path.startsWith("/v1/activity-resources") ? { items: [] } : ({
     original_query: "quiet meditation", updated_query: "quiet meditation", candidates: [], offers: [],
     conversation_revision: 4,
-  });
+  }));
   container = document.createElement("div"); document.body.appendChild(container); root = createRoot(container);
 });
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); });
@@ -39,8 +39,9 @@ test("inline search sends confirmed constraints in the API's nested request fiel
   await act(async () => { container.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click(); });
   await act(async () => { container.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
 
-  expect(requested).toHaveBeenCalledOnce();
-  const [path, init] = requested.mock.calls[0];
+  const calls = requested.mock.calls.filter(([path]) => path.endsWith("/discover"));
+  expect(calls).toHaveLength(1);
+  const [path, init] = calls[0];
   const payload = JSON.parse(String(init?.body));
   const expected: components["schemas"]["InlineDiscoveryRequest"] = {
     goal: "settle", style: "ground", constraints, llm_consent: true, expected_revision: 4, excluded_urls: [],

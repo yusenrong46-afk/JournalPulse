@@ -16,17 +16,25 @@ import {
   searchDiscovery,
 } from "@/lib/discovery";
 import { usePreferences } from "@/lib/preferences";
+import { useTabValue } from "@/lib/tab-session";
+import { useDiscoveryCapability } from "@/lib/capabilities";
+import { DiscoveryAvailability } from "@/components/discovery-availability";
+import { ReviewedActivities } from "@/components/reviewed-activities";
 
 function DiscoveryWorkspace() {
   const searchParams = useSearchParams();
   const [preferences] = usePreferences();
-  const [topic, setTopic] = useState(() => discoveryTopicForGoal(searchParams.get("goal")));
+  const [storedTopic, storeTopic] = useTabValue("explore-topic");
+  let topic = discoveryTopicForGoal(searchParams.get("goal"));
+  try { if (storedTopic) { const parsed: unknown = JSON.parse(storedTopic); if (typeof parsed === "string") topic = parsed.slice(0, 160); } } catch { /* Ignore malformed browser data. */ }
+  const setTopic = (value: string) => storeTopic(JSON.stringify(value));
+  const capability = useDiscoveryCapability();
   const [approved, setApproved] = useState(false);
   const [response, setResponse] = useState<DiscoveryResponse | null>(null);
   const [feedback, setFeedback] = useState("");
   const [seen, setSeen] = useState<string[]>([]);
   const [rejected, setRejected] = useState<string[]>([]);
-  const [manualExclusions, setManualExclusions] = useState("");
+  const [manualExclusions, setManualExclusions] = useTabValue("explore-exclusions");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [supportRequired, setSupportRequired] = useState(false);
@@ -44,6 +52,7 @@ function DiscoveryWorkspace() {
     setSupportRequired(false);
     try {
       const result = await searchDiscovery(payload, controller.signal);
+      console.info("JournalPulse discovery accounting", JSON.stringify({ search_calls: result.provenance.search_calls, model_runs: result.provenance.model_runs.map((run) => ({ generation_id: run.generation_id, cost_usd: run.cost_usd, model: run.model })) }));
       if (pending.current !== controller) return;
       setResponse(result);
       setSeen((current) => [...new Set([...current, ...result.candidates.map((item) => item.url)])]);
@@ -64,7 +73,7 @@ function DiscoveryWorkspace() {
 
   function start(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!approved) return;
+    if (!approved || capability.status !== "configured") return;
     try {
       const original = topic.trim();
       if (original.length < 3) throw new Error("Write a general topic of at least 3 characters.");
@@ -125,7 +134,8 @@ function DiscoveryWorkspace() {
         <Link className="subtle-link" href="/talk">Return to chat <Icon name="arrow" /></Link>
       </header>
 
-      <section className="card stack discovery-consent" aria-label="Approve your search topic">
+      <DiscoveryAvailability status={capability.status} onRetry={capability.retry} />
+      {capability.status === "configured" && <section className="card stack discovery-consent" aria-label="Approve your search topic">
         {!response ? (
           <form className="discovery-query" onSubmit={start}>
             <label className="text-field" htmlFor="discovery-topic">
@@ -164,7 +174,8 @@ function DiscoveryWorkspace() {
           <p className="small muted">Your journal and chat are not included. Luna may add a short focus from your feedback.
             Results use snippets; full pages and their claims are not reviewed.</p>
         </div>
-      </section>
+      </section>}
+      {!supportRequired && <details open={capability.status !== "configured"}><summary>Browse app activities</summary><ReviewedActivities goal={searchParams.get("goal")} /></details>}
 
       {busy && <div className="search-progress" role="status"><Luna mood="thinking" size={44} decorative /><p>Luna is looking through search snippets. This may take a minute.</p></div>}
       {error && <p className="note error" role="alert">{error}</p>}

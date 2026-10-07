@@ -8,6 +8,7 @@ from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Literal
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
@@ -15,7 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.datastructures import Headers
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.types import Scope
 
 from .activity_chat import generate_activity_follow_up
 from .activity_sessions import ActivityFollowUpGenerator, register_activity_routes
@@ -64,6 +67,22 @@ class ReflectionPage(BaseModel):
 
 class OutcomePage(BaseModel):
     items: list[OutcomeRecord]
+
+
+class CapabilitiesResponse(BaseModel):
+    discovery: Literal["configured", "unavailable"]
+
+
+class FreshStaticFiles(StaticFiles):
+    """Export archives normalize mtimes; metadata-only ETags can collide across builds."""
+
+    def is_not_modified(self, response_headers: Headers, request_headers: Headers) -> bool:
+        return False
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-store"
+        return response
 
 
 class StatePoint(BaseModel):
@@ -170,7 +189,7 @@ def create_app(
             "Authorization", "Content-Type", "X-JournalPulse-User", "X-Request-ID",
             "X-JournalPulse-Data-Revision",
         ],
-        expose_headers=["X-Request-ID"],
+        expose_headers=["X-Request-ID", "Server-Timing"],
     )
 
     @app.exception_handler(DeletedObjectIdentity)
@@ -249,6 +268,11 @@ def create_app(
     @app.get("/health")
     def health() -> dict:
         return {"status": "ok"}
+
+    @app.get("/v1/capabilities", response_model=CapabilitiesResponse)
+    def capabilities(response: Response) -> CapabilitiesResponse:
+        response.headers["Cache-Control"] = "no-store"
+        return CapabilitiesResponse(discovery="configured" if settings.discovery_enabled else "unavailable")
 
     @app.get("/ready", response_model=ReadinessResponse)
     def ready(response: Response) -> ReadinessResponse:
@@ -657,7 +681,7 @@ def create_app(
     )
 
     if web_dist is not None and web_dist.is_dir():
-        app.mount("/", StaticFiles(directory=web_dist, html=True), name="journalpulse-web")
+        app.mount("/", FreshStaticFiles(directory=web_dist, html=True), name="journalpulse-web")
 
     return app
 

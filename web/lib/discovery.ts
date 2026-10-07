@@ -55,6 +55,8 @@ export type DiscoveryResponse = {
       model: string;
       provider: string;
       latency_ms: number;
+      generation_id?: string | null;
+      cost_usd?: number | null;
       prompt_tokens?: number | null;
       completion_tokens?: number | null;
       prompt_version?: string | null;

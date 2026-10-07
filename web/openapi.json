@@ -1140,6 +1140,23 @@
         "title": "AnalysisRequest",
         "type": "object"
       },
+      "CapabilitiesResponse": {
+        "properties": {
+          "discovery": {
+            "enum": [
+              "configured",
+              "unavailable"
+            ],
+            "title": "Discovery",
+            "type": "string"
+          }
+        },
+        "required": [
+          "discovery"
+        ],
+        "title": "CapabilitiesResponse",
+        "type": "object"
+      },
       "ChangeConversationPreferenceRequest": {
         "properties": {
           "client_request_id": {
@@ -1415,6 +1432,16 @@
       },
       "ConversationDetail": {
         "properties": {
+          "accepted_reflection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReflectionRecord"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "conversation": {
             "$ref": "#/components/schemas/Conversation"
           },
@@ -1724,6 +1751,11 @@
               }
             ],
             "title": "Resource Token"
+          },
+          "user_selected": {
+            "default": false,
+            "title": "User Selected",
+            "type": "boolean"
           }
         },
         "required": [
@@ -1828,6 +1860,134 @@
         "title": "DiscoveryCandidate",
         "type": "object"
       },
+      "DiscoveryModelRun": {
+        "properties": {
+          "completion_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Tokens"
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          },
+          "generation_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Id"
+          },
+          "latency_ms": {
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "prompt_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Tokens"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "provider": {
+            "default": "openrouter",
+            "title": "Provider",
+            "type": "string"
+          },
+          "schema_valid": {
+            "title": "Schema Valid",
+            "type": "boolean"
+          },
+          "skill_hash": {
+            "anyOf": [
+              {
+                "pattern": "^[a-f0-9]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Hash"
+          },
+          "skill_version": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skill Version"
+          },
+          "used_fallback": {
+            "default": false,
+            "title": "Used Fallback",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model",
+          "latency_ms",
+          "schema_valid"
+        ],
+        "title": "DiscoveryModelRun",
+        "type": "object"
+      },
       "DiscoveryProvenance": {
         "properties": {
           "candidate_count": {
@@ -1838,7 +1998,7 @@
           },
           "model_runs": {
             "items": {
-              "$ref": "#/components/schemas/ModelRun"
+              "$ref": "#/components/schemas/DiscoveryModelRun"
             },
             "maxItems": 2,
             "title": "Model Runs",
@@ -4093,6 +4253,156 @@
         "summary": "Activity History"
       }
     },
+    "/v1/activity-resources": {
+      "get": {
+        "operationId": "reviewed_resources_v1_activity_resources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "goal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Goal"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Goal"
+            }
+          },
+          {
+            "in": "query",
+            "name": "time_minutes",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 20,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time Minutes"
+            }
+          },
+          {
+            "in": "query",
+            "name": "no_audio",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "No Audio",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "no_video",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "No Video",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "seated",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Seated",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "avoid_breath_focus",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Avoid Breath Focus",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-User",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Journalpulse-User"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-JournalPulse-Data-Revision",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "title": "X-Journalpulse-Data-Revision",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Reviewed Resources V1 Activity Resources Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reviewed Resources"
+      }
+    },
     "/v1/activity-sessions/{session_id}": {
       "get": {
         "operationId": "read_activity_v1_activity_sessions__session_id__get",
@@ -4457,6 +4767,24 @@
           }
         },
         "summary": "Report Activity"
+      }
+    },
+    "/v1/capabilities": {
+      "get": {
+        "operationId": "capabilities_v1_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapabilitiesResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities"
       }
     },
     "/v1/conversations": {

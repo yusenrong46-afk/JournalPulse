@@ -26,6 +26,7 @@ from .discovery_models import (
     MAX_CANDIDATES,
     MAX_RESULTS,
     DiscoveryCandidate,
+    DiscoveryModelRun,
     DiscoveryProvenance,
     DiscoveryRequest,
     DiscoveryResponse,
@@ -33,7 +34,7 @@ from .discovery_models import (
     source_url_identity,
 )
 from .discovery_prompts import DISCOVERY_PROMPT_VERSION, DISCOVERY_SYSTEM_PROMPT
-from .domain import GenerationErrorResponse, ModelRun, SafetyMode
+from .domain import GenerationErrorResponse, SafetyMode
 from .intelligence import UnsupportedProviderResponse, _json_text_from_content
 from .persistence import Repository
 from .safety import SUPPORT_FALLBACK_MESSAGE, assess_safety
@@ -180,7 +181,7 @@ class OpenWebDiscoveryClient:
         with context as client:
             assert client is not None
             query = payload.original_query
-            model_runs: list[ModelRun] = []
+            model_runs: list[DiscoveryModelRun] = []
             if payload.feedback:
                 refined, run = self._model(
                     client,
@@ -302,7 +303,7 @@ class OpenWebDiscoveryClient:
 
     def _model(
         self, client: httpx.Client, schema: dict[str, Any], data: dict[str, Any]
-    ) -> tuple[dict[str, Any], ModelRun]:
+    ) -> tuple[dict[str, Any], DiscoveryModelRun]:
         started = time.perf_counter()
         response = _provider_json(
             client,
@@ -318,6 +319,7 @@ class OpenWebDiscoveryClient:
                 "provider": {"zdr": True, "require_parameters": True},
                 "max_tokens": 4000,
                 "include_reasoning": False,
+                "usage": {"include": True},
                 "reasoning": {"effort": "medium"},
                 "response_format": {"type": "json_schema", "json_schema": schema},
                 "messages": [
@@ -352,7 +354,7 @@ class OpenWebDiscoveryClient:
             if not isinstance(usage, dict):
                 raise ValueError("invalid usage")
             raw_provider = response.get("provider")
-            run = ModelRun(
+            run = DiscoveryModelRun(
                 model=response.get("model", self.settings.chat_model),
                 provider=raw_provider if isinstance(raw_provider, str) else "openrouter",
                 latency_ms=round((time.perf_counter() - started) * 1000),
@@ -360,6 +362,8 @@ class OpenWebDiscoveryClient:
                 prompt_version=DISCOVERY_PROMPT_VERSION,
                 prompt_tokens=usage.get("prompt_tokens"),
                 completion_tokens=usage.get("completion_tokens"),
+                generation_id=response.get("id") if isinstance(response.get("id"), str) else None,
+                cost_usd=(usage["cost"] if type(usage.get("cost")) in (int, float) else None),
             )
         except (
             KeyError, IndexError, TypeError, ValueError, RecursionError, UnsupportedProviderResponse

@@ -3,6 +3,33 @@
 This runbook covers running JournalPulse for a small beta. It makes no claim of clinical safety,
 therapeutic effect, or large-scale availability.
 
+## Configuration reference
+
+Use [.env.example](../.env.example) and [Settings](../src/journalpulse/config.py) as the source of defaults. Server environment variables take precedence over the local `.env` fallback.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `JOURNALPULSE_ENV` | `local` | `production` requires hosted auth/storage, signing and explicit HTTPS origins |
+| `JOURNALPULSE_LLM_ENABLED` | `true` | Disables model use when `false`; a key and user consent are still required when enabled |
+| `JOURNALPULSE_LLM_API_KEY` / `OPENROUTER_API_KEY` | empty | Existing OpenRouter credential, server only |
+| `JOURNALPULSE_CHAT_MODEL`, `JOURNALPULSE_LLM_MODEL` | `openai/gpt-6-luna` | Chat and legacy structured-analysis models |
+| `JOURNALPULSE_LLM_ZDR` | `true` | Required zero-data-retention routing |
+| `JOURNALPULSE_CHAT_TIMEOUT_SECONDS` | `45` | Per-attempt chat timeout; attempts share the provider deadline |
+| `JOURNALPULSE_ANALYSIS_RATE_LIMIT_PER_MINUTE` | `20` | Per-person model-request limit |
+| `JOURNALPULSE_SEARCH_ENABLED` | `false` | Opts the deployment into external discovery after all required providers are configured |
+| `JOURNALPULSE_SEARCH_API_KEY` | empty | Existing Brave credential, server only |
+| `JOURNALPULSE_SEARCH_TIMEOUT_SECONDS` | `8` | Search timeout, constrained to 1–20 seconds |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | empty | Hosted Auth/PostgREST connection; anon key is public and relies on RLS |
+| `JOURNALPULSE_WRITE_SIGNING_KEY` | empty | Server provenance signing; must match `private.server_secrets` and is required in production |
+| `JOURNALPULSE_CORS_ORIGINS` | platform URL or loopback locally | Explicit allowed origins |
+| `JOURNALPULSE_WEB_DIST` | empty | Exported frontend directory; empty permits API-only development |
+| `JOURNALPULSE_DB_PATH` | `artifacts/research_beta.db` | Local SQLite file |
+| `JOURNALPULSE_MEMORY_ENABLED`, `JOURNALPULSE_ADAPTIVE_POLICY_ENABLED` | `false` | Disabled research features |
+
+Browser values are build inputs: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and local-only `NEXT_PUBLIC_API_BASE_URL` / `NEXT_PUBLIC_DEV_USER_ID`. The Vercel and Docker build scripts copy the public Supabase values. Never expose model, search or signing secrets through a `NEXT_PUBLIC_` variable.
+
+`GET /v1/capabilities` makes no provider call. Discovery `configured` means the required flags and credentials are present, not that live search has succeeded. Enable search in the intended Vercel environment; Preview configuration does not configure Production. Keep scoped consent and the reviewed-resource fallback even after enabling it.
+
 ## Runtime checks
 
 - `/health` only proves the API process answers.
@@ -32,7 +59,7 @@ therapeutic effect, or large-scale availability.
 ## Deploy
 
 1. Rotate any key that has appeared outside a secret store.
-2. Run the checks listed in the README's **Test** section. CI runs them on every push.
+2. Run the checks in [Engineering reproduction](ENGINEERING.md#reproduction). CI runs the release gates on pushes to main and pull requests.
 3. Apply only new `supabase/migrations/` in filename order; never replay or rewrite applied migrations.
    `scripts/verify_postgres_schema.py` rebuilds a
    scratch database from the migrations and checks RLS, provenance signing, lifecycle races, retention,

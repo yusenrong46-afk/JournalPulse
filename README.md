@@ -1,106 +1,80 @@
 # JournalPulse
 
-JournalPulse is a journaling and reflection companion. You can write, talk with **Luna**, and choose
-a small activity to try. AI chat and the scripted, no-AI mode are separate choices.
+**A quiet place to write, reflect, and choose one small next step.**
 
-Live site: <https://journalpulse.vercel.app>
+JournalPulse is a deployed research beta for people who want to keep their own words,
+talk through a day with Luna, and see what helped afterward. Journaling works on its own;
+AI chat and the scripted **Simple mode** are separate, optional choices.
 
-**Current workspace:** the guided chat–activity–report slice and pre-evaluation audit fixes are local.
-The existing Preview and production serve earlier versions. The new activity migration has not been
-applied to the shared database, and the model-quality release evaluation is incomplete. See the
-[audit and readiness report](docs/PRE_EVALUATION_AUDIT_2026-10-05.md) before evaluating or deploying.
+[Try JournalPulse](https://journalpulse.vercel.app) · [Engineering guide](docs/ENGINEERING.md) ·
+[Run locally](#run-locally) · [Operations](docs/OPERATIONS.md)
 
-> JournalPulse is not therapy, diagnosis, treatment, or crisis care. A limited phrase check routes
-> certain explicit risk statements to human support (9-8-8 in Canada). It can miss distress.
+![Journal workspace with a fictional entry, optional prompts, Save entry, and a disclosure that unsaved writing stays in the current browser tab.](assets/showcase/journal.jpg)
 
-## How it works
+*Real app, fictional writing. Captured locally on October 7, 2026 with AI and external search
+disabled. The draft shown here was restored after refresh. [Capture scope and text walkthrough](docs/ENGINEERING.md#demonstration).*
 
-1. **Write or talk.** A chat can use one explicitly selected journal entry. Unlinked chats cannot
-   read the full journal collection.
-2. **Reflect.** Luna can acknowledge, ask a useful question, or propose an optional activity. You can
-   correct its interpretation, negotiate the suggestion, choose **Just talk**, or stop.
-3. **Choose whether to try it.** The current candidate keeps approved activities inside chat. Only
-   your explicit start begins the activity; the server owns its timer and state.
-4. **Find another resource.** With separate consent, Brave searches general activity words. Results
-   are based on snippets; full pages and their claims are not independently verified. Saving a
-   returned activity is a separate choice from opening its link.
-5. **Report honestly.** The candidate saves whether you tried the activity and any reported change
-   before generating Luna's follow-up. Reported chat activities also appear in the Home/Journey
-   garden (`GET /v1/activity-history`), next to legacy check-ins. Only your own report counts;
-   timer expiry adds nothing, and notes and model text are not shown there.
+## The experience
 
-With AI allowed, Luna's replies come from `openai/gpt-6-luna` through OpenRouter with zero data
-retention routing. Without AI, a scripted flow supports the existing feelings, goal, catalog and
-check-in steps. It does not provide the AI candidate's conversational capabilities.
+1. **Write at your pace.** Save the exact words you wrote. Unsaved journal and chat drafts recover
+   within the current browser tab session, including after navigation and refresh.
+2. **Choose how to reflect.** Talk with Luna using AI, or use the limited scripted flow without it.
+   Sharing a saved entry requires an explicit choice; an unlinked chat cannot read your journal.
+3. **Pick one small activity.** Accept a suggestion, browse reviewed app activities, choose another
+   goal, or keep talking. External resource discovery asks separately before sharing a general topic.
+4. **Check in honestly.** Report whether you tried the activity and what changed. Your reports build
+   the Journey view. A timer reaching zero never counts as participation.
 
-## Screens
+Setup is optional. Private defaults remain active until you choose otherwise.
 
-| Screen | Purpose |
-|---|---|
-| Home | Greeting, "Talk with Luna", any check-in that is due, and a peek at your garden |
-| Chat (`/talk`) | The whole check-in: mood, conversation, feelings, goal, actions, timer |
-| Check-in | "Did you try it?", "How much did it help?", optional feelings and a note |
-| Journey | Your garden, what helps you, how you've been feeling, and past check-ins |
-| Me | AI and message settings, check-in timing, how Luna works, download, delete, sign out |
-| Welcome | Three short onboarding screens, including Smart Luna vs Simple Luna |
+## Three engineering decisions
 
-See [the design guide](docs/DESIGN.md) for the visual system and Luna's moods.
+| Decision | What it protects | Inspect it |
+|---|---|---|
+| **Writing survives a page change.** Account-scoped tab drafts and a save coordinator outside the journal page keep the submitted text and receipt stable. A late save preserves newer typing and does not pull you away from another page. | The user's words, even when navigation and responses overlap. | [Draft store](web/lib/tab-session.ts), [save coordinator](web/lib/journal-save.ts), [regressions](web/tests/unit/journal-workspace.test.tsx) |
+| **AI use has deliberate boundaries.** Explicit consent, one selected source entry, constrained activity choices, and separate topic-only search. Unavailable search offers reviewed alternatives. | A journaling action should not silently become a provider request. | [Journal routes](src/journalpulse/journals.py), [conversation routes](src/journalpulse/conversations.py), [discovery](src/journalpulse/discovery.py) |
+| **Activity state belongs to the database.** Modern activities use server deadlines, revisions and replayable receipts. Hosted writes enforce ownership and server provenance; reported participation is separate from timer state. | Refreshes, concurrent tabs, stale replies and uncertain retries. | [Activity lifecycle](src/journalpulse/activity_lifecycle.py), [activity routes](src/journalpulse/activity_sessions.py), [PostgreSQL checks](scripts/verify_activity_schema.py) |
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  PWA["Next.js PWA"] --> API["FastAPI"]
-  API --> SAFE["Safety gate"]
-  SAFE -->|support| HUMAN["Human support resources"]
-  SAFE -->|normal + AI allowed| LLM["Luna on OpenRouter (ZDR)"]
-  SAFE -->|normal, no AI| GUIDED["Scripted Luna"]
-  LLM --> VALIDATE["Server validates structured activity choice"]
-  VALIDATE --> CATALOG["Built-in / reviewed catalog"]
-  VALIDATE -->|separate consent| SEARCH["Brave snippets + Luna selection"]
-  CATALOG --> START["User starts activity"]
-  SEARCH -->|signed save| START
-  START --> DB["Supabase: owner-bound state, timer, report"]
-  DB --> LLM
-  GUIDED --> LEGACY["Feelings, goal, fixed catalog pick, legacy check-in"]
+  WEB["Next.js interface"] --> API["FastAPI · authenticated owner"]
+  API --> GATE["Safety and consent checks"]
+  GATE --> SUPPORT["Human support routing"]
+  GATE --> SIMPLE["Scripted Simple mode"]
+  GATE --> AI["Optional OpenRouter chat"]
+  API --> SEARCH["Separate consent · Brave discovery"]
+  SIMPLE --> CHECK["Validated activity selection"]
+  AI --> CHECK
+  SEARCH --> CHECK
+  CHECK --> STATE["Activity state and user reports"]
+  API --> DB["SQLite locally · Supabase in production"]
+  STATE --> DB
 ```
 
-- **Frontend:** Next.js 16, React 19, TypeScript, exported as static files.
-- **Backend:** FastAPI on Python 3.12. The same app serves the API and, in production, the static site.
-- **Data:** Supabase Auth (email magic link) and Postgres with row-level security. Local development uses
-  SQLite.
-- **AI:** OpenRouter with strict response schemas and zero-data-retention routing. The server checks
-  resource IDs and constraints; search selections must refer to actual retrieved candidates.
-- **NLP:** explicit phrase safety rules, structured model output and deterministic policy checks.
-  There is no newly trained custom NLP model in this slice; research flags remain off.
+The browser handles presentation and tab drafts. FastAPI checks ownership, consent and safety;
+the repository layer persists journal, chat and activity records. Simple mode makes no model call.
+Search and AI output are validated before becoming a saved activity.
 
-Details are in [the architecture document](docs/ARCHITECTURE.md).
+**Stack:** Next.js 16 · React 19 · TypeScript · FastAPI · Python 3.12 · Supabase Auth/Postgres/RLS.
+Production serves the exported frontend and API together on Vercel. Local development uses SQLite.
+Optional providers are OpenRouter for Luna and Brave for search. There is no custom trained NLP
+model in the active application; adaptive-policy and memory research flags remain off.
 
-## Repository layout
+## Run locally
 
-```text
-app.py                     Vercel entrypoint (loads src/journalpulse/api.py)
-src/journalpulse/          FastAPI app: safety, AI, guided Luna, policy, persistence
-web/                       Next.js app (pages in web/app, Luna in web/components/luna.tsx)
-assets/resources/          Reviewed action catalog
-supabase/migrations/       Postgres schema, RLS policies, and write functions
-scripts/                   Build, contract, and live-verification scripts
-tests/                     Backend tests (pytest)
-web/tests/                 Frontend unit (Vitest) and browser (Playwright) tests
-docs/                      Architecture, design, operations, research, and release evidence
-```
-
-## Run it locally
-
-Requires Python 3.12, [uv](https://docs.astral.sh/uv/), and Node 22.
+Requires **Python 3.12**, **Node 22**, and [uv](https://docs.astral.sh/uv/).
+From a fresh checkout, install the locked dependencies and start the API:
 
 ```bash
 uv sync --frozen --extra dev
-cp .env.example .env          # add JOURNALPULSE_LLM_API_KEY to use Smart Luna
-uv run uvicorn journalpulse.api:app --reload --port 8000
+cp .env.example .env
+JOURNALPULSE_LLM_ENABLED=false JOURNALPULSE_SEARCH_ENABLED=false \
+  uv run uvicorn journalpulse.api:app --reload --port 8000
 ```
 
-In a second terminal:
+In another terminal:
 
 ```bash
 cd web
@@ -108,100 +82,42 @@ npm ci
 npm run dev
 ```
 
-Open <http://localhost:3000>. Leave the Supabase variables empty to skip sign-in locally; the browser
-then uses a local test identity and the API stores data in SQLite. Without an OpenRouter key, Luna runs
-in Simple mode.
+Open [localhost:3000](http://localhost:3000), write a sample entry, visit Home, then return to
+Journal and refresh. The draft should remain; Save entry adds it to the saved list.
+With the example's empty Supabase settings, this uses a local development identity and SQLite.
+AI and search are disabled by the API command, so this first result needs no paid provider.
 
-## Configuration
+Stop both processes with **Ctrl+C**. Local saved records remain at the configured database path
+(by default `artifacts/research_beta.db`); drafts last only for the browser tab session.
+The [engineering guide](docs/ENGINEERING.md#reproduction) records the verification conditions.
+Hosted configuration, secrets, migrations and rollback belong in the [operations runbook](docs/OPERATIONS.md).
 
-Server variables (set on the host; `.env` is only a local fallback):
+## Verification and limits
 
-| Variable | Default | Purpose |
-|---|---|---|
-| `JOURNALPULSE_ENV` | `local` | `production` requires Supabase, a model key when AI is on, and a non-local CORS origin |
-| `JOURNALPULSE_LLM_API_KEY` | — | OpenRouter key (`OPENROUTER_API_KEY` also works) |
-| `JOURNALPULSE_LLM_ENABLED` | `true` | Turns AI off everywhere when `false` |
-| `JOURNALPULSE_CHAT_MODEL` | `openai/gpt-6-luna` | Model for Luna's chat |
-| `JOURNALPULSE_LLM_MODEL` | `openai/gpt-6-luna` | Model for the legacy structured analysis endpoint |
-| `JOURNALPULSE_CHAT_TIMEOUT_SECONDS` | `45` | Chat request timeout |
-| `JOURNALPULSE_LLM_ZDR` | `true` | Zero-data-retention routing; the chat client refuses to run without it |
-| `JOURNALPULSE_ANALYSIS_RATE_LIMIT_PER_MINUTE` | `20` | Per-person AI request limit |
-| `SUPABASE_URL`, `SUPABASE_ANON_KEY` | — | Supabase Auth and database; the anon key is public |
-| `JOURNALPULSE_WRITE_SIGNING_KEY` | — | Signs writes that carry server provenance; the same key goes in `private.server_secrets`. Required in production |
-| `JOURNALPULSE_CORS_ORIGINS` | platform URL | Comma-separated origins; defaults to the Vercel or Render URL |
-| `JOURNALPULSE_WEB_DIST` | — | Folder of the exported site to serve from FastAPI |
-| `JOURNALPULSE_MEMORY_ENABLED`, `JOURNALPULSE_ADAPTIVE_POLICY_ENABLED` | `false` | Research flags; keep off |
+The October 7 repair snapshot passed **1,270 backend tests**, **217 frontend unit tests**,
+**46 browser checks with mocked APIs**, and **22 integrations through the real API, PostgREST
+and PostgreSQL**. Backend line coverage was **91.88%**. Four optional integration tours were skipped.
+[Verification scope and reproduction](docs/ENGINEERING.md#verification).
 
-Browser variables (baked in at build time): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-and, for local development only, `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_DEV_USER_ID`. The Vercel
-and Docker builds copy the Supabase values from the server variables automatically.
+Synthetic production checks also exercised writing recovery, saving, optional setup, activity
+recovery and consented resource discovery. These are bounded workflow checks. They do not establish
+clinical benefit, model quality, load capacity or reliability for every device and network.
 
-Never commit real keys. Rotate any key that has been pasted into chat, an issue, or a commit.
+> JournalPulse is not therapy, diagnosis, treatment or crisis care. Its limited phrase-based
+> support routing can miss distress. In a crisis in Canada, call or text [9-8-8](https://988.ca/).
 
-## Deploy
+Privacy choices have different lifetimes: saved journal entries remain until deleted; tab drafts
+are temporary; chat words may be cleared while summaries, reported feelings and activity choices
+remain saved. The [privacy contract](docs/ENGINEERING.md#privacy-and-safety-boundaries) explains
+idle cleanup, provider routing and their limits.
 
-The commands below describe the hosting setup. They do not waive the candidate's evaluation and
-migration gates. Freeze and verify the current source before a release; old benchmark artifacts
-describe older prompts and are not proof that the audited candidate passes.
+## Explore the repository
 
-**Vercel (current production).** `vercel.json`, `app.py`, and `scripts/build_vercel_web.py` build the
-site into `web-dist/` and run FastAPI as one function. Set the server variables above on the Vercel
-project, then run `vercel deploy --prod`. After the first deploy, add the Vercel URL to Supabase under
-**Authentication → URL configuration** (Site URL and `https://<your-domain>/**` as a redirect URL).
+- [Engineering](docs/ENGINEERING.md): current contracts, state transitions, code tour, tradeoffs and tests
+- [Design](docs/DESIGN.md): visual language, Luna, motion and writing voice
+- [Operations](docs/OPERATIONS.md): configuration, readiness, retention, release and recovery
+- [Architecture background](docs/ARCHITECTURE.md): original reflection/chat design; current activity additions are in Engineering
+- [Research track](docs/RESEARCH_TRACK.md) and [historical release evidence](docs/RELEASE_EVIDENCE.md): dated work, not current evaluation results
 
-**Render (alternative).** `render.yaml` defines a free Docker web service from `Dockerfile.api`. Create
-a Blueprint from this repository and supply `JOURNALPULSE_LLM_API_KEY`, `SUPABASE_ANON_KEY`, and
-`JOURNALPULSE_WRITE_SIGNING_KEY` through its secret fields. Use the same signing key stored in the database.
-
-Apply `supabase/migrations/` in filename order and store the signing key in the database and on the
-host before deploying. The full sequence is in the [operations runbook](docs/OPERATIONS.md).
-
-## Test
-
-```bash
-uv run ruff check src tests scripts
-uv run mypy src
-uv run python scripts/export_openapi.py --check
-uv run pytest --cov=journalpulse
-uv run python scripts/validate_resources.py
-
-uv run python scripts/verify_postgres_schema.py
-
-cd web
-npm run lint && npm run typecheck && npm run test:unit
-npm run build && npm run test:e2e
-npm run test:integration
-```
-
-There are two browser suites. `test:e2e` checks the interface with the API mocked in the browser.
-`test:integration` runs the browser against the real FastAPI app, PostgREST 12, and PostgreSQL with every
-migration applied (`scripts/integration_stack.py`); only the token issuer and the model provider are
-stand-ins.
-
-CI runs all of these on every push and pull request. `scripts/verify_postgres_schema.py` applies the
-migrations to a real PostgreSQL 16 database and checks RLS, signed provenance, lifecycle races between
-two sessions, retention, the shared rate limit, and deletion.
-Two scripts make paid live calls and are run only on purpose: `scripts/verify_openrouter.py` and
-`scripts/verify_conversation.py`.
-
-## Privacy and safety
-
-- The safety check runs on every message before anything else. Support mode never calls the model.
-- AI is opt-in. Requests use zero-data-retention routing, and logs never contain message text or keys.
-- A chat's words are cleared when it ends, or after 24 hours idle, unless you choose to keep them. A
-  scheduled database job enforces the 24 hours even if you never come back. A short summary, your
-  confirmed feelings, the goal, and your chosen action are saved.
-- A reply that arrives after a chat was closed, accepted, or deleted is refused by the database, so it
-  cannot reopen the chat or bring back cleared words.
-- Records of which model, policy, and safety rule were used can only be written by the server.
-- Download or delete everything from the Me page. Deleting journal data keeps your sign-in.
-
-## Documentation
-
-- [Architecture](docs/ARCHITECTURE.md): request flow, chat stages, data model, and module boundaries
-- [Design](docs/DESIGN.md): colours, type, motion, Luna's moods, and writing voice
-- [Operations](docs/OPERATIONS.md): deployment, readiness, failure behaviour, recovery, rollback
-- [Research track](docs/RESEARCH_TRACK.md): the manual 16-week plan for adaptive policies and memory
-- [Release evidence](docs/RELEASE_EVIDENCE.md): what has been verified, and what is still open
-
-The retired classifier and Streamlit demo are preserved at the `v0.4-demo` tag.
+The retired classifier and Streamlit demo are preserved at the
+[`v0.4-demo` tag](https://github.com/yusenrong46-afk/JournalPulse/tree/v0.4-demo).

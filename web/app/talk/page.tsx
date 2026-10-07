@@ -6,11 +6,13 @@ import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState }
 
 import { ActivityPreferences, activityPreferencesMessage } from "@/components/activity-preferences";
 import { ActionTimer } from "@/components/action-timer";
+import { ReviewedActivities } from "@/components/reviewed-activities";
 import { type ActivityPresence, ActivitySessionWorkspace } from "@/components/activity-session-workspace";
 import { Luna, type LunaMood } from "@/components/luna";
 import { resolveLunaMood, type ActivityReaction } from "@/lib/luna-motion";
 import { Icon } from "@/components/nav-icon";
 import { ApiError, apiRequest } from "@/lib/api";
+import { ACCOUNT_DATA_CHANGED_EVENT } from "@/lib/account-data";
 import { LUNA_REQUEST_TIMEOUT_MS } from "@/lib/request-deadlines";
 import { currentActivityCard } from "@/lib/activity-card";
 import { discoveryHref } from "@/lib/discovery";
@@ -39,6 +41,7 @@ import {
 import { usePreferences } from "@/lib/preferences";
 import { saveReminder } from "@/lib/reminders";
 import { entryDateLabel } from "@/lib/journal";
+import { chatDraftKey, clearSourceDrafts, readTabValue, writeTabValue, tabValueIsVolatile, TAB_DRAFT_NOTE, VOLATILE_DRAFT_NOTE } from "@/lib/tab-session";
 import { greeting, useTimeOfDay } from "@/lib/time-of-day";
 import { useStickToBottom, useVisualViewportHeight } from "@/lib/use-chat-scroll";
 import type {
@@ -142,6 +145,7 @@ function ChatWorkspace() {
   const requestedChatId = searchParams.get("c");
   const requestedEntry = searchParams.get("entry");
   const requestedSourceId = journalSourceId(requestedEntry);
+  const freshDraftKey = `chat:new:${requestedSourceId ?? "none"}`;
   const activeSourceId = conversation?.source_entry_id ?? selectedSourceId;
   const visibleSourceId = requestedSourceId ?? activeSourceId;
   const sourceEntry = loadedSource?.id === visibleSourceId ? loadedSource : null;
@@ -155,6 +159,7 @@ function ChatWorkspace() {
 
   const clearUnavailableChat = useCallback((message: string, canReload: boolean) => {
     const previous = latestConversation.current;
+    if (previous) writeTabValue(chatDraftKey(previous), "");
     ++workspaceGeneration.current;
     sendInFlight.current = false;
     preferenceInFlight.current = false;
@@ -186,6 +191,15 @@ function ChatWorkspace() {
     if (!hasKnown || !(known || next.incarnation_id) || known === next.incarnation_id) return false;
     clearUnavailableChat("This chat was replaced elsewhere. Load it again to open its current version.", true);
     return true;
+  }, [clearUnavailableChat]);
+
+  useEffect(() => {
+    const clear = () => {
+      draftsByChat.current.clear(); pendingByChat.current.clear(); knownIncarnations.current.clear();
+      clearUnavailableChat("Your saved data changed. This tab’s unsaved writing was cleared. Load the chat again or start a new chat.", true);
+    };
+    window.addEventListener(ACCOUNT_DATA_CHANGED_EVENT, clear);
+    return () => window.removeEventListener(ACCOUNT_DATA_CHANGED_EVENT, clear);
   }, [clearUnavailableChat]);
 
   /** Take the person's own report from the server, never Luna's suggestion, after a reload. */
@@ -295,6 +309,7 @@ function ChatWorkspace() {
         }
       })
       .catch((reason) => {
+        if (!cancelled && reason instanceof ApiError && reason.status === 404) clearSourceDrafts(visibleSourceId);
         if (!cancelled) setSourceFailure({ id: visibleSourceId, message: reason instanceof ApiError && reason.status === 404
           ? "This journal entry is no longer available."
           : "We couldn’t load this journal entry. Open your journal and try again." });
@@ -351,8 +366,18 @@ function ChatWorkspace() {
         if (cancelled || !isCurrentChatRequest(generation, workspaceGeneration.current)) return;
         if (detail.conversation.status !== "open") {
           writeOpenConversationId(null);
+          loadedId.current = detail.conversation.id;
+          applyServerState(detail.conversation);
+          setMessages(detail.messages);
+          writeTabValue(chatDraftKey(detail.conversation), "");
+          setDraft("");
           setEnded(true);
-          setError("This chat has ended. Start a new chat to keep talking.");
+          if (detail.accepted_reflection) {
+            const record = detail.accepted_reflection;
+            const resource = detail.conversation.card?.actions.find((item) => item.id === record.decision.action_id) ?? null;
+            setSaved({ record, resource });
+            setError(null);
+          } else setError("This chat has ended. Start a new chat to keep talking.");
           return;
         }
         loadedId.current = detail.conversation.id;
@@ -360,7 +385,7 @@ function ChatWorkspace() {
         setEnded(false);
         if (applyServerState(detail.conversation)) {
           setMessages(detail.messages);
-          setDraft(draftsByChat.current.get(detail.conversation.id) ?? "");
+          setDraft(readTabValue(chatDraftKey(detail.conversation)) || draftsByChat.current.get(detail.conversation.id) || "");
           const pending = pendingByChat.current.get(detail.conversation.id);
           if (pending) {
             if (detail.messages.some((message) => message.client_message_id === pending.id)) {
@@ -372,7 +397,7 @@ function ChatWorkspace() {
               // A submitted message is separate from an unsent draft. Recover its
               // original receipt only after checking whether the server saved it.
               pendingMessage.current = pending;
-              setDraft(draftsByChat.current.get(detail.conversation.id) ?? pending.outgoing.text);
+              setDraft(readTabValue(chatDraftKey(detail.conversation)) || draftsByChat.current.get(detail.conversation.id) || pending.outgoing.text);
               setPendingSend({ id: pending.id, text: pending.outgoing.text, status: "failed" });
               setRetryText(pending.outgoing);
               setError("The earlier message’s delivery is not confirmed. You can retry it.");
@@ -397,6 +422,12 @@ function ChatWorkspace() {
       cancelled = true;
     };
   }, [requestedChatId, resumeAttempt, applyServerState, clearUnavailableChat]);
+
+  useEffect(() => {
+    if (!requestedChatId && !readOpenConversationId() && !conversation && !resuming) {
+      queueMicrotask(() => setDraft(readTabValue(freshDraftKey)));
+    }
+  }, [requestedChatId, conversation, resuming, freshDraftKey]);
 
   useEffect(() => {
     if (busy !== "send") return;
@@ -553,6 +584,7 @@ function ChatWorkspace() {
     if (!editedRetry) pendingMessage.current = command;
     setPendingSend({ id: messageId, text: trimmed, status: "sending" });
     let active = conversation?.status === "open" ? conversation : null;
+    const creatingChatForDraft = active === null && Boolean(draft);
     if (active && !editedRetry) {
       pendingByChat.current.set(active.id, command);
       if (sendingComposerDraft) draftsByChat.current.delete(active.id);
@@ -560,6 +592,9 @@ function ChatWorkspace() {
     try {
       active = await ensureConversation(generation);
       if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      // The URL now names a confirmed chat. Move the first draft to that same
+      // incarnation before sending, so refresh during an uncertain reply can recover it.
+      if (creatingChatForDraft) writeTabValue(chatDraftKey(active), draft);
       if (editedRetry) {
         // Recover any earlier committed pair before sending changed wording as
         // a new message, so the transcript never quietly omits that prior turn.
@@ -580,6 +615,11 @@ function ChatWorkspace() {
           ...messageFields,
         }),
       });
+      if (sendingComposerDraft) {
+        for (const key of [chatDraftKey(active), freshDraftKey]) {
+          if (readTabValue(key).trim() === trimmed) writeTabValue(key, "");
+        }
+      }
       if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
       if (!remember(turn.conversation)) {
         if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
@@ -590,7 +630,9 @@ function ChatWorkspace() {
         setPendingSend(null);
         // A successful HTTP turn contains the stored user message, so this draft
         // is already saved even when its conversation snapshot is superseded.
-        if (sendingComposerDraft) setDraft("");
+        if (sendingComposerDraft) {
+          setDraft(""); writeTabValue(chatDraftKey(active), ""); writeTabValue(freshDraftKey, "");
+        }
         await refreshConversation(active.id, generation);
         return;
       }
@@ -600,6 +642,7 @@ function ChatWorkspace() {
       // Retrying an older message must not discard newer unsent wording.
       if (sendingComposerDraft) {
         setDraft("");
+        writeTabValue(chatDraftKey(active), ""); writeTabValue(freshDraftKey, "");
         draftsByChat.current.delete(active.id);
       }
       // A refresh can discover a committed turn before its retry receipt arrives.
@@ -730,6 +773,10 @@ function ChatWorkspace() {
 
   function chooseGoal(goal: GoalOption) {
     setStep(null);
+    if (conversation?.card?.goal === goal.id) {
+      setError("These are the available reviewed suggestions for this goal. Choose another goal or browse app activities.");
+      return;
+    }
     void send({ text: goalSentence(feelings, goal), goal: goal.id, feelings });
   }
 
@@ -763,6 +810,7 @@ function ChatWorkspace() {
       writeOpenConversationId(null);
       loadedId.current = null;
       setSaved({ record, resource });
+      writeTabValue(chatDraftKey(conversation), "");
     } catch (reason) {
       if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
       setError(reason instanceof Error ? reason.message : "Your choice wasn’t saved. Please try again.");
@@ -797,6 +845,8 @@ function ChatWorkspace() {
         }
       }
       if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      if (current) writeTabValue(chatDraftKey(current), "");
+      writeTabValue(freshDraftKey, "");
       latestConversation.current = null;
       loadedId.current = null;
       pendingMessage.current = null;
@@ -1189,8 +1239,10 @@ function ChatWorkspace() {
                 disabled={!selectedAction || busy !== null || preferenceBusy} onClick={accept}>
                 {busy === "accept" ? "Saving…" : "Let’s try it"}
               </button>
-              <button className="btn btn-ghost" type="button" onClick={() => setStep("goal")}>Show me other ideas</button>
+              <button className="btn btn-ghost" type="button" onClick={() => setStep("goal")}>Choose another goal</button>
             </div>
+            <p className="small muted">Simple mode offers a limited reviewed collection for each goal; it does not interpret every personal topic. You can choose any activity here.</p>
+            <details><summary>Browse app activities</summary><ReviewedActivities goal={card.goal} constraints={conversation?.activity_constraints} /></details>
           </div>
         )}
 
@@ -1226,7 +1278,7 @@ function ChatWorkspace() {
                   Open the {saved.resource.resource_type}
                 </a>
               )}
-              <ActionTimer minutes={saved.resource?.duration_minutes ?? 5} />
+              <ActionTimer minutes={saved.resource?.duration_minutes ?? 5} sessionKey={saved.record.decision.decision_id} />
               <p className="small muted">I’ll check in with you in about {preferences.followUpMinutes} minutes. You’ll find it on Home.</p>
               <div className="row" style={{ justifyContent: "center" }}>
                 <Link className="btn btn-soft" href={discoveryHref(saved.record.target.goal)}>Search for other resources</Link>
@@ -1286,6 +1338,7 @@ function ChatWorkspace() {
             placeholder="What's on your mind?"
             onChange={(event) => {
               setDraft(event.target.value);
+              writeTabValue(conversation ? chatDraftKey(conversation) : freshDraftKey, event.target.value);
               if (conversation) draftsByChat.current.set(conversation.id, event.target.value);
             }}
             onKeyDown={(event) => {
@@ -1301,6 +1354,15 @@ function ChatWorkspace() {
           </button>
         </form>
       )}
+      {stage !== "saved" && !ended && <div className="chat-hint">
+        <p className="small muted">{tabValueIsVolatile(conversation ? chatDraftKey(conversation) : freshDraftKey) ? VOLATILE_DRAFT_NOTE : TAB_DRAFT_NOTE}</p>
+        {draft && <button className="btn btn-ghost" type="button" disabled={composerWaiting} onClick={() => {
+          if (!window.confirm("Discard your unsent message?")) return;
+          writeTabValue(conversation ? chatDraftKey(conversation) : freshDraftKey, "");
+          if (conversation) draftsByChat.current.delete(conversation.id);
+          setDraft("");
+        }}>Discard draft</button>}
+      </div>}
       {stage === "chat" && conversation?.mode !== "ai" && conversation?.interaction_preference !== "listen"
         && userMessages >= 1 && !showReady && busy === null && !preferenceBusy && (
         <div className="chat-hint" style={{ paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}>

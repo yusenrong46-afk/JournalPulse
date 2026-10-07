@@ -215,7 +215,8 @@ test('an explicit save in the surviving editor uses a new receipt after another 
     invalidateAccountDataRequests();
     rejectResponse(new TypeError('Synthetic lost response after remote erasure'));
   });
-  expect(container.querySelector('textarea')?.value).toBe('Writing deliberately saved again after erasure');
+  expect(container.querySelector('textarea')?.value).toBe('');
+  await write(container.querySelector('textarea')!, 'Writing deliberately saved again after erasure');
   await act(async () => { button('Save entry').click(); });
   const saves = calls.filter((call) => call.method === 'POST');
   expect(saves).toHaveLength(2);

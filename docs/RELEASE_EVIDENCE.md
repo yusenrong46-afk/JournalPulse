@@ -1,5 +1,7 @@
 # Release Evidence
 
+> Historical evidence: the results below belong to their stated dates. See [Engineering verification](ENGINEERING.md#verification) for the October 7 repair snapshot and current test scope.
+
 For the follow-on implementation measured locally on 2026-10-04, see
 [Persistent preference and retention evidence](PHASE_A_PREFERENCE_EVIDENCE.md).
 The production observations below are historical records from 2026-09-28; they have not been

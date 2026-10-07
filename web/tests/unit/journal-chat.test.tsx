@@ -38,6 +38,7 @@ import { ApiError, apiRequest } from "@/lib/api";
 import { OPEN_CONVERSATION_KEY, journalSourceId, needsNewJournalChat } from "@/lib/conversation";
 import { DEFAULT_PREFERENCES, savePreferences } from "@/lib/preferences";
 import type { Conversation, ConversationTurn, JournalEntry } from "@/lib/types";
+import { clearTabSession } from "@/lib/tab-session";
 
 const ENTRY_ID = "10000000-0000-4000-8000-000000000001";
 const OLD_CHAT_ID = "20000000-0000-4000-8000-000000000001";
@@ -83,6 +84,7 @@ const requested = vi.mocked(apiRequest);
 beforeEach(() => {
   (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   window.localStorage.clear();
+  clearTabSession(); window.sessionStorage.clear();
   savePreferences({ ...DEFAULT_PREFERENCES, llmConsent: true });
   navigation.query = `entry=${ENTRY_ID}`;
   navigation.replace.mockImplementation((url: string) => {
@@ -606,6 +608,48 @@ describe("chat submission and recovery", () => {
 });
 
 describe("resource discovery handoff", () => {
+  test("same-goal selection explains the finite collection without appending another turn", async () => {
+    navigation.query = `c=${OLD_CHAT_ID}`;
+    const fallback = requested.getMockImplementation()!;
+    requested.mockImplementation(async (path, options) => {
+      if (path === `/v1/conversations/${OLD_CHAT_ID}`) return {
+        conversation: { ...conversation(OLD_CHAT_ID), mode: "guided", card: {
+          goal: "settle", resource_intent: "ground", card_reason: "Reviewed collection", actions: [],
+          decision_preview: { action_id: "first", safe_action_ids: [] },
+        } }, messages: [],
+      };
+      return fallback(path, options);
+    });
+    await mount(); await click("Choose another goal"); await click("Calm down");
+    expect(container.textContent).toContain("These are the available reviewed suggestions for this goal");
+    expect(requested.mock.calls.some(([path]) => path.endsWith("/messages"))).toBe(false);
+  });
+
+  test("an accepted closed chat restores its activity and keeps the composer closed", async () => {
+    navigation.query = `c=${OLD_CHAT_ID}`;
+    const fallback = requested.getMockImplementation()!;
+    requested.mockImplementation(async (path, options) => {
+      if (path === `/v1/conversations/${OLD_CHAT_ID}`) return {
+        conversation: { ...conversation(OLD_CHAT_ID), status: "closed", mode: "guided", card: {
+          resource_intent: "ground", card_reason: "Saved choice", decision_preview: { action_id: "chosen", safe_action_ids: ["chosen"] },
+          actions: [{ id: "chosen", title: "Saved meditation", duration_minutes: 7, url: "https://example.com/video", resource_type: "video" }],
+        } }, messages: [], accepted_reflection: { decision: { decision_id: "decision", action_id: "chosen" }, target: { goal: "settle" } },
+      };
+      return fallback(path, options);
+    });
+    await mount();
+    expect(container.textContent).toContain("Saved meditation");
+    expect(container.querySelector("[role=timer]")!.textContent).toBe("7:00");
+    expect(container.querySelector("a[href='/check-in?decision=decision']")).toBeTruthy();
+    expect(container.querySelector("textarea")).toBeNull();
+  });
+
+  test("an unsent chat draft survives leaving and returning to the confirmed chat", async () => {
+    navigation.query = `c=${OLD_CHAT_ID}`;
+    await mount(); await writeDraft("Exact unsent writing\n🙂");
+    await act(async () => root.render(null)); await mount();
+    expect(container.querySelector("textarea")!.value).toBe("Exact unsent writing\n🙂");
+  });
   test("normal chat opens discovery without forwarding its private source or message", async () => {
     navigation.query = `c=${OLD_CHAT_ID}&entry=${ENTRY_ID}`;
     const fallback = requested.getMockImplementation()!;
@@ -669,6 +713,26 @@ describe("resource discovery handoff", () => {
 
 describe("composer during a reply", () => {
   beforeEach(() => { navigation.query = `c=${OLD_CHAT_ID}`; });
+
+  test("the first draft follows the confirmed chat identity before an unconfirmed send", async () => {
+    navigation.query = "";
+    const created = conversation(NEW_CHAT_ID);
+    let fail!: (reason: Error) => void;
+    const pending = new Promise((_resolve, reject) => { fail = reject; });
+    const fallback = requested.getMockImplementation()!;
+    requested.mockImplementation(async (path, options) => {
+      if (path === "/v1/conversations") return created;
+      if (path === `/v1/conversations/${NEW_CHAT_ID}/messages`) return pending;
+      if (path === `/v1/conversations/${NEW_CHAT_ID}`) return { conversation: created, messages: [] };
+      return fallback(path, options);
+    });
+    await mount(); await writeDraft("QA first draft must survive an uncertain send."); await submit();
+    expect(navigation.query).toContain(`c=${NEW_CHAT_ID}`);
+    await act(async () => root.render(null));
+    await act(async () => fail(new Error("Synthetic unconfirmed send")));
+    await mount();
+    expect(container.querySelector("textarea")!.value).toBe("QA first draft must survive an uncertain send.");
+  });
 
   test("keeps focus and the draft field enabled while Luna replies, but blocks a second send", async () => {
     const delayed = deferred<ConversationTurn>();

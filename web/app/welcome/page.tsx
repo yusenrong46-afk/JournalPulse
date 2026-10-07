@@ -1,14 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 import { Icon } from "@/components/nav-icon";
 import { Luna } from "@/components/luna";
 import { DEFAULT_PREFERENCES, savePreferences, usePreferences } from "@/lib/preferences";
 
-export default function WelcomePage() {
+function WelcomeWorkspace() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [preferences] = usePreferences();
   const [step, setStep] = useState(0);
   const [aiChoice, setAiChoice] = useState<boolean | null>(null);
@@ -22,7 +23,15 @@ export default function WelcomePage() {
       llmConsent: aiChoice === true,
       retainText,
     });
-    router.replace("/talk");
+    const next = searchParams.get("next");
+    const allowed = new Set(["/", "/talk", "/journal", "/discover", "/journey", "/check-in", "/action", "/me"]);
+    // A saved return destination must stay internal and cannot loop into setup/login.
+    let destination = "/talk";
+    if (next?.startsWith("/") && !next.startsWith("//") && !next.includes("\\")) {
+      const url = new URL(next, window.location.origin);
+      if (url.origin === window.location.origin && allowed.has(url.pathname.replace(/\/$/, "") || "/")) destination = url.pathname + url.search;
+    }
+    router.replace(destination);
   }
 
   return (
@@ -65,7 +74,7 @@ export default function WelcomePage() {
           </div>
           <div className="settings" style={{ textAlign: "left" }}>
             <label className="setting">
-              <span><strong>Keep my messages</strong><small>Off clears the words when a chat ends.</small></span>
+              <span><strong>Keep my messages</strong><small>Off clears message text when a chat ends. Your short summary, reported feelings and activity choices remain saved.</small></span>
               <span className="switch"><input type="checkbox" checked={retainText} onChange={(event) => setRetainText(event.target.checked)} /><span /></span>
             </label>
           </div>
@@ -93,4 +102,8 @@ export default function WelcomePage() {
       )}
     </div>
   );
+}
+
+export default function WelcomePage() {
+  return <Suspense fallback={<p role="status">Opening optional setup…</p>}><WelcomeWorkspace /></Suspense>;
 }

@@ -1,5 +1,7 @@
 # Architecture
 
+> Architecture background: this document describes the original reflection and scripted-chat path. See [Engineering](ENGINEERING.md) for the current guided activity sessions, discovery, draft recovery and verification scope.
+
 ## Request flow
 
 ```text

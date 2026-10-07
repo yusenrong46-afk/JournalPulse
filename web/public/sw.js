@@ -1,4 +1,4 @@
-const CACHE = "journalpulse-shell-v5";
+const CACHE = "journalpulse-shell-v6";
 const OFFLINE_FALLBACK = "/offline.html";
 
 self.addEventListener("install", (event) => {
@@ -17,15 +17,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.pathname.startsWith("/v1/") || url.origin !== self.location.origin) return;
 
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/_next/static/media/")) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-        if (response.ok) void caches.open(CACHE).then((cache) => cache.put(event.request, response.clone()));
-        return response;
-      })),
-    );
-    return;
-  }
+  // The exported Turbopack runtime can reuse chunk names across builds. Never
+  // serve an older loader/module graph alongside a new page. Only the standalone
+  // offline fallback is cached; private pages and API responses remain uncached.
+  if (url.pathname.startsWith("/_next/")) return;
 
   if (event.request.mode === "navigate") {
     event.respondWith(fetch(event.request).catch(() => caches.match(OFFLINE_FALLBACK)));

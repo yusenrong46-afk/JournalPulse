@@ -7,12 +7,15 @@ import { currentActivityCard } from "@/lib/activity-card";
 import type { ActivityResource } from "@/lib/activity-session";
 import { DISCOVERY_TIMEOUT_MS, MAX_EXCLUDED_SOURCES, type DiscoveryResponse } from "@/lib/discovery";
 import type { Conversation } from "@/lib/types";
+import { useDiscoveryCapability } from "@/lib/capabilities";
+import { DiscoveryAvailability } from "./discovery-availability";
+import { ReviewedActivities } from "./reviewed-activities";
 
 type InlineDiscoveryResult = DiscoveryResponse & {
   offers: { resource: ActivityResource; resource_token: string }[];
   conversation_revision: number;
 };
-type Props = { conversation: Conversation; disabled: boolean; onSave(resource: ActivityResource, token: string): Promise<void> };
+type Props = { conversation: Conversation; disabled: boolean; onSave(resource: ActivityResource, token: string): Promise<void>; onChooseApp?(id: string): void };
 type ActivityConversation = Conversation & {
   activity_goal?: "settle" | "move" | "understand" | "connect" | "act" | null;
   activity_search_topic?: string | null;
@@ -21,8 +24,9 @@ type ActivityConversation = Conversation & {
 };
 
 /** Only the dedicated general-topic fields leave this panel; the composer and journal never do. */
-export function ActivitySessionDiscovery({ conversation, disabled, onSave }: Props) {
+export function ActivitySessionDiscovery({ conversation, disabled, onSave, onChooseApp }: Props) {
   const [approved, setApproved] = useState(false);
+  const capability = useDiscoveryCapability();
   const [topic, setTopic] = useState(() => (conversation as ActivityConversation).activity_search_topic ?? "");
   const [feedback, setFeedback] = useState("");
   const [result, setResult] = useState<InlineDiscoveryResult | null>(null);
@@ -48,7 +52,7 @@ export function ActivitySessionDiscovery({ conversation, disabled, onSave }: Pro
 
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!approved || busy || disabled) return;
+    if (!approved || busy || disabled || capability.status !== "configured") return;
     const current = chat.current;
     const controller = new AbortController();
     pending.current?.abort();
@@ -73,6 +77,7 @@ export function ActivitySessionDiscovery({ conversation, disabled, onSave }: Pro
         method: "POST", body: JSON.stringify(payload), timeoutMs: DISCOVERY_TIMEOUT_MS,
         retry: false, signal: controller.signal,
       });
+      if (response.provenance) console.info("JournalPulse discovery accounting", JSON.stringify({ search_calls: response.provenance.search_calls, model_runs: response.provenance.model_runs.map((run) => ({ generation_id: run.generation_id, cost_usd: run.cost_usd, model: run.model })) }));
       if (pending.current !== controller || chat.current.id !== current.id || chat.current.revision !== current.revision) return;
       setResult(response);
       setSeen((values) => [...new Set([...values, ...response.candidates.map((candidate) => candidate.url)])]);
@@ -97,6 +102,8 @@ export function ActivitySessionDiscovery({ conversation, disabled, onSave }: Pro
   return (
     <section className="card stack" aria-label="Find another activity">
       <h2>Find something that fits better</h2>
+      <DiscoveryAvailability status={capability.status} onRetry={capability.retry} />
+      {capability.status === "configured" && <>
       <p className="small muted">Brave receives a general activity topic. Your chat and journal are not included. Luna selects search snippets; full pages are not reviewed.</p>
       <label className="row"><input type="checkbox" checked={approved} disabled={disabled}
         onChange={(event) => {
@@ -116,6 +123,10 @@ export function ActivitySessionDiscovery({ conversation, disabled, onSave }: Pro
           {busy ? "Searching…" : result ? "Find different sources" : "Search activities"}
         </button>
       </form>
+      </>}
+      <details open={capability.status !== "configured"}><summary>Browse app activities</summary>
+        <ReviewedActivities goal={(conversation as ActivityConversation).activity_goal} constraints={conversation.activity_constraints} onChoose={onChooseApp} disabled={busy || disabled} />
+      </details>
       {busy && <p role="status">Finding a fitting activity…</p>}
       {error && <p className="note error" role="alert">{error}</p>}
       {result && <>

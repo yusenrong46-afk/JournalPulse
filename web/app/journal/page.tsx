@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Luna } from "@/components/luna";
-import { accountDataRequestRevision } from "@/lib/account-data";
 import { resolveLunaMood } from "@/lib/luna-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -13,12 +12,13 @@ import {
   listJournalEntries,
   readJournalEntry,
   reflectJournalEntry,
-  saveJournalEntry,
   validJournalEntryId,
 } from "@/lib/journal";
 import type { JournalEntry, JournalReflectionResult } from "@/lib/journal-types";
 import { usePreferences } from "@/lib/preferences";
 import { useTimeOfDay } from "@/lib/time-of-day";
+import { submitJournalSave, useJournalSave } from "@/lib/journal-save";
+import { TAB_DRAFT_NOTE, VOLATILE_DRAFT_NOTE, clearSourceDrafts, readTabValue, useTabValue, writeTabValue } from "@/lib/tab-session";
 
 function dateLabel(value: string): string {
   return new Date(value).toLocaleString(undefined, {
@@ -204,17 +204,17 @@ function JournalWorkspace() {
   const selectedParameter = searchParams.get("entry");
   const selectedId = validJournalEntryId(selectedParameter);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft, draftVolatile] = useTabValue("journal");
   const [listLoading, setListLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const saveState = useJournalSave();
+  const saving = saveState.status === "saving";
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [prompt, setPrompt] = useState(PROMPTS[0]);
   // Local date and time exist only in the browser; rendering them on the server would
   // disagree with the reader's time zone and break hydration.
   const clientTime = useTimeOfDay();
-  const pendingSave = useRef<{ text: string; id: string; dataRevision: string } | null>(null);
   const listGeneration = useRef(0);
   const mounted = useRef(true);
 
@@ -268,41 +268,31 @@ function JournalWorkspace() {
 
   async function save() {
     if (saving || !draft.trim()) return;
-    // Keep the UUID and exact writing across network retries. Editing a failed
-    // draft creates a new intentional entry rather than rewriting its saved copy.
-    const dataRevision = accountDataRequestRevision();
-    if (!pendingSave.current || pendingSave.current.text !== draft || pendingSave.current.dataRevision !== dataRevision) {
-      // A later explicit save after erasure is new work; its old receipt may
-      // refer to a deleted entry that the server must never recreate.
-      pendingSave.current = { text: draft, id: crypto.randomUUID(), dataRevision };
-    }
-    setSaving(true);
     setError(null);
     setNotice(null);
-    try {
-      const saved = await saveJournalEntry(pendingSave.current.text, pendingSave.current.id);
-      // The save may finish after navigation. Keep its server result without
-      // pulling the person out of the page they deliberately opened next.
-      if (!mounted.current) return;
-      setEntries((current) => [saved, ...current.filter((item) => item.id !== saved.id)]);
-      setDraft("");
-      pendingSave.current = null;
-      setNotice("Entry saved. You can leave it here or ask Luna to reflect.");
-      // A list read captured before this mutation must not erase the new entry.
-      // Refresh the canonical first page and invalidate every older pending read.
-      void loadEntries();
+    const submitted = draft;
+    const saved = await submitJournalSave(submitted);
+    if (saved && mounted.current && !readTabValue("journal")) {
       router.replace(`/journal?entry=${saved.id}`, { scroll: false });
-    } catch (reason) {
-      // A remote erase may have no browser notice. Its rejected creation receipt
-      // cannot be reused; keep the writing and wait for a new explicit Save.
-      if (reason instanceof ApiError && reason.status === 409) pendingSave.current = null;
-      if (mounted.current) setError(errorMessage(reason, "Your entry couldn’t save. Your writing is still in the editor."));
-    } finally {
-      if (mounted.current) setSaving(false);
     }
   }
 
+  useEffect(() => {
+    if (saveState.status === "saved" && saveState.entry) {
+      const saved = saveState.entry;
+      queueMicrotask(() => {
+        if (!mounted.current) return;
+        setEntries((current) => [saved, ...current.filter((item) => item.id !== saved.id)]);
+        setNotice("Entry saved. You can leave it here or ask Luna to reflect.");
+        void loadEntries();
+      });
+    }
+    if (saveState.status === "failed") queueMicrotask(() => { if (mounted.current) setError(saveState.error ?? "Your save could not be confirmed."); });
+    // A completed save is reconciled on every mount, including returning before it finishes.
+  }, [saveState]);
+
   function removed(id: string) {
+    clearSourceDrafts(id);
     setEntries((current) => current.filter((item) => item.id !== id));
     setNotice("Entry and its linked chats deleted.");
     // The refreshed request supersedes any read that still contains deleted text.
@@ -365,7 +355,7 @@ function JournalWorkspace() {
           {/* The field keeps one stable accessible name; the chosen prompt is a visible nudge only. */}
           <label className="journal-prompt" htmlFor="journal-writing">{prompt}</label>
           <textarea id="journal-writing" aria-label="What would you like to remember?" rows={10} maxLength={5000} value={draft}
-            onChange={(event) => { setDraft(event.target.value); setNotice(null); }} disabled={saving}
+            onChange={(event) => { setDraft(event.target.value); setNotice(null); }}
             placeholder="Something that happened, a thought that stayed, or how today felt…"
             aria-describedby="journal-save-note journal-length" />
           <div className="journal-sheet-foot">
@@ -381,6 +371,10 @@ function JournalWorkspace() {
             Saving keeps your exact words until you delete the entry, even if temporary chat text is turned off.
             AI is optional. Saved entries keep their original wording.
           </p>
+          <p className="small muted" role={draftVolatile ? "status" : undefined}>{draftVolatile ? VOLATILE_DRAFT_NOTE : TAB_DRAFT_NOTE}</p>
+          {draft && <button className="btn btn-ghost" type="button" onClick={() => {
+            if (window.confirm("Discard your unsaved journal writing?")) { setDraft(""); writeTabValue("journal-receipt", ""); }
+          }}>Discard draft</button>}
         </section>
           )}
         </div>
