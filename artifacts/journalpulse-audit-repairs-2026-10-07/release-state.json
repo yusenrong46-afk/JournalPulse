@@ -1,12 +1,16 @@
 {
-  "source_commit": "00fc6713e66adff3f0561ee7b144ea4814b8a4c4",
-  "staged_deployment": "dpl_2aeVamZ4VSEuyErPGiGnkfoYy5tF",
-  "staged_url": "https://journalpulse-a7rdfucco-yusenrong46-9212s-projects.vercel.app",
-  "rollback_deployment": "dpl_7hxiFv7SSDU9ccvdDybpf3EY7CXt",
-  "staged_ready": true,
-  "staged_search_configured": true,
-  "staged_private_api_unauthenticated_status": 401,
-  "hosted_authenticated_checks": "pending production alias",
-  "asset_checks": "11 JavaScript/CSS files return 200 with no-store; worker v6 caches no runtime chunks",
-  "first_candidate_rolled_back": true
+  "source_commit": "779ac88a5cd809f51e9fed579fe5ef960f00800c",
+  "production_deployment": "dpl_BQCGgvyeErkmRktk2Uoii7nKTHrr",
+  "production_url": "https://journalpulse.vercel.app",
+  "immutable_url": "https://journalpulse-r2k9nn2nq-yusenrong46-9212s-projects.vercel.app",
+  "status": "production verified",
+  "rollback_deployment": "dpl_2aeVamZ4VSEuyErPGiGnkfoYy5tF",
+  "database_migration_applied": false,
+  "synthetic_artifacts_left": {
+    "journal_entry": "f9f3bf17-1cf3-4a86-98f1-d6c574e40026",
+    "guided_chat": "03404525-1c74-4b88-86d3-d6583a75bb36",
+    "audit_checkin_completed_as_not_tried": "e9ddc6bf-a974-4088-8acb-1e9c7e4e6455"
+  },
+  "manual_activity_left": "offered, not started in audit AI chat",
+  "pull_request": "Not created; optional publication awaits explicit human authorization after auto-review rejection."
 }

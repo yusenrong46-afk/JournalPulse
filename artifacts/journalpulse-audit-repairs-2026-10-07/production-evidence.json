@@ -1,6 +1,6 @@
 {
-  "deployment": "dpl_2aeVamZ4VSEuyErPGiGnkfoYy5tF",
-  "source_commit": "00fc6713e66adff3f0561ee7b144ea4814b8a4c4",
+  "deployment": "dpl_BQCGgvyeErkmRktk2Uoii7nKTHrr",
+  "source_commit": "779ac88a5cd809f51e9fed579fe5ef960f00800c",
   "origin": "https://journalpulse.vercel.app",
   "checks": {
     "JP-01": {
@@ -53,6 +53,29 @@
       "participation": "not_tried",
       "confirmation_visible": true,
       "observed_save_ms_with_automation": 1176
+    },
+    "JP-02": {
+      "Explore_initial": "two live results",
+      "Explore_refinement": "two different live sources",
+      "inline_initial": "three selectable signed offers",
+      "final_inline_smoke": "three live signed offers on the frozen deployment",
+      "receipts": "all five model generations have generation IDs and actual costs",
+      "search_code_unchanged_between_provider_checks": true
+    },
+    "manual_selection": {
+      "title": "Two-minute reflection pause",
+      "saved_without_AI_call": true,
+      "restored_after_refresh": true,
+      "not_started": true,
+      "chat": "b184b4c0-3bc1-4164-97eb-7f1a2d39cf23"
+    },
+    "final_same_tab_recovery": {
+      "journal": "QA TEST \u2014 final journal draft check. A fictional quiet garden.\nExact writing \ud83d\ude42",
+      "chat": "QA TEST \u2014 final unsent draft. A fictional green notebook.",
+      "topic": "watercolour colour selection exercises",
+      "manual_exclusion": "https://example.com/skipped-source",
+      "sharing_consent_restored": false,
+      "checked_after_hydration": true
     }
   },
   "synthetic_artifacts_left": {
@@ -65,5 +88,14 @@
     "No full accessibility or clinical validation claim.",
     "Provider fixtures in local integration are distinct from real production search checks.",
     "Production UI timing includes automation overhead; no precise production client/auth/network split claimed."
-  ]
+  ],
+  "rollout": {
+    "first_candidate_rolled_back_on_chunk_error": true,
+    "stale_worker_and_metadata_etag_repair": true,
+    "final_js_asset_graph": "11 JS files returned 200/no-store",
+    "final_ready": "ready",
+    "final_retention": "healthy",
+    "error_fatal_scan": "zero entries in final deployment window",
+    "previous_compatible_deployment": "dpl_2aeVamZ4VSEuyErPGiGnkfoYy5tF"
+  }
 }

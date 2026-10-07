@@ -33,7 +33,7 @@
         "model_runs": [
           {
             "generation_id": "gen-1791398349-sTXfBLzNjb29l5lx7xEL",
-            "cost_usd": 0.000081,
+            "cost_usd": 8.1e-05,
             "model": "openai/gpt-6-luna"
           },
           {
@@ -72,17 +72,38 @@
           }
         ]
       }
+    },
+    {
+      "flow": "final deployment inline smoke",
+      "state": "reconciled",
+      "reserve_usd": 0.1,
+      "max_model_calls": 1,
+      "brave_calls": 1,
+      "topic": "quiet meditation",
+      "deployment": "dpl_BQCGgvyeErkmRktk2Uoii7nKTHrr",
+      "receipt": {
+        "search_calls": 1,
+        "model_runs": [
+          {
+            "generation_id": "gen-1791401332-zpQRH8LGVjfdQjvj7z2T",
+            "cost_usd": 0.0002159,
+            "model": "openai/gpt-6-luna"
+          }
+        ]
+      }
     }
   ],
-  "openrouter_actual_usd": 0.0007224999999999999,
-  "brave_search_requests": 3,
-  "brave_gross_upper_bound_usd": 0.015,
+  "openrouter_actual_usd": 0.0009384,
+  "brave_search_requests": 4,
+  "brave_gross_upper_bound_usd": 0.02,
   "pricing": {
     "openrouter_model": "openai/gpt-6-luna",
-    "prompt_usd_per_token": 1e-7,
-    "completion_usd_per_token": 5e-7,
+    "prompt_usd_per_token": 1e-07,
+    "completion_usd_per_token": 5e-07,
     "brave_usd_per_request_upper_bound": 0.005
   },
   "reserve_per_search_usd": 0.1,
-  "stop_on_unknown_cost": true
+  "stop_on_unknown_cost": true,
+  "total_gross_ceiling_usd": 0.0209384,
+  "brave_net_charge": "Not claimed; monthly credits may reduce the published gross bound."
 }
