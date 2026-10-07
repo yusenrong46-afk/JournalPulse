@@ -38,7 +38,7 @@ Setup is optional. Private defaults remain active until you choose otherwise.
 ## Architecture
 
 ```mermaid
-flowchart LR
+flowchart TB
   WEB["Next.js interface"] --> API["FastAPI · authenticated owner"]
   API --> GATE["Safety and consent checks"]
   GATE --> SUPPORT["Human support routing"]
@@ -96,7 +96,8 @@ Hosted configuration, secrets, migrations and rollback belong in the [operations
 
 The October 7 repair snapshot passed **1,270 backend tests**, **217 frontend unit tests**,
 **46 browser checks with mocked APIs**, and **22 integrations through the real API, PostgREST
-and PostgreSQL**. Backend line coverage was **91.88%**. Four optional integration tours were skipped.
+and PostgreSQL**. Backend coverage was **91.88%**, with branch measurement enabled.
+Four optional integration tours were skipped.
 [Verification scope and reproduction](docs/ENGINEERING.md#verification).
 
 Synthetic production checks also exercised writing recovery, saving, optional setup, activity

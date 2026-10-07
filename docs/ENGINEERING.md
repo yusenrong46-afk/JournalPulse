@@ -147,7 +147,7 @@ main were compared byte-for-byte with that tested repair snapshot before publica
 
 | Layer | Observed result | Scope |
 |---|---|---|
-| Backend | 1,270 passed; 91.88% line coverage | Unit/API tests, SQLite behavior, validation, safety, ownership and failure cases |
+| Backend | 1,270 passed; 91.88% coverage, with branch measurement enabled | Unit/API tests, SQLite behavior, validation, safety, ownership and failure cases |
 | Frontend unit | 217 passed across 33 files | State, draft isolation, blocked storage, response races, consent, timers and check-in deadlines |
 | Browser with API mocks | 46 passed | Desktop/mobile flows and accessibility checks; provider/database behavior is not exercised |
 | Real-stack browser integration | 22 passed; four optional tours skipped | Browser → FastAPI → PostgREST 12 → PostgreSQL 16, real migrations; token issuer and providers are stand-ins |
