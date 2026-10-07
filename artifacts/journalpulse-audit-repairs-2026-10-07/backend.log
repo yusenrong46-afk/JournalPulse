@@ -4,7 +4,7 @@ rootdir: /Users/thomas/Documents/ChatGPT/JP
 configfile: pyproject.toml
 testpaths: tests
 plugins: cov-6.3.0, anyio-4.14.2
-collected 1264 items
+collected 1270 items
 
 tests/test_action_readiness_current_turn.py ..                           [  0%]
 tests/test_activity_chat.py ............                                 [  1%]
@@ -15,7 +15,7 @@ tests/test_activity_resources.py .........................               [  3%]
 tests/test_activity_search_contract.py ........                          [  4%]
 tests/test_activity_sessions_repository.py ...........                   [  5%]
 tests/test_activity_stop.py ....                                         [  5%]
-tests/test_ai_provider_failure_atomicity.py ...                          [  6%]
+tests/test_ai_provider_failure_atomicity.py ...                          [  5%]
 tests/test_auth_and_rls.py .....                                         [  6%]
 tests/test_backend_integrity_upgrade.py ..............                   [  7%]
 tests/test_config.py ........................................            [ 10%]
@@ -27,31 +27,31 @@ tests/test_discovery.py ................................................ [ 17%]
 .....................                                                    [ 18%]
 tests/test_erasure_replay.py ......................                      [ 20%]
 tests/test_foundation_api_audit.py ...........                           [ 21%]
-tests/test_guided_action_boundaries.py ............                      [ 22%]
-tests/test_guided_action_prompt.py ...................                   [ 23%]
-tests/test_guided_current_intent.py .............                        [ 24%]
+tests/test_guided_action_boundaries.py ..................                [ 22%]
+tests/test_guided_action_prompt.py ...................                   [ 24%]
+tests/test_guided_current_intent.py .............                        [ 25%]
 tests/test_guided_evaluation.py ........................................ [ 28%]
-.............................................................            [ 32%]
+.............................................................            [ 33%]
 tests/test_http_client_lifecycle.py .................................... [ 35%]
-...............                                                          [ 36%]
-tests/test_inline_discovery.py ..............                            [ 37%]
+...............                                                          [ 37%]
+tests/test_inline_discovery.py ..............                            [ 38%]
 tests/test_integration_stack_download.py .....                           [ 38%]
-tests/test_journal_chat.py ...................                           [ 39%]
+tests/test_journal_chat.py ...................                           [ 40%]
 tests/test_journal_models.py .....                                       [ 40%]
-tests/test_journal_repository.py .......                                 [ 40%]
+tests/test_journal_repository.py .......                                 [ 41%]
 tests/test_journals_api.py .................                             [ 42%]
 tests/test_luna_evaluation.py .......                                    [ 42%]
 tests/test_middleware_boundaries.py .....                                [ 43%]
 tests/test_openrouter_contract.py .....                                  [ 43%]
 tests/test_openrouter_conversation_contract.py ......................... [ 45%]
 .........................                                                [ 47%]
-tests/test_phase_a_lifecycle.py ..................                       [ 48%]
-tests/test_readiness.py ........................                         [ 50%]
+tests/test_phase_a_lifecycle.py ..................                       [ 49%]
+tests/test_readiness.py ........................                         [ 51%]
 tests/test_research_beta_api.py ..................                       [ 52%]
-tests/test_research_beta_safety.py ......................                [ 53%]
+tests/test_research_beta_safety.py ......................                [ 54%]
 tests/test_safety_direct_intent.py ...............                       [ 55%]
 tests/test_safety_indirect_and_historical.py ........................... [ 57%]
-........................................................................ [ 62%]
+........................................................................ [ 63%]
 ........................................................................ [ 68%]
 ........................................................................ [ 74%]
 ........................................................................ [ 80%]
@@ -80,9 +80,9 @@ Name                                     Stmts   Miss Branch BrPart  Cover   Mis
 src/journalpulse/__init__.py                 2      0      0      0   100%
 src/journalpulse/activity_chat.py           59      2     16      2    95%   129, 204
 src/journalpulse/activity_lifecycle.py      48      2     30      3    94%   22, 30->78, 37
-src/journalpulse/activity_models.py        146      4      8      4    95%   69, 75, 77, 165
+src/journalpulse/activity_models.py        152      5     10      5    94%   69, 75, 77, 165, 197
 src/journalpulse/activity_resources.py     204      8     68      8    94%   99, 114, 116, 238, 240, 339, 422, 465
-src/journalpulse/activity_sessions.py      201     25     58     17    84%   76, 81, 144, 148, 186, 188, 214-215, 274, 290, 295, 298, 306, 308, 399, 404, 406, 429, 432, 444-445, 457-473
+src/journalpulse/activity_sessions.py      201     22     58     14    86%   76, 81, 144, 148, 186, 188, 214-215, 290, 306, 308, 405, 410, 412, 435, 438, 450-451, 463-479
 src/journalpulse/api.py                    318     16     60      6    94%   164, 178, 285-286, 311, 321-322, 324-325, 395-396, 499-500, 617-618, 623
 src/journalpulse/auth.py                    43      2     14      0    96%   65-66
 src/journalpulse/config.py                 129      5     48      6    94%   53->49, 147, 149, 151, 163, 165
@@ -102,7 +102,7 @@ src/journalpulse/intelligence.py           375      6    126     10    97%   254
 src/journalpulse/journal_models.py          55      1      6      1    97%   82
 src/journalpulse/journals.py                69      2     14      1    96%   178, 206
 src/journalpulse/middleware.py             104      5     24      2    95%   44-46, 57, 84
-src/journalpulse/persistence.py            889     83    298     40    89%   405, 409, 415, 457, 459, 496, 572, 573->577, 595, 718, 811, 861, 874, 897, 989, 1084, 1092, 1126, 1194, 1351, 1421, 1434, 1437-1442, 1516-1527, 1530, 1532, 1537, 1745-1759, 1787-1788, 1798, 1888, 1890, 1893, 1895, 1910, 1919, 1921, 1924, 1934, 1943-1953, 1960, 1973-1993, 2003-2019, 2030-2049, 2059-2077, 2096-2136, 2148-2163, 2236-2239, 2409-2423, 2431-2432, 2497
+src/journalpulse/persistence.py            889     81    298     38    89%   405, 409, 415, 496, 572, 573->577, 595, 718, 811, 861, 874, 897, 989, 1084, 1092, 1126, 1194, 1351, 1421, 1434, 1437-1442, 1516-1527, 1530, 1532, 1537, 1745-1759, 1787-1788, 1798, 1888, 1890, 1893, 1895, 1910, 1919, 1921, 1924, 1934, 1943-1953, 1960, 1973-1993, 2003-2019, 2030-2049, 2059-2077, 2096-2136, 2148-2163, 2236-2239, 2409-2423, 2431-2432, 2497
 src/journalpulse/policy.py                  21      1      8      1    93%   34
 src/journalpulse/reflection_prompts.py       8      0      0      0   100%
 src/journalpulse/resources.py               54      9     18      7    78%   24, 30, 35-36, 39, 42, 44, 49, 54
@@ -110,6 +110,6 @@ src/journalpulse/safety.py                  66      0     22      0   100%
 src/journalpulse/self_report.py             16      0      4      0   100%
 src/journalpulse/signing.py                 16      0      0      0   100%
 ------------------------------------------------------------------------------------
-TOTAL                                     4649    297   1316    184    92%
-Required test coverage of 80.0% reached. Total coverage: 91.74%
-======================= 1264 passed, 1 warning in 30.17s =======================
+TOTAL                                     4655    293   1318    180    92%
+Required test coverage of 80.0% reached. Total coverage: 91.88%
+======================= 1270 passed, 1 warning in 37.76s =======================

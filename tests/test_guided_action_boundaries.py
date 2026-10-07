@@ -140,6 +140,64 @@ def seed_conversation(
     return SQLiteRepository(configured.database_path).create_conversation(conversation)
 
 
+@pytest.mark.parametrize("mode", [ConversationMode.AI, ConversationMode.GUIDED])
+def test_explicit_reviewed_choice_needs_no_luna_offer_and_is_not_a_model_recommendation(tmp_path, mode):
+    configured = settings(tmp_path)
+    clock = Clock()
+    base = seed_conversation(configured, clock)
+    chat = SQLiteRepository(configured.database_path).create_conversation(base.model_copy(update={
+        "id": uuid4(), "card": None, "activity_card": None, "ready_for_action": False, "mode": mode,
+    }))
+    with TestClient(create_app(settings=configured, clock=clock, conversation_client=ChatDouble())) as client:
+        payload = {"client_request_id": str(uuid4()), "expected_conversation_revision": chat.revision,
+                   "resource_id": RESOURCE_ID, "user_selected": True}
+        path = f"/v1/conversations/{chat.id}/activity-sessions"
+        response = client.post(path, headers=OWNER_HEADERS, json=payload)
+        assert response.status_code == 201, response.text
+        saved = response.json()
+        assert saved["selection"]["selection_source"] == "user"
+        assert saved["selection"]["model_run"] is None
+        assert saved["selection"]["eligible_for_ope"] is False
+        assert saved["offered_message_id"] is None
+        retry = client.post(path, headers=OWNER_HEADERS, json=payload)
+        assert retry.status_code == 201
+        assert retry.json()["id"] == saved["id"]
+        outsider = client.post(path, headers=OTHER_HEADERS, json=payload)
+        assert outsider.status_code == 404
+        for changes in (
+            {"resource_id": "made-up-activity"}, {"user_selected": False}, {"user_selected": "true"},
+            {"resource_token": "conflicting-source-test-only"},
+        ):
+            rejected = client.post(
+                path, headers=OWNER_HEADERS, json={**payload, "client_request_id": str(uuid4()), **changes},
+            )
+            assert rejected.status_code in (409, 422), rejected.text
+
+
+@pytest.mark.parametrize("boundary", ["support", "listen", "stale", "constraints"])
+def test_manual_catalog_choice_still_enforces_activity_boundaries(tmp_path, boundary):
+    from journalpulse.domain import ActivityConstraintInputs, InteractionPreference
+
+    configured = settings(tmp_path)
+    clock = Clock()
+    base = seed_conversation(configured, clock)
+    updates = {"id": uuid4(), "card": None, "activity_card": None, "ready_for_action": False}
+    if boundary == "support":
+        updates["safety_mode"] = SafetyMode.SUPPORT
+    if boundary == "listen":
+        updates["interaction_preference"] = InteractionPreference.LISTEN
+    if boundary == "constraints":
+        updates["activity_constraints"] = ActivityConstraintInputs(time_minutes=1)
+    chat = SQLiteRepository(configured.database_path).create_conversation(base.model_copy(update=updates))
+    with TestClient(create_app(settings=configured, clock=clock)) as client:
+        result = client.post(f"/v1/conversations/{chat.id}/activity-sessions", headers=OWNER_HEADERS, json={
+            "client_request_id": str(uuid4()),
+            "expected_conversation_revision": chat.revision + (boundary == "stale"),
+            "resource_id": RESOURCE_ID, "user_selected": True,
+        })
+        assert result.status_code == 409, result.text
+
+
 def offered(client: TestClient, conversation: Conversation) -> dict:
     response = client.post(
         f"/v1/conversations/{conversation.id}/activity-sessions",

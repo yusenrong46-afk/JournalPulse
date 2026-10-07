@@ -289,9 +289,9 @@ def register_activity_routes(
                     if descriptor.get("id") != payload.resource_id:
                         raise ValueError("Resource identity changed")
                 else:
-                    if active_card is None or payload.resource_id not in {
+                    if not payload.user_selected and (active_card is None or payload.resource_id not in {
                         item.get("id") for item in active_card.actions
-                    }:
+                    }):
                         raise ValueError("Choose from the current Luna recommendation")
                     resolved = resolve_activity_resource(settings.resource_catalog_path, payload.resource_id)
                     if resolved is None:
@@ -311,11 +311,13 @@ def register_activity_routes(
             if payload.duration_seconds is not None
             else candidate.duration_seconds or 0
         )
-        selection_card = None if payload.resource_token else active_card
+        selection_card = None if payload.resource_token or payload.user_selected else active_card
         recommended = selection_card.decision_preview.recommended_action_id if selection_card else None
         selection = ActivitySelectionProvenance(
             selection_source="search"
             if payload.resource_token
+            else "user"
+            if payload.user_selected
             else "guided"
             if conversation.mode == ConversationMode.GUIDED
             else "user",
@@ -330,10 +332,14 @@ def register_activity_routes(
             user_id=auth.user_id,
             conversation_id=conversation_id,
             source_entry_id=conversation.source_entry_id,
-            offered_message_id=active_card.offered_message_id if active_card else None,
+            offered_message_id=(
+                active_card.offered_message_id if active_card and not payload.user_selected else None
+            ),
             resource=candidate,
-            goal=(previous.goal if previous is not None else search_goal)
-            if payload.resource_token else active_card.goal if active_card else None,
+            goal=conversation.activity_goal if payload.user_selected else (
+                (previous.goal if previous is not None else search_goal)
+                if payload.resource_token else active_card.goal if active_card else None
+            ),
             # The visible card may include private context; never copy its freeform
             # reason (or journal quotations) into an activity row.
             recommendation_reason=None,

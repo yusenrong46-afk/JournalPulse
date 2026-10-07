@@ -1,10 +1,12 @@
 {
-  "source_commit": "920b173ae945da7a6041fd119019932410142ea1",
-  "staged_deployment": "dpl_98VuPAtmkiGGuoNzgCHgavJaUrPN",
-  "staged_url": "https://journalpulse-qn47m3ux7-yusenrong46-9212s-projects.vercel.app",
+  "source_commit": "00fc6713e66adff3f0561ee7b144ea4814b8a4c4",
+  "staged_deployment": "dpl_2aeVamZ4VSEuyErPGiGnkfoYy5tF",
+  "staged_url": "https://journalpulse-a7rdfucco-yusenrong46-9212s-projects.vercel.app",
   "rollback_deployment": "dpl_7hxiFv7SSDU9ccvdDybpf3EY7CXt",
   "staged_ready": true,
   "staged_search_configured": true,
   "staged_private_api_unauthenticated_status": 401,
-  "hosted_authenticated_checks": "pending production alias"
+  "hosted_authenticated_checks": "pending production alias",
+  "asset_checks": "11 JavaScript/CSS files return 200 with no-store; worker v6 caches no runtime chunks",
+  "first_candidate_rolled_back": true
 }

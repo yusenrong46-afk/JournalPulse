@@ -1,0 +1,95 @@
+{
+  "ready": {
+    "status": "ready",
+    "checks": {
+      "configuration": "ready",
+      "resources": "ready",
+      "llm": "configured:not_probed",
+      "web": "ready",
+      "database": "reachable",
+      "schema": "schema_ready",
+      "signing": "valid",
+      "activities": "ready",
+      "retention_job": "scheduled",
+      "retention_state": "healthy",
+      "retention_last_success": "2026-10-07 18:15:00.159013+00",
+      "retention_last_run_status": "succeeded",
+      "retention_overdue": "false"
+    }
+  },
+  "capabilities": {
+    "discovery": "configured"
+  },
+  "html_status": 200,
+  "html_cache_control": "no-store",
+  "assets": [
+    {
+      "path": "/_next/static/chunks/0cz1d0mv5g_q7.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 112594
+    },
+    {
+      "path": "/_next/static/chunks/0m3u7id8sn7k7.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 44258
+    },
+    {
+      "path": "/_next/static/chunks/15vsx7_aqa5dv.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 159652
+    },
+    {
+      "path": "/_next/static/chunks/1qzcenyv5l0cd.css",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 100181
+    },
+    {
+      "path": "/_next/static/chunks/1rj7ns8rte9vc.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 229156
+    },
+    {
+      "path": "/_next/static/chunks/2dguhvme1ykcn.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 40430
+    },
+    {
+      "path": "/_next/static/chunks/2h5-mxz7slckb.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 878
+    },
+    {
+      "path": "/_next/static/chunks/2mmpezlrfmbu5.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 34718
+    },
+    {
+      "path": "/_next/static/chunks/310vm2bl3xxpt.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 5364
+    },
+    {
+      "path": "/_next/static/chunks/3q_wngs_8w11y.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 24827
+    },
+    {
+      "path": "/_next/static/chunks/turbopack-0ad7d-bwhky_e.js",
+      "status": 200,
+      "cache_control": "no-store",
+      "bytes": 9721
+    }
+  ],
+  "worker_v6": true,
+  "worker_cache_first_chunks": false
+}

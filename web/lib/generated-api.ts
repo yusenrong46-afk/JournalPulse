@@ -1125,6 +1125,11 @@ export interface components {
             resource_id: string;
             /** Resource Token */
             resource_token?: string | null;
+            /**
+             * User Selected
+             * @default false
+             */
+            user_selected: boolean;
         };
         /** CreateJournalEntryRequest */
         CreateJournalEntryRequest: {

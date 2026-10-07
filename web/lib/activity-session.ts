@@ -45,6 +45,7 @@ export function readCurrentActivity(conversationId: string, signal?: AbortSignal
 
 export function createActivity(conversationId: string, payload: {
   client_request_id: string; expected_conversation_revision: number; resource_id: string; resource_token?: string;
+  user_selected?: boolean;
 }, signal?: AbortSignal): Promise<ActivitySession> {
   return apiRequest(`/v1/conversations/${conversationId}/activity-sessions`, {
     method: "POST", body: JSON.stringify(payload), retry: true, signal,

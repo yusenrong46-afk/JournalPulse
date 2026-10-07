@@ -1751,6 +1751,11 @@
               }
             ],
             "title": "Resource Token"
+          },
+          "user_selected": {
+            "default": false,
+            "title": "User Selected",
+            "type": "boolean"
           }
         },
         "required": [

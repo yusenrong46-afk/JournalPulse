@@ -188,6 +188,14 @@ class CreateActivitySessionRequest(BaseModel):
     resource_id: str = Field(min_length=1, max_length=120)
     duration_seconds: int | None = Field(default=None, ge=1, le=3600)
     resource_token: str | None = Field(default=None, min_length=1, max_length=12000)
+    # An explicit catalog choice is distinct from accepting Luna's current offer.
+    user_selected: bool = Field(default=False, strict=True)
+
+    @model_validator(mode="after")
+    def distinct_selection_sources(self) -> CreateActivitySessionRequest:
+        if self.user_selected and self.resource_token is not None:
+            raise ValueError("Choose either a reviewed app activity or a signed search result")
+        return self
 
 
 class ActivityCommandRequest(BaseModel):

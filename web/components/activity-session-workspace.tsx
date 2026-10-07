@@ -228,19 +228,23 @@ export function ActivitySessionWorkspace({
       const next = await commandActivity(value.id, payload, signal);
       if (generation.current === started && !signal.aborted) {
         receipts.current.delete(key);
-        if (command === "start") receipts.current.delete(`create:${next.resource.id}`);
+        if (command === "start") {
+          receipts.current.delete(`create:${next.resource.id}:user`);
+          receipts.current.delete(`create:${next.resource.id}:offer`);
+        }
         apply(next);
       }
     }, () => control(command));
   }
 
-  async function saveOffer(resourceId: string, resourceToken?: string, start = false) {
+  async function saveOffer(resourceId: string, resourceToken?: string, start = false, userSelected = false) {
     const started = generation.current;
     const expected = chat.current.revision ?? 0;
-    const key = `create:${resourceId}`;
+    const key = `create:${resourceId}:${userSelected ? "user" : "offer"}`;
     const payload = receipt(key, (requestId) => ({
       client_request_id: requestId, expected_conversation_revision: expected, resource_id: resourceId,
       ...(resourceToken ? { resource_token: resourceToken } : {}),
+      ...(userSelected ? { user_selected: true } : {}),
     }));
     let confirmed = false;
     await operation(async (signal) => {
@@ -257,7 +261,7 @@ export function ActivitySessionWorkspace({
         if (generation.current === started && !signal.aborted) { receipts.current.delete(startKey); apply(active); }
       }
       receipts.current.delete(key);
-    }, async () => { await saveOffer(resourceId, resourceToken, start); });
+    }, async () => { await saveOffer(resourceId, resourceToken, start, userSelected); });
     return confirmed;
   }
 
@@ -377,7 +381,7 @@ export function ActivitySessionWorkspace({
       </button>}
       {searchOpen && <div ref={searchRef} className="stack">
         <ActivitySessionDiscovery conversation={conversation} disabled={busy || disabled || !canStart} onSave={saveSearch}
-          onChooseApp={(id) => { void saveOffer(id).then((saved) => { if (saved) setSearchOpen(false); }); }} />
+          onChooseApp={(id) => { void saveOffer(id, undefined, false, true).then((saved) => { if (saved) setSearchOpen(false); }); }} />
         <button className="btn btn-ghost" type="button" onClick={() => setSearchOpen(false)}>Close activity search</button>
       </div>}
       {error && <div className="stack"><p role="alert" className="note error">{error}</p>

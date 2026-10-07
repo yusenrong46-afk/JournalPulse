@@ -1,0 +1,5 @@
+{
+  "observedSaveToConfirmationMs": 1176,
+  "scope": "One synthetic skipped activity; no exercise performed",
+  "limitations": "Includes browser automation overhead. Native browser timing APIs were unavailable in the read-only inspection scope; detailed phase timing is available from the local PostgreSQL integration run and server logs."
+}

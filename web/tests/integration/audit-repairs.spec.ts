@@ -58,6 +58,28 @@ test("stale application chunks in an old worker cache cannot replace the current
   await expect(page.getByRole("heading", { name: "Oops, Luna tripped." })).toHaveCount(0);
 });
 
+test("manual reviewed choice saves and restores without needing a current Luna recommendation", async ({ page, request }, info) => {
+  const headers = await setup(page, request);
+  const chatResponse = await request.post("/v1/conversations", {
+    headers: await currentDataRevisionHeaders(request, headers), data: { llm_consent: true, retain_text: false, locale: "CA" },
+  });
+  expect(chatResponse.status()).toBe(201);
+  const chat = await chatResponse.json();
+  await page.goto(`/talk/?c=${chat.id}`);
+  await page.getByRole("button", { name: "Find another resource", exact: true }).click();
+  await page.getByText("Browse app activities", { exact: true }).click();
+  await page.getByRole("button", { name: "Choose Two-minute reflection pause", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Two-minute reflection pause", exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Two-minute reflection pause", exact: true })).toBeVisible();
+  const sessionResponse = await request.get(`/v1/conversations/${chat.id}/activity-sessions`, { headers });
+  const session = await sessionResponse.json();
+  expect(session.selection.selection_source).toBe("user");
+  expect(session.selection.model_run).toBeNull();
+  expect(session.status).toBe("offered");
+  await page.screenshot({ path: info.outputPath("manual-reviewed-choice.png"), fullPage: true });
+});
+
 test("audit: accepted legacy activity and timer recover through refresh", async ({ page, request }, info) => {
   const headers = await setup(page, request);
   const revisionHeaders = await currentDataRevisionHeaders(request, headers);

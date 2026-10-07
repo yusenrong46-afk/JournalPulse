@@ -2,78 +2,78 @@
 > journalpulse-web@1.0.0 test:e2e
 > playwright test
 
-[WebServer] (node:44791) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:47517) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
-[WebServer] (node:44792) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (node:47518) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
 
 Running 46 tests using 5 workers
 
-(node:44806) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:47528) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:44805) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:47532) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:44807) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:47531) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:44803) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:47530) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:44804) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:47529) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-  ✓   1 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journey has no serious automated accessibility violations (2.0s)
-  ✓   2 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /discover has no serious automated accessibility violations (2.0s)
-  ✓   5 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journal has no serious automated accessibility violations (2.0s)
-  ✓   4 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /talk has no serious automated accessibility violations (2.0s)
-  ✓   3 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations (2.1s)
-  ✓  10 [mobile-chromium] › tests/e2e/core-flow.spec.ts:99:5 › the chat composer keeps pasted messages within the API's limit (1.2s)
-  ✓   7 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /welcome has no serious automated accessibility violations (1.5s)
-  ✓   8 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /login has no serious automated accessibility violations (1.6s)
-  ✓   6 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /me has no serious automated accessibility violations (1.6s)
+  ✓   4 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /discover has no serious automated accessibility violations (2.3s)
+  ✓   5 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journey has no serious automated accessibility violations (2.3s)
+  ✓   2 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /talk has no serious automated accessibility violations (2.3s)
+  ✓   1 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journal has no serious automated accessibility violations (2.4s)
+  ✓   3 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations (2.4s)
+  ✓  10 [mobile-chromium] › tests/e2e/core-flow.spec.ts:99:5 › the chat composer keeps pasted messages within the API's limit (913ms)
+  ✓   8 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /login has no serious automated accessibility violations (1.5s)
+  ✓   7 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /welcome has no serious automated accessibility violations (1.7s)
   ✓   9 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /check-in has no serious automated accessibility violations (1.7s)
-  ✓  11 [mobile-chromium] › tests/e2e/core-flow.spec.ts:127:5 › chat privacy and options support keyboard focus and dismissal (959ms)
-  ✓  15 [mobile-chromium] › tests/e2e/core-flow.spec.ts:290:5 › a reply to a chat that closed elsewhere is not shown as saved (570ms)
-  ✓  14 [mobile-chromium] › tests/e2e/core-flow.spec.ts:269:5 › after a reload the chat keeps the feelings the person confirmed, not Luna's guess (895ms)
-  ✓  16 [mobile-chromium] › tests/e2e/core-flow.spec.ts:318:5 › support mode puts people first and hides the chat box (407ms)
-  ✓  18 [mobile-chromium] › tests/e2e/core-flow.spec.ts:376:5 › journey grows a plant for each check-in and names what helped (556ms)
-  ✓  19 [mobile-chromium] › tests/e2e/core-flow.spec.ts:394:5 › the main navigation has three calm destinations (477ms)
-  ✓  20 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /reflect now leads to /talk (559ms)
-  ✓  21 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /history now leads to /journey (593ms)
-  ✓  13 [mobile-chromium] › tests/e2e/core-flow.spec.ts:195:5 › a chat goes from a mood tap to one saved small step (2.6s)
-  ✓  23 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /privacy now leads to /me (415ms)
-  ✓  22 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /patterns now leads to /journey (595ms)
-  ✓  12 [mobile-chromium] › tests/e2e/core-flow.spec.ts:173:5 › a new person meets Luna and chooses how Luna replies (2.8s)
-(node:44912) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+  ✓   6 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /me has no serious automated accessibility violations (1.9s)
+  ✓  11 [mobile-chromium] › tests/e2e/core-flow.spec.ts:127:5 › chat privacy and options support keyboard focus and dismissal (1.5s)
+  ✓  15 [mobile-chromium] › tests/e2e/core-flow.spec.ts:290:5 › a reply to a chat that closed elsewhere is not shown as saved (856ms)
+  ✓  14 [mobile-chromium] › tests/e2e/core-flow.spec.ts:269:5 › after a reload the chat keeps the feelings the person confirmed, not Luna's guess (1.2s)
+  ✓  16 [mobile-chromium] › tests/e2e/core-flow.spec.ts:318:5 › support mode puts people first and hides the chat box (507ms)
+  ✓  18 [mobile-chromium] › tests/e2e/core-flow.spec.ts:376:5 › journey grows a plant for each check-in and names what helped (321ms)
+  ✓  19 [mobile-chromium] › tests/e2e/core-flow.spec.ts:394:5 › the main navigation has three calm destinations (471ms)
+  ✓  20 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /reflect now leads to /talk (580ms)
+  ✓  21 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /history now leads to /journey (513ms)
+  ✓  22 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /patterns now leads to /journey (557ms)
+  ✓  23 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /privacy now leads to /me (397ms)
+  ✓  13 [mobile-chromium] › tests/e2e/core-flow.spec.ts:195:5 › a chat goes from a mood tap to one saved small step (2.8s)
+(node:47620) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:44911) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:47622) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:44913) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:47621) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-(node:44914) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+  ✓  17 [mobile-chromium] › tests/e2e/core-flow.spec.ts:350:5 › a check-in records how much the step helped (2.8s)
+  ✓  12 [mobile-chromium] › tests/e2e/core-flow.spec.ts:173:5 › a new person meets Luna and chooses how Luna replies (3.9s)
+(node:47639) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-  ✓  17 [mobile-chromium] › tests/e2e/core-flow.spec.ts:350:5 › a check-in records how much the step helped (2.9s)
-(node:44936) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(node:47638) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 (Use `node --trace-warnings ...` to show where the warning was created)
-  ✓  24 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /talk has no serious automated accessibility violations (1.3s)
-  ✓  25 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations (1.4s)
-  ✓  26 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journal has no serious automated accessibility violations (1.3s)
-  ✓  27 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /discover has no serious automated accessibility violations (1.6s)
-  ✓  28 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journey has no serious automated accessibility violations (1.3s)
-  ✓  30 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /welcome has no serious automated accessibility violations (1.1s)
-  ✓  29 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /me has no serious automated accessibility violations (1.2s)
-  ✓  31 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /login has no serious automated accessibility violations (1.2s)
-  ✓  33 [desktop-chromium] › tests/e2e/core-flow.spec.ts:99:5 › the chat composer keeps pasted messages within the API's limit (455ms)
-  ✓  32 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /check-in has no serious automated accessibility violations (1.1s)
-  ✓  38 [desktop-chromium] › tests/e2e/core-flow.spec.ts:290:5 › a reply to a chat that closed elsewhere is not shown as saved (723ms)
-  ✓  34 [desktop-chromium] › tests/e2e/core-flow.spec.ts:127:5 › chat privacy and options support keyboard focus and dismissal (1.1s)
-  ✓  37 [desktop-chromium] › tests/e2e/core-flow.spec.ts:269:5 › after a reload the chat keeps the feelings the person confirmed, not Luna's guess (1.1s)
-  ✓  39 [desktop-chromium] › tests/e2e/core-flow.spec.ts:318:5 › support mode puts people first and hides the chat box (507ms)
-  ✓  41 [desktop-chromium] › tests/e2e/core-flow.spec.ts:376:5 › journey grows a plant for each check-in and names what helped (508ms)
-  ✓  35 [desktop-chromium] › tests/e2e/core-flow.spec.ts:173:5 › a new person meets Luna and chooses how Luna replies (1.7s)
-  ✓  42 [desktop-chromium] › tests/e2e/core-flow.spec.ts:394:5 › the main navigation has three calm destinations (425ms)
-  ✓  43 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /reflect now leads to /talk (483ms)
-  ✓  44 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /history now leads to /journey (608ms)
-  ✓  45 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /patterns now leads to /journey (572ms)
-  ✓  36 [desktop-chromium] › tests/e2e/core-flow.spec.ts:195:5 › a chat goes from a mood tap to one saved small step (2.6s)
-  ✓  46 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /privacy now leads to /me (521ms)
+  ✓  25 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /talk has no serious automated accessibility violations (1.5s)
+  ✓  26 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journal has no serious automated accessibility violations (1.5s)
+  ✓  24 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations (1.8s)
+  ✓  28 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /discover has no serious automated accessibility violations (1.5s)
+  ✓  27 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journey has no serious automated accessibility violations (1.5s)
+  ✓  30 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /welcome has no serious automated accessibility violations (1.2s)
+  ✓  31 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /login has no serious automated accessibility violations (1.1s)
+  ✓  29 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /me has no serious automated accessibility violations (1.5s)
+  ✓  33 [desktop-chromium] › tests/e2e/core-flow.spec.ts:99:5 › the chat composer keeps pasted messages within the API's limit (814ms)
+  ✓  34 [desktop-chromium] › tests/e2e/core-flow.spec.ts:127:5 › chat privacy and options support keyboard focus and dismissal (952ms)
+  ✓  32 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /check-in has no serious automated accessibility violations (1.3s)
+  ✓  37 [desktop-chromium] › tests/e2e/core-flow.spec.ts:269:5 › after a reload the chat keeps the feelings the person confirmed, not Luna's guess (837ms)
+  ✓  38 [desktop-chromium] › tests/e2e/core-flow.spec.ts:290:5 › a reply to a chat that closed elsewhere is not shown as saved (507ms)
+  ✓  39 [desktop-chromium] › tests/e2e/core-flow.spec.ts:318:5 › support mode puts people first and hides the chat box (514ms)
+  ✓  41 [desktop-chromium] › tests/e2e/core-flow.spec.ts:376:5 › journey grows a plant for each check-in and names what helped (593ms)
+  ✓  42 [desktop-chromium] › tests/e2e/core-flow.spec.ts:394:5 › the main navigation has three calm destinations (479ms)
+  ✓  35 [desktop-chromium] › tests/e2e/core-flow.spec.ts:173:5 › a new person meets Luna and chooses how Luna replies (2.0s)
+  ✓  43 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /reflect now leads to /talk (424ms)
+  ✓  44 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /history now leads to /journey (407ms)
+  ✓  45 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /patterns now leads to /journey (413ms)
+  ✓  36 [desktop-chromium] › tests/e2e/core-flow.spec.ts:195:5 › a chat goes from a mood tap to one saved small step (2.5s)
+  ✓  46 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /privacy now leads to /me (538ms)
   ✓  40 [desktop-chromium] › tests/e2e/core-flow.spec.ts:350:5 › a check-in records how much the step helped (1.7s)
 
-  46 passed (14.4s)
+  46 passed (16.0s)

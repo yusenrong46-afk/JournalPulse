@@ -1,0 +1,69 @@
+{
+  "deployment": "dpl_2aeVamZ4VSEuyErPGiGnkfoYy5tF",
+  "source_commit": "00fc6713e66adff3f0561ee7b144ea4814b8a4c4",
+  "origin": "https://journalpulse.vercel.app",
+  "checks": {
+    "JP-01": {
+      "journal_navigation_and_refresh": "exact synthetic text restored",
+      "chat_navigation": "unsent synthetic text restored before send"
+    },
+    "JP-03": {
+      "user_message_count_before": 2,
+      "user_message_count_after": 2,
+      "finite_collection_notice": true,
+      "reviewed_collection_visible": true
+    },
+    "JP-04": {
+      "home_usable_with_incomplete_setup": true,
+      "private_defaults_notice": true,
+      "onboarding_choices_changed": false
+    },
+    "JP-05": {
+      "save_then_immediate_navigation_then_return": "confirmation and own entry link visible without reload",
+      "saved_entry_id": "f9f3bf17-1cf3-4a86-98f1-d6c574e40026",
+      "saved_text": "QA TEST \u2014 repaired production draft. A fictional purple kite.\nExact wording \ud83d\ude42"
+    },
+    "JP-06": {
+      "audit_chat_id": "9826e3a1-3729-4c62-93df-fc6925c4215a",
+      "paused_before_refresh": "6:56",
+      "paused_after_refresh": "6:56",
+      "running_after_refresh": true,
+      "running_time": "6:59",
+      "reset_after_refresh": "7:00",
+      "video_and_checkin_links_restored": true,
+      "exercise_performed": false
+    },
+    "retention_disclosure": {
+      "initial_choice_explicitly_mentions_summary_feelings_and_choices": true
+    },
+    "Explore_recovery": {
+      "topic": "watercolour colour selection exercises",
+      "manual_exclusion": "https://example.com/skipped-source",
+      "consent_restored": false
+    },
+    "mobile": {
+      "viewport_width": 390,
+      "viewport_height": 844,
+      "document_width": 390,
+      "horizontal_overflow": false,
+      "viewport_reset": true
+    },
+    "checkin": {
+      "synthetic_decision": "e9ddc6bf-a974-4088-8acb-1e9c7e4e6455",
+      "participation": "not_tried",
+      "confirmation_visible": true,
+      "observed_save_ms_with_automation": 1176
+    }
+  },
+  "synthetic_artifacts_left": {
+    "journal_entry": "f9f3bf17-1cf3-4a86-98f1-d6c574e40026",
+    "guided_chat": "03404525-1c74-4b88-86d3-d6583a75bb36",
+    "audit_checkin_completed_as_not_tried": "e9ddc6bf-a974-4088-8acb-1e9c7e4e6455"
+  },
+  "limits": [
+    "No real personal entry was opened or edited.",
+    "No full accessibility or clinical validation claim.",
+    "Provider fixtures in local integration are distinct from real production search checks.",
+    "Production UI timing includes automation overhead; no precise production client/auth/network split claimed."
+  ]
+}

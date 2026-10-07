@@ -20,10 +20,10 @@ Related concerns: initial retention copy aligned with Settings; reviewed app act
 
 ## Validation
 
-- Backend: 1,264 tests pass; 91.74% coverage. Ruff and mypy pass.
+- Backend: 1,270 tests pass; 91.88% coverage. Ruff and mypy pass.
 - Frontend: 216 unit tests pass. Lint/typecheck pass.
 - Desktop/mobile browser suite: 46 pass, including automated accessibility checks; final cache-transition run in progress.
-- Integration: 21 pass; four opt-in UI tour scenarios are explicitly skipped by the existing suite. PostgreSQL, API, exported UI and PostgREST are real; auth and model/search providers are deterministic stand-ins.
+- Integration: 22 pass; four opt-in UI tour scenarios are explicitly skipped by the existing suite. PostgreSQL, API, exported UI and PostgREST are real; auth and model/search providers are deterministic stand-ins.
 - All existing scratch PostgreSQL schema, ownership, integrity, activity, Sentinel and erasure gates pass. No hosted migration is needed or applied.
 
 ## Check-in timing
@@ -44,3 +44,11 @@ Session-storage recovery is tab-local and depends on browser session behavior; i
 The first staged candidate `dpl_98VuPAtmkiGGuoNzgCHgavJaUrPN` was briefly promoted, then rolled back immediately when the existing production browser reported `ChunkLoadError`. The requested chunk returned HTTP 200 on the prior deployment and 404 on the candidate; candidate HTML referenced a different current chunk. The service worker cached runtime chunks indefinitely. Export archives also normalize asset mtimes, making metadata-only ETags unsafe across equal-sized builds.
 
 The repair caches only the standalone offline page, advances the worker cache to v6 (clearing earlier asset caches), requests worker updates without HTTP cache reuse, and serves exported assets with no-store and without metadata-only 304 responses. Chunk error recovery performs a fresh document reload on explicit Try again. A real exported-UI integration test injects a stale chunk into the old worker cache and confirms it cannot replace the current runtime. An API regression test proves equal-size/equal-mtime assets return the new bytes instead of a stale 304. No user writing was entered during the failed production transition, and no paid provider call occurred.
+
+## Manual selection correction
+
+Production inspection found that the reviewed-activity picker reached the existing API with a catalog ID but without a current Luna offer. The API correctly rejected this as a changed recommendation. The repair adds optional, strict boolean `user_selected` to activity creation (default false). Explicit choices resolve only trusted catalog/built-in IDs and still obey ownership, source validity, conversation revision, support/listen state and hard activity constraints. They carry user provenance, no model credit and no OPE eligibility. No database change is needed. SQLite boundary tests and real PostgreSQL/browser integration cover creation, exact retry and refresh recovery. The corrected selection is awaiting final hosted verification.
+
+Production verification already confirmed exact journal/chat draft recovery, interrupted Save visibility, optional Home, retention copy, same-goal message count remaining at two, manual collection visibility, Explore topic/exclusion recovery with consent off, legacy activity links and timer states through refresh, and a real 390x844 viewport with no horizontal overflow. Check-in saved a synthetic not-tried outcome in 1176ms including automation overhead. Detailed client timing APIs were unavailable in the native read-only browser scope; local integration provides phase timings.
+
+Real production Explore initial/refinement and inline initial search succeeded, with generation/cost receipts. One inline topic containing `short` was rejected by the existing vocabulary gate before provider work; the valid public phrase `quiet meditation` succeeded. Current OpenRouter measured spend is US$0.0007225. Three Brave requests have a gross ceiling of US$0.015 before credits. These billing layers remain separate.
