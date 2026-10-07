@@ -106,6 +106,11 @@ def validated_activity_update(
     directive = getattr(completion, "activity", None)
     if directive is None:
         return {}
+    # The explicit user controls set context.constraints before generation.
+    # A model's omitted/default flags cannot erase those saved limits.
+    directive = directive.model_copy(update={
+        "constraints": context.effective_constraints(directive.constraints),
+    })
     if not context.action_allowed and (directive.selected_resource_id or directive.search_topic):
         raise HTTPException(
             502, "Luna proposed an activity while this chat was not accepting one. Please retry."

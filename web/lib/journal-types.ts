@@ -18,4 +18,6 @@ export type JournalReflectionResult = {
     completion_tokens?: number | null;
   };
   generated_text_retained: false;
+  /** Tentative suggestions from this reflection only; absent on older APIs. */
+  feelings?: string[];
 };

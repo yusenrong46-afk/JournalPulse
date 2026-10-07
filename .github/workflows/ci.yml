@@ -58,6 +58,14 @@ jobs:
         env:
           JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
         run: uv run python scripts/verify_activity_schema.py
+      - name: Verify Sentinel privacy, support-response, and lease regressions
+        env:
+          JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+        run: uv run python scripts/verify_sentinel_repairs.py
+      - name: Verify erasure identities and in-flight write boundaries
+        env:
+          JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+        run: uv run python scripts/verify_erasure_schema.py
 
   frontend:
     runs-on: ubuntu-latest

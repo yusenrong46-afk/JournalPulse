@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { Luna } from "@/components/luna";
+import { accountDataRequestRevision } from "@/lib/account-data";
+import { resolveLunaMood } from "@/lib/luna-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
@@ -15,11 +18,36 @@ import {
 } from "@/lib/journal";
 import type { JournalEntry, JournalReflectionResult } from "@/lib/journal-types";
 import { usePreferences } from "@/lib/preferences";
+import { useTimeOfDay } from "@/lib/time-of-day";
 
 function dateLabel(value: string): string {
   return new Date(value).toLocaleString(undefined, {
     month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
   });
+}
+
+function dayLabel(value?: string): string {
+  return (value ? new Date(value) : new Date()).toLocaleDateString(undefined, {
+    weekday: "long", month: "long", day: "numeric",
+  });
+}
+
+const PROMPTS = [
+  "What would you like to remember?",
+  "What stayed with you today?",
+  "One small good thing",
+  "What would you like to set down?",
+];
+
+function wordCount(text: string): number {
+  return text.trim() ? text.trim().split(/\s+/).length : 0;
+}
+
+function momentLabel(): string {
+  const now = new Date();
+  const hour = now.getHours();
+  const part = hour < 12 ? "Morning" : hour < 17 ? "Afternoon" : hour < 22 ? "Evening" : "Night";
+  return `${part} · ${now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
 }
 
 function errorMessage(error: unknown, fallback: string): string {
@@ -115,22 +143,28 @@ function SavedEntry({ entryId, invalid, onDeleted }: {
   }
 
   return (
-    <section className="card" aria-labelledby="saved-entry-heading" aria-busy={opening}>
-      <h2 id="saved-entry-heading">{entry ? "Your saved entry" : "Return to an entry"}</h2>
-      {invalid && <p className="note error" role="alert">This entry link is not valid. Choose a saved entry below.</p>}
+    <section className="journal-sheet journal-reading" aria-labelledby="saved-entry-heading" aria-busy={opening}>
+      <h2 id="saved-entry-heading" className={entry ? "kicker saved-entry-label" : undefined}>{entry ? "Your saved entry" : "Return to an entry"}</h2>
+      {invalid && <p className="note error" role="alert">This entry link is not valid. Choose a saved entry.</p>}
       {error && <p className="note error" role="alert">{error}</p>}
       {opening ? <p role="status">Opening your entry…</p> : entry ? (
         <>
-          <p className="small"><strong>Saved writing</strong> · Kept until you delete this entry.</p>
-          <p className="small muted"><time dateTime={entry.created_at}>{dateLabel(entry.created_at)}</time></p>
+          <header className="journal-sheet-head">
+            <time className="journal-day" dateTime={entry.created_at}>{dayLabel(entry.created_at)}</time>
+            <span className="saved-stamp" aria-hidden="true">Saved</span>
+            <p className="small muted"><strong>Saved writing</strong> · {new Date(entry.created_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · Kept until you delete this entry.</p>
+          </header>
           <p className="journal-entry-text">{entry.text}</p>
           <div className="journal-entry-actions">
             <button className="btn btn-ghost" disabled={deleting} onClick={() => void remove()}>
               {deleting ? "Deleting…" : "Delete entry"}
             </button>
           </div>
-          <div className="journal-reflect">
-            <h3>Reflect with Luna</h3>
+          <div className="journal-reflect journal-aside">
+            <div className="journal-companion"><Luna mood={resolveLunaMood({
+              waiting: reflecting, support: reflection?.safety.mode === "support",
+              hasReply: Boolean(reflection), replyFeelings: reflection?.feelings,
+            })} size={56} decorative /><h3>Reflect with Luna</h3></div>
             <p className="small muted">Optional: get one brief reply about this entry.</p>
             {/* Explain retention before consent, while the person can still choose. */}
             <p className="small muted">This reply disappears when you leave this entry or reload.</p>
@@ -149,7 +183,7 @@ function SavedEntry({ entryId, invalid, onDeleted }: {
               </div>
             )}
           </div>
-          <div className="journal-reflect">
+          <div className="journal-reflect journal-aside">
             <h3>Discuss your entry</h3>
             <p className="small muted">Optional: keep exploring in a conversation with Luna.</p>
             <p className="small muted">
@@ -159,7 +193,7 @@ function SavedEntry({ entryId, invalid, onDeleted }: {
             <Link className="btn btn-soft" href={`/talk?entry=${entry.id}`}>Discuss with Luna</Link>
           </div>
         </>
-      ) : <p className="muted">Choose a saved entry below to reread it or request a reflection.</p>}
+      ) : <p className="muted">Choose a saved entry to reread it or request a reflection.</p>}
     </section>
   );
 }
@@ -176,8 +210,21 @@ function JournalWorkspace() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const pendingSave = useRef<{ text: string; id: string } | null>(null);
+  const [prompt, setPrompt] = useState(PROMPTS[0]);
+  // Local date and time exist only in the browser; rendering them on the server would
+  // disagree with the reader's time zone and break hydration.
+  const clientTime = useTimeOfDay();
+  const pendingSave = useRef<{ text: string; id: string; dataRevision: string } | null>(null);
   const listGeneration = useRef(0);
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      listGeneration.current += 1;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -223,14 +270,20 @@ function JournalWorkspace() {
     if (saving || !draft.trim()) return;
     // Keep the UUID and exact writing across network retries. Editing a failed
     // draft creates a new intentional entry rather than rewriting its saved copy.
-    if (!pendingSave.current || pendingSave.current.text !== draft) {
-      pendingSave.current = { text: draft, id: crypto.randomUUID() };
+    const dataRevision = accountDataRequestRevision();
+    if (!pendingSave.current || pendingSave.current.text !== draft || pendingSave.current.dataRevision !== dataRevision) {
+      // A later explicit save after erasure is new work; its old receipt may
+      // refer to a deleted entry that the server must never recreate.
+      pendingSave.current = { text: draft, id: crypto.randomUUID(), dataRevision };
     }
     setSaving(true);
     setError(null);
     setNotice(null);
     try {
       const saved = await saveJournalEntry(pendingSave.current.text, pendingSave.current.id);
+      // The save may finish after navigation. Keep its server result without
+      // pulling the person out of the page they deliberately opened next.
+      if (!mounted.current) return;
       setEntries((current) => [saved, ...current.filter((item) => item.id !== saved.id)]);
       setDraft("");
       pendingSave.current = null;
@@ -240,9 +293,12 @@ function JournalWorkspace() {
       void loadEntries();
       router.replace(`/journal?entry=${saved.id}`, { scroll: false });
     } catch (reason) {
-      setError(errorMessage(reason, "Your entry couldn’t save. Your writing is still in the editor."));
+      // A remote erase may have no browser notice. Its rejected creation receipt
+      // cannot be reused; keep the writing and wait for a new explicit Save.
+      if (reason instanceof ApiError && reason.status === 409) pendingSave.current = null;
+      if (mounted.current) setError(errorMessage(reason, "Your entry couldn’t save. Your writing is still in the editor."));
     } finally {
-      setSaving(false);
+      if (mounted.current) setSaving(false);
     }
   }
 
@@ -256,34 +312,20 @@ function JournalWorkspace() {
   return (
     <div className="page page-wide journal-page">
       <header className="page-head">
-        <h1>Your journal</h1>
-        <p>Write and save first. Then choose a reflection or a conversation with Luna, if you want.</p>
+        <div className="journal-title-row">
+          <h1>Your journal</h1>
+          {entries.length > 0 && <a className="entry-count" href="#entries-heading">
+            {entries.length}{hasMore ? "+" : ""} {entries.length === 1 ? "entry" : "entries"}</a>}
+        </div>
+        <p>Your own words, kept as you wrote them. Reflection is always your choice.</p>
+        <a className="subtle-link journal-jump" href="#entries-heading">Browse saved entries</a>
       </header>
       {error && <p className="note error" role="alert">{error}</p>}
       {notice && <p className="note" role="status">{notice}</p>}
-      <div className="home-grid journal-grid">
-        <section className="card" aria-labelledby="write-heading">
-          <h2 id="write-heading">Write and save</h2>
-          {draft.length > 0 && <p className="small muted" role="status">Unsaved writing</p>}
-          <label htmlFor="journal-writing">What would you like to remember?</label>
-          <textarea id="journal-writing" rows={8} maxLength={5000} value={draft}
-            onChange={(event) => { setDraft(event.target.value); setNotice(null); }} disabled={saving}
-            placeholder="Something that happened, a thought that stayed, or how today felt…"
-            aria-describedby="journal-save-note journal-length" />
-          <p id="journal-length" className="small muted">{draft.length.toLocaleString()} / 5,000 characters</p>
-          <p id="journal-save-note" className="small muted">
-            Saving keeps your exact words until you delete the entry, even if temporary chat text is turned off.
-            AI is optional. Saved entries keep their original wording.
-          </p>
-          <button className="btn btn-primary" disabled={saving || !draft.trim()} onClick={() => void save()}>
-            {saving ? "Saving…" : "Save entry"}
-          </button>
-        </section>
-        <SavedEntry key={selectedParameter ?? "empty"} entryId={selectedId}
-          invalid={Boolean(selectedParameter && !selectedId)} onDeleted={removed} />
-      </div>
-      <section className="card" aria-labelledby="entries-heading" aria-busy={listLoading}>
+      <div className="journal-layout">
+      <section className="journal-archive" aria-labelledby="entries-heading" aria-busy={listLoading}>
         <h2 id="entries-heading">Saved entries</h2>
+        <Link className="btn btn-soft" href="/journal" scroll={false}>New entry</Link>
         {entries.length === 0 && !listLoading && <p className="muted">Your saved writing will appear here.</p>}
         <ul className="journal-entry-list">
           {entries.map((saved) => (
@@ -291,8 +333,8 @@ function JournalWorkspace() {
               <Link className="journal-entry-link" href={`/journal?entry=${saved.id}`} scroll={false}
                 aria-current={saved.id === selectedId ? "true" : undefined}>
                 <time className="small muted" dateTime={saved.created_at}>{dateLabel(saved.created_at)}</time>
-                <span>{saved.text.length > 150 ? `${saved.text.slice(0, 150)}…` : saved.text}</span>
-                <span className="small">Open entry →</span>
+                <span className="journal-entry-preview">{saved.text.length > 150 ? `${saved.text.slice(0, 150)}…` : saved.text}</span>
+                <span className="small journal-entry-open">Read entry</span>
               </Link>
             </li>
           ))}
@@ -302,6 +344,47 @@ function JournalWorkspace() {
           onClick={() => void loadEntries(entries.length)}>Load older entries</button>}
         {error && !listLoading && <button className="btn btn-ghost" onClick={() => void loadEntries()}>Reload entries</button>}
       </section>
+        <div className="journal-main">
+          {selectedParameter ? (
+          <SavedEntry key={selectedParameter ?? "empty"} entryId={selectedId}
+            invalid={Boolean(selectedParameter && !selectedId)} onDeleted={removed} />
+          ) : (
+        <section className="journal-sheet journal-paper" aria-labelledby="write-heading">
+          <div className="prompt-chips" role="group" aria-label="Optional prompts">
+            {PROMPTS.slice(1).map((item) => (
+              <button key={item} type="button" className="prompt-chip" aria-pressed={prompt === item}
+                onClick={() => setPrompt(prompt === item ? PROMPTS[0] : item)}>{item}</button>
+            ))}
+          </div>
+          <header className="journal-sheet-head">
+            <span className="journal-day-wrap"><span className="kicker">{clientTime ? momentLabel() : "\u00a0"}</span>
+              <span className="journal-day">{clientTime ? dayLabel() : "Today"}</span></span>
+            <span className="journal-companion"><Luna mood={draft.trim() ? "listening" : "idle"} size={34} decorative />
+              <h2 id="write-heading">Write at your pace.</h2></span>
+          </header>
+          {/* The field keeps one stable accessible name; the chosen prompt is a visible nudge only. */}
+          <label className="journal-prompt" htmlFor="journal-writing">{prompt}</label>
+          <textarea id="journal-writing" aria-label="What would you like to remember?" rows={10} maxLength={5000} value={draft}
+            onChange={(event) => { setDraft(event.target.value); setNotice(null); }} disabled={saving}
+            placeholder="Something that happened, a thought that stayed, or how today felt…"
+            aria-describedby="journal-save-note journal-length" />
+          <div className="journal-sheet-foot">
+            <p id="journal-length" className="small muted">
+              {draft.length > 0 && <span className="unsaved" role="status">Unsaved writing · </span>}
+              {wordCount(draft)} {wordCount(draft) === 1 ? "word" : "words"} · {draft.length.toLocaleString()} / 5,000 characters
+            </p>
+            <button className="btn btn-primary" disabled={saving || !draft.trim()} onClick={() => void save()}>
+              {saving ? "Saving…" : "Save entry"}
+            </button>
+          </div>
+          <p id="journal-save-note" className="small muted journal-save-note">
+            Saving keeps your exact words until you delete the entry, even if temporary chat text is turned off.
+            AI is optional. Saved entries keep their original wording.
+          </p>
+        </section>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

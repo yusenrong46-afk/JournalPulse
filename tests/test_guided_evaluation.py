@@ -723,6 +723,88 @@ def test_candidate_replay_statuses_require_explicit_runtime_and_identity_evidenc
     assert merged["cases"][2]["status"] == "provider_refusal"
 
 
+@pytest.mark.parametrize("proof_status", [
+    "replayed", "accepted", "provider_refusal", "deterministic_pass", "unsupported_baseline",
+    "replay_failed", "failed", "rejected", "unknown",
+])
+@pytest.mark.parametrize("prior_status", ["deterministic_uncertain", "deterministic_pass"])
+def test_explicit_runtime_failure_dominates_replay_status_and_downstream_gate(
+    proof_status: str, prior_status: str,
+) -> None:
+    dataset = load_dataset()
+    case_id = "s01_current_urgent_risk"
+    records = {
+        "cases": [
+            {"id": item.id, "status": prior_status if item.id == case_id else "deterministic_pass"}
+            for item in dataset.cases if item.severity == "critical"
+        ]
+    }
+    proof = {
+        "id": case_id,
+        "status": proof_status,
+        "runtime_gate": "fail",
+        "request_comparison": {"exact_request_match": True},
+    }
+    merged = merge_pipeline_replay(records, {"cases": [proof]}, phase="candidate")
+    result = next(item for item in merged["cases"] if item["id"] == case_id)
+    assert result["status"] == ("provider_error" if proof_status == "rejected" else "deterministic_fail")
+    assert result["provenance"]["pipeline_replay"] == proof
+    assert merged["metadata"]["pipeline_case_gates"][case_id] == "fail"
+    report = build_comparison(
+        dataset, {"cases": []}, merged,
+        metadata={"software_gates": merged["metadata"]["pipeline_case_gates"]},
+    )
+    assert report["summary"]["gates"]["hard_safety_privacy_lifecycle"] == "fail"
+    assert report["summary"]["release_gate_status"] != "pass"
+
+
+@pytest.mark.parametrize("runtime_gate", [None, "uncertain", "incomplete", "unknown"])
+def test_legacy_replay_with_explicit_incomplete_runtime_evidence_remains_uncertain(runtime_gate) -> None:
+    case_id = "s01_current_urgent_risk"
+    records = {"cases": [{"id": case_id, "status": "deterministic_uncertain"}]}
+    merged = merge_pipeline_replay(records, {"cases": [{
+        "id": case_id,
+        "status": "replayed",
+        "runtime_gate": runtime_gate,
+        "request_comparison": {"exact_request_match": True},
+    }]})
+    assert merged["cases"][0]["status"] == "deterministic_uncertain"
+    assert merged["metadata"]["pipeline_case_gates"][case_id] == "uncertain"
+
+
+@pytest.mark.parametrize("proof_status", ["replayed", "accepted", "provider_refusal", "deterministic_pass"])
+def test_explicit_request_mismatch_dominates_successful_replay_status(proof_status: str) -> None:
+    case_id = "s01_current_urgent_risk"
+    records = {"cases": [{"id": case_id, "status": "deterministic_uncertain"}]}
+    merged = merge_pipeline_replay(records, {"cases": [{
+        "id": case_id,
+        "status": proof_status,
+        "runtime_gate": "pass",
+        "request_comparison": {"exact_request_match": False},
+    }]})
+    assert merged["cases"][0]["status"] == "deterministic_fail"
+    assert merged["metadata"]["pipeline_case_gates"][case_id] == "fail"
+
+
+@pytest.mark.parametrize("gates", [("fail", "pass"), ("pass", "fail"), ("pass", "pass")])
+@pytest.mark.parametrize("status", ["observed", "deterministic_uncertain", "deterministic_pass"])
+def test_duplicate_replay_cases_are_rejected_before_conflicting_evidence_can_be_overwritten(
+    gates: tuple[str, str], status: str,
+) -> None:
+    case_id = "s01_current_urgent_risk"
+    records = {"cases": [observed(case_id) if status == "observed" else {"id": case_id, "status": status}]}
+    original = deepcopy(records)
+    proofs = [{
+        "id": case_id,
+        "status": "replayed" if gate == "fail" else "accepted",
+        "runtime_gate": gate,
+        "request_comparison": {"exact_request_match": True},
+    } for gate in gates]
+    with pytest.raises(ValueError, match="Duplicate pipeline replay case"):
+        merge_pipeline_replay(records, {"cases": proofs}, phase="candidate")
+    assert records == original
+
+
 def test_rejected_provider_result_is_diagnostic_and_never_scored_as_delivered() -> None:
     case_id = "g29_safe_brief_walk"
     before = {"cases": [observed(case_id)]}

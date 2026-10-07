@@ -33,12 +33,12 @@ async function mount() { await act(async () => root.render(createElement(Discove
 describe("discovery connected to chat", () => {
   test("prefills only a general goal and requires fresh search consent", async () => {
     await mount();
-    expect(container.querySelector<HTMLTextAreaElement>("#discovery-topic")!.value)
+    expect(container.querySelector<HTMLInputElement>("#discovery-topic")!.value)
       .toBe("short grounding exercises for everyday stress");
     expect(container.querySelector<HTMLInputElement>("input[type=checkbox]")!.checked).toBe(false);
     expect(container.querySelector<HTMLButtonElement>("button[type=submit]")!.disabled).toBe(true);
     expect(container.querySelector("a[href='/talk']")).toBeTruthy();
-    expect(container.textContent).toContain("a short focus Luna derives from your feedback");
+    expect(container.textContent).toContain("Luna may add a short focus from your feedback");
     expect(search).not.toHaveBeenCalled();
     expect(container.textContent).not.toContain("private-writing");
   });
@@ -46,16 +46,16 @@ describe("discovery connected to chat", () => {
   test("unknown URL values cannot become a search topic", async () => {
     navigation.query = "goal=private-writing&topic=private-writing";
     await mount();
-    expect(container.querySelector<HTMLTextAreaElement>("#discovery-topic")!.value).toBe("");
+    expect(container.querySelector<HTMLInputElement>("#discovery-topic")!.value).toBe("");
     expect(search).not.toHaveBeenCalled();
   });
 
   test("an approved edited topic sends no chat identity or journal content", async () => {
     search.mockRejectedValue(new Error("Provider unavailable"));
     await mount();
-    const input = container.querySelector<HTMLTextAreaElement>("#discovery-topic")!;
+    const input = container.querySelector<HTMLInputElement>("#discovery-topic")!;
     await act(async () => {
-      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")!.set!.call(input, "short text grounding guides");
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "short text grounding guides");
       input.dispatchEvent(new Event("input", { bubbles: true }));
       container.querySelector<HTMLInputElement>("input[type=checkbox]")!.click();
     });

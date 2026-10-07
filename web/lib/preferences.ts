@@ -9,6 +9,7 @@ export type Preferences = {
   llmConsent: boolean;
   retainText: boolean;
   encryptedDrafts: boolean;
+  animateLuna?: boolean;
   followUpMinutes: number;
   locale: string;
 };
@@ -18,6 +19,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   llmConsent: false,
   retainText: false,
   encryptedDrafts: false,
+  animateLuna: true,
   followUpMinutes: 10,
   locale: "CA",
 };
@@ -60,6 +62,7 @@ function validatedPreferences(value: unknown): Preferences {
     llmConsent: stored.llmConsent === true,
     retainText: stored.retainText === true,
     encryptedDrafts: stored.encryptedDrafts === true,
+    animateLuna: stored.animateLuna !== false,
     followUpMinutes: typeof stored.followUpMinutes === "number" && [5, 10, 20, 60].includes(stored.followUpMinutes)
       ? stored.followUpMinutes : DEFAULT_PREFERENCES.followUpMinutes,
     locale: typeof stored.locale === "string" && /^[a-z]{2}(?:-[a-z]{2})?$/i.test(stored.locale)

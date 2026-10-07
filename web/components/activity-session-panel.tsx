@@ -3,6 +3,8 @@
 import { forwardRef, useState, type FormEvent } from "react";
 
 import type { ActivityCommand, ActivityReport, ActivitySession } from "@/lib/activity-session";
+import { Luna } from "./luna";
+import { OfferScene } from "./offer-scene";
 
 type Props = {
   session: ActivitySession; secondsLeft: number; busy: boolean; expiryPending: boolean;
@@ -16,37 +18,48 @@ type Props = {
 type OfferProps = {
   title: string; reason?: string | null; minutes?: number | null; instructions?: string[];
   searchSnippet?: boolean; url?: string | null; busy: boolean; canStart: boolean;
+  /** Plain-language limits already saved for this chat, such as "No audio" or "Seated". */
+  tags?: string[];
   onStart(): void; onSomethingElse?(): void; dismiss: { label: string; onClick(): void };
 };
 
 /** One optional proposal, with the same layout whether Luna suggested it or the person saved it. */
-export function OfferCard({ title, reason, minutes, instructions = [], searchSnippet, url, busy, canStart, onStart, onSomethingElse, dismiss }: OfferProps) {
+export function OfferCard({ title, reason, minutes, instructions = [], searchSnippet, url, busy, canStart, onStart, onSomethingElse, dismiss, tags = [] }: OfferProps) {
   return (
     <section className="card offer-card" aria-label="Activity with Luna">
-      <span className="offer-kicker">Optional idea</span>
-      <h2>{title}</h2>
-      {(minutes || searchSnippet) && <div className="offer-meta">
-        {minutes ? <span className="tag sage">About {minutes} minute{minutes === 1 ? "" : "s"}</span> : null}
-        {searchSnippet ? <span className="tag">From a search snippet · page not reviewed</span> : null}
-      </div>}
-      {reason && <p className="offer-reason">{reason}</p>}
-      {instructions.length > 0 && <details className="offer-steps">
-        <summary>What you’d do</summary>
-        <ol>{instructions.map((instruction) => <li key={instruction}>{instruction}</li>)}</ol>
-      </details>}
-      {url && <a className="small" href={url} target="_blank" rel="noopener noreferrer">Open resource</a>}
-      <button className="btn btn-primary offer-start" type="button" disabled={busy || !canStart} onClick={onStart}>Start activity</button>
-      <div className="offer-alternatives">
-        {onSomethingElse && <button className="btn btn-soft" type="button" disabled={busy} onClick={onSomethingElse}>Something else</button>}
-        <button className="btn btn-ghost" type="button" disabled={busy} onClick={dismiss.onClick}>{dismiss.label}</button>
+      <OfferScene />
+      <div className="offer-content">
+        <span className="offer-kicker">
+          <span className="offer-luna"><Luna mood="offering" size={22} decorative /></span>
+          An optional idea
+        </span>
+        <h2>{title}</h2>
+        {(minutes || tags.length > 0) && <ul className="offer-tags" aria-label="About this idea">
+          {minutes ? <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></svg>
+            About {minutes} minute{minutes === 1 ? "" : "s"}</li> : null}
+          {tags.map((tag) => <li key={tag}>{tag}</li>)}
+        </ul>}
+        {searchSnippet && <p className="offer-provenance">From a search snippet · the full page was not reviewed</p>}
+        {reason && <p className="offer-reason">{reason}</p>}
+        {instructions.length > 0 && <details className="offer-steps">
+          <summary>What you’d do</summary>
+          <ol>{instructions.map((instruction) => <li key={instruction}>{instruction}</li>)}</ol>
+        </details>}
+        {url && <a className="small activity-resource-link" href={url} target="_blank" rel="noopener noreferrer">Open resource</a>}
       </div>
-      <p className="small muted">You can also tell Luna what would fit better.</p>
+      <div className="offer-controls">
+        <button className="btn btn-primary offer-start" type="button" disabled={busy || !canStart} onClick={onStart}>Start activity</button>
+        {onSomethingElse && <button className="btn btn-quiet" type="button" disabled={busy} onClick={onSomethingElse}>Something else</button>}
+        <button className="btn btn-quiet" type="button" disabled={busy} onClick={dismiss.onClick}>{dismiss.label}</button>
+      </div>
+      <p className="offer-footnote">Nothing starts until you choose. You can also tell Luna what would fit better.</p>
     </section>
   );
 }
 
 const PARTICIPATION = [
-  ["completed", "Completed"], ["partial", "Partly tried"], ["not_tried", "Not tried"], ["stopped", "Stopped"],
+  ["completed", "Completed", "the whole way"], ["partial", "Partly tried", "some of it"],
+  ["not_tried", "Not tried", "not this time"], ["stopped", "Stopped", "it wasn’t right"],
 ] as const;
 
 export const CheckIn = forwardRef<HTMLFormElement, Pick<Props, "session" | "busy" | "onReport">>(
@@ -72,12 +85,14 @@ export const CheckIn = forwardRef<HTMLFormElement, Pick<Props, "session" | "busy
       <form ref={ref} className="card check-in-card" aria-label="Activity check-in" onSubmit={submit} tabIndex={-1}>
         <fieldset disabled={busy} className="stack" style={{ border: 0, padding: 0, margin: 0 }}>
           <legend><h2 className="check-in-title">Did you try it?</h2></legend>
-          <p className="small muted">The timer can’t tell whether you took part or how you feel. Your answer is what counts.</p>
+          <p className="check-in-lede">The timer can’t tell whether you took part or how you feel. Only you can, and any answer is fine.</p>
           <div className="participation">
-            {PARTICIPATION.map(([value, label]) => (
+            {PARTICIPATION.map(([value, label, hint]) => (
               <label className={`participation-choice${participation === value ? " is-selected" : ""}`} key={value}>
-                <input type="radio" name={`participation-${session.id}`} value={value}
-                  checked={participation === value} onChange={() => setParticipation(value)} /> {label}
+                {/* The native radio stays for keyboard and screen readers; CSS draws it as a moon. */}
+                <input className={`moon-radio moon-${value}`} type="radio" name={`participation-${session.id}`} value={value}
+                  aria-label={label} checked={participation === value} onChange={() => setParticipation(value)} />
+                <span className="participation-text"><span>{label}</span><small aria-hidden="true">{hint}</small></span>
               </label>
             ))}
           </div>
@@ -141,12 +156,16 @@ export const ActivitySessionPanel = forwardRef<HTMLFormElement, Props>(function 
         searchSnippet={session.resource.provenance === "search_snippet"} url={session.resource.url}
         busy={busy} canStart={canStart} onStart={() => onCommand("start")} onSomethingElse={onSomethingElse}
         dismiss={{ label: "Not now", onClick: () => onCommand("decline") }} />}
+      {(waiting || session.report) && session.resource.url && !suppressQuestions && (
+        <a className="small activity-resource-link" href={session.resource.url}
+          target="_blank" rel="noopener noreferrer">Open resource: {session.resource.title}</a>
+      )}
       {waiting && <CheckIn ref={checkInRef} key={session.id} session={session} busy={busy || expiryPending} onReport={onReport} />}
-      {/* Once Luna's follow-up is in the chat it acknowledges the report there, so the receipt
-          only stays while that reply is pending, failed, or could not be placed as a message. */}
-      {session.report && !(session.follow_up_status === "ready" && session.follow_up_message_id && !session.final_follow_up)
-        && <div className="activity-receipt" aria-label="Activity check-in saved">
+      {/* Keep the person's own report visible after generated follow-up wording.
+          A reply must not become the only remaining record of what was reported. */}
+      {session.report && <div className="activity-receipt" aria-label="Activity check-in saved">
         <p role="status"><strong>Check-in saved.</strong> {REPORTED[session.report.participation]}</p>
+        {session.report.note && <p className="activity-receipt-note">“{session.report.note}”</p>}
         {session.follow_up_status === "pending" || session.follow_up_status === "generating"
           ? <p className="small muted" role="status">Luna’s follow-up is on its way.</p> : null}
         {(session.follow_up_status === "failed" || session.follow_up_status === "pending") && session.follow_up_attempts < 3 && <button className="btn btn-soft" type="button"

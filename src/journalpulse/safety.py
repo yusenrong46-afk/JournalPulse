@@ -29,8 +29,8 @@ HIGH_RISK_PATTERNS = (
 # to die"). It still routes to support if the clause also has a present-time marker, so
 # "I used to want to die and now I want to die again" is never treated as past.
 HISTORICAL_PREFIX = re.compile(
-    r"\b(?:used to|years ago|months ago|long ago|in the past|back then|"
-    r"when i was (?:a |an )?(?:kid|child|teen|teenager|younger|student|\d+))\b"
+    r"\b(?:used\s+to|years\s+ago|months\s+ago|long\s+ago|in\s+the\s+past|back\s+then|"
+    r"when\s+i\s+was\s+(?:(?:a|an)\s+)?(?:kid|child|teen|teenager|younger|student|\d+))\b"
 )
 PRESENT_MARKER = re.compile(
     r"\b(?:now|again|still|today|tonight|currently|lately|these days|this (?:week|month))\b"
@@ -60,12 +60,98 @@ SUPPORT_FALLBACK_MESSAGE = (
     "person nearby. Befrienders Worldwide can help locate crisis support in your country."
 )
 
+# Clause ownership depends on the subject, not an immediate verb whitelist:
+# "and I really want ..." and "and sometimes I think I might ..." are independent
+# statements. Shared past predicates retain the earlier historical scope.
 _CLAUSE_BREAK = re.compile(r"[.!?]+|;|\s+\bbut\b\s+|,\s*")
+_COORDINATION = re.compile(
+    # Colons, dashes and newlines may introduce a new subject or continue a past
+    # predicate. Decide below instead of discarding inherited history globally.
+    # Keep hyphenated words and the historical marker "back then" intact.
+    r"[:/\u2013\u2014]+|--+|(?<!\w)-|-(?!\w)|\n+|"
+    r"\s+(?:and|or|yet|so|because|although|while|however|(?<!\bback )then)\s+"
+)
+_INDEPENDENT_SUBJECT = re.compile(
+    r"\b(?:i\b|everyone\b|everybody\b|people\b|they\b|the\s+world\b|"
+    r"my\s+(?:family|friends|kids|children|partner|parents)\b)"
+)
+_PAST_PREDICATE = re.compile(
+    # "Would" is also a present conditional, so it cannot establish past scope.
+    r"^i\s+(?:(?:[a-z]+ly|also|even)\s+)*(?:was|were|felt|wanted|wished|thought|used to)\b"
+)
+_PAST_HABIT = re.compile(r"^i\s+(?:(?:[a-z]+ly|also|even)\s+)*would\b")
+_PRESENT_CONTINUATION = re.compile(r"\bi (?:still do|still am|still feel that way)\b")
+_REPORTED_PREDICATE = re.compile(
+    # A belief's embedded subject shares the belief's tense: "I was convinced
+    # my family ..." is past; "I am convinced my family ..." remains current.
+    r"\b(?:think|thought|thinking|feel|felt|feeling|believe|believed|remember|remembered|said|convinced|sure)"
+    r"(?:\s+(?:that|like|about how))?$"
+)
+
+
+def _subject_parts(part: str) -> list[str]:
+    """Separate a later current subject without treating a reported thought as new."""
+    # An explicit historical statement owns its embedded subjects until a real
+    # clause delimiter. This avoids treating objects/quoted thoughts as current
+    # statements in "I used to tell myself I want to die".
+    if HISTORICAL_PREFIX.search(part):
+        return [part]
+    parts = []
+    start = 0
+    for subject in list(_INDEPENDENT_SUBJECT.finditer(part))[1:]:
+        prefix = part[:subject.start()].rstrip()
+        if (
+            _REPORTED_PREDICATE.search(prefix)
+            or _PAST_PREDICATE.match(part[subject.start():])
+            or _PRESENT_CONTINUATION.match(part[subject.start():])
+        ):
+            continue
+        parts.append(part[start:subject.start()].strip())
+        start = subject.start()
+    parts.append(part[start:])
+    return parts
 
 
 def _clauses(normalized: str) -> list[str]:
-    parts = [part.strip() for part in _CLAUSE_BREAK.split(normalized) if part.strip()]
-    return parts or [normalized]
+    clauses = []
+    for sentence in _CLAUSE_BREAK.split(normalized):
+        # Line wrapping within "my family", "the world" or a historical marker
+        # does not introduce a clause boundary. Retain other newlines for scope.
+        for phrase in (HISTORICAL_PREFIX, _INDEPENDENT_SUBJECT):
+            sentence = phrase.sub(lambda match: " ".join(match.group().split()), sentence)
+        combined = ""
+        parts = [
+            part
+            for raw in _COORDINATION.split(sentence)
+            for part in _subject_parts(" ".join(raw.split()))
+        ]
+        for part in parts:
+            if not part:
+                continue
+            subject = _INDEPENDENT_SUBJECT.search(part)
+            subject_clause = part[subject.start():] if subject else ""
+            shared_past = (
+                not PRESENT_MARKER.search(part)
+                and (
+                    _PAST_PREDICATE.match(subject_clause)
+                    # A standalone history heading establishes past scope for
+                    # "When I was a teenager: I would hurt myself". "Would"
+                    # after a complete statement remains a possible current wish.
+                    or (HISTORICAL_PREFIX.fullmatch(combined) and _PAST_HABIT.match(subject_clause))
+                )
+            )
+            # "I still do" explicitly carries the earlier predicate into now.
+            carries_predicate = shared_past or _PRESENT_CONTINUATION.search(part)
+            if combined and subject and not carries_predicate:
+                clauses.append(combined)
+                combined = part
+            else:
+                # A wrapped phrase such as "I do not\nwant to die" must retain
+                # its denial rather than gaining an artificial conjunction.
+                combined = f"{combined} {part}" if combined else part
+        if combined:
+            clauses.append(combined)
+    return clauses or [normalized]
 
 
 def _clause_has_unnegated_risk(clause: str) -> bool:
@@ -88,7 +174,9 @@ def _clause_has_unnegated_risk(clause: str) -> bool:
 
 
 def assess_safety(text: str, locale: str = "CA") -> SafetyResult:
-    normalized = " ".join(text.lower().replace("’", "'").split())
+    normalized = "\n".join(
+        " ".join(line.split()) for line in text.lower().replace("’", "'").splitlines()
+    )
     if not any(_clause_has_unnegated_risk(clause) for clause in _clauses(normalized)):
         return SafetyResult(mode=SafetyMode.NORMAL, locale=locale.upper(), exploration_allowed=True)
 

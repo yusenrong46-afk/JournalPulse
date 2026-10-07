@@ -64,6 +64,7 @@ describe("check-in identity", () => {
     await click("Not yet");
     await click("Skip this one");
     expect(container.textContent).toContain("Thank you!");
+    expect(container.querySelector("[data-luna-pose]")?.getAttribute("data-luna-pose")).toBe("reflecting");
     await navigate("decision=second");
     expect(container.textContent).toContain("second activity");
     expect(container.textContent).not.toContain("Thank you!");

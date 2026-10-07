@@ -27,6 +27,25 @@ from journalpulse.intelligence import (
 CATALOG = Path(__file__).resolve().parents[1] / "assets/resources/catalog.json"
 
 
+@pytest.mark.parametrize(("overrides", "rule"), [
+    ({"search_topic": "meditation"}, "activity_choice_conflict"),
+    ({"move": "reflect"}, "activity_move_requires_proposal"),
+    ({"goal": None}, "activity_goal_required"),
+    ({"selected_resource_id": " "}, "activity_id_blank"),
+])
+def test_activity_contract_failures_have_precise_private_safe_diagnostics(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, overrides: dict, rule: str,
+):
+    output = payload(**overrides)
+    output["reply"] = "PRIVATE_MODEL_REPLY"
+    with caplog.at_level(logging.WARNING, logger="journalpulse.intelligence"):
+        with pytest.raises(ConversationProviderError) as caught:
+            model(tmp_path, output).complete_guided([], context())
+    assert caught.value.diagnostic_headers["X-JournalPulse-Error-Fields"] == f"activity.{rule}"
+    assert "PRIVATE_MODEL_REPLY" not in caplog.text
+    assert "guided_meditation_2m" not in caplog.text
+
+
 def settings(tmp_path: Path) -> Settings:
     return Settings(
         environment="test", database_path=tmp_path / "unused.db", resource_catalog_path=CATALOG,
@@ -67,7 +86,7 @@ def model(tmp_path: Path, output: dict) -> OpenRouterConversationClient:
 
 def test_runtime_skill_is_packaged_hashed_and_present_in_the_actual_provider_request(tmp_path: Path):
     skill = load_guided_action_skill()
-    assert skill.version == "guided-action-2026-10-05.3"
+    assert skill.version == "guided-action-2026-10-06.1"
     assert skill.sha256 == hashlib.sha256(skill.content.encode()).hexdigest()
     request = build_guided_request(
         settings(tmp_path), [{"role": "user", "content": "A quiet pause?"}], context(),

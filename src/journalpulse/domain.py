@@ -246,10 +246,22 @@ class MessageRole(StrEnum):
     ASSISTANT = "assistant"
 
 
+class ActivityConstraintInputs(BaseModel):
+    """Correctable activity limits; no free-form private text enters search context."""
+
+    model_config = ConfigDict(extra="forbid", strict=True)
+    time_minutes: int | None = Field(default=None, ge=1, le=20)
+    no_audio: bool = False
+    no_video: bool = False
+    seated: bool = False
+    avoid_breath_focus: bool = False
+
+
 class ConversationRequestInputs(BaseModel):
     """Explicit taps accompanying a turn; no text or text digest is retained here."""
 
     goal: Goal | None = None
+    activity_constraints: ActivityConstraintInputs | None = None
     mood_score: int | None = Field(default=None, ge=1, le=5)
     confirmed_feelings: list[str] | None = Field(default=None, max_length=6)
 
@@ -277,17 +289,6 @@ class ActionCard(BaseModel):
     goal: Goal | None = None
 
 
-class ActivityConstraintInputs(BaseModel):
-    """Correctable activity limits; no free-form private text enters search context."""
-
-    model_config = ConfigDict(extra="forbid", strict=True)
-    time_minutes: int | None = Field(default=None, ge=1, le=20)
-    no_audio: bool = False
-    no_video: bool = False
-    seated: bool = False
-    avoid_breath_focus: bool = False
-
-
 class ActivityFollowUpDirective(BaseModel):
     """A validated next proposal committed with the report reply, never started automatically."""
 
@@ -308,6 +309,8 @@ class InteractionPreference(StrEnum):
 
 class Conversation(BaseModel):
     id: UUID = Field(default_factory=uuid4)
+    # Minted by the start endpoint; None identifies records written by older servers.
+    incarnation_id: UUID | None = None
     user_id: UUID
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -355,6 +358,9 @@ class StartConversationRequest(BaseModel):
 
 class ConversationTurnRequest(BaseModel):
     client_message_id: UUID
+    expected_incarnation_id: UUID | None = None
+    # Only an explicit control submission may replace (including relax) saved limits.
+    activity_constraints: ActivityConstraintInputs | None = None
     text: str = Field(min_length=1, max_length=2000)
     # A goal chosen from Luna's buttons. The reply is built from the reviewed catalog
     # without a model call.

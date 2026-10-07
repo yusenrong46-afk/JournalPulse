@@ -14,6 +14,13 @@ export function getSupabase(): Promise<SupabaseClient | null> {
     clientPromise = Promise.resolve(null);
     return clientPromise;
   }
-  clientPromise = import("@supabase/supabase-js").then(({ createClient }) => createClient(url, key));
+  clientPromise = import("@supabase/supabase-js")
+    .then(({ createClient }) => createClient(url, key))
+    .catch((error) => {
+      // A failed SDK load or initialization is not a permanent sign-in state.
+      // Keep concurrent callers on one promise, but let the next attempt retry.
+      clientPromise = undefined;
+      throw error;
+    });
   return clientPromise;
 }

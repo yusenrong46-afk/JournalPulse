@@ -12,11 +12,11 @@ import { clearReminder } from "@/lib/reminders";
 import type { OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
 
 const HELP_FACES = [
-  { score: 1, emoji: "😣", label: "Not at all" },
-  { score: 2, emoji: "😕", label: "A little" },
-  { score: 3, emoji: "😐", label: "Somewhat" },
-  { score: 4, emoji: "🙂", label: "Helped" },
-  { score: 5, emoji: "😄", label: "A lot" },
+  { score: 1, label: "Not at all" },
+  { score: 2, label: "A little" },
+  { score: 3, label: "Somewhat" },
+  { score: 4, label: "Helped" },
+  { score: 5, label: "A lot" },
 ];
 
 function CheckInWorkspace() {
@@ -129,7 +129,7 @@ function CheckInWorkspace() {
   } else if (saved || alreadyDone) {
     body = (
       <>
-        <Luna mood="proud" size={130} />
+        <Luna mood={saved && tried && helpfulness != null && helpfulness >= 4 ? "grounded" : "reflecting"} size={130} />
         <h1>{saved ? "Thank you!" : "Already checked in"}</h1>
         <p>{saved ? "Your garden grew a little. Over time you’ll see which small things help you most." : "You already told Luna how this one went."}</p>
         <div className="row" style={{ justifyContent: "center" }}>
@@ -170,7 +170,7 @@ function CheckInWorkspace() {
         <div className="faces" role="group" aria-label="How much did it help?">
           {HELP_FACES.map((face) => (
             <button key={face.score} className="face" type="button" disabled={busy || retryPending} aria-pressed={helpfulness === face.score} onClick={() => setHelpfulness(face.score)}>
-              <span aria-hidden="true">{face.emoji}</span>
+              <span className="scale-number" aria-hidden="true">{face.score}</span>
               <span>{face.label}</span>
             </button>
           ))}
@@ -187,7 +187,7 @@ function CheckInWorkspace() {
                 aria-pressed={feelings.includes(item.id)}
                 onClick={() => setFeelings((current) => (current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id]))}
               >
-                <span className="chip-emoji" aria-hidden="true">{item.emoji}</span>{item.label}
+                {item.label}
               </button>
             ))}
           </div>

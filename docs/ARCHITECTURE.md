@@ -256,3 +256,38 @@ provider, latency, token counts, schema validity, and fallback reason, never mes
 Deleting journal data removes every journal row (reflections, provenance, outcomes, chats, messages,
 memories, consents, profiles) but leaves the Supabase sign-in identity; deleting the identity is a
 separate privileged task that is not built.
+
+
+### Deletion and delayed requests
+
+A journal entry, conversation, activity session, or reflection UUID identifies one logical creation.
+Retries are idempotent while that object exists. Once it is deleted, its UUID is retired: intentional
+new writing or a new chat must use a fresh UUID. This prevents delayed accepts, offers, preferences,
+activity commands, and saved-entry retries from reaching a replacement under a deleted ID.
+Existing conversation incarnation checks remain an additional boundary for generated work.
+
+SQLite and PostgreSQL retain private, content-free deletion markers containing the owner UUID,
+object kind, and object UUID. They retain no journal text, summary, report, text hash, or deletion
+timestamp. These markers and an account erasure revision survive `DELETE /v1/account/data`, along
+with the existing expiring usage counters and sign-in identity. Markers apply to deletions after
+this migration; previously erased identities cannot be reconstructed. Privileged deletion of the
+Supabase sign-in identity cascades to its markers and revision.
+
+Before submitting a mutation, the browser reads the authenticated, uncached
+`GET /v1/account/data-revision` endpoint and attaches `X-JournalPulse-Data-Revision`. That value stays
+fixed across network retries and authentication refreshes. The API checks POST revisions after
+authentication, then each SQLite write transaction and signed PostgreSQL RPC checks again while
+holding the account write barrier. Account erasure advances the revision under the same barrier.
+A request already waiting inside server authentication therefore cannot adopt a newer revision and
+restore writing after erasure, even if its UUID has never committed. The browser also invalidates
+preflight-delayed work and stale responses when account deletion starts or completes across tabs.
+
+An omitted header means legacy revision zero, never the latest database revision. Older clients
+work on accounts with no erasure since this migration; after an erase, they must update/reload to
+obtain and submit a fresh revision. New intentional post-erasure saves use the new revision.
+Negative, malformed, and numbers beyond JavaScript's safe integer range are rejected. DELETEs
+remain available independently of this header, so an explicit deletion can still clear data after
+previous erasures. Deletion cannot resurrect content. No raw JWT or cross-host clock comparison
+establishes the revision. The database upgrade accepts signed envelopes from the old deployed
+server that omit the revision during rollout; full request fencing requires the new API and client.
+Versioned readiness v5 requires the guards while v1-v4 keep their existing responses.

@@ -675,6 +675,11 @@ def merge_pipeline_replay(
     observed provider content. It cannot turn a prepared/unobserved prompt into
     model language. Baseline-only capability gaps remain unsupported.
     """
+    replay_ids = [proof["id"] for proof in replay.get("cases", [])]
+    if len(replay_ids) != len(set(replay_ids)):
+        # One case has one adjudicated proof. Refuse ambiguous input before any
+        # success can overwrite a failed gate or the failure's provenance.
+        raise ValueError("Duplicate pipeline replay case IDs are not allowed")
     result = json.loads(json.dumps(observations))
     by_id = {item["id"]: item for item in result["cases"]}
     gates: dict[str, str] = {}
@@ -687,14 +692,28 @@ def merge_pipeline_replay(
         observation.setdefault("provenance", {})["pipeline_replay"] = proof
         matched = proof.get("request_comparison", {}).get("exact_request_match")
         proof_status = proof.get("status")
-        actual_pass = (
-            (proof_status == "replayed" and matched is not False)
+        runtime_gate = proof.get("runtime_gate")
+        # Failure evidence dominates every success spelling, including legacy
+        # replay records and a deterministic pass with a mismatched request.
+        actual_fail = (
+            runtime_gate == "fail"
+            or proof_status in {"replay_failed", "failed", "rejected"}
+            or matched is False
+        )
+        actual_pass = not actual_fail and (
+            (
+                proof_status == "replayed"
+                and (
+                    "runtime_gate" not in proof
+                    or runtime_gate in {"pass", "pass_native_refusal_handled"}
+                )
+            )
             or (
                 proof_status in {"accepted", "provider_refusal"}
                 and matched is True
-                and proof.get("runtime_gate") in {"pass", "pass_native_refusal_handled"}
+                and runtime_gate in {"pass", "pass_native_refusal_handled"}
             )
-            or (proof_status == "deterministic_pass" and proof.get("runtime_gate") == "pass")
+            or (proof_status == "deterministic_pass" and runtime_gate == "pass")
         )
         if actual_pass:
             gates[case_id] = "pass"
@@ -704,7 +723,7 @@ def merge_pipeline_replay(
                 observation["status"] = "deterministic_pass"
                 observation["output"] = proof.get("response")
                 observation["provenance"]["track"] = "deterministic"
-        elif proof_status in {"replay_failed", "failed", "rejected"} or matched is False:
+        elif actual_fail:
             gates[case_id] = "fail"
             observation["errors"].append(
                 "Actual pipeline replay failed or did not match the observed request."

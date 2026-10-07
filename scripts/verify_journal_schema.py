@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from datetime import timedelta
+from uuid import uuid4
 
 import verify_postgres_schema as base
 from journalpulse.journal_models import JournalEntry
@@ -65,7 +66,8 @@ def main() -> None:
     {base.check(f"exists(select 1 from public.conversations where id = '{unlinked.id}')", "source deletion preserves unrelated conversations")}
     {base.expect_error(base.commit(linked, user, assistant, 1), "Conversation not found", "a delayed turn cannot recreate deleted source context")}
     {base.expect_error(base.create(linked), "Journal entry not found", "a delayed start cannot create an orphan source chat")}
-    select {save(source)};
+    {base.expect_error(save(source), "Creation request ID was deleted; use a new request ID", "deleted journal request cannot restore writing")}
+    select {save(source.model_copy(update={"id": uuid4()}))};
     select public.delete_my_journalpulse_data();
     {base.check("(select count(*) from public.journal_entries) = 0", "global journal deletion includes standalone writing")}
     {base.as_user(base.USER_B)}

@@ -20,6 +20,7 @@ import json
 import os
 import platform
 import re
+import secrets
 import shutil
 import signal
 import subprocess
@@ -31,13 +32,13 @@ import time
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit, urlunsplit
-from uuid import UUID
+from urllib.parse import parse_qsl, urlencode, urlsplit
+from uuid import UUID, uuid4
 
 import httpx
 import uvicorn
 
-from scratch_postgres import require_local_postgres_dsn
+from scratch_postgres import postgres_uri, require_local_postgres_dsn
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -62,7 +63,10 @@ from journalpulse.intelligence import ConversationCompletion  # noqa: E402
 DATABASE = "jp_integration"
 JWT_SECRET = "integration-only-jwt-secret-0123456789abcdef"
 SIGNING_KEY = "integration-only-signing-key-0123456789abcdef"
-AUTHENTICATOR_PASSWORD = "integration-authenticator"
+# A run owns only this fresh role; never rotate a shared local Supabase login.
+AUTHENTICATOR_ROLE = "jp_test_auth_" + uuid4().hex
+AUTHENTICATOR_PASSWORD = secrets.token_urlsafe(32)
+_authenticator_created = False
 POSTGREST_VERSION = "v12.2.12"
 # SHA-256 of the official GitHub release archives, recorded by the maintainers on 2026-10-05.
 # PostgREST publishes no checksums for these assets, so this pins the reviewed bytes (trust on
@@ -141,7 +145,12 @@ def dsn(database: str, *, user: str | None = None, password: str | None = None) 
     if user is not None:
         host = netloc.rsplit("@", 1)[-1]
         netloc = f"{user}:{password}@{host}"
-    return urlunsplit(parts._replace(path=f"/{database}", netloc=netloc))
+        # Admin URI options must not override the isolated PostgREST role.
+        parts = parts._replace(query=urlencode([
+            (key, value) for key, value in parse_qsl(parts.query, keep_blank_values=True)
+            if key not in {"user", "password", "passfile"}
+        ]))
+    return postgres_uri(parts._replace(path=f"/{database}", netloc=netloc))
 
 
 def psql(database: str, sql: str) -> str:
@@ -171,6 +180,7 @@ def psql(database: str, sql: str) -> str:
 
 
 def prepare_database() -> None:
+    global _authenticator_created
     require_local_postgres_dsn(os.getenv("JOURNALPULSE_PG_DSN"))
     psql(
         "postgres",
@@ -188,18 +198,40 @@ def prepare_database() -> None:
     psql(
         DATABASE,
         f"""
-        do $$
-        begin
-          if not exists (select 1 from pg_roles where rolname = 'authenticator') then
-            create role authenticator login noinherit;
-          end if;
-        end $$;
-        alter role authenticator with login password '{AUTHENTICATOR_PASSWORD}';
-        grant anon, authenticated to authenticator;
+        begin;
+        create role "{AUTHENTICATOR_ROLE}" login noinherit password '{AUTHENTICATOR_PASSWORD}';
+        grant anon, authenticated to "{AUTHENTICATOR_ROLE}";
         insert into auth.users (id, email) values {users};
         insert into private.server_secrets (name, value) values ('write_signing_key', '{SIGNING_KEY}');
+        commit;
         """,
     )
+    _authenticator_created = True
+
+
+def cleanup_authenticator() -> None:
+    """Best-effort removal of the role this run successfully created."""
+    if not _authenticator_created:
+        return
+    try:
+        psql("postgres", f'drop role if exists "{AUTHENTICATOR_ROLE}";')
+    except RuntimeError:
+        # Do not echo a connection string or SQL containing the random password.
+        print(
+            f"Remove the leftover test role {AUTHENTICATOR_ROLE} from the disposable cluster.",
+            file=sys.stderr,
+        )
+
+
+def stop_postgrest(process: subprocess.Popen) -> None:
+    if process.poll() is not None:
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=5)
 
 
 # PostgREST --------------------------------------------------------------------------------
@@ -264,7 +296,7 @@ def postgrest_binary() -> Path:
 def start_postgrest() -> subprocess.Popen:
     environment = {
         **os.environ,
-        "PGRST_DB_URI": dsn(DATABASE, user="authenticator", password=AUTHENTICATOR_PASSWORD) or "",
+        "PGRST_DB_URI": dsn(DATABASE, user=AUTHENTICATOR_ROLE, password=AUTHENTICATOR_PASSWORD) or "",
         "PGRST_DB_SCHEMAS": "public",
         "PGRST_DB_ANON_ROLE": "anon",
         "PGRST_JWT_SECRET": JWT_SECRET,
@@ -272,7 +304,7 @@ def start_postgrest() -> subprocess.Popen:
         "PGRST_SERVER_HOST": "127.0.0.1",
     }
     process = subprocess.Popen([str(postgrest_binary())], env=environment)
-    atexit.register(process.terminate)
+    atexit.register(stop_postgrest, process)
     for _ in range(100):
         try:
             if httpx.get(f"http://127.0.0.1:{POSTGREST_PORT}/", timeout=1).status_code < 500:
@@ -528,6 +560,8 @@ def api_settings() -> Settings:
 
 
 def main() -> None:
+    # Registered first, so PostgREST's later cleanup closes its sessions first.
+    atexit.register(cleanup_authenticator)
     prepare_database()
     start_postgrest()
     start_gateway()

@@ -34,6 +34,7 @@ from .domain import (
     ConversationMessage,
     ConversationMode,
     ConversationStatus,
+    Goal,
     ModelRun,
     SafetyMode,
 )
@@ -237,25 +238,33 @@ def register_activity_routes(
     ) -> ActivitySession:
         # This helper is imported at use to keep route registration independent
         # from the provider. It resolves static resources or verifies a signed snippet.
-        from .activity_resources import resolve_activity_resource, verify_resource_token
+        from .activity_resources import (
+            activity_resource_matches_constraints,
+            resolve_activity_resource,
+            verify_resource_offer,
+        )
 
         repository = sweep(auth)
         conversation = owned_chat(repository, auth, conversation_id, open_only=True)
         active_card = conversation.activity_card or conversation.card
+        search_goal = conversation.activity_goal or Goal.SETTLE
         previous = repository.get_activity_session(auth.user_id, payload.client_request_id)
         if previous is not None and previous.conversation_id == conversation_id:
             candidate = previous.resource
         else:
             try:
                 if payload.resource_token is not None:
-                    descriptor = verify_resource_token(
+                    receipt = verify_resource_offer(
                         settings,
                         payload.resource_token,
                         user_id=auth.user_id,
                         conversation_id=conversation_id,
                         conversation_revision=conversation.revision,
+                        conversation_incarnation_id=conversation.incarnation_id,
                         now=clock(),
                     )
+                    descriptor = receipt.resource.model_dump(mode="json")
+                    search_goal = Goal(receipt.goal) if receipt.goal else search_goal
                     if descriptor.get("id") != payload.resource_id:
                         raise ValueError("Resource identity changed")
                 else:
@@ -267,6 +276,8 @@ def register_activity_routes(
                     if resolved is None:
                         raise ValueError("The recommended resource is unavailable")
                     descriptor = resolved
+                if not activity_resource_matches_constraints(descriptor, conversation.activity_constraints):
+                    raise ValueError("Resource does not fit the current activity preferences")
                 candidate = session_resource(descriptor)
             except (ValueError, KeyError, TypeError) as exc:
                 raise HTTPException(409, "This recommendation changed. Ask Luna for another option.") from exc
@@ -279,7 +290,8 @@ def register_activity_routes(
             if payload.duration_seconds is not None
             else candidate.duration_seconds or 0
         )
-        recommended = active_card.decision_preview.recommended_action_id if active_card else None
+        selection_card = None if payload.resource_token else active_card
+        recommended = selection_card.decision_preview.recommended_action_id if selection_card else None
         selection = ActivitySelectionProvenance(
             selection_source="search"
             if payload.resource_token
@@ -288,7 +300,9 @@ def register_activity_routes(
             else "user",
             recommended_resource_id=recommended or payload.resource_id,
             selected_resource_id=payload.resource_id,
-            model_run=active_card.decision_preview.context_snapshot.get("model_run") if active_card else None,
+            model_run=(
+                selection_card.decision_preview.context_snapshot.get("model_run") if selection_card else None
+            ),
         )
         session = ActivitySession(
             id=payload.client_request_id,
@@ -297,7 +311,8 @@ def register_activity_routes(
             source_entry_id=conversation.source_entry_id,
             offered_message_id=active_card.offered_message_id if active_card else None,
             resource=candidate,
-            goal=active_card.goal if active_card else None,
+            goal=(previous.goal if previous is not None else search_goal)
+            if payload.resource_token else active_card.goal if active_card else None,
             # The visible card may include private context; never copy its freeform
             # reason (or journal quotations) into an activity row.
             recommendation_reason=None,
@@ -428,6 +443,7 @@ def register_activity_routes(
                     expected_revision=claimed.revision,
                     expected_conversation_revision=generation_revision,
                     expected_session_created_at=claimed.created_at,
+                    expected_conversation_incarnation_id=conversation.incarnation_id,
                     reply=None,
                     model_run=None,
                     now=clock(),
@@ -447,6 +463,7 @@ def register_activity_routes(
                 expected_revision=claimed.revision,
                 expected_conversation_revision=generation_revision,
                 expected_session_created_at=claimed.created_at,
+                expected_conversation_incarnation_id=conversation.incarnation_id,
                 reply=reply,
                 model_run=model_run,
                 now=clock(),

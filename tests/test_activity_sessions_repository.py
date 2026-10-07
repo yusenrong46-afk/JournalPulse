@@ -303,7 +303,15 @@ def test_new_offer_supersedes_only_unstarted_offer(tmp_path):
     second = repo.offer_activity_session(
         newer, request_id=newer.id, expected_conversation_revision=0, now=NOW
     )
-    assert repo.get_activity_session(OWNER, first.id).status == ActivityStatus.DECLINED
+    withdrawn = repo.get_activity_session(OWNER, first.id)
+    assert withdrawn.status == ActivityStatus.STOPPED
+    assert withdrawn.started_at is None and withdrawn.report is None
+    assert withdrawn.expires_at is None and not withdrawn.check_in_issued
+    assert withdrawn.revision == first.revision + 1
+    assert repo.offer_activity_session(
+        newer, request_id=newer.id, expected_conversation_revision=0, now=NOW
+    ) == second
+    assert repo.get_activity_session(OWNER, first.id) == withdrawn
     active, _ = command(repo, second, "start")
     with pytest.raises(ActivityConflict, match="Finish or stop"):
         repo.offer_activity_session(
@@ -361,14 +369,25 @@ def test_delayed_followup_cannot_commit_into_recreated_ids(tmp_path):
     original, _ = repo.claim_activity_follow_up(OWNER, saved.id, request, now=NOW)
     repo.delete_journal_entry(OWNER, source.id)
     later = NOW + timedelta(hours=1)
+    with pytest.raises(ValueError, match="deleted"):
+        repo.save_journal_entry(source)
     restored = repo.save_journal_entry(
-        source.model_copy(update={"text": "New fictional writing.", "created_at": later})
+        source.model_copy(update={"id": uuid4(), "text": "New fictional writing.", "created_at": later})
     )
     recreated = repo.create_conversation(
         chat.model_copy(
-            update={"created_at": later, "updated_at": later, "source_entry_created_at": restored.created_at}
+            update={"id": uuid4(), "created_at": later, "updated_at": later,
+                    "source_entry_id": restored.id, "source_entry_created_at": restored.created_at}
         )
     )
+    with pytest.raises(ValueError, match="deleted"):
+        repo.offer_activity_session(
+            offered.model_copy(update={"conversation_id": recreated.id, "source_entry_id": restored.id}),
+            request_id=offered.id, expected_conversation_revision=0, now=later,
+        )
+    offered = offered.model_copy(update={
+        "id": uuid4(), "conversation_id": recreated.id, "source_entry_id": restored.id,
+    })
     fresh = repo.offer_activity_session(
         offered, request_id=offered.id, expected_conversation_revision=0, now=later
     )

@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 import os
-from urllib.parse import parse_qs, unquote, urlsplit
+from urllib.parse import SplitResult, parse_qs, unquote, urlsplit, urlunsplit
+
+
+def postgres_uri(parts: SplitResult) -> str:
+    """libpq requires :// even with no authority (a local Unix socket URI)."""
+    encoded = urlunsplit(parts)
+    return encoded if parts.netloc else encoded.replace(f"{parts.scheme}:", f"{parts.scheme}://", 1)
 
 
 def require_local_postgres_dsn(configured: str | None) -> None:
@@ -23,6 +29,10 @@ def require_local_postgres_dsn(configured: str | None) -> None:
             if parts.hostname:
                 hosts.append(unquote(parts.hostname))
             query = parse_qs(parts.query, keep_blank_values=True)
+            # libpq query parameters override a URI path, including after the
+            # caller replaces that path with its named scratch database.
+            if "dbname" in query:
+                raise SystemExit("Scratch PostgreSQL database overrides are not allowed.")
             for parameter in ("host", "hostaddr"):
                 hosts.extend(query.get(parameter, []))
             service = service or bool(query.get("service"))

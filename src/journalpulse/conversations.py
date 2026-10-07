@@ -9,6 +9,11 @@ from uuid import UUID, uuid4
 from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
 
+from .activity_resources import (
+    ActivityConstraints,
+    activity_resource_matches_constraints,
+    resolve_activity_resource,
+)
 from .auth import AuthContext
 from .config import Settings
 from .domain import (
@@ -163,6 +168,7 @@ def register_conversation_routes(
         moment = clock()
         conversation = Conversation(
             id=payload.client_request_id or uuid4(),
+            incarnation_id=uuid4(),
             user_id=auth.user_id,
             created_at=moment,
             updated_at=moment,
@@ -217,6 +223,9 @@ def register_conversation_routes(
         acquire(conversation_id)
         try:
             conversation = require_owned(repository, auth, conversation_id)
+            if ("expected_incarnation_id" in payload.model_fields_set
+                    and payload.expected_incarnation_id != conversation.incarnation_id):
+                raise HTTPException(status_code=409, detail=STALE_TURN)
             messages = repository.list_messages(auth.user_id, conversation_id)
             stored = _stored_turn(messages, payload.client_message_id)
             if stored is not None:
@@ -470,6 +479,8 @@ def _take_turn(
                 "safety": safety,
                 "summary": conversation.summary or "This conversation moved to support mode.",
                 "card": _support_card(settings, safety, assistant_message.id),
+                "activity_card": None,
+                "ready_for_action": False,
             }
         )
         return _commit(repository, updated, user_message, assistant_message, expected_revision)
@@ -493,14 +504,23 @@ def _take_turn(
             message_id=assistant_message.id,
             state=PREVIEW_STATE,
             goal=payload.goal,
+            constraints=reported.activity_constraints,
         )
+        if card is None:
+            assistant_message = assistant_message.model_copy(update={"content": (
+                "I couldn’t find a reviewed option that fits those activity preferences. "
+                "We can keep talking, or you can change Activity preferences in Chat options."
+            )})
         updated = reported.model_copy(
             update={
                 "updated_at": assistant_created,
                 "safety": safety,
                 "summary": conversation.summary or GUIDED_SUMMARY,
                 "card": card,
-                "ready_for_action": True,
+                "activity_card": None,
+                "activity_search_topic": None,
+                "activity_goal": payload.goal,
+                "ready_for_action": card is not None,
             }
         )
         return _commit(repository, updated, user_message, assistant_message, expected_revision)
@@ -514,14 +534,19 @@ def _take_turn(
             listening=conversation.interaction_preference == InteractionPreference.LISTEN,
         )
     else:
-        if source_entry is not None and (
-            not conversation.llm_consent or not settings.openrouter_enabled or not settings.openrouter_zdr
+        # A chat's stored AI mode cannot override today's consent and provider
+        # configuration, including after the global feature has been disabled.
+        if (
+            not conversation.llm_consent or not settings.openrouter_enabled
+            or not settings.chat_model.strip() or not settings.openrouter_zdr
         ):
             raise HTTPException(
                 status_code=409,
                 detail=(
                     "AI help is unavailable for this journal-linked chat. "
                     "Start a guided chat without the entry."
+                    if source_entry is not None else
+                    "AI help is unavailable for this chat. You can start a guided chat."
                 ),
             )
         enforce_generation_limit(auth, repository)
@@ -549,7 +574,11 @@ def _take_turn(
         try:
             from .activity_chat import chat_activity_context, complete_chat
 
-            activity_context = chat_activity_context(settings, repository, conversation)
+            activity_context = chat_activity_context(settings, repository, reported)
+            if payload.activity_constraints is not None:
+                activity_context = activity_context.model_copy(
+                    update={"constraints_confirmed_this_turn": True}
+                )
             completion = complete_chat(_client(settings, conversation_client), history, activity_context)
         except UnsupportedProviderResponse as exc:
             raise HTTPException(
@@ -607,12 +636,18 @@ def _take_turn(
 def _request_inputs(payload: ConversationTurnRequest) -> ConversationRequestInputs:
     return ConversationRequestInputs(
         goal=payload.goal, mood_score=payload.mood_score, confirmed_feelings=payload.confirmed_feelings,
+        activity_constraints=payload.activity_constraints,
     )
 
 
 def _with_reported_inputs(conversation: Conversation, payload: ConversationTurnRequest) -> Conversation:
     """Store what the person tapped: the first mood face, and feelings confirmed with a goal."""
     update: dict[str, object] = {}
+    if payload.activity_constraints is not None:
+        update["activity_constraints"] = payload.activity_constraints
+        # An explicit correction invalidates previous offers before any path,
+        # including older guided clients, can reuse them under different limits.
+        update.update(card=None, activity_card=None, activity_search_topic=None)
     if payload.mood_score is not None and conversation.reported_mood is None:
         update["reported_mood"] = payload.mood_score
     if payload.goal is not None and payload.confirmed_feelings is not None:
@@ -705,6 +740,16 @@ def _support_card(settings: Settings, safety: SafetyResult, message_id: UUID) ->
     )
 
 
+def _constrained_catalog_actions(
+    settings: Settings, intent: str, constraints: ActivityConstraints,
+) -> list[dict]:
+    return [
+        item for item in approved_actions(settings.resource_catalog_path, intent=intent)
+        if (resolved := resolve_activity_resource(settings.resource_catalog_path, item["id"])) is not None
+        and activity_resource_matches_constraints(resolved, constraints)
+    ]
+
+
 def _catalog_card(
     settings: Settings,
     policy: ReflectionPolicy,
@@ -714,8 +759,11 @@ def _catalog_card(
     message_id: UUID,
     state: AffectiveState,
     goal: Goal | None = None,
-) -> ActionCard:
-    actions = approved_actions(settings.resource_catalog_path, intent=intent)
+    constraints: ActivityConstraints | None = None,
+) -> ActionCard | None:
+    actions = _constrained_catalog_actions(settings, intent, constraints or ActivityConstraints())
+    if not actions:
+        return None
     decision = policy.decide(
         state=state,
         target=TargetState(goal=goal.value if goal else goal_for_intent(intent)),
@@ -770,7 +818,11 @@ def _reflection_from_card(
     if conversation.safety_mode == SafetyMode.SUPPORT:
         decision = _accept_support_choice(card.decision_preview, payload.action_id)
     else:
-        actions = approved_actions(settings.resource_catalog_path, intent=card.resource_intent)
+        actions = _constrained_catalog_actions(
+            settings, card.resource_intent, conversation.activity_constraints,
+        )
+        if not actions:
+            raise HTTPException(409, "This offer no longer fits your activity preferences.")
         decision = policy.decide(state=state, target=target, actions=actions, context=context)
         try:
             decision = apply_user_choice(decision, payload.action_id)

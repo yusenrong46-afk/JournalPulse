@@ -1,5 +1,69 @@
 # Claude handoff: audit, repair, then improve the Luna UI
 
+**Release candidate, 6 October 2026:** the user authorized a fresh Sentinel audit,
+repairs, GitHub main and the official Vercel app update. Audit-only findings and
+independent repair rechecks are complete. See
+[SENTINEL_RELEASE_2026-10-06.md](SENTINEL_RELEASE_2026-10-06.md) for the six findings,
+follow-up regressions, final validation and compatibility contract.
+The candidate includes the Paper & Lamp UI and requires the additive
+202610060002_erasure_boundaries.sql migration before publication.
+Final local checks: 1,259 Python tests / 91.69% coverage, 199 frontend tests,
+lint/types/OpenAPI/static build, real isolated PostgreSQL and fictional browser
+journeys. No new paid AI qualification was run. Confirm migration and deployment
+status from the release record before claiming the official app is updated.
+
+**AI activity hardening preview, 6 October 2026:** user testing exposed two
+output_schema rejections at activity.value_error. Their exact rejected directives
+were not retained. Prompt guided-action-2026-10-06.2 makes cross-field rules explicit;
+the validators now report precise fixed diagnostic types, with strict validation
+unchanged. 103 focused mocked-provider/activity/chat/atomicity tests pass, as do
+Ruff and mypy on edited files. The stable preview now points to
+dpl_4JbCakXYbpdw3P5wK67GCd3v2PBZ, READY, with live readiness passed.
+AI success for the reported activity request remains unverified; the user should
+reload and retry once. No agent-paid AI call, database change, main push, or official
+deployment occurred for this patch. See
+artifacts/preview-verification-2026-10-06/activity-contract-hardening.md.
+
+**Hosted repair completed, 6 October 2026:** after explicit user approval, applied
+only 202610050002 and 202610060001 transactionally to the shared Supabase database.
+Captured function definitions before/after; pre-existing ACLs are unchanged.
+Candidate, official app and existing preview all passed live readiness.
+A separate fictional Simple Luna chat passed first-send, continuation and reload
+persistence in the hosted browser, with no paid AI call. The stable preview alias
+now points to dpl_3jkeiGj9Ajybb427WhxNhYNFE7fS. Official deployment remains
+dpl_57Rut4UoR24LsTRjsA7nEpiBQycU; main has not been pushed.
+See artifacts/preview-verification-2026-10-06/database-repair-result.md.
+This supersedes the pending database/alias gate in the earlier checkpoints below.
+
+**Preview checkpoint, 6 October 2026:** the current Paper & Lamp UI passed fresh
+821 backend tests,148 frontend tests, types/lint/build and a fictional desktop/mobile
+walkthrough. A separate Vercel candidate is built at
+https://journalpulse-d18gb64ni-yusenrong46-9212s-projects.vercel.app/,
+deployment `dpl_3jkeiGj9Ajybb427WhxNhYNFE7fS`. Its UI renders, but application
+readiness reports `schema_missing`. Preview and production share Supabase; approval
+was requested for the two pending migrations or a separate preview database.
+No shared migration, stable-preview alias switch, main push or official-app update
+has happened in this verification. Read
+[`artifacts/preview-verification-2026-10-06/REPORT.md`](../artifacts/preview-verification-2026-10-06/REPORT.md)
+before further deployment work. No paid model calls were made.
+
+**Preview sign-in repair, 6 October 2026:** Supabase Auth omitted the new candidate
+from allowed redirects, causing email sign-in to fall back to the official old app.
+Added the candidate domain root and its /** path pattern; the dashboard confirmed
+both entries. Production's Site URL and existing redirects remain unchanged.
+Request a fresh email link from the candidate to verify the full sign-in flow.
+See artifacts/preview-verification-2026-10-06/auth-redirect-repair.md and its
+screenshot. The separate shared-database migration approval is still pending.
+
+**Local repair checkpoint, 6 October 2026:** see
+[`artifacts/sentinel-repair-2026-10-06/REPORT.md`](../artifacts/sentinel-repair-2026-10-06/REPORT.md)
+for the current uncommitted repairs, exact source snapshot, regression evidence,
+independent rechecks and outstanding preview/live-AI gates. The local runtime skill
+is now `guided-action-2026-10-06.1`; the hosted release and evaluation facts below
+describe the earlier 5 October baseline and have not been updated by deployment.
+Preserve the earlier UI work and historical benchmarks. The new database migration
+has been verified locally; it has not been applied to shared Supabase.
+
 Use the prompt below from the root of `yusenrong46-afk/JournalPulse`. Repository
 paths are relative so the handoff also works in a fresh checkout. The latest
 preview release is described in `docs/LUNA_PREVIEW_RELEASE_2026-10-05.md`.

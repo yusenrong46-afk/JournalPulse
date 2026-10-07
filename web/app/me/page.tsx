@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Luna } from "@/components/luna";
 import { apiRequest } from "@/lib/api";
+import { invalidateAccountDataRequests } from "@/lib/account-data";
 import { writeOpenConversationId } from "@/lib/conversation";
 import { usePreferences } from "@/lib/preferences";
 import { clearReflectionDraft } from "@/lib/reflection-draft";
@@ -41,8 +42,13 @@ export default function MePage() {
     if (confirmation.trim().toLowerCase() !== DELETE_PHRASE) return;
     setBusy(true);
     setError("");
+    // Deletion supersedes submitted work, even if the DELETE later fails. An
+    // explicit new save remains possible; an old automatic retry never revives.
+    invalidateAccountDataRequests();
     try {
       const result = await apiRequest<{ deleted_records: number }>("/v1/account/data", { method: "DELETE" });
+      // Cancel work begun in another tab while deletion was in progress too.
+      invalidateAccountDataRequests();
       writeOpenConversationId(null);
       clearReminders();
       await clearReflectionDraft();
@@ -71,23 +77,27 @@ export default function MePage() {
   }
 
   return (
-    <div className="page">
-      <header className="page-head row" style={{ gap: 14 }}>
-        <Luna mood="idle" size={72} />
+    <div className="page page-wide settings-page">
+      <header className="page-head companion-page-head">
+        <Luna mood="idle" size={72} decorative />
         <div>
+          <span className="eyebrow">On your terms</span>
           <h1>Your space</h1>
           <p>Choose how Luna works with you. You can change these anytime.</p>
         </div>
       </header>
 
+      <div className="settings-layout">
+      <div className="settings-primary stack">
+      <div><h2>Your preferences</h2><p className="small muted">AI and message settings apply to new chats. Changes save automatically.</p></div>
       {preferencesLoaded && (
         <section className="settings" aria-label="Chat settings">
           <label className="setting">
-            <span><strong>Let Luna use AI</strong><small>Smarter, more personal replies. Sent privately; the AI provider keeps nothing. Off means Luna asks simple questions instead.</small></span>
+            <span><strong>Let Luna use AI</strong><small>Uses AI for replies in new chats, with zero data retention required from the provider. Off starts a simple guided chat.</small></span>
             <span className="switch"><input type="checkbox" checked={preferences.llmConsent} onChange={(event) => updatePreferences({ ...preferences, llmConsent: event.target.checked })} /><span /></span>
           </label>
           <label className="setting">
-            <span><strong>Keep my messages</strong><small>Off clears the words of a chat when it ends. A short summary and your choice are still saved.</small></span>
+            <span><strong>Keep my messages</strong><small>For new chats. Off clears message text when the chat ends; your summary and activity choices remain saved.</small></span>
             <span className="switch"><input type="checkbox" checked={preferences.retainText} onChange={(event) => updatePreferences({ ...preferences, retainText: event.target.checked })} /><span /></span>
           </label>
           <label className="setting">
@@ -99,10 +109,16 @@ export default function MePage() {
               <option value="60">1 hour</option>
             </select>
           </label>
+          <label className="setting">
+            <span><strong>Animation</strong><small>Luna’s movements and gentle transitions. Switch off for a still experience.</small></span>
+            <span className="switch"><input type="checkbox" checked={preferences.animateLuna !== false}
+              onChange={(event) => updatePreferences({ ...preferences, animateLuna: event.target.checked })} /><span /></span>
+          </label>
         </section>
       )}
 
-      <section className="stack" aria-labelledby="how-heading">
+      </div>
+      <section className="stack settings-explainer" aria-labelledby="how-heading">
         <h2 id="how-heading">How Luna works</h2>
         <details className="explain">
           <summary>Luna is a companion, not a therapist</summary>
@@ -134,13 +150,16 @@ export default function MePage() {
         </details>
       </section>
 
-      <section className="stack" aria-labelledby="data-heading">
+      </div>
+      <section className="stack settings-data" aria-labelledby="data-heading">
         <h2 id="data-heading">Your data</h2>
         <div className="row">
           <button className="btn btn-soft" type="button" onClick={exportData}>Download my data</button>
           <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => void signOut()}>Sign out</button>
         </div>
-        <div className="card danger-card">
+        <details className="explain danger-card">
+          <summary>Delete saved data</summary>
+          <div className="stack">
           <h3>Delete everything</h3>
           <p className="muted small">This removes your chats, check-ins, and everything Luna saved. Your sign-in stays.</p>
           <label className="text-field">
@@ -150,7 +169,8 @@ export default function MePage() {
           <button className="btn btn-danger" type="button" disabled={busy || confirmation.trim().toLowerCase() !== DELETE_PHRASE} onClick={deleteData}>
             {busy ? "Deleting…" : "Delete my journal"}
           </button>
-        </div>
+          </div>
+        </details>
       </section>
 
       {message && <p className="note ok" role="status">{message}</p>}

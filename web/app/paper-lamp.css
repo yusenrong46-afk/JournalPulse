@@ -1,0 +1,710 @@
+/* Paper & Lamp: a refinement of Quiet Nook for reading, writing and talking.
+   Words people read or write use a book serif; controls stay in DM Sans. The warm palette,
+   ambient scene and Luna are kept; chrome, cards and repeated decoration are reduced. */
+
+:root, html[data-time] {
+  --serif: "Newsreader Variable", "Iowan Old Style", Georgia, serif;
+  --ink: #22392f;
+  --ink-soft: #4b5f55;
+  --ink-faint: #5d6e64;
+  --paper: rgba(253, 252, 246, .94);
+  --paper-solid: #fcfbf5;
+  --hair: rgba(46, 74, 58, .13);
+  --you: #e2e8da;
+  --plum-faint: #5d6e64;
+}
+
+/* Ambience stays at the edges; reading areas sit on calm, even light. */
+.paper-lamp::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 74% 92% at 50% 45%, rgba(247, 247, 240, .92) 0%, rgba(247, 247, 240, .8) 55%, rgba(247, 247, 240, .22) 100%);
+}
+.paper-lamp > * { position: relative; z-index: 1; }
+.paper-lamp .skip-link { position: absolute; z-index: 40; }
+
+/* Type: one serif voice for words, one sans voice for the interface. */
+.paper-lamp h1 {
+  font-family: var(--serif);
+  font-weight: 420;
+  font-size: clamp(34px, 4.2vw, 50px);
+  letter-spacing: -.012em;
+  line-height: 1.08;
+  color: var(--ink);
+  font-variation-settings: "opsz" 60;
+}
+.paper-lamp .page-head p { font-size: 16px; color: var(--ink-soft); }
+.paper-lamp .eyebrow { display: none; }
+
+/* Navigation: a quiet text bar on wide screens, a tab bar within thumb reach on phones. */
+.paper-lamp .nook-navigation {
+  max-width: none;
+  height: 64px;
+  padding: 0 clamp(20px, 4vw, 48px);
+  background: rgba(247, 247, 240, .72);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--hair);
+  position: sticky;
+  top: 0;
+  z-index: 25;
+}
+.paper-lamp .nook-brand { font-family: var(--serif); font-size: 23px; font-weight: 500; letter-spacing: -.01em; }
+.paper-lamp .nook-brand svg { width: 22px; height: 22px; }
+.paper-lamp .nook-links { justify-content: center; gap: 4px; }
+.paper-lamp .nook-links a { gap: 0; font-size: 14.5px; color: var(--ink-soft); padding: 8px 14px; position: relative; }
+.paper-lamp .nook-links a svg { display: none; }
+.paper-lamp .nook-links a[aria-current='page'] { background: transparent; box-shadow: none; color: var(--ink); font-weight: 600; }
+.paper-lamp .nook-links a[aria-current='page']::after {
+  content: ""; position: absolute; left: 50%; bottom: 3px; width: 4px; height: 4px;
+  margin-left: -2px; border-radius: 50%; background: #5d7d63;
+}
+.tab-bar { display: none; }
+
+/* ---------- Chat ---------- */
+.paper-lamp.nook-chat-app { --shell-height: 0px; }
+.paper-lamp.nook-chat-app .chat { height: var(--chat-height, 100dvh); }
+.paper-lamp .chat > .chat-log,
+.paper-lamp .chat > .chat-dock,
+.paper-lamp .chat > .composer,
+.paper-lamp .chat > .chat-hint { width: min(100%, 760px) !important; }
+.paper-lamp .chat-top {
+  min-height: 0;
+  padding: 10px 16px;
+  align-items: center;
+  border-bottom: 1px solid var(--hair);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  grid-template-columns: 44px 1fr 44px;
+  background: rgba(247, 247, 240, .7);
+  backdrop-filter: blur(10px);
+}
+.paper-lamp .chat-top > .icon-btn { margin: 0; background: transparent; border-color: transparent; }
+.paper-lamp .chat-top > .icon-btn:hover { background: rgba(77, 105, 58, .07); }
+.paper-lamp .chat-who { flex-direction: row; justify-content: center; gap: 10px; text-align: left; }
+.paper-lamp .chat-who > .luna { width: 40px; height: 40px; margin: 0; }
+.paper-lamp .chat-who strong { font-family: var(--serif); font-weight: 500; font-size: 21px; line-height: 1.1; }
+.paper-lamp .chat-who small { font-size: 12.5px; color: var(--ink-faint); }
+.paper-lamp .menu { top: 62px; right: max(16px, calc((100vw - 760px) / 2)); }
+
+.paper-lamp .chat-log { padding: 20px 20px 18px; }
+.paper-lamp .chat-log-content { gap: 22px; }
+.paper-lamp .msg { max-width: 100%; align-items: flex-start; gap: 10px; }
+.paper-lamp .msg.from-me { max-width: 82%; }
+.paper-lamp .msg-avatar { flex: 0 0 30px; width: 30px; padding-top: 1px; }
+.paper-lamp .msg-avatar .luna { width: 30px; height: 30px; }
+.paper-lamp .msg.from-luna .bubble {
+  background: transparent;
+  padding: 2px 0 0;
+  border-radius: 0;
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.62;
+  color: var(--ink);
+  max-width: 60ch;
+  font-variation-settings: "opsz" 18;
+}
+.paper-lamp .msg.from-me .bubble {
+  background: var(--you);
+  color: #213a30;
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 11px 16px;
+  border-radius: 18px 18px 6px 18px;
+}
+/* Support replies remain visibly set apart from ordinary conversation. */
+.paper-lamp .msg.from-support .bubble {
+  background: #f6f2df;
+  border: 1px solid #d9cfa6;
+  border-radius: 14px;
+  padding: 14px 18px;
+}
+.paper-lamp .msg-time-divider {
+  align-self: center;
+  font-size: 12px;
+  letter-spacing: .02em;
+  color: var(--ink-faint);
+  padding: 2px 10px;
+}
+.paper-lamp .message-time { display: none; }
+.paper-lamp .msg.from-luna { animation: pl-arrive .5s var(--ease) both; }
+.paper-lamp .msg.from-me { animation: pl-arrive .22s var(--ease) both; }
+.paper-lamp .is-thinking { align-items: center; }
+.paper-lamp .thinking-line { display: inline-flex; align-items: center; gap: 12px; min-height: 30px; }
+.paper-lamp .typing { background: transparent; padding: 0; gap: 5px; }
+.paper-lamp .typing i { width: 6px; height: 6px; background: #6d8a71; animation: pl-breathe 1.8s ease-in-out infinite; }
+.paper-lamp .typing i:nth-child(2) { animation-delay: .25s; }
+.paper-lamp .typing i:nth-child(3) { animation-delay: .5s; }
+.paper-lamp .typing-note { margin: 0; font-family: var(--serif); font-style: italic; font-size: 16px; color: var(--ink-faint); }
+
+.paper-lamp .chat-welcome { gap: 10px; }
+.paper-lamp .chat-welcome > .luna { width: 104px; height: 104px; margin: 0 0 4px; }
+.paper-lamp .chat-welcome h1 { font-size: clamp(26px, 3.2vw, 34px) !important; font-weight: 420; max-width: 20ch; }
+.paper-lamp .chat-welcome p { font-size: 15px; color: var(--ink-soft); }
+.paper-lamp .faces { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 460px !important; }
+.paper-lamp .chat-welcome .face {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: rgba(253, 252, 246, .82);
+  border: 1px solid var(--hair);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+/* The first span used to hold an emoji and was sized for one; labels must not inherit that. */
+.paper-lamp .chat-welcome .face span:first-child { font-size: inherit; line-height: inherit; }
+.paper-lamp .chat-welcome .face:hover:not(:disabled) { transform: none; border-color: #8ea488; background: var(--paper-solid); }
+.paper-lamp .chat-welcome .face[aria-pressed='true'] { background: #e1e9d9; border-color: #5f7f63; }
+
+.paper-lamp .chat-panel { margin-left: 40px; }
+.paper-lamp .chat-choices .chip { min-height: 40px; background: transparent; border-color: var(--hair); color: var(--ink-soft); font-size: 13.5px; }
+.paper-lamp .chat-choices .chip:hover { background: rgba(253, 252, 246, .9); color: var(--ink); }
+.paper-lamp .jump-latest { background: var(--ink); font-weight: 500; }
+
+/* One field with the send control inside it; the draft has the room. */
+.paper-lamp .composer { position: relative; padding: 10px 18px 18px; }
+.paper-lamp .composer textarea {
+  background: var(--paper-solid);
+  border: 1px solid #cbd3c3;
+  border-radius: 26px;
+  min-height: 56px;
+  padding: 16px 64px 16px 20px;
+  font-size: 16px;
+  line-height: 1.5;
+  box-shadow: 0 8px 28px rgba(31, 60, 43, .06);
+}
+.paper-lamp .composer textarea:focus { border-color: #6f8c72; box-shadow: 0 0 0 3px rgba(214, 226, 205, .85), 0 8px 28px rgba(31, 60, 43, .06); }
+.paper-lamp .composer textarea[aria-busy='true'] { color: var(--ink-faint); }
+.paper-lamp .composer .send-btn {
+  position: absolute;
+  right: 26px;
+  bottom: 26px;
+  width: 40px;
+  height: 40px;
+  flex-basis: 40px;
+}
+.paper-lamp .composer .send-btn svg { width: 19px; height: 19px; }
+.paper-lamp .send-btn:disabled { background: #dfe5d8; color: #7b8977; }
+
+/* ---------- Activity in the conversation ---------- */
+.paper-lamp .offer-card {
+  max-width: 600px;
+  padding: 20px 22px 16px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(31, 60, 43, .05);
+  gap: 12px;
+}
+.paper-lamp .offer-content { padding: 0; min-height: 0; gap: 6px; }
+.paper-lamp .offer-kicker { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-faint); padding: 0; }
+.paper-lamp .offer-luna { position: static; display: inline-flex; }
+.paper-lamp .offer-luna .luna { width: 26px; height: 26px; }
+.paper-lamp .offer-card h2 { font-family: var(--serif); font-weight: 460; font-size: 25px; line-height: 1.2; padding: 0; letter-spacing: -.01em; }
+.paper-lamp .offer-reason, .paper-lamp .offer-content .offer-reason { font-size: 15px; line-height: 1.6; color: var(--ink-soft); }
+.paper-lamp .offer-provenance { margin: 0; font-size: 12.5px; color: var(--ink-faint); }
+.paper-lamp .offer-steps summary { font-size: 13px; color: #3d6047; min-height: 36px; }
+.paper-lamp .offer-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; margin-top: 2px; }
+.paper-lamp .offer-controls .offer-start { min-width: 168px; min-height: 46px; margin-right: 8px; font-size: 15px; width: auto; }
+.paper-lamp .btn-quiet {
+  min-height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+}
+.paper-lamp .btn-quiet:hover:not(:disabled) { background: rgba(77, 105, 58, .07); color: var(--ink); }
+.paper-lamp .offer-footnote { margin: 0; font-size: 12px; color: var(--ink-faint); }
+
+.paper-lamp .activity-bar { background: var(--paper-solid); border: 1px solid var(--hair); border-radius: 18px; padding: 10px 12px; box-shadow: 0 8px 26px rgba(31, 60, 43, .06); }
+.paper-lamp .activity-bar-text strong { font-family: var(--serif); font-weight: 500; font-size: 17px; }
+.paper-lamp .activity-bar-text span { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+.paper-lamp .activity-bar-btn { min-height: 42px; border-radius: 12px; font-size: 14px; }
+.paper-lamp .activity-bar.is-paused { background: rgba(250, 249, 241, .96); border-style: dashed; }
+
+.paper-lamp .check-in-card { background: var(--paper); border: 1px solid var(--hair); box-shadow: 0 10px 30px rgba(31, 60, 43, .05); border-radius: 18px; padding: 22px; max-width: 600px; }
+.paper-lamp .check-in-title { font-family: var(--serif); font-weight: 460; font-size: 25px; }
+.paper-lamp .participation-choice { min-height: 48px; border-radius: 12px; background: var(--paper-solid); border-color: #cfd8c7; font-size: 15px; }
+.paper-lamp .participation-choice.is-selected { background: #e1e9d8; border-color: #5f7f63; }
+.paper-lamp .check-in-card textarea { font-size: 16px; }
+.paper-lamp .activity-receipt { background: transparent; border: 0; border-left: 0; padding: 4px 0; font-size: 13.5px; color: var(--ink-soft); }
+.paper-lamp .activity-receipt strong { color: #2f553f; }
+
+/* Inline search: permission sits beside its explanation instead of on its own line. */
+.paper-lamp .chat-panel section[aria-label='Find another activity'] { background: var(--paper); border: 1px solid var(--hair); box-shadow: none; border-radius: 18px; }
+.paper-lamp .chat-panel section[aria-label='Find another activity'] h2 { font-family: var(--serif); font-weight: 460; font-size: 23px; }
+.paper-lamp .chat-panel section[aria-label='Find another activity'] label.row { flex-wrap: nowrap; align-items: flex-start; gap: 10px; font-size: 15px; }
+.paper-lamp .chat-panel section[aria-label='Find another activity'] label.row input { flex: 0 0 18px; margin-top: 4px; }
+.paper-lamp .chat-panel section[aria-label='Find another activity'] article h3 { font-family: var(--serif); font-weight: 480; font-size: 20px; }
+
+/* ---------- Journal: a page, not a form ---------- */
+.paper-lamp .journal-layout { grid-template-columns: 220px minmax(0, 1fr); gap: 40px; }
+.paper-lamp .journal-archive { background: transparent; border: 0; padding: 4px 0 0; }
+.paper-lamp .journal-archive h2 { font-size: 13px; font-weight: 600; letter-spacing: .04em; color: var(--ink-faint); text-transform: uppercase; }
+.paper-lamp .journal-archive .btn { background: transparent; border: 1px solid var(--hair); min-height: 42px; justify-content: flex-start; padding: 0 14px; font-weight: 500; }
+.paper-lamp .journal-entry-link { padding: 14px 10px; border-radius: 10px; }
+.paper-lamp .journal-entry-link[aria-current='true'] { background: rgba(253, 252, 246, .9); border-left: 0; padding: 14px 10px; box-shadow: inset 2px 0 0 #6b8a6c; }
+.paper-lamp .journal-entry-preview { font-family: var(--serif); font-size: 15.5px; color: var(--ink); }
+.paper-lamp .journal-entry-open { display: none; }
+
+.paper-lamp .journal-sheet {
+  display: grid;
+  gap: 14px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: 20px;
+  padding: 36px 48px 30px;
+  box-shadow: 0 18px 50px rgba(31, 60, 43, .06);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.paper-lamp .journal-paper:focus-within { border-color: #9db29a; box-shadow: 0 0 0 3px rgba(214, 226, 205, .7), 0 18px 50px rgba(31, 60, 43, .06); }
+.paper-lamp .journal-sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.paper-lamp .journal-day { font-family: var(--serif); font-size: 26px; font-weight: 440; color: var(--ink); letter-spacing: -.01em; }
+.paper-lamp .journal-sheet-head .journal-companion { margin: 0; gap: 8px; }
+.paper-lamp .journal-sheet-head .journal-companion h2 { font-size: 13px; font-weight: 500; color: var(--ink-faint); }
+.paper-lamp .journal-prompt { font-family: var(--serif); font-style: italic; font-size: 18px; color: var(--ink-soft); font-weight: 400; }
+.paper-lamp .journal-main textarea {
+  min-height: 340px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--serif);
+  font-size: 20px;
+  line-height: 1.75;
+  color: var(--ink);
+  resize: none;
+  font-variation-settings: "opsz" 16;
+}
+.paper-lamp .journal-main textarea:focus { outline: none; box-shadow: none; }
+.paper-lamp .journal-main textarea::placeholder { color: #7d8a80; font-style: italic; }
+.paper-lamp .journal-sheet-foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-top: 1px solid var(--hair); padding-top: 16px; }
+.paper-lamp .journal-sheet-foot p { margin: 0; }
+.paper-lamp .journal-sheet-foot .btn-primary { margin: 0; min-width: 150px; }
+.paper-lamp .journal-save-note { margin: 0; font-size: 12px; max-width: 62ch; }
+.paper-lamp .journal-reading .journal-entry-text { font-family: var(--serif); font-size: 20px; line-height: 1.8; max-width: 62ch; color: var(--ink); white-space: pre-wrap; }
+.paper-lamp .journal-entry-actions .btn { min-height: 40px; font-weight: 500; }
+.paper-lamp .journal-aside { border-top: 1px solid var(--hair); padding-top: 22px; }
+.paper-lamp .journal-aside h3 { font-size: 15px; font-weight: 600; }
+.paper-lamp .journal-reflection { background: #eef2e6; border: 0; border-radius: 14px; font-weight: 400; }
+.paper-lamp .journal-reflection .journal-entry-text { font-family: var(--serif); font-size: 18px; }
+.paper-lamp .journal-page > .note { max-width: 62ch; }
+
+/* ---------- Journey: their history first, numbers as a quiet ledger ---------- */
+.paper-lamp .journey-page .stat-grid { display: flex; flex-wrap: wrap; gap: 8px 40px; padding: 4px 0 18px; border-bottom: 1px solid var(--hair); }
+.paper-lamp .journey-page .stat { background: transparent; border: 0; padding: 0; gap: 0; border-radius: 0; box-shadow: none; }
+.paper-lamp .journey-page .stat strong { font-family: var(--serif); font-weight: 420; font-size: 36px; line-height: 1.1; }
+.paper-lamp .journey-page .stat span { font-size: 13px; color: var(--ink-faint); }
+.paper-lamp .journey-page .garden { background: transparent; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0; min-height: 64px; padding: 4px 0 10px; }
+.paper-lamp .journey-page h2 { font-family: var(--serif); font-weight: 460; font-size: 25px; }
+.paper-lamp .journey-list { display: grid; gap: 10px; }
+.paper-lamp .activity-history li { padding: 14px 0; border-bottom: 1px solid var(--hair); }
+.paper-lamp .activity-history strong { font-family: var(--serif); font-weight: 500; font-size: 19px; }
+.paper-lamp .journey-page .entry { background: transparent; box-shadow: none; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0; padding: 18px 0; }
+.paper-lamp .journey-insights .card { background: transparent; box-shadow: none; border: 0; border-top: 1px solid var(--hair); border-radius: 0; padding: 22px 0 0; }
+.paper-lamp .journey-insights h2 { font-size: 20px; }
+
+/* ---------- Home ---------- */
+.paper-lamp .hero h1 { font-size: clamp(40px, 5vw, 60px); }
+.paper-lamp .hero > p { font-family: var(--serif); font-style: italic; font-size: 20px; color: var(--ink-soft); }
+.paper-lamp .home-paths { gap: 0 32px; }
+.paper-lamp .home-paths a { background: transparent; border: 0; border-top: 1px solid var(--hair); border-radius: 0; padding: 18px 2px; }
+.paper-lamp .home-paths a:hover { background: transparent; border-color: #9db29a; }
+.paper-lamp .home-paths strong { font-family: var(--serif); font-weight: 500; font-size: 19px; }
+.paper-lamp .home-details .home-grid .card { box-shadow: none; background: var(--paper); border: 1px solid var(--hair); }
+.paper-lamp .home-details .home-grid h2 { font-family: var(--serif); font-weight: 460; font-size: 22px; }
+
+/* ---------- Shared pieces ---------- */
+.paper-lamp .discovery-page .discovery-results > article h3 a { font-family: var(--serif); font-weight: 480; font-size: 21px; }
+.paper-lamp .discovery-page .discovery-consent { box-shadow: none; }
+.paper-lamp .focus-page { background: var(--paper); box-shadow: 0 18px 50px rgba(31, 60, 43, .06); }
+.paper-lamp .focus-page h1 { font-size: 34px; }
+.paper-lamp .settings, .paper-lamp .settings-data .danger-card { box-shadow: none; }
+.paper-lamp .note { font-weight: 500; border-radius: 12px; }
+.paper-lamp .note.error { background: #f7ebe3; color: #7c3d29; border: 1px solid #e8cfc1; }
+.paper-lamp .btn:disabled { opacity: .5; cursor: not-allowed; }
+.paper-lamp .skeleton { background: linear-gradient(90deg, rgba(228, 234, 220, .6), rgba(244, 246, 238, .9), rgba(228, 234, 220, .6)); background-size: 200% 100%; animation: pl-shimmer 1.8s ease-in-out infinite; border-radius: 14px; }
+
+/* ---------- Refinements after the first review pass ---------- */
+/* Section headings on content pages share the reading serif; form labels stay sans. */
+.paper-lamp .page h2 { font-family: var(--serif); font-weight: 460; letter-spacing: -.008em; }
+.paper-lamp .settings-primary h2, .paper-lamp .settings-explainer h2, .paper-lamp .settings-data h2 { font-size: 23px; }
+.paper-lamp .discovery-page h2 { font-size: 24px; }
+.paper-lamp .journal-archive h2 { font-family: var(--font-body), sans-serif; font-size: 12px; font-weight: 600; }
+.paper-lamp .check-in-more summary { min-height: 40px; font-size: 13.5px; font-weight: 500; color: #3d6047; }
+.paper-lamp .chat-panel .stack > .chip {
+  min-height: 40px; background: transparent; border: 1px solid var(--hair); color: var(--ink-soft);
+  font-size: 13.5px; font-weight: 500; box-shadow: none;
+}
+.paper-lamp .chat-panel .stack > .chip:hover:not(:disabled) { background: rgba(253, 252, 246, .9); color: var(--ink); }
+.paper-lamp .note { background: rgba(226, 233, 218, .75); color: var(--ink); }
+.paper-lamp .journey-insights { gap: 28px; }
+
+/* ---------- Luna's motion: slower, smaller, and tied to what is actually happening ---------- */
+.paper-lamp .luna-thinking .luna-float { animation: pl-ponder 5.2s ease-in-out infinite; }
+.paper-lamp .luna-thinking .luna-orbit { opacity: .32; }
+.paper-lamp .luna-listening .luna-sprout { animation: nook-sprout 2.2s ease-in-out infinite; }
+.paper-lamp .luna-offering .luna-float { animation: pl-lean 4.6s ease-in-out infinite; }
+/* Receiving a report: one small nod, then ordinary reflective stillness. */
+.paper-lamp .luna-reflecting .luna-float { animation: pl-nod 1.4s var(--ease) 1, nook-reflect 6.5s ease-in-out 1.4s infinite; }
+.paper-lamp .luna-resting .luna-float { animation: pl-rest 8s ease-in-out infinite; }
+
+@keyframes pl-arrive { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes pl-breathe { 0%, 100% { opacity: .3; transform: scale(.85); } 50% { opacity: .9; transform: scale(1); } }
+@keyframes pl-ponder { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg) translateY(-2px); } }
+@keyframes pl-lean { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(4deg) translateX(1.5px); } }
+@keyframes pl-nod { 0% { transform: none; } 40% { transform: rotate(3deg) translateY(3px); } 100% { transform: none; } }
+@keyframes pl-rest { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025) translateY(-1px); } }
+@keyframes pl-shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+/* ---------- Small screens ---------- */
+@media (max-width: 760px) {
+  .paper-lamp { --shell-height: 0px; }
+  .paper-lamp .nook-navigation { display: none; }
+  .paper-lamp .app-main { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .tab-bar {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: rgba(248, 248, 241, .94);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--hair);
+  }
+  .tab-bar a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 52px;
+    border-radius: 12px;
+    color: var(--ink-faint);
+    font-size: 11px;
+    text-decoration: none;
+  }
+  .tab-bar a svg { width: 22px; height: 22px; }
+  .tab-bar a[aria-current='page'] { color: var(--ink); font-weight: 600; background: rgba(222, 230, 213, .7); }
+  /* The tab bar stays put while typing. Hiding it on focus made it reappear under a tap on
+     "Save entry" (focus left the field mid-tap), so the press landed on the bar instead. */
+
+  .paper-lamp .page { padding-top: 30px; }
+  .paper-lamp h1 { font-size: 36px; }
+  .paper-lamp .chat-top { padding: 8px 10px; }
+  .paper-lamp .chat-who > .luna { width: 36px; height: 36px; }
+  .paper-lamp .chat-who strong { font-size: 19px; }
+  .paper-lamp .chat-log { padding: 16px 14px 12px; }
+  .paper-lamp .chat-log-content { gap: 18px; }
+  .paper-lamp .msg-avatar { flex-basis: 26px; width: 26px; }
+  .paper-lamp .msg-avatar .luna { width: 26px; height: 26px; }
+  .paper-lamp .msg.from-luna .bubble { font-size: 17.5px; line-height: 1.6; }
+  .paper-lamp .msg.from-me { max-width: 88%; }
+  .paper-lamp .msg.from-me .bubble { font-size: 15.5px; }
+  .paper-lamp .chat-panel { margin-left: 0; }
+  .paper-lamp .composer { padding: 8px 12px calc(12px + env(safe-area-inset-bottom)); }
+  .paper-lamp .composer textarea { min-height: 52px; padding: 14px 58px 14px 18px; }
+  .paper-lamp .composer .send-btn { right: 19px; bottom: calc(18px + env(safe-area-inset-bottom)); }
+  .paper-lamp .chat-dock { padding: 0 12px; }
+  .paper-lamp .offer-card, .paper-lamp .check-in-card { padding: 18px 16px 14px; }
+  .paper-lamp .offer-card h2, .paper-lamp .check-in-title { font-size: 22px; }
+  .paper-lamp .offer-controls .offer-start { width: 100%; margin: 0 0 2px; }
+  .paper-lamp .offer-controls .btn-quiet { flex: 1; }
+  .paper-lamp .participation { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .paper-lamp .participation-choice { font-size: 14.5px; padding: 0 12px; }
+
+  .paper-lamp .journal-layout { grid-template-columns: 1fr; gap: 28px; }
+  .paper-lamp .journal-sheet { padding: 22px 20px 20px; border-radius: 18px; }
+  .paper-lamp .journal-day { font-size: 22px; }
+  .paper-lamp .journal-main textarea { font-size: 18.5px; min-height: 260px; }
+  .paper-lamp .journal-sheet-foot { flex-wrap: wrap; }
+  .paper-lamp .journal-sheet-foot .btn-primary { width: 100%; }
+  .paper-lamp .journal-reading .journal-entry-text { font-size: 18.5px; }
+
+  .tab-bar { border-radius: 0; gap: 0; box-shadow: none; left: 0; right: 0; bottom: 0; }
+  .tab-bar a { font-weight: 500; border-radius: 12px; }
+  .paper-lamp .chat-welcome .faces { gap: 6px; flex-wrap: nowrap; }
+  .paper-lamp .chat-welcome .face { padding: 0 12px; font-size: 14.5px; }
+  .paper-lamp .journal-sheet-head { flex-wrap: nowrap; }
+  .paper-lamp .journal-sheet-head .journal-companion h2 {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+  }
+  .paper-lamp .journey-page .stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; }
+  .paper-lamp .chat-panel section[aria-label='Find another activity'] h2 { font-size: 21px; }
+  .paper-lamp .page h2 { font-size: 22px; }
+  .paper-lamp .hero h1 { font-size: 40px; }
+  .paper-lamp .hero > p { font-size: 18px; }
+  .paper-lamp .journey-page .stat-grid { gap: 8px 28px; }
+  .paper-lamp .journey-page .stat strong { font-size: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper-lamp *, .paper-lamp *::before, .paper-lamp *::after { animation: none !important; transition: none !important; }
+}
+
+/* Ledger items align to their first line regardless of label length. */
+.paper-lamp .journey-page .stat { align-content: start; align-self: start; }
+.paper-lamp .journey-page > p.small { font-size: 13px; }
+
+/* Very narrow phones: the mood row wraps rather than widening the conversation column. */
+@media (max-width: 380px) {
+  .paper-lamp .chat-welcome .faces { flex-wrap: wrap; }
+  .paper-lamp .chat-welcome .face { padding: 0 11px; font-size: 14px; }
+  .paper-lamp .chat-welcome { min-width: 0; }
+}
+
+/* =====================================================================================
+   Paper & Lamp, in detail: warmer light, expressive type and small, honest details.
+   ===================================================================================== */
+:root, html[data-time] {
+  --ivory: #F4F1E8;
+  --paper: rgba(251, 248, 240, .97);
+  --paper-solid: #FBF8F0;
+  --ink: #1F3A31;
+  --ink-soft: #4A5D52;
+  --ink-faint: #5F6E65;
+  --forest: #24493C;
+  --you: #E3EADB;
+  --lamp: #D9A35B;
+  --lamp-mist: #F4E4C8;
+  --amber-ink: #8A5A1E;
+  --tag: #EFEBDF;
+  --hair: rgba(31, 58, 49, .11);
+}
+/* The drawn ambience replaces the stock photograph. */
+html { background: var(--ivory); }
+body { background: var(--ivory) !important; }
+.paper-lamp::before { content: none; }
+.ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.ambient-lamp { position: absolute; top: -220px; right: -180px; width: 640px; height: 640px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(232, 184, 110, .30), rgba(244, 241, 232, 0)); }
+.ambient-sage { position: absolute; bottom: -260px; left: -220px; width: 640px; height: 600px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(169, 190, 163, .34), rgba(244, 241, 232, 0)); }
+.ambient-branch { position: absolute; top: 60px; left: -60px; width: 300px; height: 300px; opacity: .07; }
+.ambient-branch path { fill: none; stroke: var(--ink); stroke-width: 3; }
+.ambient-branch ellipse { fill: var(--ink); }
+
+.kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--amber-ink);
+}
+.paper-lamp .btn-primary { background: var(--forest); border-radius: 999px; }
+.paper-lamp .btn-primary:hover:not(:disabled) { background: #1A3A2F; }
+.paper-lamp .btn-soft { border-radius: 999px; background: var(--you); color: var(--ink); }
+.paper-lamp .nook-navigation { background: rgba(244, 241, 232, .8); }
+.paper-lamp .nook-links a[aria-current='page']::after { background: var(--lamp); width: 5px; height: 5px; }
+
+/* ---------- Chat ---------- */
+.paper-lamp .chat-top { background: rgba(244, 241, 232, .86); }
+.paper-lamp .msg-time-divider {
+  align-self: stretch; display: flex; align-items: center; gap: 12px;
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-faint);
+}
+.paper-lamp .msg-time-divider::before, .paper-lamp .msg-time-divider::after { content: ""; flex: 1; height: 1px; background: var(--hair); }
+.paper-lamp .msg.from-luna .bubble { font-size: 20px; color: var(--ink); }
+.paper-lamp .msg.from-me .bubble { background: var(--you); border-radius: 20px 20px 6px 20px; box-shadow: 0 1px 0 rgba(31, 58, 49, .06); }
+.paper-lamp .composer textarea { background: var(--paper-solid); border-color: rgba(31, 58, 49, .15); }
+.paper-lamp .send-btn:not(:disabled) { background: var(--forest); }
+
+/* The invitation: a small lit scene beside a clear choice. */
+.paper-lamp .offer-card {
+  display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 0; padding: 0; overflow: hidden;
+  max-width: 640px; border-radius: 22px; background: var(--paper-solid); box-shadow: 0 18px 44px rgba(31, 58, 49, .08);
+}
+.paper-lamp .offer-card > :not(.offer-scene) { grid-column: 2; padding-left: 24px; padding-right: 24px; }
+.paper-lamp .offer-card > .offer-content { padding-top: 22px; }
+.paper-lamp .offer-card > .offer-footnote { padding-bottom: 18px; }
+.offer-scene { grid-row: 1 / span 3; position: relative; min-height: 220px; overflow: hidden;
+  background: linear-gradient(180deg, var(--lamp-mist) 0%, #EDE6D4 100%); }
+.offer-scene-window { position: absolute; top: 26px; left: 50%; margin-left: -46px; width: 92px; height: 116px;
+  border-radius: 46px 46px 6px 6px; background: var(--you); border: 3px solid var(--paper-solid);
+  box-shadow: inset 0 0 0 0 transparent; }
+.offer-scene-window::after { content: ""; position: absolute; top: 4px; bottom: 0; left: 50%; width: 3px; margin-left: -1.5px; background: var(--paper-solid); }
+.offer-scene-glow { position: absolute; bottom: 20px; left: 50%; margin-left: -80px; width: 160px; height: 140px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(232, 184, 110, .58), rgba(232, 184, 110, 0)); }
+.offer-scene-cushion { position: absolute; bottom: 18px; left: 50%; margin-left: -60px; width: 120px; height: 28px; border-radius: 999px; background: #D9C3A0; }
+.offer-scene-luna { position: absolute; bottom: 34px; left: 50%; margin-left: -30px; }
+.offer-scene-tag { position: absolute; top: 12px; right: 12px; padding: 3px 9px; border-radius: 999px; background: rgba(251, 248, 240, .86);
+  font-size: 10px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--amber-ink); }
+.paper-lamp .offer-kicker { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: var(--amber-ink); }
+.paper-lamp .offer-card h2 { font-size: 30px; font-weight: 450; line-height: 1.12; }
+.offer-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 0; padding: 0; list-style: none; }
+.offer-tags li { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: var(--tag); font-size: 13px; color: #3E5248; }
+.offer-tags svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.paper-lamp .offer-reason { font-family: var(--serif); font-style: italic; font-size: 17px; color: var(--ink-soft); }
+.paper-lamp .offer-controls .offer-start { background: var(--forest); border-radius: 999px; }
+
+/* The running activity: a lamp-coloured ring around resting Luna. */
+.paper-lamp .activity-bar { border-radius: 22px; background: var(--paper-solid); padding: 12px 14px; box-shadow: 0 14px 34px rgba(31, 58, 49, .09); }
+.paper-lamp .activity-ring { position: relative; width: 58px; height: 58px; flex: 0 0 58px; display: block; }
+.paper-lamp .activity-ring svg { position: absolute; inset: 0; }
+.activity-ring-luna { position: absolute; top: 12px; left: 12px; }
+.paper-lamp .activity-ring-track { stroke: #EFE7D6; }
+.paper-lamp .activity-ring-fill { stroke: var(--lamp); }
+.paper-lamp .activity-bar.is-paused .activity-ring-fill { stroke: #A9B4A3; }
+.paper-lamp .activity-bar-text strong { font-family: var(--font-body), sans-serif; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--amber-ink); font-weight: 600; }
+.paper-lamp .activity-time { font-family: var(--serif); font-size: 28px; line-height: 1.05; color: var(--ink); font-variant-numeric: tabular-nums; }
+.paper-lamp .activity-time em { font-size: 15px; color: var(--ink-faint); }
+.activity-step-hint { margin: 0; padding: 9px 12px; border-radius: 14px; background: var(--ivory);
+  font-family: var(--serif); font-style: italic; font-size: 15.5px; line-height: 1.45; color: #3E5248; }
+
+/* The check-in: four honest answers drawn as moons. */
+.paper-lamp .check-in-card { border-radius: 22px; background: var(--paper-solid); box-shadow: 0 16px 40px rgba(31, 58, 49, .08); }
+.paper-lamp .check-in-title { font-size: 28px; }
+.check-in-lede { margin: 0; font-family: var(--serif); font-style: italic; font-size: 16.5px; line-height: 1.45; color: var(--ink-soft); }
+.paper-lamp .participation-choice { min-height: 60px; gap: 10px; border-radius: 16px; background: var(--paper-solid); border-color: rgba(31, 58, 49, .16); }
+.paper-lamp .participation-choice.is-selected { background: var(--you); border-color: var(--forest); }
+.participation-text { display: grid; gap: 1px; }
+.participation-text small { font-size: 12px; font-weight: 400; color: var(--ink-faint); }
+.moon-radio { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; flex: 0 0 20px; margin: 0;
+  border-radius: 50%; border: 1.5px solid var(--forest); background: transparent; }
+.moon-radio.moon-completed { background: var(--forest); }
+.moon-radio.moon-partial { background: linear-gradient(90deg, var(--forest) 50%, transparent 50%); }
+.moon-radio.moon-stopped { border-style: dashed; border-color: var(--amber-ink); }
+.moon-radio:checked { box-shadow: 0 0 0 3px var(--paper-solid), 0 0 0 5px var(--lamp); }
+.moon-radio:focus-visible { outline: 2px solid var(--forest); outline-offset: 4px; }
+.paper-lamp .activity-receipt strong { color: var(--forest); }
+.activity-receipt-note { margin: 2px 0 0; font-family: var(--serif); font-style: italic; font-size: 15.5px; color: var(--ink-soft); }
+
+/* ---------- Home ---------- */
+.home-date { grid-column: 1; }
+.paper-lamp .hero h1 { font-weight: 400; }
+.paper-lamp .home-grid .card.sun { background: var(--lamp-mist); border: 1px solid rgba(138, 90, 30, .14); }
+.paper-lamp .home-grid .card.sun .eyebrow { display: inline-flex; color: var(--amber-ink); }
+.moon-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin: 8px 0 10px; padding: 0; list-style: none; text-align: center; }
+.moon-week li { display: grid; justify-items: center; gap: 5px; font-size: 11px; color: var(--ink-faint); }
+.moon-week li[aria-current='date'] { color: var(--ink); font-weight: 700; }
+
+/* ---------- Journal ---------- */
+.journal-title-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.entry-count { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--hair);
+  color: var(--ink); text-decoration: none; font-size: 13.5px; }
+.prompt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.prompt-chip { min-height: 36px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--tag); color: #3E5248; font-size: 13px; cursor: pointer; }
+.prompt-chip[aria-pressed='true'] { background: var(--lamp-mist); color: #5B4426; box-shadow: inset 0 0 0 1px rgba(138, 90, 30, .25); }
+.journal-day-wrap { display: grid; gap: 2px; }
+.paper-lamp .journal-paper { position: relative; }
+.paper-lamp .journal-paper::before { content: ""; position: absolute; top: 0; bottom: 0; left: 30px; width: 1px; background: rgba(184, 107, 78, .2); pointer-events: none; }
+.paper-lamp .journal-main textarea {
+  font-size: 19px; line-height: 32px;
+  background-image: repeating-linear-gradient(180deg, transparent 0, transparent 31px, rgba(31, 58, 49, .08) 31px, rgba(31, 58, 49, .08) 32px);
+  background-attachment: local;
+}
+.paper-lamp .journal-sheet-foot .unsaved { color: var(--amber-ink); font-weight: 600; }
+.saved-stamp { width: 60px; height: 60px; border-radius: 50%; border: 1.5px solid #B07A35; color: var(--amber-ink); display: grid; place-items: center;
+  transform: rotate(-8deg); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700; flex-shrink: 0; }
+.paper-lamp .journal-reading .journal-entry-text::first-letter { float: left; font-size: 3.1em; line-height: .9; padding: 6px 8px 0 0; color: var(--forest); }
+.paper-lamp .journal-reflection { position: relative; background: var(--lamp-mist); border-radius: 6px 18px 18px 18px; transform: rotate(-.6deg);
+  box-shadow: 0 10px 24px rgba(138, 90, 30, .12); padding: 18px 16px 14px; }
+.paper-lamp .journal-reflection::before { content: ""; position: absolute; top: -9px; left: 26px; width: 64px; height: 18px; background: rgba(251, 248, 240, .75); transform: rotate(-4deg); }
+.paper-lamp .journal-reflection .journal-entry-text { font-style: italic; color: #3A2E1C; }
+.paper-lamp .journal-reflection .journal-entry-text::first-letter { float: none; font-size: inherit; padding: 0; color: inherit; }
+
+/* ---------- Explore ---------- */
+.paper-lamp .search-permission { background: var(--you); border: 0; border-radius: 14px; padding: 12px 14px; }
+.paper-lamp .discovery-results { counter-reset: result; }
+.paper-lamp .discovery-page .discovery-results > article.discovery-result { counter-increment: result; position: relative; padding-left: 74px; overflow: hidden; background: var(--paper-solid); }
+.paper-lamp .discovery-page .discovery-results > article.discovery-result::before {
+  content: counter(result, upper-roman); position: absolute; top: 0; bottom: 0; left: 0; width: 50px; padding-top: 22px; text-align: center;
+  background: #A9BEA3; font-family: var(--serif); font-size: 20px; color: var(--ink);
+}
+.paper-lamp .discovery-page .discovery-results > article.discovery-result:nth-of-type(even)::before { background: var(--lamp-mist); color: var(--amber-ink); }
+.paper-lamp .result-index { display: none; }
+.paper-lamp .result-reason { font-family: var(--serif); font-style: italic; }
+
+/* ---------- Journey ---------- */
+.moon-calendar { padding: 18px; border-radius: 20px; background: var(--paper-solid); border: 1px solid var(--hair); }
+.moon-calendar-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.paper-lamp .moon-calendar h2 { font-size: 21px; }
+.moon-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 10px; margin: 0; padding: 0; list-style: none; text-align: center; max-width: 520px; }
+.moon-grid li { display: grid; justify-items: center; gap: 4px; font-size: 10.5px; color: var(--ink-faint); }
+.moon-legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0 0; }
+.moon-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---------- Welcome and settings ---------- */
+.paper-lamp .focus-page { background: var(--paper-solid); }
+.welcome-luna { display: block; position: relative; }
+.welcome-luna::before { content: ""; position: absolute; inset: -20px; border-radius: 50%; background: radial-gradient(closest-side, var(--lamp-mist), rgba(244, 228, 200, 0)); z-index: -1; }
+.welcome-lede { font-family: var(--serif); font-style: italic; font-size: 22px !important; color: var(--ink-soft); margin-top: -6px; }
+.welcome-promises { list-style: none; margin: 4px 0 8px; padding: 0; width: 100%; text-align: left; border-top: 1px solid var(--hair); }
+.welcome-promises li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--hair); font-size: 15px; }
+.welcome-promises svg { width: 20px; height: 20px; color: var(--forest); flex-shrink: 0; }
+.paper-lamp .switch input:checked + span { background: var(--forest); }
+.paper-lamp .settings { background: var(--paper-solid); border-radius: 20px; }
+.paper-lamp .tab-bar a[aria-current='page'] { background: var(--you); }
+
+@media (max-width: 560px) {
+  .paper-lamp .offer-card { grid-template-columns: minmax(0, 1fr); }
+  .paper-lamp .offer-card > :not(.offer-scene) { grid-column: 1; padding-left: 16px; padding-right: 16px; }
+  .offer-scene { grid-row: auto; min-height: 104px; height: 104px; }
+  .offer-scene-window { top: 14px; left: 26px; margin-left: 0; width: 60px; height: 78px; border-radius: 30px 30px 4px 4px; }
+  .offer-scene-glow { bottom: 0; }
+  .offer-scene-cushion { bottom: 6px; width: 104px; margin-left: -52px; height: 22px; }
+  .offer-scene-luna { bottom: 16px; }
+  .offer-scene-luna .luna { width: 56px; height: 56px; }
+  .paper-lamp .offer-card > .offer-content { padding-top: 14px; }
+  .paper-lamp .offer-card h2 { font-size: 24px; }
+  .paper-lamp .activity-time { font-size: 26px; }
+  .paper-lamp .journal-paper::before { left: 12px; }
+  .paper-lamp .discovery-page .discovery-results > article.discovery-result { padding-left: 62px; }
+  .paper-lamp .discovery-page .discovery-results > article.discovery-result::before { width: 42px; }
+  .ambient-branch { width: 220px; height: 220px; top: 20px; left: -80px; }
+}
+
+/* ---------- Night (10 pm to 5 am): the chat becomes a lamp-lit room ---------- */
+html[data-time='night'] body:has(.nook-chat-app) { background: #16231E !important; }
+html[data-time='night'] .nook-chat-app {
+  --ink: #EFE8D8; --ink-soft: #C9CFC2; --ink-faint: #B9C2B5; --you: #2E4339; --paper-solid: #22332B; --paper: rgba(34, 51, 43, .97);
+  --hair: rgba(239, 232, 216, .12); --tag: #2E4339; --ivory: #1B2A24; --lamp-mist: #3A3524; --amber-ink: #E2B36A;
+  color: var(--ink);
+}
+html[data-time='night'] .nook-chat-app .ambient-lamp { background: radial-gradient(closest-side, rgba(226, 179, 106, .26), rgba(22, 35, 30, 0)); }
+html[data-time='night'] .nook-chat-app .ambient-sage { opacity: .25; }
+html[data-time='night'] .nook-chat-app .ambient-branch path { stroke: #EFE8D8; }
+html[data-time='night'] .nook-chat-app .ambient-branch ellipse { fill: #EFE8D8; }
+html[data-time='night'] .nook-chat-app .chat-top { background: rgba(22, 35, 30, .9); }
+html[data-time='night'] .nook-chat-app .chat-top .icon-btn, html[data-time='night'] .nook-chat-app .chat-who strong { color: var(--ink); }
+html[data-time='night'] .nook-chat-app .msg.from-me .bubble { color: var(--ink); }
+html[data-time='night'] .nook-chat-app .msg.from-support .bubble { background: #3A3524; border-color: #6B5A33; color: var(--ink); }
+html[data-time='night'] .nook-chat-app .composer textarea { color: var(--ink); background: var(--paper-solid); border-color: var(--hair); }
+html[data-time='night'] .nook-chat-app .composer textarea::placeholder { color: #A9B2A5; }
+html[data-time='night'] .nook-chat-app .send-btn:disabled { background: #2E4339; color: #A9B2A5; }
+html[data-time='night'] .nook-chat-app .card, html[data-time='night'] .nook-chat-app .offer-card,
+html[data-time='night'] .nook-chat-app .check-in-card, html[data-time='night'] .nook-chat-app .activity-bar { color: var(--ink); }
+html[data-time='night'] .nook-chat-app .offer-tags li, html[data-time='night'] .nook-chat-app .participation-choice { color: var(--ink); }
+html[data-time='night'] .nook-chat-app .btn-quiet, html[data-time='night'] .nook-chat-app .chip, html[data-time='night'] .nook-chat-app .link-btn { color: var(--ink-soft); }
+html[data-time='night'] .nook-chat-app .text-field textarea { background: #1B2A24; color: var(--ink); border-color: var(--hair); }
+html[data-time='night'] .nook-chat-app .moon-radio { border-color: #A8C2AF; }
+html[data-time='night'] .nook-chat-app .moon-radio.moon-completed { background: #A8C2AF; }
+html[data-time='night'] .nook-chat-app .moon-radio.moon-partial { background: linear-gradient(90deg, #A8C2AF 50%, transparent 50%); }
+html[data-time='night'] .nook-chat-app .menu, html[data-time='night'] .nook-chat-app .sheet { background: #22332B; color: var(--ink); border-color: var(--hair); }
+html[data-time='night'] .nook-chat-app .privacy-pill { background: #22332B; color: var(--ink-soft); }
+html[data-time='night'] .nook-chat-app .chat-welcome .face { background: #22332B; color: var(--ink); border-color: var(--hair); }
+html[data-time='night'] .nook-chat-app .note { background: #2E4339; color: var(--ink); }
+/* Night: headings and labels carry fixed daytime ink elsewhere; give them the night ink. */
+html[data-time='night'] .nook-chat-app :is(h1, h2, h3, strong, legend, label, .participation-text span) { color: var(--ink); }
+html[data-time='night'] .nook-chat-app .offer-scene { background: linear-gradient(180deg, #3A3524 0%, #26362E 100%); }
+html[data-time='night'] .nook-chat-app .offer-kicker, html[data-time='night'] .nook-chat-app .activity-bar-text strong { color: #E2B36A; }
+html[data-time='night'] .nook-chat-app :is(.check-in-more summary, .offer-steps summary, .activity-resource-link, .activity-bar-steps) { color: #A8C2AF; }
+@media (max-width: 560px) {
+  /* Prompts stay one quiet, swipeable line instead of pushing the page down. */
+  .prompt-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; padding: 0 4px 2px; }
+  .prompt-chip { flex: 0 0 auto; white-space: nowrap; }
+}
+/* Weekday initials label the first week only; the second row aligns beneath them. */
+.moon-grid li:nth-child(n + 8) > span { display: none; }

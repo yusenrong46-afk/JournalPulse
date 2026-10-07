@@ -241,6 +241,7 @@ def test_signed_search_offer_has_no_journal_data_and_cannot_grant_another_owner_
             offer["resource_token"],
             user_id=OWNER,
             conversation_id=UUID(conversation["id"]),
+            conversation_incarnation_id=UUID(conversation["incarnation_id"]),
             conversation_revision=0,
             now=NOW,
         )
@@ -252,6 +253,7 @@ def test_signed_search_offer_has_no_journal_data_and_cannot_grant_another_owner_
                 offer["resource_token"],
                 user_id=OTHER,
                 conversation_id=UUID(conversation["id"]),
+                conversation_incarnation_id=UUID(conversation["incarnation_id"]),
                 conversation_revision=0,
                 now=NOW,
             )
@@ -337,16 +339,6 @@ class TwoResultDiscovery(DiscoveryDouble):
         })
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Known P3 (2026-10-05 UI audit): saving a different offer marks the earlier unstarted "
-        "offer 'declined' in both SQLite and the PostgreSQL function, and chat_activity_context "
-        "then excludes it from Luna's later choices, unlike the supersede path ('stopped'). "
-        "Fixing PostgreSQL needs a new migration on the shared project, so it is deferred; "
-        "remove this marker when both stores are fixed."
-    ),
-)
 def test_saving_another_offer_is_not_recorded_as_a_rejection(tmp_path: Path) -> None:
     settings = configured(tmp_path)
     with TestClient(create_app(
@@ -364,6 +356,7 @@ def test_saving_another_offer_is_not_recorded_as_a_rejection(tmp_path: Path) -> 
             verified = verify_resource_token(
                 settings, offer["resource_token"], user_id=OWNER,
                 conversation_id=UUID(conversation["id"]), conversation_revision=0, now=NOW,
+                conversation_incarnation_id=UUID(conversation["incarnation_id"]),
             )
             created = client.post(
                 f"/v1/conversations/{conversation['id']}/activity-sessions",
@@ -376,4 +369,9 @@ def test_saving_another_offer_is_not_recorded_as_a_rejection(tmp_path: Path) -> 
             assert created.status_code == 201, created.text
             saved.append(created.json()["id"])
         first = client.get(f"/v1/activity-sessions/{saved[0]}", headers=HEADERS).json()
-        assert first["status"] != "declined", "choosing another option is not a rejection"
+        assert first["status"] == "stopped", "choosing another option is not a rejection"
+        assert first["started_at"] is None and first["report"] is None
+        assert first["expires_at"] is None and not first["check_in_issued"]
+        assert first["revision"] == 1
+        current = client.get(f"/v1/activity-sessions/{saved[1]}", headers=HEADERS).json()
+        assert current["status"] == "offered"

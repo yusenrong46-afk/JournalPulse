@@ -68,10 +68,11 @@ export function readyForSomething(input: {
 
 /** An HTTP response can arrive after a newer choice, close, or support transition. */
 export function canApplyConversation(
-  current: { id: string; revision?: number; status: string; safety_mode?: string } | null,
-  next: { id: string; revision?: number; status: string; safety_mode?: string },
+  current: { id: string; revision?: number; status: string; safety_mode?: string; incarnation_id?: string | null } | null,
+  next: { id: string; revision?: number; status: string; safety_mode?: string; incarnation_id?: string | null },
 ): boolean {
   if (!current) return true;
+  if ((current.incarnation_id || next.incarnation_id) && current.incarnation_id !== next.incarnation_id) return false;
   if (current.id !== next.id || (next.revision ?? 0) < (current.revision ?? 0)) return false;
   if (current.status === "closed" && next.status !== "closed") return false;
   return current.safety_mode !== "support" || next.safety_mode === "support";

@@ -120,6 +120,7 @@ def finish(
     chat: Conversation,
     request: ActivityFollowUpRequest,
     directive: ActivityFollowUpDirective | None = None,
+    expected_incarnation=None,
 ) -> str:
     capture = base.Capture()
 
@@ -143,6 +144,9 @@ def finish(
             expected_revision=activity.revision,
             expected_conversation_revision=chat.revision,
             expected_session_created_at=activity.created_at,
+            expected_conversation_incarnation_id=(
+                expected_incarnation if expected_incarnation is not None else chat.incarnation_id
+            ),
             reply="The report says it stayed the same. We can leave it here.",
             model_run=ModelRun(model="fixture", latency_ms=1, schema_valid=True),
             now=datetime.now(UTC),
@@ -262,6 +266,24 @@ def superseded_offer_checks(card: ActionCard) -> int:
         ))
         count += notices(base.psql(base.DATABASE, "\n".join(setup)))
     return count
+
+
+def replaced_saved_offer_checks() -> int:
+    """Saving another option is not an explicit rejection or evidence of trying it."""
+    now = datetime.now(UTC)
+    chat = base.conversation(base.USER_A).model_copy(update={"created_at": now, "updated_at": now})
+    first, second = session(chat), session(chat)
+    return notices(base.psql(base.DATABASE, f"""
+    {base.as_user(base.USER_A)}
+    select {base.create(chat)};select {offer(first)};select {offer(second)};
+    {base.check(f"(select status='stopped' and revision=1 and record->>'status'='stopped' and record->>'started_at' is null and record->>'report' is null and record->>'expires_at' is null and not (record->>'check_in_issued')::boolean from public.activity_sessions where id='{first.id}')", "saving another offer withdraws without recording rejection or participation")}
+    {base.check(f"(select status='offered' and revision=0 from public.activity_sessions where id='{second.id}')", "replacement remains an unstarted offer")}
+    select {offer(second)};
+    {base.check(f"(select revision from public.activity_sessions where id='{first.id}')=1", "replacement retry does not withdraw the original twice")}
+    {base.expect_error(command(first, "start", 1), "This activity changed; refresh before trying again", "withdrawn offer cannot be started")}
+    select {command(second, "decline", 0)};
+    {base.check(f"(select status='declined' and record->>'status'='declined' from public.activity_sessions where id='{second.id}')", "explicit decline still records the participant choice")}
+    """))
 
 
 def followup_pause_checks() -> int:
@@ -390,6 +412,7 @@ def main() -> None:
     )
     count += preference_and_message_bound_checks(next_card)
     count += superseded_offer_checks(next_card)
+    count += replaced_saved_offer_checks()
     count += followup_pause_checks()
     finish_sql = finish(claimed, chat, follow, ActivityFollowUpDirective(card=next_card))
     stop_user, stop_assistant = base.pair(chat, "Stop. Please do not ask any more questions.", 0)

@@ -37,6 +37,8 @@ _DIAGNOSTIC_ERROR_TYPES = {
     "string_too_short", "string_too_long", "list_type", "too_long", "bool_type",
     "int_parsing", "int_type", "greater_than_equal", "value_error", "model_type", "dict_type",
     "invalid_activity_operation",
+    "activity_choice_conflict", "activity_move_requires_proposal", "activity_goal_required",
+    "activity_id_blank",
 }
 _DIAGNOSTIC_STAGES = {
     "provider_json", "envelope", "content_format", "output_schema", "output_semantics",
@@ -557,6 +559,9 @@ class GuidedActionTurnOutput(ConversationTurnOutput):
     activity: ActivityDirective
 
     def require_activity_semantics(self, context: GuidedActionContext) -> GuidedActionTurnOutput:
+        self.activity = self.activity.model_copy(update={
+            "constraints": context.effective_constraints(self.activity.constraints),
+        })
         choosing = self.activity.selected_resource_id is not None or self.activity.search_topic is not None
         if self.offer_action != choosing:
             raise ActivitySemanticError("Readiness must describe the validated activity operation")
@@ -614,7 +619,7 @@ class OpenRouterConversationClient:
         sleeper: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
-        if not settings.openrouter_api_key or not settings.chat_model:
+        if not settings.openrouter_enabled or not settings.chat_model.strip():
             raise ValueError("OpenRouter is not configured")
         if not settings.openrouter_zdr:
             raise ValueError("JournalPulse requires zero-data-retention routing")

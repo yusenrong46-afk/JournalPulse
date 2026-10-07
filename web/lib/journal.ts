@@ -1,4 +1,5 @@
 import { apiRequest } from "./api";
+import { LUNA_REQUEST_TIMEOUT_MS } from "./request-deadlines";
 import type { JournalEntry, JournalEntryPage, JournalReflectionResult } from "./journal-types";
 
 const ENTRY_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -38,7 +39,7 @@ export function reflectJournalEntry(
   return apiRequest(`/v1/journal/entries/${entryId}/reflect`, {
     method: "POST",
     body: JSON.stringify({ llm_consent: consent, locale }),
-    timeoutMs: 60_000,
+    timeoutMs: LUNA_REQUEST_TIMEOUT_MS,
     retry: false,
     signal,
   });

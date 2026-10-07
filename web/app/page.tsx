@@ -4,8 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
+import { Icon } from "@/components/nav-icon";
 import { Luna } from "@/components/luna";
-import { Plant, plantStage } from "@/components/plant";
+import { MoonMark } from "@/components/moon-mark";
+import { plantStage } from "@/components/plant";
+import { moonDays } from "@/lib/moon-days";
 import { apiRequest } from "@/lib/api";
 import { readOpenConversationId } from "@/lib/conversation";
 import { activityPlantStage, loadActivityHistory, PARTICIPATION_WORDS, type ActivityHistoryItem } from "@/lib/garden";
@@ -15,11 +18,11 @@ import { greeting, useTimeOfDay } from "@/lib/time-of-day";
 import type { OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
 
 const HELP_FACES = [
-  { score: 1, emoji: "😣", label: "Not at all" },
-  { score: 2, emoji: "😕", label: "A little" },
-  { score: 3, emoji: "😐", label: "Somewhat" },
-  { score: 4, emoji: "🙂", label: "Helped" },
-  { score: 5, emoji: "😄", label: "A lot" },
+  { score: 1, label: "Not at all" },
+  { score: 2, label: "A little" },
+  { score: 3, label: "Somewhat" },
+  { score: 4, label: "Helped" },
+  { score: 5, label: "A lot" },
 ];
 
 function subscribeToStorage(callback: () => void) {
@@ -96,24 +99,27 @@ export default function HomePage() {
     })),
   ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at)).slice(0, 8).reverse();
 
+  // Day marks only say that a moment was recorded; they never grade how it went.
+  const week = moonDays(reflections.map((item) => item.created_at), activities.map((item) => item.reported_at), 7, new Date(now));
+
   return (
     <>
       <section className="hero" aria-labelledby="home-greeting">
-        <svg className="hills" viewBox="0 0 400 160" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0 90 C70 50 130 60 200 88 C270 116 330 70 400 80 V160 H0 Z" fill="var(--hill-back)" opacity="0.7" />
-          <path d="M0 120 C80 96 150 110 220 124 C290 138 340 110 400 118 V160 H0 Z" fill="var(--hill-front)" />
-        </svg>
         <Luna mood={lunaMood} size={132} />
+        <span className="kicker home-date"><MoonMark kind="activity" size={15} />
+          {time ? new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" }) : "\u00a0"}</span>
         <h1 id="home-greeting">{time ? greeting(time) : "Hello"}</h1>
         <p>{pending && minutesLeft <= 0 ? "I’ve been wondering how your small step went." : "How are you arriving today?"}</p>
         <Link className="btn btn-primary btn-big" href="/talk">
           {openChat ? "Continue with Luna" : "Talk with Luna"}
         </Link>
-        <Link className="btn btn-ghost" href="/journal">Write a journal entry</Link>
-        <Link className="btn btn-ghost" href="/discover">Explore useful resources</Link>
+        <div className="home-paths">
+          <Link href="/journal"><Icon name="journal" /><span><strong>Write a journal entry</strong><small>Make room for what’s on your mind.</small></span><Icon name="arrow" /></Link>
+          <Link href="/discover"><Icon name="explore" /><span><strong>Explore useful resources</strong><small>Find a small place to begin.</small></span><Icon name="arrow" /></Link>
+        </div>
       </section>
 
-      <div className="page page-wide">
+      <div className="page page-wide home-details">
         {offline && (
           <p className="note error" role="status">Luna can’t reach your journal right now. Your chat will still try when you’re back online.</p>
         )}
@@ -129,14 +135,15 @@ export default function HomePage() {
               <div className="faces" role="group" aria-label="Did it help?">
                 {HELP_FACES.map((face) => (
                   <Link key={face.score} className="face" href={`/check-in?decision=${pending.decision.decision_id}&h=${face.score}`}>
-                    <span aria-hidden="true">{face.emoji}</span>
+                    <span className="scale-number" aria-hidden="true">{face.score}</span>
                     <span>{face.label}</span>
                   </Link>
                 ))}
               </div>
               <Link className="link-btn" href={`/check-in?decision=${pending.decision.decision_id}&tried=no`}>I haven’t tried it yet</Link>
             </section>
-          ) : (
+          ) : loaded && recent.length > 0 ? null : (
+            // Returning people already know the rhythm; the explanation is for a first visit.
             <section className="card lav" aria-labelledby="how-heading">
               <span className="eyebrow">How it works</span>
               <h2 id="how-heading">Talk, try one small thing, check in.</h2>
@@ -144,21 +151,27 @@ export default function HomePage() {
             </section>
           )}
 
-          <section className="card" aria-labelledby="garden-heading">
+          <section className="card week-card" aria-labelledby="garden-heading">
             <div className="row" style={{ justifyContent: "space-between" }}>
-              <h2 id="garden-heading">Your garden</h2>
+              <h2 id="garden-heading">This week</h2>
               <Link className="link-btn" href="/journey">See your journey</Link>
             </div>
             {!loaded ? (
               <div className="skeleton" style={{ minHeight: 70 }} />
-            ) : recent.length ? (
-              <div className="mini-garden">
-                {recent.map((item, index) => (
-                  <Plant key={item.key} index={index} size={36} stage={item.stage} label={item.label} />
-                ))}
-              </div>
             ) : (
-              <p className="muted">Each check-in plants something here. Your first one is a chat away.</p>
+              <>
+                <ol className="moon-week" aria-label="Days you showed up this week">
+                  {week.map((day) => (
+                    <li key={day.key} aria-current={day.today ? "date" : undefined}>
+                      <MoonMark kind={day.kind} today={day.today} size={28} label={day.label} />
+                      <span aria-hidden="true">{day.date.toLocaleDateString(undefined, { weekday: "narrow" })}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="small muted">{recent.length
+                  ? `${recent.length} recent ${recent.length === 1 ? "moment" : "moments"}, in your own words.`
+                  : "Each check-in leaves a small mark here. Your first one is a chat away."}</p>
+              </>
             )}
           </section>
         </div>

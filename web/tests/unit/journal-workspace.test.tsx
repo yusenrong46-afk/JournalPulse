@@ -136,7 +136,7 @@ describe("journal save, reflection and discussion", () => {
     expect(calls).toHaveLength(2);
     expect(calls[0]).toEqual(calls[1]);
     expect(calls[0][0]).toBe(entry.text);
-    expect(container.querySelector("textarea")!.value).toBe("");
+    expect(container.querySelector("textarea")).toBeNull(); // The confirmed save opens its immutable reading view.
     expect(navigation.query).toBe(`entry=${entry.id}`);
     expect(container.querySelector(".journal-entry-text")!.textContent).toBe(entry.text);
   });
@@ -151,6 +151,20 @@ describe("journal save, reflection and discussion", () => {
     expect(container.querySelector(".journal-entry-text")!.textContent).toBe(entry.text);
     expect(container.querySelector(`a[href='/talk?entry=${entry.id}']`)).toBeTruthy();
     expect(container.querySelector(".journal-reflection")).toBeNull();
+  });
+
+  test("a save that finishes after leaving the journal cannot navigate back", async () => {
+    navigation.query = "";
+    const delayed = deferred<JournalEntry>();
+    vi.mocked(saveJournalEntry).mockReturnValueOnce(delayed.promise);
+    await mount();
+    await write(entry.text);
+    await click("Save entry");
+    await act(async () => { root.render(createElement("p", null, "Another page")); });
+    navigation.replace.mockClear();
+    await act(async () => { delayed.resolve(entry); });
+    expect(navigation.replace).not.toHaveBeenCalled();
+    expect(container.textContent).toBe("Another page");
   });
 
   test("provider decline shows its explanation without hiding writing or inventing a reply", async () => {

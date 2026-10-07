@@ -1,23 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Nunito } from "next/font/google";
 
 import { AppShell } from "@/components/app-shell";
 import { ServiceWorkerRegistration } from "@/components/service-worker";
 
 import "./globals.css";
-
-const display = Nunito({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const body = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
+import "@fontsource-variable/dm-sans";
+import "./quiet-nook.css";
+// Paper & Lamp prototype: a reading serif for words people read or write, loaded locally.
+import "@fontsource-variable/newsreader/opsz.css";
+import "@fontsource-variable/newsreader/opsz-italic.css";
+import "./paper-lamp.css";
 
 export const metadata: Metadata = {
   title: { default: "JournalPulse", template: "%s · JournalPulse" },
@@ -27,11 +19,11 @@ export const metadata: Metadata = {
 
 // resizes-content lets Android Chrome shrink the page for the keyboard; /talk also follows the
 // visual viewport for iOS, which ignores this hint.
-export const viewport: Viewport = { themeColor: "#fbf5ec", colorScheme: "light", interactiveWidget: "resizes-content" };
+export const viewport: Viewport = { themeColor: "#f0f3ed", colorScheme: "light", interactiveWidget: "resizes-content" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en">
       <body>
         <AppShell>{children}</AppShell>
         <ServiceWorkerRegistration />

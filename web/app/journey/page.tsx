@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { Luna } from "@/components/luna";
-import { Plant, plantStage } from "@/components/plant";
+import { MoonMark } from "@/components/moon-mark";
+import { moonDays } from "@/lib/moon-days";
 import { apiRequest } from "@/lib/api";
 import { feelingById } from "@/lib/feelings";
-import { activityPlantStage, loadActivityHistory, PARTICIPATION_WORDS, type ActivityHistoryItem } from "@/lib/garden";
+import { loadActivityHistory, PARTICIPATION_WORDS, type ActivityHistoryItem } from "@/lib/garden";
 import type { OutcomeRecord, ReflectionRecord, Resource } from "@/lib/types";
 
 const HELP_WORDS = ["", "Didn’t help", "Helped a little", "Helped somewhat", "Helped", "Helped a lot"];
@@ -28,6 +29,14 @@ function dateLabel(value: string) {
   return new Date(value).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
+function activityWasTried(item: ActivityHistoryItem) {
+  return item.participation === "completed" || item.participation === "partial";
+}
+
+function matchesQuery(query: string, ...values: (string | null | undefined)[]) {
+  return values.filter(Boolean).join(" ").toLowerCase().includes(query);
+}
+
 export default function JourneyPage() {
   const [reflections, setReflections] = useState<ReflectionRecord[]>([]);
   const [outcomes, setOutcomes] = useState<OutcomeRecord[]>([]);
@@ -37,9 +46,13 @@ export default function JourneyPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [countsUnavailable, setCountsUnavailable] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([
+    let cancelled = false;
+    Promise.allSettled([
       apiRequest<{ items: ReflectionRecord[] }>("/v1/reflections?limit=100"),
       apiRequest<{ items: OutcomeRecord[] }>("/v1/outcomes"),
       apiRequest<{ items: Resource[] }>("/v1/resources"),
@@ -47,54 +60,86 @@ export default function JourneyPage() {
       loadActivityHistory(100),
     ])
       .then(([history, recorded, resources, chatActivities]) => {
-        setReflections(history.items);
-        setOutcomes(recorded.items);
-        setCatalog(resources.items);
-        setActivities(chatActivities ?? []);
-        setActivitiesFailed(chatActivities === null);
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+        if (cancelled) return;
+        if (history.status === "fulfilled") setReflections(history.value.items);
+        if (recorded.status === "fulfilled") setOutcomes(recorded.value.items);
+        if (resources.status === "fulfilled") setCatalog(resources.value.items);
+        const chatFailed = chatActivities.status === "rejected" || chatActivities.value === null;
+        if (chatActivities.status === "fulfilled") setActivities(chatActivities.value ?? []);
+        setActivitiesFailed(chatFailed);
+        setCountsUnavailable(history.status === "rejected" || recorded.status === "rejected" || chatFailed);
+        setError([history, recorded, resources].some((result) => result.status === "rejected"));
+        setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   const outcomeByDecision = useMemo(() => new Map(outcomes.map((item) => [item.decision_id, item])), [outcomes]);
-  const titleOf = (id: string) => catalog.find((item) => item.id === id)?.title ?? id.replaceAll("_", " ");
+  const titleById = useMemo(() => new Map(catalog.map((item) => [item.id, item.title])), [catalog]);
+  const titleOf = (id: string) => titleById.get(id) ?? id.replaceAll("_", " ");
 
-  const oldestFirst = [...reflections].reverse();
-  const tried = outcomes.filter((item) => item.completed);
-  const helpedCount = tried.filter((item) => (item.helpfulness ?? 0) >= 4).length;
+  const oldestFirst = [...reflections].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
+  const tried = reflections.flatMap((item) => {
+    const outcome = outcomeByDecision.get(item.decision.decision_id);
+    return outcome?.completed ? [outcome] : [];
+  });
+  const triedActivities = activities.filter(activityWasTried);
+  const helpedCount = tried.filter((item) => (item.helpfulness ?? 0) >= 4).length
+    + triedActivities.filter((item) => (item.helpfulness ?? 0) >= 4).length;
 
   const helped = useMemo(() => {
-    const byAction = new Map<string, { total: number; helped: number; sum: number }>();
+    const byAction = new Map<string, { title: string; source: string; total: number; helped: number; sum: number }>();
     for (const reflection of reflections) {
       const outcome = outcomeByDecision.get(reflection.decision.decision_id);
       if (!outcome?.completed || !outcome.helpfulness) continue;
-      const entry = byAction.get(reflection.decision.action_id) ?? { total: 0, helped: 0, sum: 0 };
+      const id = `reflection:${reflection.decision.action_id}`;
+      const entry = byAction.get(id) ?? {
+        title: titleById.get(reflection.decision.action_id) ?? reflection.decision.action_id.replaceAll("_", " "),
+        source: "From reflections", total: 0, helped: 0, sum: 0,
+      };
       entry.total += 1;
       entry.sum += outcome.helpfulness;
       if (outcome.helpfulness >= 4) entry.helped += 1;
-      byAction.set(reflection.decision.action_id, entry);
+      byAction.set(id, entry);
+    }
+    for (const activity of activities) {
+      if (!activityWasTried(activity) || !activity.helpfulness) continue;
+      // History exposes titles and kinds, not resource identities. Keep these
+      // ratings separate from catalog actions instead of assuming they match.
+      const id = `chat:${JSON.stringify([activity.kind, activity.title])}`;
+      const entry = byAction.get(id) ?? { title: activity.title, source: "From chats", total: 0, helped: 0, sum: 0 };
+      entry.total += 1;
+      entry.sum += activity.helpfulness;
+      if (activity.helpfulness >= 4) entry.helped += 1;
+      byAction.set(id, entry);
     }
     return [...byAction.entries()]
       .map(([id, entry]) => ({ id, ...entry, average: entry.sum / entry.total }))
       .sort((a, b) => b.average - a.average || b.total - a.total)
       .slice(0, 5);
-  }, [outcomeByDecision, reflections]);
+  }, [activities, outcomeByDecision, reflections, titleById]);
 
+  const searchTerm = query.trim().toLowerCase();
   const filtered = reflections.filter((item) => {
-    if (!query.trim()) return true;
-    const text = [
+    const outcome = outcomeByDecision.get(item.decision.decision_id);
+    return matchesQuery(searchTerm,
       item.reflection.summary,
       titleOf(item.decision.action_id),
+      !outcome ? "check-in waiting" : outcome.completed ? HELP_WORDS[outcome.helpfulness ?? 0] || "tried it" : "skipped",
       ...item.state.emotion_tags.map((tag) => feelingById(tag)?.label ?? tag),
-    ]
-      .join(" ")
-      .toLowerCase();
-    return text.includes(query.trim().toLowerCase());
+    );
   });
+  const filteredActivities = activities.filter((item) => matchesQuery(searchTerm,
+    item.title, item.kind, item.goal, PARTICIPATION_WORDS[item.participation],
+    item.state_change ? CHANGE_WORDS[item.state_change] : null,
+    activityWasTried(item) ? HELP_WORDS[item.helpfulness ?? 0] : null,
+  ));
 
   async function remove(id: string) {
+    if (deletingId) return;
     if (!window.confirm("Delete this entry and its check-in? This can’t be undone.")) return;
+    setDeletingId(id);
+    setDeleteError(false);
     const decisionId = reflections.find((item) => item.id === id)?.decision.decision_id;
     try {
       await apiRequest(`/v1/reflections/${id}`, { method: "DELETE" });
@@ -103,34 +148,23 @@ export default function JourneyPage() {
       // consistent immediately, rather than counting the deleted outcome.
       setOutcomes((current) => current.filter((item) => item.decision_id !== decisionId));
     } catch {
-      setError(true);
+      setDeleteError(true);
+    } finally {
+      setDeletingId(null);
     }
   }
 
-  const garden = [
-    ...oldestFirst.map((item) => {
-      const outcome = outcomeByDecision.get(item.decision.decision_id);
-      const status = !outcome ? "check-in waiting" : outcome.completed ? HELP_WORDS[outcome.helpfulness ?? 0] || "tried it" : "skipped";
-      return {
-        key: item.id, at: item.created_at,
-        stage: plantStage(outcome?.helpfulness, outcome?.completed),
-        label: `${dateLabel(item.created_at)}: ${status}`,
-      };
-    }),
-    ...activities.map((item) => ({
-      key: item.id, at: item.reported_at, stage: activityPlantStage(item),
-      label: `${dateLabel(item.reported_at)}: ${item.title}, ${PARTICIPATION_WORDS[item.participation].toLowerCase()}`,
-    })),
-  ].sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
 
-  if (!loading && !error && reflections.length === 0 && activities.length === 0) {
+  const fortnight = moonDays(reflections.map((item) => item.created_at), activities.map((item) => item.reported_at), 14);
+
+  if (!loading && !error && !activitiesFailed && reflections.length === 0 && activities.length === 0) {
     return (
       <div className="page">
         <header className="page-head"><h1>Your journey</h1></header>
         <section className="card center">
           <Luna mood="checkin" size={120} />
-          <h2>Your garden is ready to grow.</h2>
-          <p className="muted">Each time you try a small step and check in, a new plant appears here.</p>
+          <h2>A little space to look back.</h2>
+          <p className="muted">Your reflections and activity check-ins will gather here. There’s no pace to keep.</p>
           <Link className="btn btn-primary" href="/talk">Talk with Luna</Link>
         </section>
       </div>
@@ -138,114 +172,102 @@ export default function JourneyPage() {
   }
 
   return (
-    <div className="page page-wide">
+    <div className="page page-wide journey-page">
       <header className="page-head">
         <h1>Your journey</h1>
-        <p>Every check-in grows your garden. These are your own patterns, not a diagnosis.</p>
+        <p>A quiet look at what you’ve felt, tried, and found helpful.</p>
       </header>
 
-      {error && <p className="note error" role="status">Some of your journey couldn’t load. Nothing was changed.</p>}
+      {error && <p className="note error" role="status">Some of your journey couldn’t load. The history available is shown below; nothing was changed.</p>}
+      {deleteError && <p className="note error" role="alert">That check-in couldn’t be deleted. Please try again.</p>}
 
-      <section aria-label="Your garden">
+      <section className="moon-calendar" aria-labelledby="calendar-heading">
+        <div className="moon-calendar-head">
+          <h2 id="calendar-heading">Last two weeks</h2>
+          <span className="small muted">a mark for each day you showed up</span>
+        </div>
         {loading ? (
-          <div className="skeleton" />
+          <div className="skeleton" role="status" aria-label="Loading your journey" />
         ) : (
-          <div className="garden">
-            {garden.map((item, index) => (
-              <Plant key={item.key} index={index} stage={item.stage} size={48} label={item.label} />
-            ))}
-          </div>
+          <>
+            <ol className="moon-grid">
+              {fortnight.map((day) => (
+                <li key={day.key} aria-current={day.today ? "date" : undefined}>
+                  <span aria-hidden="true">{day.date.toLocaleDateString(undefined, { weekday: "narrow" })}</span>
+                  <MoonMark kind={day.kind} today={day.today} size={26} label={day.label} />
+                </li>
+              ))}
+            </ol>
+            <p className="moon-legend small muted">
+              <span><MoonMark kind="activity" size={14} /> activity check-in</span>
+              <span><MoonMark kind="moment" size={14} /> reflection or chat moment</span>
+            </p>
+          </>
         )}
       </section>
 
       <section className="stat-grid" aria-label="Your numbers">
-        <div className="stat"><strong>{reflections.length}</strong><span>check-ins with Luna</span></div>
-        <div className="stat"><strong>{tried.length}</strong><span>small steps tried</span></div>
-        <div className="stat"><strong>{helpedCount}</strong><span>really helped</span></div>
-        <div className="stat"><strong>{activities.length}</strong><span>activity check-ins from chats</span></div>
+        <div className="stat"><strong>{loading || countsUnavailable ? "—" : reflections.length + activities.length}</strong><span>moments recorded</span></div>
+        <div className="stat"><strong>{loading || countsUnavailable ? "—" : tried.length + triedActivities.length}</strong><span>small steps tried</span></div>
+        <div className="stat"><strong>{loading || countsUnavailable ? "—" : helpedCount}</strong><span>rated helpful</span></div>
+        <div className="stat"><strong>{loading || activitiesFailed ? "—" : activities.length}</strong><span>activity check-ins from chats</span></div>
+      </section>
+      <p className="small muted">Based on your latest 100 reflections and 100 activity check-ins. “Rated helpful” counts your ratings of 4 or 5 after trying a step.</p>
+
+      <section className="stack" aria-labelledby="history-heading">
+        <h2 id="history-heading">Your check-ins</h2>
+        <label className="sr-only" htmlFor="journey-search">Search your check-ins</label>
+        <input id="journey-search" className="search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search feelings, activities, or reflections" aria-describedby="journey-search-hint" />
+        <p id="journey-search-hint" className="small muted">Search both histories below. Your summary above stays the same.</p>
+        {searchTerm && !loading && <p className="small muted" role="status">{filtered.length + filteredActivities.length} {filtered.length + filteredActivities.length === 1 ? "matching check-in" : "matching check-ins"}</p>}
       </section>
 
-      <section className="card" aria-labelledby="chat-activities-heading">
+      <section className="journey-list" aria-labelledby="chat-activities-heading">
         <h2 id="chat-activities-heading">Activities from your chats</h2>
-        {activitiesFailed ? (
+        {loading ? <p className="muted">Loading your activity check-ins…</p> : activitiesFailed ? (
           <p className="muted" role="status">Activities from your chats couldn’t load. Nothing was changed.</p>
-        ) : activities.length ? (
+        ) : filteredActivities.length ? (
           <ul className="activity-history">
-            {activities.map((item) => (
+            {filteredActivities.map((item) => (
               <li key={item.id}>
                 <strong>{item.title}</strong>
                 <span className="small muted">
                   <time dateTime={item.reported_at}>{dateLabel(item.reported_at)}</time>
                   {" · "}{PARTICIPATION_WORDS[item.participation]}
                   {item.state_change ? ` · ${CHANGE_WORDS[item.state_change]}` : ""}
+                  {activityWasTried(item) && item.helpfulness ? ` · ${HELP_WORDS[item.helpfulness]}` : ""}
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="muted">When you try an activity with Luna and check in, it appears here in your own words.</p>
+          <p className="muted">{searchTerm ? "No activity check-ins match this search." : "When you report back on an activity with Luna, your check-in appears here—even if you didn’t try it."}</p>
         )}
         <p className="small muted">These are your own check-ins. Finishing a timer is never counted as trying it.</p>
       </section>
 
-      <div className="home-grid">
-        <section className="card" aria-labelledby="helped-heading">
-          <h2 id="helped-heading">What helps you</h2>
-          {helped.length ? (
-            <div className="helped">
-              {helped.map((item) => (
-                <div className="helped-row" key={item.id}>
-                  <strong>{titleOf(item.id)}</strong>
-                  <span className="small muted">helped {item.helped} of {item.total}</span>
-                  <div className="helped-bar"><i style={{ width: `${(item.average / 5) * 100}%` }} /></div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="muted">After a few check-ins, Luna will show which small steps help you most.</p>
-          )}
-        </section>
-
-        <section className="card" aria-labelledby="mood-heading">
-          <h2 id="mood-heading">How you’ve been feeling</h2>
-          <div className="mood-dots" role="img" aria-label={`Mood over your last ${Math.min(oldestFirst.length, 30)} check-ins`}>
-            {oldestFirst.slice(-30).map((item) => (
-              <span key={item.id} style={{ background: moodColor(item.state.valence) }} title={dateLabel(item.created_at)} />
-            ))}
-          </div>
-          <div className="row small muted">
-            <span><span className="tag" style={{ background: "var(--lav)" }}>&nbsp;</span> heavier</span>
-            <span><span className="tag" style={{ background: "#f1d9a6" }}>&nbsp;</span> in between</span>
-            <span><span className="tag" style={{ background: "var(--sage)" }}>&nbsp;</span> lighter</span>
-          </div>
-        </section>
-      </div>
-
       <section className="stack" aria-labelledby="entries-heading">
-        <div className="row" style={{ justifyContent: "space-between" }}>
-          <h2 id="entries-heading">Past check-ins</h2>
-        </div>
-        <label className="sr-only" htmlFor="journey-search">Search your check-ins</label>
-        <input id="journey-search" className="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search feelings or small steps" />
+        <h2 id="entries-heading">Past reflections</h2>
+        {loading && <p className="muted">Loading your reflections…</p>}
         {filtered.map((item) => {
           const outcome = outcomeByDecision.get(item.decision.decision_id);
           return (
             <article className="entry" key={item.id}>
               <div className="entry-head">
                 <time dateTime={item.created_at}>{dateLabel(item.created_at)}</time>
-                <button className="link-btn" type="button" aria-label={`Delete the check-in from ${dateLabel(item.created_at)}`} onClick={() => void remove(item.id)}>Delete</button>
+                <button className="link-btn" type="button" disabled={deletingId !== null} aria-label={`Delete the check-in from ${dateLabel(item.created_at)}`} onClick={() => void remove(item.id)}>{deletingId === item.id ? "Deleting…" : "Delete"}</button>
               </div>
               {item.state.emotion_tags.length > 0 && (
                 <div className="chips">
                   {item.state.emotion_tags.map((tag) => {
                     const feeling = feelingById(tag);
-                    return <span className="tag" key={tag}>{feeling ? `${feeling.emoji} ${feeling.label}` : tag.replaceAll("_", " ")}</span>;
+                    return <span className="tag" key={tag}>{feeling?.label ?? tag.replaceAll("_", " ")}</span>;
                   })}
                 </div>
               )}
               <p>{item.reflection.summary}</p>
               <div className="row small">
-                <span className="tag sun">Tried: {titleOf(item.decision.action_id)}</span>
+                <span className="tag sun">{outcome?.completed ? "Tried" : "Suggested"}: {titleOf(item.decision.action_id)}</span>
                 {outcome ? (
                   <span className="tag sage">{outcome.completed ? HELP_WORDS[outcome.helpfulness ?? 0] || "Tried it" : "Skipped"}</span>
                 ) : (
@@ -255,8 +277,45 @@ export default function JourneyPage() {
             </article>
           );
         })}
-        {!loading && filtered.length === 0 && reflections.length > 0 && <p className="muted">Nothing matches that search.</p>}
+        {!loading && filtered.length === 0 && <p className="muted">{searchTerm ? "No reflections match this search." : "Your saved reflections will appear here."}</p>}
       </section>
+      <div className="home-grid journey-insights">
+        <section className="card" aria-labelledby="helped-heading">
+          <h2 id="helped-heading">What you found helpful</h2>
+          {loading ? <p className="muted">Loading your ratings…</p> : helped.length ? (
+            <div className="helped">
+              {helped.map((item) => (
+                <div className="helped-row" key={item.id}>
+                  <strong>{item.title}</strong>
+                  <span className="small muted">{item.average.toFixed(1)} / 5</span>
+                  <span className="small muted">{item.source} · {item.total} {item.total === 1 ? "rating" : "ratings"} · {item.helped} rated helpful</span>
+                  <div className="helped-bar" aria-hidden="true"><i style={{ width: `${(item.average / 5) * 100}%` }} /></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="muted">When you rate a step you’ve tried, your ratings will appear here. Feeling the same or skipping a step doesn’t count as a helpfulness rating.</p>
+          )}
+        </section>
+
+        <section className="card" aria-labelledby="mood-heading">
+          <h2 id="mood-heading">Feelings from your reflections</h2>
+          {loading ? <p className="muted">Loading your reflections…</p> : oldestFirst.length ? <>
+          <div className="mood-dots" role="img" aria-label={oldestFirst.slice(-30).map((item) => `${dateLabel(item.created_at)}: ${item.state.valence >= 0.25 ? "lighter" : item.state.valence <= -0.25 ? "heavier" : "in between"}`).join("; ")}>
+            {oldestFirst.slice(-30).map((item) => (
+              <span key={item.id} style={{ background: moodColor(item.state.valence) }} title={dateLabel(item.created_at)} />
+            ))}
+          </div>
+          <div className="row small muted">
+            <span><span className="tag" style={{ background: "var(--lav)" }}>&nbsp;</span> heavier</span>
+            <span><span className="tag" style={{ background: "#f1d9a6" }}>&nbsp;</span> in between</span>
+            <span><span className="tag" style={{ background: "var(--sage)" }}>&nbsp;</span> lighter</span>
+          </div>
+          <p className="small muted">Up to 30 reflections, oldest to newest. Activity reports don’t add a mood estimate.</p>
+          </> : <p className="muted">Your saved reflections will add a view of how you’ve been feeling. Activity check-ins stay in your history below.</p>}
+        </section>
+      </div>
+
     </div>
   );
 }

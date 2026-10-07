@@ -18,7 +18,7 @@ import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import urlsplit
 from uuid import UUID, uuid4
 
 import httpx
@@ -42,7 +42,7 @@ from journalpulse.domain import (
 from journalpulse.intelligence import CONVERSATION_PROMPT_VERSION
 from journalpulse.persistence import SupabaseRepository
 from journalpulse.signing import readiness_probe, signed_payload
-from scratch_postgres import require_local_postgres_dsn
+from scratch_postgres import postgres_uri, require_local_postgres_dsn
 
 ROOT = Path(__file__).resolve().parents[1]
 DATABASE = "jp_verify"
@@ -58,7 +58,7 @@ def dsn_for(database: str) -> str | None:
     if not raw:
         return None
     parts = urlsplit(raw)
-    return urlunsplit(parts._replace(path=f"/{database}"))
+    return postgres_uri(parts._replace(path=f"/{database}"))
 
 
 def psql_command(database: str) -> list[str]:

@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
+import pytest
 from fastapi.testclient import TestClient
 
 from journalpulse.api import create_app
@@ -415,6 +416,29 @@ def test_a_goal_turn_still_goes_through_the_safety_gate(tmp_path: Path):
         assert updated["safety_mode"] == "support"
         assert updated["card"]["resource_intent"] == "pause"
         assert model.calls == []
+
+
+@pytest.mark.parametrize("disabled_setting", ["llm_feature_enabled", "openrouter_zdr"])
+def test_existing_unlinked_ai_chat_respects_disabled_ai_without_saving_a_turn(
+    tmp_path: Path, disabled_setting: str,
+):
+    model = ScriptedClient([False])
+    with TestClient(create_app(settings=chat_settings(tmp_path), conversation_client=model)) as client:
+        chat = start(client)
+        assert say(client, chat["id"], "A fictional first message.").status_code == 200
+        before = client.get(
+            f"/v1/conversations/{chat['id']}", headers={"X-JournalPulse-User": USER_A},
+        ).json()
+    disabled = chat_settings(tmp_path, **{disabled_setting: False})
+    with TestClient(create_app(settings=disabled, conversation_client=model)) as client:
+        rejected = say(client, chat["id"], "Do not send this while AI is disabled.")
+        assert rejected.status_code == 409
+        assert "AI help is unavailable" in rejected.json()["detail"]
+        after = client.get(
+            f"/v1/conversations/{chat['id']}", headers={"X-JournalPulse-User": USER_A},
+        ).json()
+        assert after == before
+    assert len(model.calls) == 1
 
 
 def test_accept_rejects_unknown_actions_and_a_missing_card(tmp_path: Path):

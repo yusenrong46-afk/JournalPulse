@@ -314,8 +314,8 @@ def test_deletion_during_generation_removes_derived_data_and_rejects_late_reply(
             assert began.wait(5)
             assert repository.delete_journal_entry(OWNER, source.id)
             # Reusing the entry UUID must not grant the old pending reply new ownership.
-            replacement = entry_in(repository, "Replacement entry.", id=source.id)
-            assert replacement.created_at != source.created_at
+            with pytest.raises(ValueError, match="deleted"):
+                entry_in(repository, "Replacement entry.", id=source.id)
         finally:
             release.set()
             worker.join(5)
@@ -335,10 +335,11 @@ def test_create_race_cannot_attach_a_replacement_entry_with_the_same_uuid(tmp_pa
             source = self.get_journal_entry(OWNER, conversation.source_entry_id)
             assert source is not None
             assert self.delete_journal_entry(OWNER, source.id)
-            self.save_journal_entry(JournalEntry(
-                id=source.id, user_id=OWNER, text="New writing under the reused UUID.",
-                created_at=source.created_at + timedelta(seconds=1),
-            ))
+            with pytest.raises(ValueError, match="deleted"):
+                self.save_journal_entry(JournalEntry(
+                    id=source.id, user_id=OWNER, text="New writing under the reused UUID.",
+                    created_at=source.created_at + timedelta(seconds=1),
+                ))
             return super().create_conversation(conversation)
 
     repository = ReplacingRepository(settings.database_path)

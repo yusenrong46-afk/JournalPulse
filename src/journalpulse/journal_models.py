@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .domain import ModelRun, SafetyResult
+from .domain import FEELINGS, ModelRun, SafetyResult
 
 
 def require_writing(text: str) -> str:
@@ -64,6 +64,16 @@ class JournalReflectionResult(BaseModel):
     model_run: ModelRun
     safety: SafetyResult
     generated_text_retained: Literal[False] = False
+    # Existing structured model suggestions, transient like the reply. They are
+    # never folded into the immutable entry or presented as confirmed self-report.
+    feelings: list[str] = Field(default_factory=list, max_length=3)
+
+    @field_validator("feelings")
+    @classmethod
+    def known_suggestions(cls, values: list[str]) -> list[str]:
+        if any(value not in FEELINGS for value in values):
+            raise ValueError("Unknown feeling suggestion")
+        return list(dict.fromkeys(values))
 
     @field_validator("reply")
     @classmethod

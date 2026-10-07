@@ -7,7 +7,7 @@ from uuid import UUID
 import pytest
 from fastapi.testclient import TestClient
 
-from journalpulse.activity_models import ActivityFollowUpRequest
+from journalpulse.activity_models import FOLLOW_UP_LEASE_SECONDS, ActivityFollowUpRequest
 from journalpulse.api import create_app
 from journalpulse.persistence import SQLiteRepository
 from test_guided_action_boundaries import (
@@ -24,7 +24,10 @@ from test_guided_action_boundaries import (
 )
 
 
-@pytest.mark.parametrize("elapsed,visible_status", [(89, "generating"), (90, "failed")])
+@pytest.mark.parametrize(
+    "elapsed,visible_status",
+    [(FOLLOW_UP_LEASE_SECONDS - 1, "generating"), (FOLLOW_UP_LEASE_SECONDS, "failed")],
+)
 def test_reads_expose_expired_claim_for_retry_without_mutating_storage(
     tmp_path: Path, elapsed: int, visible_status: str
 ) -> None:
@@ -88,7 +91,7 @@ def test_expired_claim_recovery_preserves_the_three_attempt_limit(tmp_path: Path
                 OWNER, UUID(session["id"]), request, now=clock()
             )
             assert owns and claimed.follow_up_attempts == expected_attempts
-            clock.now += timedelta(seconds=90)
+            clock.now += timedelta(seconds=FOLLOW_UP_LEASE_SECONDS)
         read = client.get(f"/v1/activity-sessions/{session['id']}", headers=OWNER_HEADERS)
         assert read.json()["follow_up_status"] == "failed"
         assert read.json()["follow_up_attempts"] == 3

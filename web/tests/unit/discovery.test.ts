@@ -1,3 +1,4 @@
+import { withDataRevisionPreflight } from "../helpers/revision-fetch";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import {
@@ -59,7 +60,7 @@ describe("discovery refinement", () => {
 describe("discovery requests", () => {
   test("sends only the approved stateless fields, with no automatic paid-call retry", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(JSON.stringify(previous), { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withDataRevisionPreflight(fetchMock));
     const payload = {
       original_query: previous.original_query, excluded_urls: [], llm_consent: true,
     };
@@ -76,7 +77,7 @@ describe("discovery requests", () => {
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((_url, init) => new Promise((_resolve, reject) => {
       init?.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), { once: true });
     }));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withDataRevisionPreflight(fetchMock));
     let settled = false;
     const outcome = searchDiscovery({ original_query: "grounding exercises", excluded_urls: [], llm_consent: true })
       .catch((error: Error) => {
@@ -94,7 +95,7 @@ describe("discovery requests", () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(
       JSON.stringify({ detail: "Web discovery is unavailable." }), { status: 503 },
     ));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withDataRevisionPreflight(fetchMock));
     await expect(searchDiscovery({ original_query: "grounding exercises", excluded_urls: [], llm_consent: true }))
       .rejects.toThrow("Web discovery is unavailable");
     expect(fetchMock).toHaveBeenCalledTimes(1);

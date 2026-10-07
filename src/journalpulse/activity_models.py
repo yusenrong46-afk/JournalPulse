@@ -37,7 +37,8 @@ NONTERMINAL_ACTIVITY_STATES = frozenset(
 )
 MAX_ACTIVITY_RECEIPTS = 64
 MAX_FOLLOW_UP_ATTEMPTS = 3
-FOLLOW_UP_LEASE_SECONDS = 90
+# Exceeds the 100s provider budget and 120s host limit, with recovery/commit headroom.
+FOLLOW_UP_LEASE_SECONDS = 180
 
 
 class ActivityResource(BaseModel):

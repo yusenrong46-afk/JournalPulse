@@ -5,6 +5,7 @@ import threading
 import time
 from collections import Counter, defaultdict
 from collections.abc import Callable
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
@@ -37,6 +38,7 @@ from .domain import (
     ReflectionRequest,
     SafetyMode,
 )
+from .erasure import AccountDataErased, DeletedObjectIdentity, bind_repository
 from .inline_discovery import register_inline_discovery_routes
 from .intelligence import OpenRouterReflectionClient, UnsupportedProviderResponse, safe_analyze
 from .journals import register_journal_routes
@@ -95,6 +97,10 @@ class DeletionResponse(BaseModel):
     note: str = "Journal data was deleted. Your sign-in identity remains active."
 
 
+class AccountDataRevisionResponse(BaseModel):
+    revision: int
+
+
 class SystemStatusResponse(BaseModel):
     analysis_mode: str
     persistence_mode: str
@@ -139,7 +145,10 @@ def create_app(
             return SupabaseRepository(settings, auth.access_token)
         return SQLiteRepository(settings.database_path)
 
-    repositories = repository_factory or default_repository_factory
+    make_repository = repository_factory or default_repository_factory
+
+    def repositories(auth: AuthContext) -> Repository:
+        return bind_repository(make_repository(auth), auth.user_id, auth.erasure_revision)
     # Resolve once so readiness checks the same export that the app will serve.
     # An unset path deliberately supports API-only development/deployments.
     web_dist_value = os.getenv("JOURNALPULSE_WEB_DIST", "").strip()
@@ -157,9 +166,26 @@ def create_app(
         allow_origins=list(settings.cors_origins),
         allow_credentials=True,
         allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-JournalPulse-User", "X-Request-ID"],
+        allow_headers=[
+            "Authorization", "Content-Type", "X-JournalPulse-User", "X-Request-ID",
+            "X-JournalPulse-Data-Revision",
+        ],
         expose_headers=["X-Request-ID"],
     )
+
+    @app.exception_handler(DeletedObjectIdentity)
+    def deleted_object_identity(request: Request, exc: DeletedObjectIdentity) -> JSONResponse:
+        del request, exc
+        return JSONResponse(status_code=409, content={
+            "detail": "This creation request was deleted. Start a new request."
+        })
+
+    @app.exception_handler(AccountDataErased)
+    def account_data_erased(request: Request, exc: AccountDataErased) -> JSONResponse:
+        del request, exc
+        return JSONResponse(status_code=409, content={
+            "detail": "Account data was cleared while this request was in progress. Start a new request."
+        })
 
     @app.exception_handler(StorageUnavailable)
     def storage_unavailable(request: Request, exc: StorageUnavailable) -> JSONResponse:
@@ -198,14 +224,27 @@ def create_app(
             )
 
     def auth_dependency(
+        request: Request,
         authorization: str | None = Header(default=None),
         development_user: str | None = Header(default=None, alias="X-JournalPulse-User"),
+        data_revision: int = Header(
+            default=0, ge=0, le=9_007_199_254_740_991, alias="X-JournalPulse-Data-Revision",
+        ),
     ) -> AuthContext:
-        return resolve_auth(
+        auth = resolve_auth(
             settings,
             authorization=authorization,
             development_user=development_user,
         )
+        if request.method == "POST":
+            # The browser observed this revision before submitting the mutation.
+            # Never refresh it here: the request may already have waited through
+            # an account erase inside authentication. Missing headers represent
+            # legacy revision zero, so old clients fail closed after any erasure.
+            auth = replace(auth, erasure_revision=data_revision)
+            if make_repository(auth).get_erasure_revision(auth.user_id) != data_revision:
+                raise AccountDataErased("Account data was erased")
+        return auth
 
     @app.get("/health")
     def health() -> dict:
@@ -273,6 +312,13 @@ def create_app(
     def create_reflection(
         payload: ReflectionRequest, auth: AuthContext = Depends(auth_dependency)
     ) -> ReflectionRecord:
+        repository = repositories(auth)
+        if payload.client_request_id is not None:
+            # Legacy saves use first-write-wins receipts. A lost response must
+            # not spend another generation slot before returning the saved record.
+            saved = repository.get_reflection(auth.user_id, payload.client_request_id, standalone_only=True)
+            if saved is not None:
+                return saved
         safety = assess_safety(payload.text, payload.locale)
         if safety.mode == SafetyMode.SUPPORT:
             state = payload.self_report or AffectiveState(
@@ -555,6 +601,13 @@ def create_app(
     @app.get("/v1/export")
     def export(auth: AuthContext = Depends(auth_dependency)) -> dict:
         return repositories(auth).export_user_data(auth.user_id)
+
+    @app.get("/v1/account/data-revision", response_model=AccountDataRevisionResponse)
+    def account_data_revision(
+        response: Response, auth: AuthContext = Depends(auth_dependency),
+    ) -> AccountDataRevisionResponse:
+        response.headers["Cache-Control"] = "no-store"
+        return AccountDataRevisionResponse(revision=make_repository(auth).get_erasure_revision(auth.user_id))
 
     @app.delete("/v1/account/data", response_model=DeletionResponse)
     def delete_account_data(auth: AuthContext = Depends(auth_dependency)) -> DeletionResponse:

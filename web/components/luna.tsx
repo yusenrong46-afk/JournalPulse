@@ -1,15 +1,6 @@
 import { useId } from "react";
-
-export type LunaMood =
-  | "idle"
-  | "listening"
-  | "thinking"
-  | "answering"
-  | "proud"
-  | "oops"
-  | "sleepy"
-  | "checkin"
-  | "support";
+import type { LunaMood } from "@/lib/luna-motion";
+export type { LunaMood } from "@/lib/luna-motion";
 
 const LABELS: Record<LunaMood, string> = {
   idle: "Luna is here",
@@ -21,9 +12,15 @@ const LABELS: Record<LunaMood, string> = {
   sleepy: "Luna is sleepy",
   checkin: "Luna is checking in",
   support: "Luna is here with you",
+  reflecting: "Luna is reflecting with you",
+  comforting: "Luna is listening gently",
+  grounded: "Luna is taking a quiet moment",
+  offering: "Luna has an optional idea",
+  resting: "Luna is giving you space",
+  encouraging: "Luna is warmly attentive",
 };
 
-const INK = "#2B2540";
+const INK = "#243e35";
 
 type LunaProps = {
   mood?: LunaMood;
@@ -38,12 +35,13 @@ export function Luna({ mood = "idle", size = 120, decorative = false, className 
   const body = `luna-body-${id}`;
   const glow = `luna-glow-${id}`;
   const label = LABELS[mood];
-  const happyEyes = mood === "answering" || mood === "proud";
+  const happyEyes = mood === "proud" || mood === "encouraging";
   const armsUp = mood === "proud";
 
   return (
     <svg
       className={["luna", `luna-${mood}`, className].filter(Boolean).join(" ")}
+      data-luna-pose={mood}
       width={size}
       height={size}
       viewBox="0 0 160 160"
@@ -66,11 +64,13 @@ export function Luna({ mood = "idle", size = 120, decorative = false, className 
 
       <ellipse className="luna-shadow" cx="80" cy="148" rx="30" ry="5" fill={INK} opacity="0.1" />
 
+      {/* The supplied brand character keeps its identity while its body parts
+          respond independently to the current conversation. */}
       <g className="luna-float">
         {mood === "thinking" && (
           <g className="luna-orbit" aria-hidden="true">
-            <Star x={36} y={40} size={6} color="#B9A8F0" />
-            <Star x={124} y={34} size={5} color="#FF9A5A" />
+            <Star x={36} y={40} size={6} color="#91A88B" />
+            <Star x={124} y={34} size={5} color="#C9BA98" />
             <Star x={130} y={78} size={4} color="#9FC8A8" />
           </g>
         )}
@@ -112,7 +112,7 @@ export function Luna({ mood = "idle", size = 120, decorative = false, className 
 
         {mood === "sleepy" && (
           <g aria-hidden="true">
-            <path d="M44 72 C46 44 70 36 92 40 C110 43 124 36 134 26 C136 46 126 60 116 66 C96 58 64 60 44 72 Z" fill="#B9A8F0" />
+            <path d="M44 72 C46 44 70 36 92 40 C110 43 124 36 134 26 C136 46 126 60 116 66 C96 58 64 60 44 72 Z" fill="#91A88B" />
             <path d="M42 72 C62 60 98 58 118 68" stroke="#F4F0FF" strokeWidth="7" strokeLinecap="round" fill="none" />
             <circle cx="135" cy="25" r="7" fill="#F4F0FF" />
           </g>
@@ -132,14 +132,14 @@ export function Luna({ mood = "idle", size = 120, decorative = false, className 
 
         {mood === "answering" && (
           <g className="luna-twinkle" aria-hidden="true">
-            <Star x={128} y={48} size={9} color="#FF9A5A" />
+            <Star x={128} y={48} size={9} color="#C9BA98" />
           </g>
         )}
         {mood === "proud" && (
           <g className="luna-petals" aria-hidden="true">
-            <Petal x={30} y={30} color="#FF9A5A" />
+            <Petal x={30} y={30} color="#C9BA98" />
             <Petal x={130} y={24} color="#FFB4A2" />
-            <Petal x={112} y={10} color="#B9A8F0" />
+            <Petal x={112} y={10} color="#91A88B" />
             <Petal x={46} y={8} color="#FFB4A2" />
           </g>
         )}
@@ -162,25 +162,25 @@ export function Luna({ mood = "idle", size = 120, decorative = false, className 
           <g className="luna-lantern" aria-hidden="true">
             <circle cx="128" cy="118" r="22" fill={`url(#${glow})`} className="luna-lantern-glow" />
             <path d="M128 96 v6" stroke={INK} strokeWidth="2" strokeLinecap="round" />
-            <rect x="119" y="102" width="18" height="24" rx="6" fill="#FFE3A3" stroke="#6B5A8E" strokeWidth="2" />
-            <rect x="122" y="126" width="12" height="4" rx="2" fill="#6B5A8E" />
-            <rect x="122" y="99" width="12" height="4" rx="2" fill="#6B5A8E" />
+            <rect x="119" y="102" width="18" height="24" rx="6" fill="#FFE3A3" stroke="#587B60" strokeWidth="2" />
+            <rect x="122" y="126" width="12" height="4" rx="2" fill="#587B60" />
+            <rect x="122" y="99" width="12" height="4" rx="2" fill="#587B60" />
           </g>
         )}
       </g>
 
       {mood === "thinking" && (
         <g className="luna-bubble" aria-hidden="true">
-          <circle cx="108" cy="46" r="3" fill="#FFFFFF" stroke="#E4DDF7" />
-          <circle cx="116" cy="36" r="4.5" fill="#FFFFFF" stroke="#E4DDF7" />
-          <rect x="112" y="8" width="42" height="22" rx="11" fill="#FFFFFF" stroke="#E4DDF7" />
-          <text x="133" y="23" textAnchor="middle" fontSize="10" fontWeight="700" fill="#6B5A8E">hmm…</text>
+          <circle cx="108" cy="46" r="3" fill="#FFFFFF" stroke="#DDE5D7" />
+          <circle cx="116" cy="36" r="4.5" fill="#FFFFFF" stroke="#DDE5D7" />
+          <rect x="112" y="8" width="42" height="22" rx="11" fill="#FFFFFF" stroke="#DDE5D7" />
+          <text x="133" y="23" textAnchor="middle" fontSize="10" fontWeight="700" fill="#587B60">hmm…</text>
         </g>
       )}
       {mood === "sleepy" && (
         <g className="luna-zz" aria-hidden="true">
-          <text x="120" y="70" fontSize="14" fontWeight="800" fill="#B9A8F0">z</text>
-          <text x="132" y="56" fontSize="11" fontWeight="800" fill="#B9A8F0">z</text>
+          <text x="120" y="70" fontSize="14" fontWeight="800" fill="#91A88B">z</text>
+          <text x="132" y="56" fontSize="11" fontWeight="800" fill="#91A88B">z</text>
         </g>
       )}
     </svg>
@@ -196,7 +196,7 @@ function Eyes({ mood, happy }: { mood: LunaMood; happy: boolean }) {
       </>
     );
   }
-  if (mood === "sleepy") {
+  if (mood === "sleepy" || mood === "grounded" || mood === "resting") {
     return (
       <>
         <path d="M60 90 Q66 95 72 90" stroke={INK} strokeWidth="3" strokeLinecap="round" fill="none" />
@@ -205,16 +205,17 @@ function Eyes({ mood, happy }: { mood: LunaMood; happy: boolean }) {
     );
   }
   if (mood === "oops") {
-    const swirl = (cx: number) =>
-      `M${cx} 89 m-1 0 a1 1 0 1 1 2 0 a3 3 0 1 1 -5 -1 a5 5 0 1 1 9 2`;
+    // A snag is the app's problem, not the person's: attentive eyes, no alarm or dizziness.
     return (
       <>
-        <path d={swirl(66)} stroke="#E07A4F" strokeWidth="2" strokeLinecap="round" fill="none" />
-        <path d={swirl(94)} stroke="#E07A4F" strokeWidth="2" strokeLinecap="round" fill="none" />
+        <circle cx="66" cy="91" r="4" fill={INK} />
+        <circle cx="94" cy="91" r="4" fill={INK} />
+        <circle cx="64.8" cy="89.6" r="1.2" fill="#FFFFFF" />
+        <circle cx="92.8" cy="89.6" r="1.2" fill="#FFFFFF" />
       </>
     );
   }
-  if (mood === "support") {
+  if (mood === "support" || mood === "comforting") {
     return (
       <>
         <ellipse cx="66" cy="90" rx="3.8" ry="4.2" fill={INK} />
@@ -224,9 +225,9 @@ function Eyes({ mood, happy }: { mood: LunaMood; happy: boolean }) {
       </>
     );
   }
-  const big = mood === "listening";
+  const big = mood === "listening" || mood === "offering";
   const radius = big ? 5.2 : 4.4;
-  const dx = mood === "thinking" ? -2 : 0;
+  const dx = mood === "thinking" || mood === "reflecting" ? -2 : 0;
   const dy = mood === "thinking" ? -3 : 0;
   return (
     <>
@@ -242,8 +243,12 @@ function Mouth({ mood }: { mood: LunaMood }) {
   switch (mood) {
     case "listening":
       return <ellipse cx="80" cy="105" rx="2.8" ry="3.4" fill={INK} />;
+    // An upward-bowed line reads as a frown at chat-header size; thinking stays neutral
+    // and reflecting keeps a faint, tentative warmth.
     case "thinking":
-      return <path d="M75 105 Q80 103 85 105" stroke={INK} strokeWidth="2.4" strokeLinecap="round" fill="none" />;
+      return <path d="M76 105 Q80 106 84 105" stroke={INK} strokeWidth="2.3" strokeLinecap="round" fill="none" />;
+    case "reflecting":
+      return <path d="M75 104 Q80 107.5 85 104" stroke={INK} strokeWidth="2.3" strokeLinecap="round" fill="none" />;
     case "answering":
     case "proud":
       return (
@@ -253,10 +258,12 @@ function Mouth({ mood }: { mood: LunaMood }) {
         </>
       );
     case "oops":
-      return <path d="M72 106 q4 -4 8 0 q4 4 8 0" stroke={INK} strokeWidth="2.4" strokeLinecap="round" fill="none" />;
+      return <path d="M76 105.5 L84 105.5" stroke={INK} strokeWidth="2.3" strokeLinecap="round" fill="none" />;
     case "sleepy":
       return <ellipse cx="80" cy="105" rx="2.4" ry="2" fill={INK} opacity="0.8" />;
     case "support":
+    case "comforting":
+    case "resting":
       return <path d="M75 103 Q80 106 85 103" stroke={INK} strokeWidth="2.2" strokeLinecap="round" fill="none" />;
     default:
       return <path d="M74 102 Q80 108 86 102" stroke={INK} strokeWidth="2.6" strokeLinecap="round" fill="none" />;

@@ -22,7 +22,7 @@ export function useStickToBottom() {
     if (!element) return;
     pinned.current = true;
     setUnseen(false);
-    if (smooth && typeof element.scrollTo === "function") {
+    if (smooth && !window.matchMedia("(prefers-reduced-motion: reduce)").matches && typeof element.scrollTo === "function") {
       element.scrollTo({ top: element.scrollHeight, behavior: "smooth" });
     } else {
       element.scrollTop = element.scrollHeight;

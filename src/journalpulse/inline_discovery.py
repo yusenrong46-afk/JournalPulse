@@ -166,7 +166,9 @@ def register_inline_discovery_routes(
         # Search/model latency cannot turn a stale journal or preference into a
         # new offer. Tokens bind the exact owner, chat revision and expiry.
         current = require_context(repository, auth, conversation_id)
-        if current.revision != conversation.revision:
+        if (current.revision != conversation.revision
+                or current.incarnation_id != conversation.incarnation_id
+                or current.created_at != conversation.created_at):
             raise HTTPException(409, "This chat changed while searching. These results were not offered.")
         offers = []
         for candidate in result.candidates:
@@ -182,7 +184,9 @@ def register_inline_discovery_routes(
                         user_id=auth.user_id,
                         conversation_id=conversation_id,
                         conversation_revision=current.revision,
+                        conversation_incarnation_id=current.incarnation_id,
                         resource=descriptor,
+                        goal=goal,
                         now=clock(),
                     ),
                 )

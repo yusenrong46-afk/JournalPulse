@@ -75,3 +75,9 @@ describe("canonical conversation updates", () => {
     expect(canApplyConversation(current, { ...current, id: "chat-b" })).toBe(false);
   });
 });
+
+test("a reused chat ID cannot admit a response from another incarnation", () => {
+  const current={id:"same",status:"open",revision:0,incarnation_id:"new"};
+  expect(canApplyConversation(current,{...current,revision:10,incarnation_id:"old"})).toBe(false);
+  expect(canApplyConversation(current,{...current,revision:1})).toBe(true);
+});

@@ -1,6 +1,7 @@
 // Real UI -> API -> PostgREST -> PostgreSQL. Auth issuance, Luna and search are
 // explicit local test doubles; passing these checks does not establish AI quality.
 import { type APIRequestContext, expect, type Page, test } from "@playwright/test";
+import { currentDataRevisionHeaders } from "../helpers/data-revision";
 
 type Session = { user_id: string; access_token: string };
 
@@ -63,7 +64,7 @@ test("slice 1: save, reopen, reflect and delete standalone writing", async ({ pa
 test("slice 2: selected journal context survives chat reload and source deletion invalidates it", async ({ page, request }, testInfo) => {
   const headers = await setup(page, request);
   const saved = await request.post("/v1/journal/entries", {
-    headers, data: { text: "A fictional meeting left me stressed and tired." },
+    headers: await currentDataRevisionHeaders(request, headers), data: { text: "A fictional meeting left me stressed and tired." },
   });
   expect(saved.status()).toBe(201);
   const entry = await saved.json();
@@ -92,16 +93,17 @@ test("slice 2: selected journal context survives chat reload and source deletion
 test("slice 3: approve a topic and refine results without repeating sources", async ({ page, request }, testInfo) => {
   await setup(page, request);
   await page.goto("/discover/");
-  await page.getByLabel("General topic to search").fill("Understanding overthinking");
+  await page.getByLabel("What would you like to explore?").fill("Understanding overthinking");
   await expect(page.getByRole("button", { name: "Search this topic" })).toBeDisabled();
-  await page.getByRole("checkbox", { name: /I approve sending this topic/ }).check();
+  await page.getByRole("checkbox", { name: /Share this topic/ }).check();
   await page.getByRole("button", { name: "Search this topic" }).click();
   await expect(page.getByRole("link", { name: "Fictional reflection resource 1", exact: true })).toBeVisible();
   await page.getByLabel("Feedback for Luna").fill("Something shorter and practical");
   await page.getByRole("button", { name: "Find different sources" }).click();
   await expect(page.getByRole("link", { name: "Fictional reflection resource 3", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Fictional reflection resource 1", exact: true })).toHaveCount(0);
-  await expect(page.getByText("Your original goal: Understanding overthinking", { exact: true })).toBeVisible();
+  // The original topic stays the visible goal while refinement narrows the search.
+  await expect(page.getByRole("heading", { name: "Understanding overthinking", exact: true })).toBeVisible();
   await expect(page.getByText(
     "Latest search: Understanding overthinking Something shorter and practical", { exact: true },
   )).toBeVisible();

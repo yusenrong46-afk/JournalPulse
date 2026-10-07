@@ -1,6 +1,7 @@
 // Real UI/API/PostgREST/PostgreSQL. Auth, Luna and Brave remain named local
 // test doubles; these checks establish the activity loop, not emotional benefit.
 import { expect, type APIRequestContext, type Page, test } from "@playwright/test";
+import { currentDataRevisionHeaders } from "../helpers/data-revision";
 
 type Session = { user_id: string; access_token: string };
 type Activity = {
@@ -225,10 +226,10 @@ test("a newer recommendation replaces an unstarted saved search offer", async ({
   await clearAccount(request, who);
   try {
     const chat = await (await request.post("/v1/conversations", {
-      headers: headers(who), data: { llm_consent: true, retain_text: false },
+      headers: await currentDataRevisionHeaders(request, headers(who)), data: { llm_consent: true, retain_text: false },
     })).json();
     const discoveredResponse = await request.post(`/v1/conversations/${chat.id}/discover`, {
-      headers: headers(who), data: {
+      headers: await currentDataRevisionHeaders(request, headers(who)), data: {
         expected_revision: chat.revision, llm_consent: true, original_query: "quiet meditation",
       },
     });
@@ -236,7 +237,7 @@ test("a newer recommendation replaces an unstarted saved search offer", async ({
     const { offers } = await discoveredResponse.json();
     expect(offers.length).toBeGreaterThan(0);
     const createdResponse = await request.post(`/v1/conversations/${chat.id}/activity-sessions`, {
-      headers: headers(who), data: {
+      headers: await currentDataRevisionHeaders(request, headers(who)), data: {
         client_request_id: crypto.randomUUID(), expected_conversation_revision: chat.revision,
         resource_id: offers[0].resource.id, resource_token: offers[0].resource_token,
       },

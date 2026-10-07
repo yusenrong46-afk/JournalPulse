@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/account/data-revision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Account Data Revision */
+        get: operations["account_data_revision_v1_account_data_revision_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/actions/preview": {
         parameters: {
             query?: never;
@@ -517,6 +534,11 @@ export interface components {
             expected_revision?: number | null;
             self_report?: components["schemas"]["AffectiveState"] | null;
         };
+        /** AccountDataRevisionResponse */
+        AccountDataRevisionResponse: {
+            /** Revision */
+            revision: number;
+        };
         /** ActionCard */
         ActionCard: {
             /** Actions */
@@ -914,6 +936,8 @@ export interface components {
              * Format: uuid
              */
             id?: string;
+            /** Incarnation Id */
+            incarnation_id?: string | null;
             /** @default auto */
             interaction_preference: components["schemas"]["InteractionPreference"];
             /** Llm Consent */
@@ -1007,6 +1031,7 @@ export interface components {
          * @description Explicit taps accompanying a turn; no text or text digest is retained here.
          */
         ConversationRequestInputs: {
+            activity_constraints?: components["schemas"]["ActivityConstraintInputs"] | null;
             /** Confirmed Feelings */
             confirmed_feelings?: string[] | null;
             goal?: components["schemas"]["Goal"] | null;
@@ -1020,6 +1045,7 @@ export interface components {
         ConversationStatus: "open" | "closed";
         /** ConversationTurnRequest */
         ConversationTurnRequest: {
+            activity_constraints?: components["schemas"]["ActivityConstraintInputs"] | null;
             /**
              * Client Message Id
              * Format: uuid
@@ -1027,6 +1053,8 @@ export interface components {
             client_message_id: string;
             /** Confirmed Feelings */
             confirmed_feelings?: string[] | null;
+            /** Expected Incarnation Id */
+            expected_incarnation_id?: string | null;
             goal?: components["schemas"]["Goal"] | null;
             /** Mood Score */
             mood_score?: number | null;
@@ -1302,6 +1330,8 @@ export interface components {
              * Format: uuid
              */
             entry_id: string;
+            /** Feelings */
+            feelings?: string[];
             /**
              * Generated Text Retained
              * @default false
@@ -1836,6 +1866,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -1862,12 +1893,46 @@ export interface operations {
             };
         };
     };
+    account_data_revision_v1_account_data_revision_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+                "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDataRevisionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     preview_actions_v1_actions_preview_post: {
         parameters: {
             query?: never;
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -1906,6 +1971,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -1938,6 +2004,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 session_id: string;
@@ -1972,6 +2039,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 session_id: string;
@@ -2010,6 +2078,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 session_id: string;
@@ -2048,6 +2117,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 session_id: string;
@@ -2086,6 +2156,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2122,6 +2193,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 conversation_id: string;
@@ -2156,6 +2228,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 conversation_id: string;
@@ -2188,6 +2261,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 conversation_id: string;
@@ -2226,6 +2300,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 conversation_id: string;
@@ -2260,6 +2335,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 conversation_id: string;
@@ -2298,6 +2374,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 conversation_id: string;
@@ -2332,6 +2409,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 conversation_id: string;
@@ -2370,6 +2448,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 conversation_id: string;
@@ -2408,6 +2487,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 conversation_id: string;
@@ -2446,6 +2526,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2482,6 +2563,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2516,6 +2598,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2551,6 +2634,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2583,6 +2667,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2619,6 +2704,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 entry_id: string;
@@ -2653,6 +2739,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 entry_id: string;
@@ -2685,6 +2772,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 entry_id: string;
@@ -2723,6 +2811,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2755,6 +2844,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2794,6 +2884,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2826,6 +2917,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2862,6 +2954,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2898,6 +2991,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path: {
                 reflection_id: string;
@@ -2930,6 +3024,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;
@@ -2964,6 +3059,7 @@ export interface operations {
             header?: {
                 authorization?: string | null;
                 "X-JournalPulse-User"?: string | null;
+                "X-JournalPulse-Data-Revision"?: number;
             };
             path?: never;
             cookie?: never;

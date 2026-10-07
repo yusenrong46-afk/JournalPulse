@@ -18,6 +18,7 @@ from journalpulse.activity_chat import (
     validated_activity_update,
 )
 from journalpulse.activity_models import (
+    ActivityCommandRequest,
     ActivityReport,
     ActivitySelectionProvenance,
     ActivitySession,
@@ -164,6 +165,29 @@ def activity(current: Conversation, **overrides) -> ActivitySession:
     )
 
 
+def test_replaced_offer_stays_eligible_until_the_user_explicitly_declines(tmp_path: Path) -> None:
+    settings = configured(tmp_path)
+    repository = SQLiteRepository(settings.database_path)
+    current = repository.create_conversation(conversation())
+    for _ in range(2):
+        offered = activity(current)
+        repository.offer_activity_session(
+            offered, request_id=offered.id, expected_conversation_revision=0, now=NOW,
+        )
+    context = chat_activity_context(settings, repository, current)
+    assert RESOURCE_ID in {item["id"] for item in context.candidates}
+    repository.command_activity_session(
+        OWNER, offered.id,
+        ActivityCommandRequest(
+            client_request_id=uuid4(), expected_revision=0,
+            expected_conversation_revision=0, command="decline",
+        ),
+        now=NOW,
+    )
+    context = chat_activity_context(settings, repository, current)
+    assert RESOURCE_ID not in {item["id"] for item in context.candidates}
+
+
 def test_latest_user_can_relax_old_limits_without_an_invented_resource(tmp_path: Path) -> None:
     settings = configured(tmp_path)
     repository = SQLiteRepository(settings.database_path)
@@ -179,11 +203,14 @@ def test_latest_user_can_relax_old_limits_without_an_invented_resource(tmp_path:
         for item in context.candidates
         if (item["source"] == "catalog" and item["kind"] == "video" and 2 < item["duration_minutes"] <= 10)
     )
+    corrected_context = context.model_copy(update={
+        "constraints": ActivityConstraints(time_minutes=10), "constraints_confirmed_this_turn": True,
+    })
     accepted = validated_activity_update(
         completion(
             selected=candidate["id"], constraints=ActivityConstraints(time_minutes=10), intent="watch"
         ),
-        context,
+        corrected_context,
         uuid4(),
     )
     assert accepted["activity_card"].actions[0]["id"] == candidate["id"]

@@ -1,5 +1,6 @@
 // Real UI/API/database; auth issuance and AI/search are local test doubles.
 import { expect, test } from "@playwright/test";
+import { currentDataRevisionHeaders } from "../helpers/data-revision";
 
 test("an account change on the same chat URL discards private replies, drafts and inherited consent", async ({ page, request }) => {
   const alice = await (await request.get("http://127.0.0.1:54321/test/session/alex")).json();
@@ -75,7 +76,7 @@ test("a linked chat opens an editable general search and returns with its source
       user: { id: who.user_id, aud: "authenticated", role: "authenticated" },
     }));
   }, session);
-  const saved = await request.post("/v1/journal/entries", { headers, data: { text: "PRIVATE_FICTIONAL_SOURCE for a busy afternoon." } });
+  const saved = await request.post("/v1/journal/entries", { headers: await currentDataRevisionHeaders(request, headers), data: { text: "PRIVATE_FICTIONAL_SOURCE for a busy afternoon." } });
   expect(saved.status()).toBe(201);
   const entry = await saved.json();
   await page.goto(`/talk/?entry=${entry.id}`);
@@ -89,14 +90,14 @@ test("a linked chat opens an editable general search and returns with its source
   // AI chats search inline now; the separate library is reached from Home and must still
   // return to the linked chat without carrying its source or chat identity.
   await page.goto("/");
-  await page.getByRole("link", { name: "Explore useful resources", exact: true }).click();
-  await expect(page.getByLabel("General topic to search")).toHaveValue("");
-  await expect(page.getByRole("checkbox", { name: /I approve sending this topic/ })).not.toBeChecked();
+  await page.getByRole("link", { name: /Explore useful resources/ }).click();
+  await expect(page.getByLabel("What would you like to explore?")).toHaveValue("");
+  await expect(page.getByRole("checkbox", { name: /Share this topic/ })).not.toBeChecked();
   expect(page.url()).not.toContain(entry.id);
   expect(page.url()).not.toContain(chat!);
   expect(await page.locator("body").innerText()).not.toContain("PRIVATE_FICTIONAL_SOURCE");
-  await page.getByLabel("General topic to search").fill("brief grounding guides");
-  await page.getByRole("checkbox", { name: /I approve sending this topic/ }).check();
+  await page.getByLabel("What would you like to explore?").fill("brief grounding guides");
+  await page.getByRole("checkbox", { name: /Share this topic/ }).check();
   const requested = page.waitForRequest((req) => req.url().endsWith("/v1/discovery/search") && req.method() === "POST");
   await page.getByRole("button", { name: "Search this topic", exact: true }).click();
   const payload = (await requested).postDataJSON();
@@ -114,7 +115,7 @@ test("retry after a committed turn loses its response keeps one stored turn", as
   const session = await (await request.get("http://127.0.0.1:54321/test/session/grace")).json();
   const headers = { Authorization: `Bearer ${session.access_token}` };
   expect((await request.delete("/v1/account/data", { headers })).ok()).toBeTruthy();
-  const created = await request.post("/v1/conversations", { headers, data: { llm_consent: true, retain_text: false } });
+  const created = await request.post("/v1/conversations", { headers: await currentDataRevisionHeaders(request, headers), data: { llm_consent: true, retain_text: false } });
   expect(created.status()).toBe(201);
   const chat = await created.json();
   await page.addInitScript((who) => {

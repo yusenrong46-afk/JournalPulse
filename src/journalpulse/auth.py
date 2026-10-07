@@ -14,6 +14,7 @@ from .http_clients import managed_http_client
 class AuthContext:
     user_id: UUID
     access_token: str | None = None
+    erasure_revision: int | None = None
 
 
 def resolve_auth(

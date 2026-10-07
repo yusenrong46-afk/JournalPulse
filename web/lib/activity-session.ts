@@ -1,4 +1,5 @@
 import { apiRequest } from "./api";
+import { LUNA_REQUEST_TIMEOUT_MS } from "./request-deadlines";
 import type { Conversation } from "./types";
 
 export type ActivityStatus = "offered" | "active" | "paused" | "awaiting_report" | "completed" | "stopped" | "declined";
@@ -66,7 +67,7 @@ export function reportActivity(sessionId: string, payload: ActivityReceipt & Act
 export function followUpActivity(sessionId: string, payload: ActivityReceipt, signal?: AbortSignal): Promise<ActivitySession> {
   // Outlast the server's 100s Luna budget so a slow success is not shown as a failure.
   return apiRequest(`/v1/activity-sessions/${sessionId}/follow-up`, {
-    method: "POST", body: JSON.stringify(payload), timeoutMs: 125_000, retry: false, signal,
+    method: "POST", body: JSON.stringify(payload), timeoutMs: LUNA_REQUEST_TIMEOUT_MS, retry: false, signal,
   });
 }
 

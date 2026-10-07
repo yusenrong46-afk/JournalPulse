@@ -1,3 +1,4 @@
+import { withDataRevisionPreflight } from "../helpers/revision-fetch";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const auth = vi.hoisted(() => ({ getSupabase: vi.fn() }));
@@ -19,7 +20,7 @@ describe("account switch history", () => {
       status: 200, ok: true, headers: new Headers(),
       json: vi.fn(() => new Promise((resolve) => { finishBody = resolve; })),
     };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
+    vi.stubGlobal("fetch", withDataRevisionPreflight(vi.fn().mockResolvedValue(response)));
     const result = apiRequest("/v1/journal/entries", { method: "POST", body: "{}" });
     await vi.waitFor(() => expect(response.json).toHaveBeenCalledOnce());
     activateBrowserAccount("bob");
@@ -32,7 +33,7 @@ describe("account switch history", () => {
     vi.useFakeTimers();
     const fetchMock = vi.fn().mockResolvedValueOnce(new Response("{}", { status: 503 }))
       .mockResolvedValue(new Response("{}"));
-    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("fetch", withDataRevisionPreflight(fetchMock));
     const result = apiRequest("/v1/conversations", { method: "POST", retry: true, body: "{}" })
       .catch((reason: Error) => reason.message);
     await vi.advanceTimersByTimeAsync(1);

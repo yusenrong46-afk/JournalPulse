@@ -11,6 +11,7 @@ import base64
 import binascii
 import hashlib
 import hmac
+import json
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -26,7 +27,7 @@ from .discovery_models import (
     checked_source_url,
     source_url_identity,
 )
-from .domain import ActivityConstraintInputs
+from .domain import ActivityConstraintInputs, Goal
 from .resources import load_catalog
 
 RESOURCE_TOKEN_TTL_SECONDS = 600
@@ -41,6 +42,20 @@ ACTIVITY_SEARCH_TOPICS: tuple[str, ...] = get_args(ActivitySearchTopic)
 
 
 ActivityConstraints = ActivityConstraintInputs
+
+
+def protected_activity_constraints(
+    current: ActivityConstraints, proposed: ActivityConstraints,
+) -> ActivityConstraints:
+    """A model may add a restriction, but cannot revoke a saved one."""
+    times = [v for v in (current.time_minutes, proposed.time_minutes) if v is not None]
+    return ActivityConstraints(
+        time_minutes=min(times) if times else None,
+        no_audio=current.no_audio or proposed.no_audio,
+        no_video=current.no_video or proposed.no_video,
+        seated=current.seated or proposed.seated,
+        avoid_breath_focus=current.avoid_breath_focus or proposed.avoid_breath_focus,
+    )
 
 
 class ActivityResource(BaseModel):
@@ -357,10 +372,12 @@ def discovery_activity_resource(
 class _ResourceReceipt(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    version: Literal[1]
+    version: Literal[1, 2]
+    goal: Goal | None = None
     user_id: str = Field(min_length=36, max_length=36)
     conversation_id: str = Field(min_length=36, max_length=36)
     conversation_revision: int = Field(ge=0)
+    conversation_incarnation_id: str | None = Field(default=None, min_length=36, max_length=36)
     issued_at: int = Field(ge=0)
     expires_at: int = Field(ge=0)
     resource: ActivityResource
@@ -379,19 +396,26 @@ def _urlsafe_encode(value: bytes) -> str:
 
 def issue_resource_token(
     settings: Settings, *, user_id: UUID, conversation_id: UUID, conversation_revision: int,
-    resource: dict[str, Any], now: datetime | None = None,
+    resource: dict[str, Any], now: datetime | None = None, goal: Goal | None = None,
+    conversation_incarnation_id: UUID | None = None,
 ) -> str:
     moment = now or datetime.now(UTC)
     descriptor = ActivityResource.model_validate(resource)
     if descriptor.source != "search_snippet":
         raise ValueError("Only retrieved snippets use resource receipts")
     receipt = _ResourceReceipt(
-        version=1, user_id=str(user_id), conversation_id=str(conversation_id),
+        version=2 if goal is not None else 1, goal=goal,
+        user_id=str(user_id), conversation_id=str(conversation_id),
+        conversation_incarnation_id=str(conversation_incarnation_id) if conversation_incarnation_id else None,
         conversation_revision=conversation_revision, issued_at=int(moment.timestamp()),
         expires_at=int((moment + timedelta(seconds=RESOURCE_TOKEN_TTL_SECONDS)).timestamp()),
         resource=descriptor,
     )
-    raw = receipt.model_dump_json().encode()
+    payload = receipt.model_dump(mode="json")
+    if receipt.version == 1:
+        payload.pop("goal")
+        payload.pop("conversation_incarnation_id")
+    raw = json.dumps(payload, separators=(",", ":")).encode()
     signature = hmac.new(_signing_key(settings), _TOKEN_DOMAIN + raw, hashlib.sha256).digest()
     token = f"{_urlsafe_encode(raw)}.{_urlsafe_encode(signature)}"
     if len(token) > MAX_RESOURCE_TOKEN_BYTES:
@@ -399,10 +423,11 @@ def issue_resource_token(
     return token
 
 
-def verify_resource_token(
+def verify_resource_offer(
     settings: Settings, token: str, *, user_id: UUID, conversation_id: UUID,
     conversation_revision: int, now: datetime | None = None,
-) -> dict[str, Any]:
+    conversation_incarnation_id: UUID | None = None,
+) -> _ResourceReceipt:
     """Verify authenticity before decoding or trusting the resource descriptor.
 
     Binding to the current revision discards replies from old chat turns/tabs.
@@ -427,10 +452,28 @@ def verify_resource_token(
         receipt.user_id != str(user_id)
         or receipt.conversation_id != str(conversation_id)
         or receipt.conversation_revision != conversation_revision
+        or receipt.conversation_incarnation_id != (
+            str(conversation_incarnation_id) if conversation_incarnation_id else None
+        )
         or receipt.issued_at > timestamp + 30
         or receipt.expires_at <= timestamp
         or receipt.expires_at - receipt.issued_at != RESOURCE_TOKEN_TTL_SECONDS
         or receipt.resource.source != "search_snippet"
     ):
         raise ValueError("Invalid or expired resource receipt")
-    return receipt.resource.model_dump(mode="json")
+    if receipt.version == 2 and receipt.goal is None:
+        raise ValueError("A versioned search offer needs its goal")
+    return receipt
+
+
+def verify_resource_token(
+    settings: Settings, token: str, *, user_id: UUID, conversation_id: UUID,
+    conversation_revision: int, now: datetime | None = None,
+    conversation_incarnation_id: UUID | None = None,
+) -> dict[str, Any]:
+    """Compatibility descriptor view; saving uses the full verified receipt."""
+    return verify_resource_offer(
+        settings, token, user_id=user_id, conversation_id=conversation_id,
+        conversation_revision=conversation_revision, now=now,
+        conversation_incarnation_id=conversation_incarnation_id,
+    ).resource.model_dump(mode="json")

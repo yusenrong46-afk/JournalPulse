@@ -2,6 +2,7 @@
 // real FastAPI app, which talks to PostgREST and PostgreSQL with every migration applied.
 // The only stand-ins are the auth token issuer and a deterministic model provider.
 import { type APIRequestContext, expect, type Page, test } from "@playwright/test";
+import { currentDataRevisionHeaders } from "../helpers/data-revision";
 
 const GATEWAY = "http://127.0.0.1:54321";
 
@@ -41,7 +42,7 @@ function api(request: APIRequestContext, who: Session) {
   const headers = { Authorization: `Bearer ${who.access_token}` };
   return {
     get: (path: string) => request.get(path, { headers }),
-    post: (path: string, data?: unknown) => request.post(path, { headers, data }),
+    post: async (path: string, data?: unknown) => request.post(path, { headers: await currentDataRevisionHeaders(request, headers), data }),
     delete: (path: string) => request.delete(path, { headers }),
   };
 }
@@ -104,8 +105,8 @@ test("the legacy guided loop runs against the real API and database", async ({ p
   await expect(page.getByRole("heading", { name: "Thank you!" })).toBeVisible();
 
   await page.goto("/journey/");
-  await expect(page.getByText("helped 1 of 1")).toBeVisible();
-  await expect(page.getByText("😢 Sad")).toBeVisible();
+  await expect(page.getByText("1 rating · 1 rated helpful", { exact: false })).toBeVisible();
+  await expect(page.locator(".entry .chips").getByText("Sad", { exact: true })).toBeVisible();
 
   await page.goto("/me/");
   const download = page.waitForEvent("download");
@@ -118,6 +119,8 @@ test("the legacy guided loop runs against the real API and database", async ({ p
   expect(exported.policy_decisions).toHaveLength(1);
   expect(exported.conversation_messages.every((item: { content: string | null }) => item.content === null)).toBe(true);
 
+  // Deletion is a disclosed, deliberate step; open it before confirming.
+  await page.getByText("Delete saved data", { exact: true }).click();
   await page.getByLabel(/Type “delete my journal” to confirm/).fill("delete my journal");
   await page.getByRole("button", { name: "Delete my journal" }).click();
   await expect(page.getByText(/saved items were deleted/)).toBeVisible();

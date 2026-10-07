@@ -4,6 +4,8 @@ const staticExport = process.env.JOURNALPULSE_STATIC_EXPORT === "true";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Keep the local mobile preview's composer unobstructed; errors still surface.
+  devIndicators: false,
   experimental: { inlineCss: true },
   output: staticExport ? "export" : undefined,
   trailingSlash: staticExport,

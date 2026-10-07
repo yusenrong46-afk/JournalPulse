@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { ActivityPreferences, activityPreferencesMessage } from "@/components/activity-preferences";
 import { ActionTimer } from "@/components/action-timer";
 import { type ActivityPresence, ActivitySessionWorkspace } from "@/components/activity-session-workspace";
 import { Luna, type LunaMood } from "@/components/luna";
+import { resolveLunaMood, type ActivityReaction } from "@/lib/luna-motion";
 import { Icon } from "@/components/nav-icon";
 import { ApiError, apiRequest } from "@/lib/api";
+import { LUNA_REQUEST_TIMEOUT_MS } from "@/lib/request-deadlines";
 import { currentActivityCard } from "@/lib/activity-card";
 import { discoveryHref } from "@/lib/discovery";
 import {
@@ -39,6 +42,7 @@ import { entryDateLabel } from "@/lib/journal";
 import { greeting, useTimeOfDay } from "@/lib/time-of-day";
 import { useStickToBottom, useVisualViewportHeight } from "@/lib/use-chat-scroll";
 import type {
+  ActivityConstraints,
   Conversation,
   ConversationDetail,
   ConversationMessage,
@@ -49,15 +53,21 @@ import type {
   SystemStatus,
 } from "@/lib/types";
 
-// Wait past the server's 100s provider budget and Vercel's 120s function limit. Giving up
-// earlier made the browser retry while the first request could still reach Luna, so one
-// message could cost several provider calls on different serverless instances.
-const CHAT_TIMEOUT_MS = 125_000;
 const CHAT_MESSAGE_LIMIT = 20;
 const THINKING_LINES = ["Luna is thinking…", "Mulling it over…", "Finding the right words…"];
+// A new time label appears only after a real pause in the conversation.
+const TIME_GAP_MS = 20 * 60_000;
+
+function timeLabel(value: string) {
+  const at = new Date(value);
+  const today = new Date();
+  const sameDay = at.toDateString() === today.toDateString();
+  const clock = at.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return sameDay ? `Today · ${clock}` : `${at.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · ${clock}`;
+}
 
 type Busy = "send" | "accept" | "close" | null;
-type Outgoing = { text: string; goal?: GoalOption["id"]; moodScore?: number; feelings?: string[] };
+type Outgoing = { text: string; goal?: GoalOption["id"]; moodScore?: number; feelings?: string[]; constraints?: ActivityConstraints };
 type PendingSend = { id: string; text: string; status: "sending" | "failed" };
 type PendingCommand = { id: string; payload: string; outgoing: Outgoing };
 
@@ -83,6 +93,7 @@ function ChatWorkspace() {
   const [retain, setRetain] = useState<boolean | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [activityPreferencesOpen, setActivityPreferencesOpen] = useState(false);
   const [preferenceBusy, setPreferenceBusy] = useState(false);
   const [preferenceRetry, setPreferenceRetry] = useState<"listen" | "act" | null>(null);
   const [answering, setAnswering] = useState(false);
@@ -97,10 +108,14 @@ function ChatWorkspace() {
   const [resumeAttempt, setResumeAttempt] = useState(0);
   const [pendingSend, setPendingSend] = useState<PendingSend | null>(null);
   const [activityBusy, setActivityBusy] = useState(false);
+  const [activityReaction, setActivityReaction] = useState<ActivityReaction | null>(null);
   const [activityPresence, setActivityPresence] = useState<ActivityPresence>("idle");
 
   const pendingMessage = useRef<PendingCommand | null>(null);
   const pendingByChat = useRef(new Map<string, PendingCommand>());
+  // UUID reuse must not transfer cached words to a replacement chat after
+  // navigation has cleared latestConversation. No private data is persisted.
+  const knownIncarnations = useRef(new Map<string, Conversation["incarnation_id"]>());
   const pendingCreation = useRef<{ id: string; payload: string } | null>(null);
   const resumeTarget = useRef<string | null | undefined>(undefined);
   const sendInFlight = useRef(false);
@@ -124,6 +139,7 @@ function ChatWorkspace() {
 
   const useAi = consent ?? preferences.llmConsent;
   const keepText = retain ?? preferences.retainText;
+  const requestedChatId = searchParams.get("c");
   const requestedEntry = searchParams.get("entry");
   const requestedSourceId = journalSourceId(requestedEntry);
   const activeSourceId = conversation?.source_entry_id ?? selectedSourceId;
@@ -136,6 +152,56 @@ function ChatWorkspace() {
     ? needsNewJournalChat(conversation, visibleSourceId) : false;
   const sourcePending = Boolean(requestedSourceId && !conversation && requestedSourceId !== selectedSourceId);
   const linkedSourceUnavailable = Boolean(activeSourceId && ((!conversation && !useAi) || aiAvailable === false));
+
+  const clearUnavailableChat = useCallback((message: string, canReload: boolean) => {
+    const previous = latestConversation.current;
+    ++workspaceGeneration.current;
+    sendInFlight.current = false;
+    preferenceInFlight.current = false;
+    preferenceCommand.current = null;
+    pendingCreation.current = null;
+    pendingMessage.current = null;
+    const unavailableId = previous?.id ?? resumeTarget.current;
+    if (unavailableId) {
+      pendingByChat.current.delete(unavailableId);
+      draftsByChat.current.delete(unavailableId);
+      knownIncarnations.current.delete(unavailableId);
+    }
+    latestConversation.current = null;
+    loadedId.current = null;
+    writeOpenConversationId(null);
+    setConversation(null); setMessages([]); setDraft(""); setPendingSend(null); setRetryText(null);
+    setBusy(null); setPreferenceBusy(false); setPreferenceRetry(null); setActivityBusy(false);
+    setActivityReaction(null); setActivityPresence("idle"); setStep(null); setSaved(null); setAnswering(false);
+    setFeelings([]); setMoodValence(null); setSelectedAction(""); setSelectedSourceId(null);
+    setMenuOpen(false); setPrivacyOpen(false); setActivityPreferencesOpen(false);
+    setResuming(false); setEnded(!canReload);
+    setError(canReload ? null : message); setResumeFailure(canReload ? message : null);
+  }, []);
+
+  const rejectReplacedChat = useCallback((next: Conversation) => {
+    const current = latestConversation.current;
+    const known = current?.id === next.id ? current.incarnation_id : knownIncarnations.current.get(next.id);
+    const hasKnown = current?.id === next.id || knownIncarnations.current.has(next.id);
+    if (!hasKnown || !(known || next.incarnation_id) || known === next.incarnation_id) return false;
+    clearUnavailableChat("This chat was replaced elsewhere. Load it again to open its current version.", true);
+    return true;
+  }, [clearUnavailableChat]);
+
+  /** Take the person's own report from the server, never Luna's suggestion, after a reload. */
+  const applyServerState = useCallback((next: Conversation) => {
+    if (rejectReplacedChat(next)) return false;
+    if (!canApplyConversation(latestConversation.current, next)) return false;
+    latestConversation.current = next;
+    knownIncarnations.current.set(next.id, next.incarnation_id);
+    setConversation(next);
+    if (next.confirmed_feelings) setFeelings(next.confirmed_feelings);
+    const mood = moodByScore(next.reported_mood);
+    if (mood) setMoodValence(mood.valence);
+    setSelectedAction(currentActivityCard(next)?.decision_preview.action_id ?? "");
+    if (next.interaction_preference === "listen" || next.safety_mode === "support") setStep(null);
+    return true;
+  }, [rejectReplacedChat]);
 
   useEffect(() => () => {
     // Leaving this workspace must also invalidate sends, not only resume reads.
@@ -237,7 +303,7 @@ function ChatWorkspace() {
   }, [requestedEntry, requestedSourceId, visibleSourceId]);
 
   useEffect(() => {
-    const requested = searchParams.get("c") ?? readOpenConversationId();
+    const requested = requestedChatId ?? readOpenConversationId();
     let cancelled = false;
     const switching = resumeTarget.current !== undefined && resumeTarget.current !== requested
       && requested !== latestConversation.current?.id;
@@ -246,7 +312,7 @@ function ChatWorkspace() {
       workspaceGeneration.current += 1;
       latestConversation.current = null;
       loadedId.current = null;
-      pendingMessage.current = requested ? pendingByChat.current.get(requested) ?? null : null;
+      pendingMessage.current = null;
       pendingCreation.current = null;
       acceptRequestId.current = "";
       sendInFlight.current = false;
@@ -259,7 +325,8 @@ function ChatWorkspace() {
         if (switching) {
           setConversation(null);
           setMessages([]);
-          setDraft(requested ? draftsByChat.current.get(requested) ?? "" : "");
+          // Restore only after the server confirms the cached chat incarnation.
+          setDraft("");
           setBusy(null);
           setPendingSend(null);
           setRetryText(null);
@@ -293,6 +360,7 @@ function ChatWorkspace() {
         setEnded(false);
         if (applyServerState(detail.conversation)) {
           setMessages(detail.messages);
+          setDraft(draftsByChat.current.get(detail.conversation.id) ?? "");
           const pending = pendingByChat.current.get(detail.conversation.id);
           if (pending) {
             if (detail.messages.some((message) => message.client_message_id === pending.id)) {
@@ -315,9 +383,7 @@ function ChatWorkspace() {
       .catch((reason) => {
         if (!cancelled && isCurrentChatRequest(generation, workspaceGeneration.current)) {
           if (reason instanceof ApiError && reason.status === 404) {
-            writeOpenConversationId(null);
-            setEnded(true);
-            setError("This chat is no longer available. Start a new chat to keep talking.");
+            clearUnavailableChat("This chat is no longer available. Start a new chat to keep talking.", false);
           } else {
             // Losing a read is not evidence that the saved chat disappeared.
             setResumeFailure("We couldn’t load this chat. Try again to continue where you left off.");
@@ -330,7 +396,7 @@ function ChatWorkspace() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams, resumeAttempt]);
+  }, [requestedChatId, resumeAttempt, applyServerState, clearUnavailableChat]);
 
   useEffect(() => {
     if (busy !== "send") return;
@@ -367,19 +433,35 @@ function ChatWorkspace() {
     });
 
   const mood: LunaMood = useMemo(() => {
-    if (stage === "support") return "support";
-    if (error) return "oops";
-    if (busy === "send" || busy === "accept") return "thinking";
-    if (stage === "saved") return "proud";
-    if (answering) return "answering";
-    if (draft.trim()) return "listening";
-    return "idle";
-  }, [answering, busy, draft, error, stage]);
+    const latest = messages.at(-1);
+    const currentUser = messages.findLast((message) => message.role === "user");
+    const activity = activityReaction?.conversationId === conversation?.id ? activityReaction : null;
+    // A past report may remain in the activity workspace. Only the corresponding
+    // delivered follow-up can use it to drive the current expression.
+    const currentActivity = activity ? { ...activity,
+      participation: latest?.id === activity.messageId ? activity.participation : undefined,
+      stateChange: latest?.id === activity.messageId ? activity.stateChange : undefined,
+    } : null;
+    return resolveLunaMood({
+      support: stage === "support", error: Boolean(error),
+      waiting: busy === "send" || busy === "accept" || activityBusy,
+      typing: Boolean(draft.trim()), closed: ended,
+      move: (conversation as (Conversation & { activity_move?: string }) | null)?.activity_move,
+      hasOffer: activityPresence === "offer", hasReply: answering || Boolean(latest?.role === "assistant"),
+      replyFeelings: conversation?.feelings,
+      confirmedFeelings: currentUser?.request_inputs?.goal
+        ? currentUser.request_inputs.confirmed_feelings : undefined,
+      openingMood: userMessages <= 1 ? conversation?.reported_mood : null,
+      activity: currentActivity,
+    });
+  }, [activityBusy, activityPresence, activityReaction, answering, busy, conversation, draft, ended, error, messages, stage, userMessages]);
 
   const remember = useCallback(
     (next: Conversation) => {
+      if (rejectReplacedChat(next)) return false;
       if (!canApplyConversation(latestConversation.current, next)) return false;
       latestConversation.current = next;
+      knownIncarnations.current.set(next.id, next.incarnation_id);
       loadedId.current = next.id;
       writeOpenConversationId(next.id);
       if (searchParams.get("c") !== next.id) {
@@ -389,21 +471,8 @@ function ChatWorkspace() {
       setConversation(next);
       return true;
     },
-    [router, searchParams, requestedSourceId],
+    [router, searchParams, requestedSourceId, rejectReplacedChat],
   );
-
-  /** Take the person's own report from the server, never Luna's suggestion, after a reload. */
-  function applyServerState(next: Conversation) {
-    if (!canApplyConversation(latestConversation.current, next)) return false;
-    latestConversation.current = next;
-    setConversation(next);
-    if (next.confirmed_feelings) setFeelings(next.confirmed_feelings);
-    const mood = moodByScore(next.reported_mood);
-    if (mood) setMoodValence(mood.valence);
-    setSelectedAction(currentActivityCard(next)?.decision_preview.action_id ?? "");
-    if (next.interaction_preference === "listen" || next.safety_mode === "support") setStep(null);
-    return true;
-  }
 
   async function refreshConversation(id: string, generation = workspaceGeneration.current): Promise<ConversationDetail | null> {
     try {
@@ -421,8 +490,7 @@ function ChatWorkspace() {
       if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return null;
       if (latestConversation.current?.id !== id) return null;
       if (reason instanceof ApiError && reason.status === 404) {
-        writeOpenConversationId(null);
-        setEnded(true);
+        clearUnavailableChat("This chat was deleted. Start a new chat when you’re ready.", false);
       } else {
         // A failed read is not evidence that the chat was closed or deleted.
         setError("We couldn’t refresh this chat. Your draft is still on this page.");
@@ -444,7 +512,7 @@ function ChatWorkspace() {
     const created = await apiRequest<Conversation>("/v1/conversations", {
       method: "POST",
       retry: true,
-      timeoutMs: CHAT_TIMEOUT_MS,
+      timeoutMs: LUNA_REQUEST_TIMEOUT_MS,
       body: JSON.stringify({
         // A lost first response must recover the same chat, not create another.
         client_request_id: pendingCreation.current.id,
@@ -475,6 +543,7 @@ function ChatWorkspace() {
       text: trimmed,
       ...(outgoing.goal ? { goal: outgoing.goal, confirmed_feelings: outgoing.feelings ?? [] } : {}),
       ...(outgoing.moodScore ? { mood_score: outgoing.moodScore } : {}),
+      ...(outgoing.constraints ? { activity_constraints: outgoing.constraints } : {}),
     };
     const payload = JSON.stringify(messageFields);
     // Only an identical retry shares a receipt. Edited wording is a new message.
@@ -504,14 +573,16 @@ function ChatWorkspace() {
       const turn = await apiRequest<ConversationTurn>(`/v1/conversations/${active.id}/messages`, {
         method: "POST",
         retry: true,
-        timeoutMs: CHAT_TIMEOUT_MS,
+        timeoutMs: LUNA_REQUEST_TIMEOUT_MS,
         body: JSON.stringify({
           client_message_id: messageId,
+          ...(active.incarnation_id !== undefined ? { expected_incarnation_id: active.incarnation_id } : {}),
           ...messageFields,
         }),
       });
       if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
       if (!remember(turn.conversation)) {
+        if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
         // The turn may have committed before the preference command but arrived
         // afterward. Reload its messages without replacing newer canonical state.
         pendingMessage.current = null;
@@ -672,7 +743,7 @@ function ChatWorkspace() {
       const record = await apiRequest<ReflectionRecord>(`/v1/conversations/${conversation.id}/accept`, {
         method: "POST",
         retry: true,
-        timeoutMs: CHAT_TIMEOUT_MS,
+        timeoutMs: LUNA_REQUEST_TIMEOUT_MS,
         body: JSON.stringify({
           client_request_id: acceptRequestId.current,
           action_id: selectedAction,
@@ -686,7 +757,8 @@ function ChatWorkspace() {
         decisionId: record.decision.decision_id,
         actionId: record.decision.action_id,
         actionTitle: resource?.title ?? "Your small step",
-        dueAt: new Date(Date.now() + preferences.followUpMinutes * 60_000).toISOString(),
+        // The original acceptance timestamp also keeps a retry from restarting the wait.
+        dueAt: new Date(new Date(record.created_at).getTime() + preferences.followUpMinutes * 60_000).toISOString(),
       });
       writeOpenConversationId(null);
       loadedId.current = null;
@@ -847,6 +919,9 @@ function ChatWorkspace() {
       {menuOpen && (
         <div ref={menuRef} className="menu" role="menu" aria-label="Chat options">
           <button role="menuitem" type="button" onClick={() => { privacyOpener.current = menuTriggerRef.current; setMenuOpen(false); setPrivacyOpen(true); }}>How this chat is kept</button>
+          {conversation?.mode === "ai" && conversation.safety_mode !== "support" && <button role="menuitem" type="button"
+            disabled={busy !== null || activityBusy || userMessages >= CHAT_MESSAGE_LIMIT}
+            onClick={() => { setMenuOpen(false); setActivityPreferencesOpen(true); }}>Activity preferences</button>}
           <button role="menuitem" type="button" onClick={() => void endConversation(false)}>End this chat</button>
           <button role="menuitem" type="button" className="danger" onClick={() => void endConversation(true)}>Delete this chat</button>
         </div>
@@ -854,7 +929,7 @@ function ChatWorkspace() {
 
       {activeSourceId && (
         <section className="source-strip" aria-label="Journal entry in this chat">
-          <span className="source-strip-icon" aria-hidden="true">📓</span>
+          <span className="source-strip-icon" aria-hidden="true"><Icon name="journal" /></span>
           <div className="source-strip-text" role="status">
             <strong>Using your selected journal entry{sourceEntry?.id === activeSourceId
               ? ` from ${entryDateLabel(sourceEntry.created_at).date}` : ""}</strong>
@@ -925,22 +1000,21 @@ function ChatWorkspace() {
         )}
         {stage === "welcome" && (
           <div className="chat-welcome">
-            <Luna mood={mood} size={150} />
-            <h1 className="display" style={{ fontSize: "1.7rem" }}>
+            <Luna mood={mood} size={104} />
+            <h1 className="display">
               {time ? greeting(time) : "Hi there"}. How are you arriving?
             </h1>
-            <p>Tap a face or just type. There’s no wrong answer.</p>
+            <p>Choose a mood or just type. There’s no wrong answer.</p>
             <div className="faces" role="group" aria-label="How are you feeling?" style={{ width: "100%", maxWidth: 420, marginTop: 8 }}>
               {MOODS.map((choice) => (
                 <button key={choice.score} className="face" type="button" disabled={busy !== null || resuming || Boolean(resumeFailure) || sourcePending} aria-pressed={moodValence === choice.valence} onClick={() => tapMood(choice)}>
-                  <span aria-hidden="true">{choice.emoji}</span>
                   <span>{choice.label}</span>
                 </button>
               ))}
             </div>
             {preferencesLoaded && (
               <button className="privacy-pill" type="button" onClick={(event) => { privacyOpener.current = event.currentTarget; setPrivacyOpen(true); }}>
-                <span aria-hidden="true">🔒</span>
+                <Icon name="lock" />
                 {useAi ? "AI help on" : "AI help off"} · {keepText ? "messages kept" : "messages cleared after"}
                 <span className="sr-only">Change chat privacy</span>
               </button>
@@ -948,19 +1022,32 @@ function ChatWorkspace() {
           </div>
         )}
 
-        {messages.map((message, index) =>
-          message.content ? (
-            <div key={message.id} className={`msg ${message.role === "user" ? "from-me" : "from-luna"}${message.safety_mode === "support" && message.role === "assistant" ? " from-support" : ""}`}>
-              {message.role === "assistant" && (
-                <span className="msg-avatar"><Luna mood={index === lastLunaIndex && stage === "support" ? "support" : "idle"} size={34} decorative /></span>
-              )}
-              <div className="bubble">
-                <span className="sr-only">{message.role === "user" ? "You said: " : "Luna said: "}</span>
-                {message.content}
+        {messages.map((message, index) => {
+          if (!message.content) return null;
+          const previous = messages.slice(0, index).findLast((item) => item.content);
+          // Time is context, not decoration: show it once, then only after a real pause.
+          const showTime = !previous
+            || Date.parse(message.created_at) - Date.parse(previous.created_at) > TIME_GAP_MS;
+          // Luna's small mark opens each run of her replies instead of repeating on every line.
+          const opensLunaRun = message.role === "assistant" && (showTime || previous?.role !== "assistant");
+          return (
+            <Fragment key={message.id}>
+              {showTime && <time className="msg-time-divider" dateTime={message.created_at}>
+                {timeLabel(message.created_at)}
+              </time>}
+              <div className={`msg ${message.role === "user" ? "from-me" : "from-luna"}${message.safety_mode === "support" && message.role === "assistant" ? " from-support" : ""}`}>
+                {message.role === "assistant" && (
+                  <span className="msg-avatar">{opensLunaRun
+                    && <Luna mood={index === lastLunaIndex ? mood : "idle"} size={30} decorative />}</span>
+                )}
+                <div className="message-content"><div className="bubble">
+                  <span className="sr-only">{message.role === "user" ? "You said: " : "Luna said: "}</span>
+                  {message.content}
+                </div></div>
               </div>
-            </div>
-          ) : null,
-        )}
+            </Fragment>
+          );
+        })}
 
         {pendingSend && !messages.some((message) => message.client_message_id === pendingSend.id) && (
           <div className="msg from-me" data-message-status={pendingSend.status}>
@@ -976,13 +1063,15 @@ function ChatWorkspace() {
         )}
 
         {busy === "send" && (
-          <div className="msg from-luna" role="status">
-            <span className="msg-avatar"><Luna mood="thinking" size={34} decorative /></span>
+          <div className="msg from-luna is-thinking" role="status">
+            <span className="msg-avatar"><Luna mood="thinking" size={30} decorative /></span>
             <span className="sr-only">Luna is replying</span>
-            <div className="typing" aria-hidden="true"><i /><i /><i /></div>
+            <span className="thinking-line" aria-hidden="true">
+              <span className="typing"><i /><i /><i /></span>
+              <span className="typing-note">{THINKING_LINES[thinkingLine]}</span>
+            </span>
           </div>
         )}
-        {busy === "send" && <div className="typing-note" aria-hidden="true">{THINKING_LINES[thinkingLine]}</div>}
 
         {conversation?.mode === "ai" && conversation.status === "open" && conversation.safety_mode !== "support"
           && (conversation as Conversation & { activity_move?: string }).activity_move !== "pause"
@@ -995,6 +1084,7 @@ function ChatWorkspace() {
               onBusyChange={setActivityBusy}
               onRefresh={() => refreshConversation(conversation.id)}
               dock={activityDock} onPresenceChange={setActivityPresence}
+              onReactionChange={setActivityReaction}
               onJustTalk={() => void changePreference("listen")} />
           </div>
         )}
@@ -1030,7 +1120,7 @@ function ChatWorkspace() {
         {showReady && !preferenceBusy && (
           <div className="chat-panel">
             <div className="chips">
-              <button className="chip" type="button" onClick={startCheck}><span className="chip-emoji" aria-hidden="true">✨</span>Yes, let’s find one small thing</button>
+              <button className="chip" type="button" onClick={startCheck}><Icon name="leaf" />Yes, let’s find one small thing</button>
             </div>
           </div>
         )}
@@ -1045,7 +1135,7 @@ function ChatWorkspace() {
               <div className="chips" role="group" aria-label="Feelings">
                 {FEELINGS.map((item) => (
                   <button key={item.id} className="chip" type="button" aria-pressed={feelings.includes(item.id)} onClick={() => toggleFeeling(item.id)}>
-                    <span className="chip-emoji" aria-hidden="true">{item.emoji}</span>{item.label}
+                    {item.label}
                   </button>
                 ))}
               </div>
@@ -1068,7 +1158,7 @@ function ChatWorkspace() {
               <div className="stack" role="group" aria-label="What would help">
                 {GOALS.map((goal) => (
                   <button key={goal.id} className="chip goal" type="button" onClick={() => chooseGoal(goal)}>
-                    <span className="chip-emoji" aria-hidden="true">{goal.emoji}</span>{goal.label}
+                    {goal.label}
                   </button>
                 ))}
               </div>
@@ -1193,7 +1283,7 @@ function ChatWorkspace() {
             disabled={composerBlocked}
             readOnly={composerWaiting}
             aria-busy={composerWaiting}
-            placeholder={stage === "welcome" ? "Or tell Luna what’s going on…" : "Type something…"}
+            placeholder="What's on your mind?"
             onChange={(event) => {
               setDraft(event.target.value);
               if (conversation) draftsByChat.current.set(conversation.id, event.target.value);
@@ -1218,6 +1308,15 @@ function ChatWorkspace() {
         </div>
       )}
 
+      {activityPreferencesOpen && conversation?.status === "open" && conversation.safety_mode !== "support" && (
+        <ActivityPreferences key={conversation.id} current={conversation.activity_constraints}
+          busy={busy !== null || activityBusy} opener={menuTriggerRef}
+          onClose={() => setActivityPreferencesOpen(false)}
+          onApply={(constraints) => {
+            setActivityPreferencesOpen(false);
+            void send({ text: activityPreferencesMessage(constraints), constraints });
+          }} />
+      )}
       {privacyOpen && (
         <div className="sheet-backdrop" onClick={() => setPrivacyOpen(false)}>
           <div ref={privacyRef} className="sheet" role="dialog" aria-modal="true" aria-labelledby="privacy-title" onClick={(event) => event.stopPropagation()}>
@@ -1226,13 +1325,13 @@ function ChatWorkspace() {
               <p className="muted">
                 This chat uses {conversation.mode === "guided" ? "simple mode, with no AI" : "private AI help"}. Its messages
                 are {conversation.retain_text ? "kept after it ends" : "cleared when it ends"}. A short summary and your choice are
-                saved either way. You can change the defaults for new chats on the Me page.
+                saved either way. You can change the defaults for new chats in Settings.
               </p>
             ) : (
               <>
                 <div className="settings">
                   <label className="setting">
-                    <span><strong>Let Luna use AI</strong><small>Smarter replies. Sent privately, with no data kept by the AI provider.</small></span>
+                    <span><strong>Let Luna use AI</strong><small>Uses AI for replies, with zero data retention required from the provider.</small></span>
                     <span className="switch"><input type="checkbox" checked={useAi} onChange={(event) => setConsent(event.target.checked)} /><span /></span>
                   </label>
                   <label className="setting">

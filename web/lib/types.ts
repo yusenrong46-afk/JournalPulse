@@ -136,6 +136,7 @@ export type ConversationMessage = {
   created_at: string;
   safety_mode: "normal" | "support";
   model_run?: PreparedAnalysis["model_run"] | null;
+  request_inputs?: { goal?: string | null; confirmed_feelings?: string[] | null; activity_constraints?: ActivityConstraints | null } | null;
 };
 
 export type ActionCard = {
@@ -147,8 +148,17 @@ export type ActionCard = {
   goal?: "settle" | "move" | "understand" | "connect" | "act" | null;
 };
 
+export type ActivityConstraints = {
+  time_minutes: number | null;
+  no_audio: boolean; no_video: boolean; seated: boolean; avoid_breath_focus: boolean;
+};
+
 export type Conversation = {
   id: string;
+  incarnation_id?: string | null;
+  activity_card?: ActionCard | null;
+  activity_constraints?: ActivityConstraints;
+  activity_goal?: ActionCard["goal"];
   user_id: string;
   created_at: string;
   updated_at: string;

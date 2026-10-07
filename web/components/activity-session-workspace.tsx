@@ -11,6 +11,7 @@ import {
   type ActivityClock, type ActivityCommand, type ActivityReport, type ActivityResource, type ActivitySession,
 } from "@/lib/activity-session";
 import type { Conversation } from "@/lib/types";
+import type { ActivityReaction } from "@/lib/luna-motion";
 import { ActivityBar } from "./activity-bar";
 import { ActivitySessionDiscovery } from "./activity-session-discovery";
 import { ActivitySessionPanel, OfferCard } from "./activity-session-panel";
@@ -24,17 +25,40 @@ type Props = {
   /** Slot above the composer for the running-activity bar. Without one, the bar renders inline. */
   dock?: HTMLElement | null;
   onPresenceChange?(presence: ActivityPresence): void;
+  onReactionChange?(reaction: ActivityReaction): void;
   /** "Just talk" on Luna's offer: the same server preference as the chat-level choice. */
   onJustTalk?(): void;
 };
 type PendingOperation = { key: string; payload: string };
 
+/** Saved activity limits, shown back to the person in their own terms on the offer. */
+function constraintTags(conversation: Conversation): string[] {
+  const limits = (conversation as Conversation & {
+    activity_constraints?: { no_audio?: boolean; no_video?: boolean; seated?: boolean; avoid_breath_focus?: boolean } | null;
+  }).activity_constraints;
+  if (!limits) return [];
+  return [
+    limits.no_audio && "No audio", limits.no_video && "No video",
+    limits.seated && "Seated", limits.avoid_breath_focus && "No breath focus",
+  ].filter((tag): tag is string => Boolean(tag));
+}
+
 /** All authoritative state lives on the server. This component keeps only display clocks and retry receipts. */
 export function ActivitySessionWorkspace({
-  conversation, disabled, onRefresh, onBusyChange, ordinaryMessages = 0, dock = null, onPresenceChange, onJustTalk,
+  conversation, disabled, onRefresh, onBusyChange, ordinaryMessages = 0, dock = null, onPresenceChange, onJustTalk, onReactionChange,
 }: Props) {
   const pausedByConversation = (conversation as Conversation & { activity_move?: string }).activity_move === "pause";
   const [session, setSession] = useState<ActivitySession | null>(null);
+  useEffect(() => {
+    onReactionChange?.({
+      conversationId: conversation.id,
+      status: session?.status,
+      followUp: session?.follow_up_status,
+      participation: session?.report?.participation,
+      stateChange: session?.report?.state_change,
+      messageId: session?.follow_up_message_id,
+    });
+  }, [conversation.id, session, onReactionChange]);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -336,7 +360,7 @@ export function ActivitySessionWorkspace({
     <div className="stack">
       {loading && <p className="small muted" role="status">Syncing your activity…</p>}
       {showOffer && primary && <OfferCard title={primary.title} reason={card?.card_reason ?? primary.summary}
-        minutes={primary.duration_minutes} busy={busy || disabled || loading} canStart
+        minutes={primary.duration_minutes} tags={constraintTags(conversation)} url={primary.url} busy={busy || disabled || loading} canStart
         onStart={() => void saveOffer(primary.id, undefined, true)}
         onSomethingElse={canStart ? openSearch : undefined}
         dismiss={onJustTalk ? { label: "Just talk", onClick: onJustTalk } : {
@@ -344,7 +368,7 @@ export function ActivitySessionWorkspace({
         }} />}
       {session && <ActivitySessionPanel ref={checkInRef} session={session} secondsLeft={secondsLeft}
         busy={busy || disabled || pausedByConversation || sessionNeedsSync}
-        suppressQuestions={disabled || pausedByConversation || sessionNeedsSync}
+        suppressQuestions={pausedByConversation}
         canStart={canStart} onSomethingElse={canStart ? openSearch : undefined}
         expiryPending={expiryPending} onCommand={(command) => void control(command)}
         onReport={(report) => void saveReport(report)} onFollowUp={() => void followUp()} />}

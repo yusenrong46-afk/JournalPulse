@@ -4,6 +4,8 @@ import { useId, useState } from "react";
 
 import type { ActivityCommand, ActivitySession } from "@/lib/activity-session";
 
+import { Luna } from "./luna";
+
 type Props = {
   session: ActivitySession; secondsLeft: number; busy: boolean;
   /** The person's check-in is due (timer expiry, Finish early, or an explicit Stop). */
@@ -45,7 +47,10 @@ export function ActivityBar({ session, secondsLeft, busy, waiting, expiryPending
 
   const total = Math.max(session.duration_seconds, 1);
   const progress = timer ? Math.min(1, Math.max(0, secondsLeft / total)) : 1;
-  const circumference = 2 * Math.PI * 16;
+  const circumference = 2 * Math.PI * 25;
+  const steps = session.resource.instructions;
+  // A gentle pointer to where someone might be, paced by elapsed time; it never measures them.
+  const stepIndex = steps.length ? Math.min(steps.length - 1, Math.floor((1 - progress) * steps.length)) : -1;
   return (
     <section className={`activity-bar${paused ? " is-paused" : ""}`} aria-label="Current activity" aria-busy={busy}>
       {stepsOpen && session.resource.instructions.length > 0 && (
@@ -53,21 +58,29 @@ export function ActivityBar({ session, secondsLeft, busy, waiting, expiryPending
           {session.resource.instructions.map((instruction) => <li key={instruction}>{instruction}</li>)}
         </ol>
       )}
+      {!stepsOpen && stepIndex >= 0 && timer && (
+        <p className="activity-step-hint">Step {stepIndex + 1} of {steps.length} · {steps[stepIndex]}</p>
+      )}
       <div className="activity-bar-row">
         <div className="activity-bar-info">
           {timer && (
-            <svg className="activity-ring" width="38" height="38" viewBox="0 0 40 40" aria-hidden="true">
-              <circle cx="20" cy="20" r="16" fill="none" strokeWidth="5" className="activity-ring-track" />
-              <circle cx="20" cy="20" r="16" fill="none" strokeWidth="5" strokeLinecap="round"
-                className="activity-ring-fill" strokeDasharray={circumference}
-                strokeDashoffset={circumference * (1 - progress)} transform="rotate(-90 20 20)" />
-            </svg>
+            <span className="activity-ring" aria-hidden="true">
+              <svg width="58" height="58" viewBox="0 0 58 58">
+                <circle cx="29" cy="29" r="25" fill="none" strokeWidth="4.5" className="activity-ring-track" />
+                <circle cx="29" cy="29" r="25" fill="none" strokeWidth="4.5" strokeLinecap="round"
+                  className="activity-ring-fill" strokeDasharray={circumference}
+                  strokeDashoffset={circumference * (1 - progress)} transform="rotate(-90 29 29)" />
+              </svg>
+              <span className="activity-ring-luna"><Luna mood={paused ? "resting" : "grounded"} size={34} decorative /></span>
+            </span>
           )}
           <div className="activity-bar-text">
             <strong>{session.resource.title}</strong>
+            {session.resource.url && <a className="small activity-resource-link" href={session.resource.url}
+              target="_blank" rel="noopener noreferrer">Open resource</a>}
             {timer ? (
-              <span role="timer" aria-live="off" aria-label="Activity time remaining">
-                {paused ? "Paused · " : ""}{clockLabel(secondsLeft)} left
+              <span className="activity-time" role="timer" aria-live="off" aria-label="Activity time remaining">
+                {paused ? "Paused · " : ""}{clockLabel(secondsLeft)} <em>left</em>
               </span>
             ) : <span>{paused ? "Paused" : "In progress"}</span>}
           </div>

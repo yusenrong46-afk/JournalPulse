@@ -45,6 +45,7 @@ from .domain import (
     SafetyMode,
     SafetyResult,
 )
+from .erasure import AccountDataErased, DeletedObjectIdentity, write_scope
 from .http_clients import managed_http_client
 from .journal_models import JournalEntry
 from .signing import readiness_probe, signed_payload
@@ -102,6 +103,7 @@ def require_same_turn_request(
 
 
 class Repository(Protocol):
+    def get_erasure_revision(self, user_id: UUID) -> int: ...
     def save_journal_entry(self, entry: JournalEntry) -> JournalEntry: ...
     def get_journal_entry(self, user_id: UUID, entry_id: UUID) -> JournalEntry | None: ...
     def list_journal_entries(
@@ -116,7 +118,9 @@ class Repository(Protocol):
     def save_outcome(self, record: OutcomeRecord) -> OutcomeRecord: ...
     def list_reflections(self, user_id: UUID, *, limit: int, offset: int) -> list[ReflectionRecord]: ...
     def list_all_reflections(self, user_id: UUID) -> list[ReflectionRecord]: ...
-    def get_reflection(self, user_id: UUID, reflection_id: UUID) -> ReflectionRecord | None: ...
+    def get_reflection(
+        self, user_id: UUID, reflection_id: UUID, *, standalone_only: bool = False
+    ) -> ReflectionRecord | None: ...
     def list_outcomes(self, user_id: UUID) -> list[OutcomeRecord]: ...
     def delete_reflection(self, user_id: UUID, reflection_id: UUID) -> bool: ...
     def export_user_data(self, user_id: UUID) -> dict: ...
@@ -193,6 +197,7 @@ class Repository(Protocol):
         model_run: ModelRun | None,
         now: datetime,
         directive: ActivityFollowUpDirective | None = None,
+        expected_conversation_incarnation_id: UUID | None = None,
     ) -> ActivitySession: ...
     def consume_rate_limit(
         self, user_id: UUID, bucket: str, *, limit: int, window_seconds: int, now: datetime
@@ -225,10 +230,19 @@ class SQLiteRepository:
         connection.row_factory = sqlite3.Row
         try:
             connection.execute("BEGIN IMMEDIATE")
+            scope = write_scope.get()
+            if scope is not None:
+                row = connection.execute(
+                    "SELECT revision FROM account_erasure_revisions WHERE user_id=?", (str(scope[0]),)
+                ).fetchone()
+                if (row[0] if row else 0) != scope[1]:
+                    raise AccountDataErased("Account data was erased")
             yield connection
             connection.execute("COMMIT")
-        except BaseException:
+        except BaseException as exc:
             connection.execute("ROLLBACK")
+            if isinstance(exc, sqlite3.IntegrityError) and str(exc) == "Deleted object identity":
+                raise DeletedObjectIdentity("Creation request ID was deleted; use a new request ID") from exc
             raise
         finally:
             connection.close()
@@ -237,6 +251,13 @@ class SQLiteRepository:
         with self.connect() as connection:
             connection.executescript(
                 """
+                CREATE TABLE IF NOT EXISTS deleted_object_ids (
+                    object_kind TEXT NOT NULL, object_id TEXT NOT NULL, user_id TEXT NOT NULL,
+                    PRIMARY KEY(object_kind, object_id)
+                );
+                CREATE TABLE IF NOT EXISTS account_erasure_revisions (
+                    user_id TEXT PRIMARY KEY, revision INTEGER NOT NULL
+                );
                 CREATE TABLE IF NOT EXISTS activity_sessions (
                     id TEXT PRIMARY KEY, user_id TEXT NOT NULL, conversation_id TEXT NOT NULL,
                     source_entry_id TEXT, status TEXT NOT NULL, revision INTEGER NOT NULL,
@@ -345,6 +366,28 @@ class SQLiteRepository:
                     ON reflections(conversation_id) WHERE conversation_id IS NOT NULL
                 """
             )
+
+            # IDs name a single logical creation, including after content deletion.
+            # No text, hash of text, summary, or timestamp is retained in these markers.
+            for table in ("journal_entries", "conversations", "activity_sessions", "reflections"):
+                connection.executescript(f"""
+                    CREATE TRIGGER IF NOT EXISTS {table}_retire_identity AFTER DELETE ON {table}
+                    BEGIN
+                        INSERT OR IGNORE INTO deleted_object_ids(object_kind, object_id, user_id)
+                        VALUES ('{table}', OLD.id, OLD.user_id);
+                    END;
+                    CREATE TRIGGER IF NOT EXISTS {table}_prevent_recreation BEFORE INSERT ON {table}
+                    WHEN EXISTS(SELECT 1 FROM deleted_object_ids
+                        WHERE object_kind='{table}' AND object_id=NEW.id)
+                    BEGIN SELECT RAISE(ABORT, 'Deleted object identity'); END;
+                """)
+
+    def get_erasure_revision(self, user_id: UUID) -> int:
+        with self.connect() as connection:
+            row = connection.execute(
+                "SELECT revision FROM account_erasure_revisions WHERE user_id=?", (str(user_id),)
+            ).fetchone()
+        return row[0] if row else 0
 
     # Inline activity sessions -------------------------------------------------------
 
@@ -561,14 +604,16 @@ class SQLiteRepository:
                     raise ActivityConflict("Finish or stop the current activity before starting another")
                 # Negotiation supersedes an unstarted offer; an active activity is
                 # never replaced silently by a newer recommendation.
-                declined = current.model_copy(
+                withdrawn = current.model_copy(
                     update={
-                        "status": ActivityStatus.DECLINED,
+                        "status": ActivityStatus.STOPPED,
                         "revision": current.revision + 1,
                         "updated_at": now,
+                        "expires_at": None,
+                        "check_in_issued": False,
                     }
                 )
-                self._write_activity(connection, declined)
+                self._write_activity(connection, withdrawn)
             fresh = session.model_copy(
                 update={
                     "revision": 0,
@@ -795,10 +840,12 @@ class SQLiteRepository:
         model_run: ModelRun | None,
         now: datetime,
         directive: ActivityFollowUpDirective | None = None,
+        expected_conversation_incarnation_id: UUID | None = None,
     ) -> ActivitySession:
         with self.transaction() as connection:
             conversation, session = self._activity_locked(connection, user_id, session_id)
-            if session.created_at != expected_session_created_at:
+            if (session.created_at != expected_session_created_at
+                    or conversation.incarnation_id != expected_conversation_incarnation_id):
                 raise ActivityConflict("Activity changed")
             if session.follow_up_status == "ready" and session.follow_up_request_id == request_id:
                 return session
@@ -1119,10 +1166,13 @@ class SQLiteRepository:
     def list_all_reflections(self, user_id: UUID) -> list[ReflectionRecord]:
         return self.list_reflections(user_id, limit=-1, offset=0)
 
-    def get_reflection(self, user_id: UUID, reflection_id: UUID) -> ReflectionRecord | None:
+    def get_reflection(
+        self, user_id: UUID, reflection_id: UUID, *, standalone_only: bool = False
+    ) -> ReflectionRecord | None:
         with self.connect() as connection:
             row = connection.execute(
-                "SELECT payload_json FROM reflections WHERE id = ? AND user_id = ?",
+                "SELECT payload_json FROM reflections WHERE id = ? AND user_id = ?"
+                + (" AND conversation_id IS NULL" if standalone_only else ""),
                 (str(reflection_id), str(user_id)),
             ).fetchone()
         return ReflectionRecord.model_validate_json(row["payload_json"]) if row else None
@@ -1176,6 +1226,10 @@ class SQLiteRepository:
         """Delete every journal row; the returned count covers journal data only."""
         deleted = 0
         with self.transaction() as connection:
+            connection.execute(
+                "INSERT INTO account_erasure_revisions(user_id,revision) VALUES (?,1) "
+                "ON CONFLICT(user_id) DO UPDATE SET revision=revision+1", (str(user_id),)
+            )
             for table in (
                 "activity_receipts",
                 "activity_sessions",
@@ -1372,6 +1426,12 @@ class SQLiteRepository:
             ).fetchone()
             if row is None:
                 raise ConversationNotFound(str(conversation.id))
+            current = self._conversation(row)
+            # A UUID/revision can reappear after deletion; a late result belongs
+            # only to the original chat, even if the server clock has not advanced.
+            if (current.incarnation_id != conversation.incarnation_id
+                    or current.created_at != conversation.created_at):
+                raise ConversationStale(str(conversation.id))
             stored = self._stored_turn(connection, conversation.id, user_message.client_message_id)
             if stored is not None:
                 require_same_turn_request(
@@ -1391,6 +1451,11 @@ class SQLiteRepository:
                     "revision": expected_revision + 1,
                     "reflection_id": None,
                     "interaction_preference": current.interaction_preference,
+                    "incarnation_id": current.incarnation_id,
+                    "created_at": current.created_at,
+                    "mode": current.mode,
+                    "llm_consent": current.llm_consent,
+                    "retain_text": current.retain_text,
                     "source_entry_id": current.source_entry_id,
                     "source_entry_created_at": current.source_entry_created_at,
                 }
@@ -1757,6 +1822,8 @@ class SupabaseRepository:
         except httpx.HTTPError as exc:
             raise StorageUnavailable("The database could not be reached") from exc
         if response.status_code >= 400:
+            if table == "rpc/jp_account_data_revision" and response.status_code == 404:
+                raise StorageUnavailable("The account erasure guard is unavailable")
             if table == "rpc/jp_consume_rate_limit_v2" and response.status_code == 404:
                 # Missing migration / schema-cache refresh must not fall back to an
                 # unsigned or local-only paid-call limit.
@@ -1822,6 +1889,10 @@ class SupabaseRepository:
         if status == 404 and message == "Journal entry not found":
             raise JournalEntryNotFound(message)
         if status == 409:
+            if message == "Creation request ID was deleted; use a new request ID":
+                raise DeletedObjectIdentity(message)
+            if message == "Account data was erased":
+                raise AccountDataErased(message)
             if message.startswith(
                 (
                     "Activity",
@@ -1852,7 +1923,16 @@ class SupabaseRepository:
             raise StorageUnavailable(message or f"Database error {status}")
         response.raise_for_status()
 
+    def get_erasure_revision(self, user_id: UUID) -> int:
+        del user_id  # The database obtains the owner from the verified JWT.
+        return self._nonnegative_integer(self._request("POST", "rpc/jp_account_data_revision", json={}))
+
     def _signed(self, purpose: str, user_id: UUID, body: dict[str, Any]) -> dict[str, str]:
+        scope = write_scope.get()
+        if scope is not None:
+            if scope[0] != user_id:
+                raise ValueError("Request owner changed")
+            body = {**body, "expected_erasure_revision": scope[1]}
         if not self.signing_key:
             raise StorageUnavailable("The server signing key is not configured")
         return signed_payload(purpose, user_id, body, self.signing_key)
@@ -2009,6 +2089,7 @@ class SupabaseRepository:
         model_run: ModelRun | None,
         now: datetime,
         directive: ActivityFollowUpDirective | None = None,
+        expected_conversation_incarnation_id: UUID | None = None,
     ) -> ActivitySession:
         # The API creates a deterministic reply identity; the RPC commits it with
         # the session and chat revisions, or keeps only the independently saved report.
@@ -2033,7 +2114,7 @@ class SupabaseRepository:
         )
         saved = self._request(
             "POST",
-            "rpc/jp_finish_activity_followup_v1",
+            "rpc/jp_finish_activity_followup_v2",
             json=self._signed(
                 "finish_activity_follow_up",
                 user_id,
@@ -2043,6 +2124,10 @@ class SupabaseRepository:
                     "expected_revision": expected_revision,
                     "expected_conversation_revision": expected_conversation_revision,
                     "expected_session_created_at": expected_session_created_at.isoformat(),
+                    "expected_conversation_incarnation_id": (
+                        str(expected_conversation_incarnation_id)
+                        if expected_conversation_incarnation_id else None
+                    ),
                     "assistant_message": assistant,
                     "directive": directive.model_dump(mode="json") if directive is not None else None,
                 },
@@ -2174,11 +2259,16 @@ class SupabaseRepository:
         )
         return [self._row_model(ReflectionRecord, row) for row in rows]
 
-    def get_reflection(self, user_id: UUID, reflection_id: UUID) -> ReflectionRecord | None:
+    def get_reflection(
+        self, user_id: UUID, reflection_id: UUID, *, standalone_only: bool = False
+    ) -> ReflectionRecord | None:
         rows = self._request(
             "GET",
             "reflections",
-            params={"select": "record", "id": f"eq.{reflection_id}", "user_id": f"eq.{user_id}", "limit": 1},
+            params={
+                "select": "record", "id": f"eq.{reflection_id}", "user_id": f"eq.{user_id}", "limit": 1,
+                **({"conversation_id": "is.null"} if standalone_only else {}),
+            },
         )
         return self._row_model(ReflectionRecord, rows[0]) if rows else None
 
@@ -2286,12 +2376,15 @@ class SupabaseRepository:
     ) -> Turn:
         saved = self._request(
             "POST",
-            "rpc/jp_commit_turn",
+            "rpc/jp_commit_turn_v2",
             json=self._signed(
                 "commit_turn",
                 conversation.user_id,
                 {
                     "expected_revision": expected_revision,
+                    "expected_incarnation_id": (
+                        str(conversation.incarnation_id) if conversation.incarnation_id else None
+                    ),
                     "conversation": conversation.model_dump(mode="json"),
                     "user_message": user_message.model_dump(mode="json"),
                     "assistant_message": assistant_message.model_dump(mode="json"),
@@ -2386,7 +2479,7 @@ def supabase_readiness(settings: Settings, client: httpx.Client | None = None) -
         with managed_http_client(client, timeout=5) as transport:
             response = transport.post(
                 # Keep the live reliability API's RPC unchanged during a preview rollout.
-                f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/jp_readiness_v3",
+                f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/jp_readiness_v5",
                 headers={
                     "apikey": settings.supabase_anon_key or "",
                     "Authorization": f"Bearer {settings.supabase_anon_key or ''}",
@@ -2414,7 +2507,9 @@ def supabase_readiness(settings: Settings, client: httpx.Client | None = None) -
     return {
         "database": "reachable",
         "schema": "schema_ready"
-        if body.get("schema") == "guided-action-1" and body.get("activities") == "ready"
+        if (body.get("schema") == "erasure-boundaries-1"
+            and body.get("activities") == "ready" and body.get("repairs") == "ready"
+            and body.get("erasure") == "ready")
         else f"schema_outdated:{body.get('schema')}",
         "signing": signing,
         "activities": str(body.get("activities", "missing")),

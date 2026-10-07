@@ -84,6 +84,9 @@ const reflection = {
 };
 
 async function fulfilJson(route: Route, json: unknown, status = 200) {
+  if (new URL(route.request().url()).pathname === "/v1/account/data-revision") {
+    return route.fulfill({ status: 200, json: { revision: 0 } });
+  }
   return route.fulfill({ status, json });
 }
 
@@ -378,9 +381,10 @@ test("journey grows a plant for each check-in and names what helped", async ({ p
     return fulfilJson(route, { items: [] });
   });
   await page.goto("/journey");
-  await expect(page.getByRole("img", { name: /Helped a lot/ })).toBeVisible();
-  await expect(page.getByText("helped 1 of 1")).toBeVisible();
-  await expect(page.getByText("😴 Tired")).toBeVisible();
+  // The journey names what helped from the person's own rating, never from a timer.
+  await expect(page.getByRole("heading", { name: "Last two weeks" })).toBeVisible();
+  await expect(page.getByText("1 rating · 1 rated helpful", { exact: false })).toBeVisible();
+  await expect(page.locator(".entry .chips").getByText("Tired", { exact: true })).toBeVisible();
 });
 
 test("the main navigation has three calm destinations", async ({ page }) => {
@@ -391,7 +395,7 @@ test("the main navigation has three calm destinations", async ({ page }) => {
   const visible = nav.locator("visible=true").first();
   await expect(visible.getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
   await expect(visible.getByRole("link", { name: "Journey", exact: true })).toHaveAttribute("href", "/journey");
-  await expect(visible.getByRole("link", { name: "Me", exact: true })).toHaveAttribute("href", "/me");
+  await expect(visible.getByRole("link", { name: "Settings", exact: true })).toHaveAttribute("href", "/me");
   await expect(page.getByRole("link", { name: "Talk with Luna" }).first()).toBeVisible();
   await expect(page.getByText(/Observe|Orient/)).toHaveCount(0);
 });

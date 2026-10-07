@@ -295,7 +295,7 @@ describe("chat submission and recovery", () => {
     completed.assistant_message.id = "new-assistant";
     await act(async () => { delayed.resolve(completed); });
     expect(container.textContent).not.toContain("Sending");
-    expect([...container.querySelectorAll(".msg")].map((node) => node.textContent)).toEqual([
+    expect([...container.querySelectorAll(".msg .bubble")].map((node) => node.textContent)).toEqual([
       "You said: Stored old thought.", "Luna said: The earlier reply.",
       "You said: Please help me understand this.", "Luna said: DELAYED_OLD_REPLY",
     ]);

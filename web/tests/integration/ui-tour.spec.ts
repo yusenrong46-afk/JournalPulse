@@ -5,6 +5,7 @@
 // comparable before/after images.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type APIRequestContext, type Page, test } from "@playwright/test";
+import { currentDataRevisionHeaders } from "../helpers/data-revision";
 import path from "node:path";
 
 type Session = { user_id: string; access_token: string };
@@ -122,7 +123,7 @@ for (const [label, use] of [
         await shot(page, label, "07-search");
 
         const saved = await request.post("/v1/journal/entries", {
-          headers: headers(who), data: { text: "A fictional meeting left me stressed and tired." },
+          headers: await currentDataRevisionHeaders(request, headers(who)), data: { text: "A fictional meeting left me stressed and tired." },
         });
         const entry = await saved.json();
         // Accept "end the current chat?" so the entry really starts a new chat. The baseline

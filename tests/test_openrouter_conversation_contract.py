@@ -76,6 +76,11 @@ def _response(content: object, finish_reason: str = "stop") -> httpx.Response:
     )
 
 
+def test_luna_client_cannot_be_created_when_ai_feature_is_disabled(tmp_path: Path):
+    with pytest.raises(ValueError, match="not configured"):
+        OpenRouterConversationClient(settings(tmp_path, llm_feature_enabled=False))
+
+
 def test_luna_request_uses_only_documented_parameters(tmp_path: Path):
     observed: dict = {}
 

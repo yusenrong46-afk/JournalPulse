@@ -172,6 +172,7 @@ def register_journal_routes(
                         f"+{REFLECTION_SKILL_VERSION}"
                     )}
                 ),
+                feelings=list(completion.feelings),
             )
         except UnsupportedProviderResponse as exc:
             raise HTTPException(

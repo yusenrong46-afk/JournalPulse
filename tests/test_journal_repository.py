@@ -177,7 +177,8 @@ def test_delayed_start_cannot_attach_to_a_recreated_entry_uuid(tmp_path: Path):
     delayed_start = chat(source)
     assert repo.delete_journal_entry(OWNER, source.id)
     recreated = source.model_copy(update={"created_at": source.created_at + timedelta(seconds=1)})
-    repo.save_journal_entry(recreated)
+    with pytest.raises(ValueError, match="deleted"):
+        repo.save_journal_entry(recreated)
     with pytest.raises(JournalEntryNotFound):
         repo.create_conversation(delayed_start)
     assert repo.get_conversation(OWNER, delayed_start.id) is None

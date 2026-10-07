@@ -362,8 +362,58 @@ def test_recreated_entry_uuid_does_not_receive_old_reflection(tmp_path: Path):
         assert started.wait(5)
         assert client.delete(f"/v1/journal/entries/{original['id']}", headers=HEADERS).status_code == 204
         current["now"] = datetime(2026, 10, 4, 0, 1, tzinfo=UTC)
-        replacement = save(client, "A different moment.", client_request_id=original["id"])
-        release.set()
-        thread.join(5)
+        try:
+            rejected = client.post("/v1/journal/entries", headers=HEADERS, json={
+                "text": "A different moment.", "client_request_id": original["id"],
+            })
+            assert rejected.status_code == 409
+            replacement = save(client, "A different moment.")
+        finally:
+            release.set()
+            thread.join(5)
         assert results[0].status_code == 404
-        assert client.get(f"/v1/journal/entries/{original['id']}", headers=HEADERS).json() == replacement
+        assert client.get(f"/v1/journal/entries/{original['id']}", headers=HEADERS).status_code == 404
+        assert client.get(f"/v1/journal/entries/{replacement['id']}", headers=HEADERS).json() == replacement
+
+
+def test_reflection_feelings_are_transient_suggestions_with_one_provider_call(tmp_path: Path):
+    from dataclasses import replace
+
+    class FeelingClient(RecordingClient):
+        def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
+            self.calls.append(messages)
+            return replace(completion(), feelings=("happy", "anxious"))
+
+    model = FeelingClient()
+    with TestClient(create_app(settings=settings(tmp_path), conversation_client=model)) as client:
+        entry = save(client, "Fictional writing with mixed feelings.")
+        reflected = client.post(
+            f"/v1/journal/entries/{entry['id']}/reflect", headers=HEADERS,
+            json={"llm_consent": True, "locale": "CA"},
+        )
+        assert reflected.status_code == 200
+        assert reflected.json()["feelings"] == ["happy", "anxious"]
+        assert reflected.json()["generated_text_retained"] is False
+        assert len(model.calls) == 1
+        assert client.get(f"/v1/journal/entries/{entry['id']}", headers=HEADERS).json() == entry
+        exported = client.get("/v1/export", headers=HEADERS).json()
+        assert exported["journal_entries"] == [entry]
+        assert exported["reflections"] == []
+
+
+@pytest.mark.parametrize("suggestions", [("invented-diagnosis",), ("happy", "calm", "hopeful", "okay")])
+def test_invalid_reflection_feeling_suggestions_fail_without_changing_writing(tmp_path: Path, suggestions):
+    from dataclasses import replace
+
+    class InvalidClient(RecordingClient):
+        def complete(self, messages: list[dict[str, str]]) -> ConversationCompletion:
+            return replace(completion(), feelings=suggestions)
+
+    with TestClient(create_app(settings=settings(tmp_path), conversation_client=InvalidClient())) as client:
+        entry = save(client)
+        reflected = client.post(
+            f"/v1/journal/entries/{entry['id']}/reflect", headers=HEADERS,
+            json={"llm_consent": True, "locale": "CA"},
+        )
+        assert reflected.status_code == 502
+        assert client.get(f"/v1/journal/entries/{entry['id']}", headers=HEADERS).json() == entry

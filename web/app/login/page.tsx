@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 import { Luna } from "@/components/luna";
 import { getSupabase } from "@/lib/supabase";
@@ -12,26 +12,44 @@ function LoginWorkspace() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const mounted = useRef(true);
+  const inFlight = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    const client = await getSupabase();
-    if (!client) {
-      setError("Sign-in isn’t set up here yet.");
-      return;
-    }
+    if (inFlight.current) return;
+    inFlight.current = true;
     setLoading(true);
     setError("");
     setMessage("");
-    const requestedPath = searchParams.get("next");
-    const nextPath = requestedPath?.startsWith("/") && !requestedPath.startsWith("//") ? requestedPath : "/";
-    const { error: signInError } = await client.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}${nextPath}` },
-    });
-    if (signInError) setError("Luna couldn’t send the link. Check the address and try again.");
-    else setMessage("Check your email and tap the link to come in. You can close this tab.");
-    setLoading(false);
+    try {
+      const client = await getSupabase();
+      // A delayed SDK import must not send mail after this page has been left.
+      if (!mounted.current) return;
+      if (!client) {
+        setError("Sign-in isn’t set up here yet.");
+        return;
+      }
+      const requestedPath = searchParams.get("next");
+      const nextPath = requestedPath?.startsWith("/") && !requestedPath.startsWith("//") ? requestedPath : "/";
+      const { error: signInError } = await client.auth.signInWithOtp({
+        email: email.trim(),
+        options: { emailRedirectTo: `${window.location.origin}${nextPath}` },
+      });
+      if (!mounted.current) return;
+      if (signInError) setError("Luna couldn’t send the link. Check the address and try again.");
+      else setMessage("Check your email and tap the link to come in. You can close this tab.");
+    } catch {
+      if (mounted.current) setError("Luna couldn’t send the link. Check your connection and try again.");
+    } finally {
+      inFlight.current = false;
+      if (mounted.current) setLoading(false);
+    }
   }
 
   return (
@@ -48,6 +66,7 @@ function LoginWorkspace() {
               inputMode="email"
               type="email"
               required
+              disabled={loading}
               value={email}
               placeholder="you@example.com"
               onChange={(event) => setEmail(event.target.value)}
