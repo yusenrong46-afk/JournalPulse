@@ -21,7 +21,7 @@ Related concerns: initial retention copy aligned with Settings; reviewed app act
 ## Validation
 
 - Backend: 1,270 tests pass; 91.88% coverage. Ruff and mypy pass.
-- Frontend: 216 unit tests pass. Lint/typecheck pass.
+- Frontend: 217 unit tests pass. Lint/typecheck pass.
 - Desktop/mobile browser suite: 46 pass, including automated accessibility checks; final cache-transition run in progress.
 - Integration: 22 pass; four opt-in UI tour scenarios are explicitly skipped by the existing suite. PostgreSQL, API, exported UI and PostgREST are real; auth and model/search providers are deterministic stand-ins.
 - All existing scratch PostgreSQL schema, ownership, integrity, activity, Sentinel and erasure gates pass. No hosted migration is needed or applied.
@@ -52,3 +52,7 @@ Production inspection found that the reviewed-activity picker reached the existi
 Production verification already confirmed exact journal/chat draft recovery, interrupted Save visibility, optional Home, retention copy, same-goal message count remaining at two, manual collection visibility, Explore topic/exclusion recovery with consent off, legacy activity links and timer states through refresh, and a real 390x844 viewport with no horizontal overflow. Check-in saved a synthetic not-tried outcome in 1176ms including automation overhead. Detailed client timing APIs were unavailable in the native read-only browser scope; local integration provides phase timings.
 
 Real production Explore initial/refinement and inline initial search succeeded, with generation/cost receipts. One inline topic containing `short` was rejected by the existing vocabulary gate before provider work; the valid public phrase `quiet meditation` succeeded. Current OpenRouter measured spend is US$0.0007225. Three Brave requests have a gross ceiling of US$0.015 before credits. These billing layers remain separate.
+
+## First-chat draft handoff
+
+A new failing regression reproduced loss of the first draft after chat creation changed the URL but the message response remained unconfirmed. The draft now transfers to the confirmed chat/incarnation before sending. This also preserves any unsent typed text when a separate mood tap creates the chat. The regression is preserved in `first-chat-draft-red.log`; the repaired frontend suite passes 217 tests. Existing server contracts are unchanged by this client correction.

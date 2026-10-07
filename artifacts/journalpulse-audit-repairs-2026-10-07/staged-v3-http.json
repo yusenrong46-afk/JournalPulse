@@ -1,0 +1,85 @@
+{
+  "ready": {
+    "status": "ready",
+    "checks": {
+      "configuration": "ready",
+      "resources": "ready",
+      "llm": "configured:not_probed",
+      "web": "ready",
+      "database": "reachable",
+      "schema": "schema_ready",
+      "signing": "valid",
+      "activities": "ready",
+      "retention_job": "scheduled",
+      "retention_state": "healthy",
+      "retention_last_success": "2026-10-07 19:00:00.189457+00",
+      "retention_last_run_status": "succeeded",
+      "retention_overdue": "false"
+    }
+  },
+  "capabilities": {
+    "discovery": "configured"
+  },
+  "manual_field": {
+    "type": "boolean",
+    "title": "User Selected",
+    "default": false
+  },
+  "assets": [
+    {
+      "path": "/_next/static/chunks/0cz1d0mv5g_q7.js",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/0m3u7id8sn7k7.js",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/15vsx7_aqa5dv.js",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/1qzcenyv5l0cd.css",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/1rj7ns8rte9vc.js",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/2dguhvme1ykcn.js",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/2h5-mxz7slckb.js",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/2mmpezlrfmbu5.js",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/310vm2bl3xxpt.js",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/3q_wngs_8w11y.js",
+      "status": 200,
+      "cache_control": "no-store"
+    },
+    {
+      "path": "/_next/static/chunks/turbopack-0ad7d-bwhky_e.js",
+      "status": 200,
+      "cache_control": "no-store"
+    }
+  ]
+}

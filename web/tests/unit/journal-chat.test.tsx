@@ -714,6 +714,26 @@ describe("resource discovery handoff", () => {
 describe("composer during a reply", () => {
   beforeEach(() => { navigation.query = `c=${OLD_CHAT_ID}`; });
 
+  test("the first draft follows the confirmed chat identity before an unconfirmed send", async () => {
+    navigation.query = "";
+    const created = conversation(NEW_CHAT_ID);
+    let fail!: (reason: Error) => void;
+    const pending = new Promise((_resolve, reject) => { fail = reject; });
+    const fallback = requested.getMockImplementation()!;
+    requested.mockImplementation(async (path, options) => {
+      if (path === "/v1/conversations") return created;
+      if (path === `/v1/conversations/${NEW_CHAT_ID}/messages`) return pending;
+      if (path === `/v1/conversations/${NEW_CHAT_ID}`) return { conversation: created, messages: [] };
+      return fallback(path, options);
+    });
+    await mount(); await writeDraft("QA first draft must survive an uncertain send."); await submit();
+    expect(navigation.query).toContain(`c=${NEW_CHAT_ID}`);
+    await act(async () => root.render(null));
+    await act(async () => fail(new Error("Synthetic unconfirmed send")));
+    await mount();
+    expect(container.querySelector("textarea")!.value).toBe("QA first draft must survive an uncertain send.");
+  });
+
   test("keeps focus and the draft field enabled while Luna replies, but blocks a second send", async () => {
     const delayed = deferred<ConversationTurn>();
     const fallback = requested.getMockImplementation()!;

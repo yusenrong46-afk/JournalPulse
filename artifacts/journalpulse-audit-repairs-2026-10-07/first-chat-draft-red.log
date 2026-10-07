@@ -1,0 +1,38 @@
+
+> journalpulse-web@1.0.0 test:unit
+> vitest run tests/unit/journal-chat.test.tsx
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/thomas/Documents/ChatGPT/JP/web
+
+ ❯ tests/unit/journal-chat.test.tsx (32 tests | 1 failed) 382ms
+     × the first draft follows the confirmed chat identity before an unconfirmed send 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/unit/journal-chat.test.tsx > composer during a reply > the first draft follows the confirmed chat identity before an unconfirmed send
+AssertionError: expected '' to be 'QA first draft must survive an uncert…' // Object.is equality
+
+- Expected
++ Received
+
+- QA first draft must survive an uncertain send.
+
+ ❯ tests/unit/journal-chat.test.tsx:734:56
+    732|     await act(async () => fail(new Error("Synthetic unconfirmed send")…
+    733|     await mount();
+    734|     expect(container.querySelector("textarea")!.value).toBe("QA first …
+       |                                                        ^
+    735|   });
+    736|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 31 passed (32)
+   Start at  16:11:23
+   Duration  2.09s (transform 150ms, setup 29ms, import 1.09s, tests 382ms, environment 493ms)

@@ -584,6 +584,7 @@ function ChatWorkspace() {
     if (!editedRetry) pendingMessage.current = command;
     setPendingSend({ id: messageId, text: trimmed, status: "sending" });
     let active = conversation?.status === "open" ? conversation : null;
+    const creatingChatForDraft = active === null && Boolean(draft);
     if (active && !editedRetry) {
       pendingByChat.current.set(active.id, command);
       if (sendingComposerDraft) draftsByChat.current.delete(active.id);
@@ -591,6 +592,9 @@ function ChatWorkspace() {
     try {
       active = await ensureConversation(generation);
       if (!isCurrentChatRequest(generation, workspaceGeneration.current)) return;
+      // The URL now names a confirmed chat. Move the first draft to that same
+      // incarnation before sending, so refresh during an uncertain reply can recover it.
+      if (creatingChatForDraft) writeTabValue(chatDraftKey(active), draft);
       if (editedRetry) {
         // Recover any earlier committed pair before sending changed wording as
         // a new message, so the transcript never quietly omits that prior turn.
