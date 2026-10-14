@@ -34,6 +34,13 @@ Evidence folder: `artifacts/reliability-2026-10-14`.
   wording defect, now removed. Its input was fictional and it is **not live proof**.
 - Resume evidence: `resume-verification.json`. Revised PDF and source are beside
   the selected October 5 original, outside Git. No new model-quality claim was added.
+- GitHub CI passed all three jobs on `f71c27694b862a8296213df65a0b91f10cf07890`
+  in [run 38638845684](https://github.com/yusenrong46-afk/JournalPulse/actions/runs/38638845684).
+  [Draft PR 10](https://github.com/yusenrong46-afk/JournalPulse/pull/10) remains unmerged.
+- A hosted smoke runner is prepared in `scripts/verify_hosted_closure.py`.
+  Its four guard tests pass, alongside the ten account-closure API tests. It creates
+  only new tagged fictional accounts, verifies a refreshed token still needs fresh
+  sign-in, and limits cleanup to proven fixtures. **The hosted run has not occurred.**
 
 ## Runbooks and evidence boundaries
 

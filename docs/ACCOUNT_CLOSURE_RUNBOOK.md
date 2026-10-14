@@ -65,3 +65,47 @@ retain this migration and pending/complete markers. Do not drop the guards or
 ledger to get rid of an error, and do not restore deleted identities. Resolve a
 pending operation privately, verify its state, and use a forward repair if needed.
 Existing pending accounts remain write-blocked during rollback.
+
+## Prepared hosted smoke command
+
+After the real encrypted recovery is verified, apply the compatible migration and
+stage the tested application with closure configured. Capture the verified Vercel
+project ID, exact source commit and deployment origin in a release record:
+
+```json
+{
+  "project_id": "prj_EOSYVlo1KjkdnOAT8Smm72LdgFrV",
+  "commit": "EXACT_40_CHARACTER_COMMIT_FROM_VERIFIED_DEPLOYMENT",
+  "url": "https://VERIFIED_JOURNALPULSE_DEPLOYMENT.vercel.app"
+}
+```
+
+Then run in your interactive terminal, using the actual release-record path and a
+new report path:
+
+```sh
+.venv/bin/python scripts/verify_hosted_closure.py --deployment-record RELEASE_RECORD.json --output HOSTED_CLOSURE_RESULT.json
+```
+
+The Admin and public anon keys are hidden prompts. The privileged credential goes
+only to this project's Supabase API. The runner requires a successful encrypted
+recovery record, creates two new fictional identities tagged with its unique run
+ID, and stores only fictional writing. It never accepts an existing user ID as a
+test target, lists real users, sends sign-in email, or makes a model call.
+[Supabase's Admin creation API](https://supabase.com/docs/reference/javascript/auth-admin-createuser)
+supports confirming these disposable test emails without an invitation.
+
+The test waits just over five minutes, refreshes the token and proves that refresh
+does not satisfy fresh sign-in. It then signs in freshly, closes the first account,
+checks identity absence and the verified completion record, retries the same
+closure receipt, rejects that receipt from the second account, and checks the
+second account's writing is unchanged. Cleanup verifies the exact returned ID,
+fictional email and server-owned test marker before deleting any remaining fixture.
+
+A timeout during creation records an uncertain fictional email/run marker rather
+than retrying or guessing which account to delete. Reconcile that fixture privately
+before another attempt. A STOPPED report does not establish hosted completion.
+The script's failure-injection and concurrent-write coverage remain the separately
+recorded local API/PostgreSQL tests; it does not claim to inject production faults.
+Do not publish raw responses or tokens. The committed guard tests use only fake
+HTTP responses and are not evidence that this hosted smoke has run.
