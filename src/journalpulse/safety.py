@@ -6,8 +6,8 @@ import unicodedata
 from .domain import SafetyMode, SafetyResult
 
 HIGH_RISK_PATTERNS = (
-    r"\b(?:want|plan|going) to (?:die|kill myself|end my life)\b",
-    r"\bi(?: will|'ll) (?:kill myself|end my life)\b",
+    r"\b(?:want|plan|going|intend|planning) to (?:die|kill myself|end my life|unalive myself)\b",
+    r"\bi(?: will|'ll) (?:kill myself|end my life|unalive myself)\b",
     r"\b(?:hurt|harm) myself\b",
     r"\b(?:not|do not|don't) feel safe(?: (?:right now|tonight|today|alone))?\b",
     r"\bi (?:have|made) a suicide plan\b",
@@ -21,6 +21,7 @@ HIGH_RISK_PATTERNS = (
     r"\b(?:end|ending) it all\b",
     r"\bi (?:won't|will not|'m not going to|am not going to) be (?:around|here) much longer\b",
     r"\bsuicidal\b",
+    r"\bi(?: am|'m) considering (?:suicide|(?:killing|hurting|harming) myself|ending my life)\b",
     r"\b(?:thinking|thoughts?) (?:about|of) (?:killing myself|suicide|ending my life)\b",
     r"\bi wish i (?:was|were) dead\b",
     r"\bi (?:don't|do not) want to (?:be alive|live|exist) anymore\b",
@@ -38,15 +39,19 @@ PRESENT_MARKER = re.compile(
 )
 
 NEGATED_PATTERNS = (
-    r"\b(?:not|never) suicidal\b",
-    r"\b(?:do not|don't|never) want to (?:die|hurt myself|harm myself|kill myself|end my life)\b",
-    r"\b(?:not|never) going to (?:die|hurt myself|harm myself|kill myself|end my life)\b",
-    r"\b(?:will not|won't) (?:hurt myself|harm myself|kill myself|end my life)\b",
+    r"\bno thoughts? (?:about|of) (?:suicide|killing myself|ending my life)\b",
+    r"\b(?:not|never)(?: (?:currently|feeling))? suicidal\b",
+    r"\b(?:do not|don't|never) (?:want|intend|plan) to "
+    r"(?:die|hurt myself|harm myself|kill myself|end my life|unalive myself)\b",
+    r"\b(?:not|never) (?:going|planning) to "
+    r"(?:die|hurt myself|harm myself|kill myself|end my life|unalive myself)\b",
+    r"\b(?:will not|won't) (?:hurt myself|harm myself|kill myself|end my life|unalive myself)\b",
 )
 
 # Deliberately bounded spelling variants. This is not a semantic classifier or
 # general spell checker. Normalize denials and affirmative phrases identically.
-_WORD_VARIANTS = {"wanna": "want to", "gonna": "going to", "suicdial": "suicidal", "kil": "kill"}
+_WORD_VARIANTS = {"wanna": "want to", "gonna": "going to", "suicdial": "suicidal", "kil": "kill",
+                  "dont": "don't", "wont": "won't"}
 _VARIANT_PATTERN = re.compile(r"\b(?:" + "|".join(_WORD_VARIANTS) + r")\b")
 
 

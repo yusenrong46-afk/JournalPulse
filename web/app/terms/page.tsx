@@ -20,7 +20,10 @@ export default function TermsPage() {
         <p>Do not attempt to access another person’s records, bypass access controls or usage limits, or disrupt the service. External resources are operated by other organizations and have their own terms.</p>
       </section>
       <section><h2>Leaving the beta</h2>
-        <p>You can stop using JournalPulse at any time. Settings provides download and saved-data deletion controls. Deleting saved data keeps the sign-in identity and is subject to the technical retention limits described in the privacy notice.</p>
+        <p>You can stop using JournalPulse at any time. Settings provides download, saved-data deletion, and a separate Close account control. Deleting saved data keeps the sign-in identity; closing the account removes it after a fresh sign-in and explicit confirmation. Backup and service-log retention limits are described in the privacy notice.</p>
+      </section>
+      <section><h2>Contact</h2>
+        <p>For privacy questions or help closing your account, email <a href="mailto:yusenrong46@gmail.com">yusenrong46@gmail.com</a>. Please do not include journal entries, passwords, or sign-in links in your message.</p>
       </section>
     </PublicInformation>
   );

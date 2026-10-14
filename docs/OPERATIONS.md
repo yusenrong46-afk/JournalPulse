@@ -20,6 +20,8 @@ Use [.env.example](../.env.example) and [Settings](../src/journalpulse/config.py
 | `JOURNALPULSE_SEARCH_API_KEY` | empty | Existing Brave credential, server only |
 | `JOURNALPULSE_SEARCH_TIMEOUT_SECONDS` | `8` | Search timeout, constrained to 1–20 seconds |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | empty | Hosted Auth/PostgREST connection; anon key is public and relies on RLS |
+| `SUPABASE_SERVICE_ROLE_KEY` | empty | Server-only Admin credential for verified account closure; never expose to the browser |
+| `JOURNALPULSE_ACCOUNT_CLOSURE_ENABLED` | `false` | Enables fresh-auth account closure only after migration and hosted disposable-account checks |
 | `JOURNALPULSE_WRITE_SIGNING_KEY` | empty | Server provenance signing; must match `private.server_secrets` and is required in production |
 | `JOURNALPULSE_CORS_ORIGINS` | platform URL or loopback locally | Explicit allowed origins |
 | `JOURNALPULSE_WEB_DIST` | empty | Exported frontend directory; empty permits API-only development |
@@ -171,14 +173,18 @@ then check both the existing site's readiness and the preview's readiness and us
 
 ## Data recovery and deletion
 
-- Enable and test Supabase backups and point-in-time recovery for the chosen plan. Before inviting more
-  people, restore a backup into a separate project and check record counts and RLS.
+- The approved Free-plan path is a manual encrypted export and isolated local restore;
+  follow [Local recovery](LOCAL_RECOVERY_RUNBOOK.md). No paid subscription or managed
+  daily backup is assumed. Real recovery remains a release gate until verified.
 - `DELETE /v1/reflections/{id}` removes the decision, outcome, observation, model run, and safety event
   through foreign-key cascades.
 - `DELETE /v1/account/data` removes every journal row: outcomes, observations, decisions, model runs,
   safety events, messages, memories, reflections, conversations, consents, and profiles. Usage counters
-  are left to expire so deletion cannot reset the generation limit. The sign-in identity is kept;
-  deleting it is a separate privileged task and must not be described as done until it is built.
+  are left to expire so deletion cannot reset the generation limit. The sign-in identity is kept.
+- `DELETE /v1/account` separately closes a freshly authenticated account. It requires
+  an explicit phrase, a server-only Admin credential, and the additive closure migration.
+  Default configuration leaves it unavailable. See [Account closure](ACCOUNT_CLOSURE_RUNBOOK.md)
+  for retry, write-blocking, verification and rollback boundaries.
 
 ## Rollback
 
@@ -191,9 +197,9 @@ then check both the existing site's readiness and the preview's readiness and us
 
 ## Signing-key rotation with bounded overlap
 
-Candidate migration `202610140001_signing_key_overlap.sql` adds an optional expiry
+Migration `202610140001_signing_key_overlap.sql` adds an optional expiry
 column to `private.server_secrets` and verifies the active key plus one previous key.
-The candidate API similarly verifies resource receipts with an optional previous key.
+The released API similarly verifies resource receipts with an optional previous key.
 New writes and receipts are always signed with `JOURNALPULSE_WRITE_SIGNING_KEY`.
 This migration is not a key rotation and does not change stored key values.
 
@@ -232,8 +238,9 @@ restores it into a different database, and verifies RLS, deleted-ID replay rejec
 new signed writes, and key overlap. It refuses existing scratch database names.
 This tests mechanics; it does not verify managed Supabase backups or hosted identity.
 
-Before expanding the hosted beta, record: backup schedule and retention, the latest
-successful backup, recovery-point and recovery-time objectives, a successful restore
-into a separate hosted project, account-isolation tests there, and deletion
-reconciliation for requests received after the backup. Keep that target isolated and
-close it afterward. Never restore over the live database to test the procedure.
+Before expanding the hosted beta, record the manual backup frequency and retention,
+latest successful encrypted export/local restore, recovery-point and recovery-time
+limits, account-isolation checks and post-backup deletion reconciliation. The current
+approved exercise restores private records only locally. A separate hosted recovery
+is outside this plan and remains unverified. Never restore over the live database
+to test the procedure.

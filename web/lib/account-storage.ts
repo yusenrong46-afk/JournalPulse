@@ -54,3 +54,16 @@ export function writeAccountStorage(baseKey: string, value: string | null, stora
     sessionValues.set(key, value);
   }
 }
+
+/** Remove only this closed account's cached state; other accounts keep their data. */
+export function clearClosedAccountStorage(userId: string): void {
+  const suffix = `:${userId}`;
+  for (const key of sessionValues.keys()) if (key.endsWith(suffix)) sessionValues.delete(key);
+  for (const name of ["localStorage", "sessionStorage"] as const) {
+    try {
+      const storage = window[name];
+      const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index));
+      for (const key of keys) if (key?.endsWith(suffix)) storage.removeItem(key);
+    } catch { /* unavailable storage must not turn confirmed server deletion into a failure */ }
+  }
+}
