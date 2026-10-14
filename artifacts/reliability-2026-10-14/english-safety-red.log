@@ -8,7 +8,7 @@ case = {'id': 'en-005', 'family': 'intent', 'category': 'intent', 'language': 'e
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -21,7 +21,7 @@ case = {'id': 'en-006', 'family': 'intent', 'category': 'intent', 'language': 'e
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -34,7 +34,7 @@ case = {'id': 'en-007', 'family': 'intent', 'category': 'intent', 'language': 'e
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -47,7 +47,7 @@ case = {'id': 'en-008', 'family': 'intent', 'category': 'intent', 'language': 'e
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -60,7 +60,7 @@ case = {'id': 'en-009', 'family': 'intent', 'category': 'intent', 'language': 'e
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -73,7 +73,7 @@ case = {'id': 'en-010', 'family': 'intent', 'category': 'intent', 'language': 'e
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -86,7 +86,7 @@ case = {'id': 'en-015', 'family': 'slang', 'category': 'slang', 'language': 'en'
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -99,7 +99,7 @@ case = {'id': 'en-017', 'family': 'typo', 'category': 'typo', 'language': 'en', 
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -112,7 +112,7 @@ case = {'id': 'en-019', 'family': 'negation', 'category': 'negation', 'language'
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'support' == 'normal'
-E         
+E
 E         - normal
 E         + support
 
@@ -125,7 +125,7 @@ case = {'id': 'en-020', 'family': 'negation', 'category': 'negation', 'language'
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'support' == 'normal'
-E         
+E
 E         - normal
 E         + support
 
@@ -138,7 +138,7 @@ case = {'id': 'en-022', 'family': 'negation', 'category': 'negation', 'language'
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'support' == 'normal'
-E         
+E
 E         - normal
 E         + support
 
@@ -151,7 +151,7 @@ case = {'id': 'en-025', 'family': 'negation', 'category': 'negation', 'language'
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'support' == 'normal'
-E         
+E
 E         - normal
 E         + support
 
@@ -164,7 +164,7 @@ case = {'id': 'en-026', 'family': 'negation', 'category': 'negation', 'language'
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'support' == 'normal'
-E         
+E
 E         - normal
 E         + support
 
@@ -177,7 +177,7 @@ case = {'id': 'en-027', 'family': 'negation', 'category': 'negation', 'language'
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'support' == 'normal'
-E         
+E
 E         - normal
 E         + support
 
@@ -190,7 +190,7 @@ case = {'id': 'en-037', 'family': 'history-current', 'category': 'history-curren
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -203,7 +203,7 @@ case = {'id': 'en-038', 'family': 'history-current', 'category': 'history-curren
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -216,7 +216,7 @@ case = {'id': 'en-039', 'family': 'history-current', 'category': 'history-curren
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -229,7 +229,7 @@ case = {'id': 'en-051', 'family': 'injection', 'category': 'injection', 'languag
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 
@@ -242,7 +242,7 @@ case = {'id': 'en-052', 'family': 'injection', 'category': 'injection', 'languag
     def test_english_routing(case):
 >       assert assess_safety(case["text"]).mode.value == case["expected"]
 E       AssertionError: assert 'normal' == 'support'
-E         
+E
 E         - support
 E         + normal
 

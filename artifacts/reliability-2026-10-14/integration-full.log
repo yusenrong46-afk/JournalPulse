@@ -18,17 +18,17 @@
 [WebServer] 14/Oct/2026:18:10:31 -0300: Schema cache queried in 12.5 milliseconds
 [WebServer] 14/Oct/2026:18:10:31 -0300: Schema cache loaded 17 Relations, 29 Relationships, 38 Functions, 0 Domain Representations, 4 Media Type Handlers, 1198 Timezones
 [WebServer] 14/Oct/2026:18:10:31 -0300: Schema cache loaded in 0.4 milliseconds
-[WebServer] 
+[WebServer]
 [WebServer] > journalpulse-web@1.0.0 build
 [WebServer] > next build
-[WebServer] 
+[WebServer]
 [WebServer] ▲ Next.js 16.3.8 (Turbopack)
 [WebServer] (node:77415) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
 [WebServer] ✓ Running next.config.ts took 56ms
 [WebServer] - Experiments (use with caution):
 [WebServer]   ✓ inlineCss
-[WebServer] 
+[WebServer]
 [WebServer]   Creating an optimized production build ...
 [WebServer] (node:77415) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
@@ -55,12 +55,12 @@
 [WebServer] (node:77435) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
 [WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
 [WebServer]   Generating static pages using 9 workers (0/20) ...
-[WebServer]   Generating static pages using 9 workers (5/20) 
-[WebServer]   Generating static pages using 9 workers (10/20) 
-[WebServer]   Generating static pages using 9 workers (15/20) 
+[WebServer]   Generating static pages using 9 workers (5/20)
+[WebServer]   Generating static pages using 9 workers (10/20)
+[WebServer]   Generating static pages using 9 workers (15/20)
 [WebServer] ✓ Generating static pages using 9 workers (20/20) in 297ms
 [WebServer]   Finalizing page optimization ...
-[WebServer] 
+[WebServer]
 [WebServer] Route (app)
 [WebServer] ┌ ○ /
 [WebServer] ├ ○ /_not-found
@@ -81,10 +81,10 @@
 [WebServer] ├ ○ /talk
 [WebServer] ├ ○ /terms
 [WebServer] └ ○ /welcome
-[WebServer] 
-[WebServer] 
+[WebServer]
+[WebServer]
 [WebServer] ○  (Static)  prerendered as static content
-[WebServer] 
+[WebServer]
 [WebServer] integration stack ready: api http://127.0.0.1:8100, gateway http://127.0.0.1:54321
 
 Running 26 tests using 1 worker

@@ -97,7 +97,7 @@ Running 62 tests using 5 workers
   ✓  62 [desktop-chromium] › tests/e2e/public-information.spec.ts:17:5 › sign-in links to disclosures before an email is submitted (425ms)
 
 
-  1) [mobile-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured 
+  1) [mobile-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured
 
     Error: expect(received).toEqual(expected) // deep equality
 
@@ -175,7 +175,7 @@ Running 62 tests using 5 workers
 
     Error Context: test-results/account-closure-account-cl-2f36b--accessible-when-configured-mobile-chromium/error-context.md
 
-  2) [desktop-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured 
+  2) [desktop-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured
 
     Error: expect(received).toEqual(expected) // deep equality
 
@@ -254,6 +254,6 @@ Running 62 tests using 5 workers
     Error Context: test-results/account-closure-account-cl-2f36b--accessible-when-configured-desktop-chromium/error-context.md
 
   2 failed
-    [mobile-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured 
-    [desktop-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured 
+    [mobile-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured
+    [desktop-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured
   60 passed (17.6s)
