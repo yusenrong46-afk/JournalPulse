@@ -1,0 +1,16 @@
+
+> journalpulse-web@1.0.0 test:unit
+> vitest run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/thomas/Documents/ChatGPT/JP/web
+
+
+ Test Files  35 passed (35)
+      Tests  230 passed (230)
+   Start at  18:10:46
+   Duration  10.47s (transform 4.54s, setup 2.22s, import 28.49s, tests 8.38s, environment 43.83s)
+

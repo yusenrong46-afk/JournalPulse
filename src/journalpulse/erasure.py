@@ -18,6 +18,10 @@ class DeletedObjectIdentity(ValueError):
     """A logical creation ID has already been erased."""
 
 
+class AccountClosurePending(RuntimeError):
+    """New writes are blocked by a durable account-closure intent."""
+
+
 class AccountDataErased(RuntimeError):
     """An authenticated request predates the latest account data erasure."""
 

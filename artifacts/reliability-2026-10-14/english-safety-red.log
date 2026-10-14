@@ -1,0 +1,270 @@
+....FFFFFF....F.F.FF.F..FFF.........FFF...........FF                     [100%]
+=================================== FAILURES ===================================
+_________________________ test_english_routing[en-005] _________________________
+
+case = {'id': 'en-005', 'family': 'intent', 'category': 'intent', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-006] _________________________
+
+case = {'id': 'en-006', 'family': 'intent', 'category': 'intent', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-007] _________________________
+
+case = {'id': 'en-007', 'family': 'intent', 'category': 'intent', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-008] _________________________
+
+case = {'id': 'en-008', 'family': 'intent', 'category': 'intent', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-009] _________________________
+
+case = {'id': 'en-009', 'family': 'intent', 'category': 'intent', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-010] _________________________
+
+case = {'id': 'en-010', 'family': 'intent', 'category': 'intent', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-015] _________________________
+
+case = {'id': 'en-015', 'family': 'slang', 'category': 'slang', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-017] _________________________
+
+case = {'id': 'en-017', 'family': 'typo', 'category': 'typo', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-019] _________________________
+
+case = {'id': 'en-019', 'family': 'negation', 'category': 'negation', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'support' == 'normal'
+E         
+E         - normal
+E         + support
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-020] _________________________
+
+case = {'id': 'en-020', 'family': 'negation', 'category': 'negation', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'support' == 'normal'
+E         
+E         - normal
+E         + support
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-022] _________________________
+
+case = {'id': 'en-022', 'family': 'negation', 'category': 'negation', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'support' == 'normal'
+E         
+E         - normal
+E         + support
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-025] _________________________
+
+case = {'id': 'en-025', 'family': 'negation', 'category': 'negation', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'support' == 'normal'
+E         
+E         - normal
+E         + support
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-026] _________________________
+
+case = {'id': 'en-026', 'family': 'negation', 'category': 'negation', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'support' == 'normal'
+E         
+E         - normal
+E         + support
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-027] _________________________
+
+case = {'id': 'en-027', 'family': 'negation', 'category': 'negation', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'support' == 'normal'
+E         
+E         - normal
+E         + support
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-037] _________________________
+
+case = {'id': 'en-037', 'family': 'history-current', 'category': 'history-current', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-038] _________________________
+
+case = {'id': 'en-038', 'family': 'history-current', 'category': 'history-current', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-039] _________________________
+
+case = {'id': 'en-039', 'family': 'history-current', 'category': 'history-current', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-051] _________________________
+
+case = {'id': 'en-051', 'family': 'injection', 'category': 'injection', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+_________________________ test_english_routing[en-052] _________________________
+
+case = {'id': 'en-052', 'family': 'injection', 'category': 'injection', 'language': 'en', ...}
+
+    @pytest.mark.parametrize("case", CLEAR, ids=[case["id"] for case in CLEAR])
+    def test_english_routing(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_english_safety_regressions.py:15: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-005]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-006]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-007]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-008]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-009]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-010]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-015]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-017]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-019]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-020]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-022]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-025]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-026]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-027]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-037]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-038]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-039]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-051]
+FAILED tests/test_english_safety_regressions.py::test_english_routing[en-052]
+19 failed, 33 passed in 0.19s

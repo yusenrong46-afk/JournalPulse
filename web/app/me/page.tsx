@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Luna } from "@/components/luna";
+import { CloseAccount } from "@/components/close-account";
 import { apiRequest } from "@/lib/api";
 import { invalidateAccountDataRequests } from "@/lib/account-data";
 import { writeOpenConversationId } from "@/lib/conversation";
@@ -171,6 +172,11 @@ export default function MePage() {
           </button>
           </div>
         </details>
+      </section>
+
+      <section className="stack settings-data" aria-label="Account closure and contact">
+        <CloseAccount onBusyChange={setBusy} disabled={busy} />
+        <p className="small">Privacy questions or account help: <a href="mailto:yusenrong46@gmail.com">yusenrong46@gmail.com</a>. Please do not send journal entries or sign-in links.</p>
       </section>
 
       {message && <p className="note ok" role="status">{message}</p>}

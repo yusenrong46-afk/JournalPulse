@@ -26,9 +26,12 @@ export default function PrivacyPage() {
         <p>Application request logs record technical information such as request identifiers, paths, status, and timing. The application is designed not to log journal text or API keys. Hosting and authentication services may keep their own operational records.</p>
       </section>
       <section><h2>Download and delete</h2>
-        <p>After signing in, use Settings to download your data or delete saved journal data. The deletion control removes journal and chat content from the active app database. It keeps your sign-in identity; it is not account closure.</p>
-        <p>Limited technical records remain to prevent delayed requests from recreating deleted content and to enforce usage limits. Deletion markers contain account and object identifiers, not your writing.</p>
+        <p>After signing in, use Settings to download your data or delete saved journal data. The deletion control removes journal and chat content from the active app database. This control keeps your sign-in identity. The separate “Close account” control removes the sign-in account and its active app data after a fresh sign-in and explicit confirmation.</p>
+        <p>Limited technical records remain to prevent delayed requests from recreating deleted content and to enforce usage limits. Deletion markers contain account and object identifiers, not your writing. Account-closure records also retain an account identifier and timestamps for recovery reconciliation.</p>
         <p>Deleting active records does not promise immediate removal from infrastructure backups or service logs. Backup retention and a hosted restore exercise have not yet been verified for this beta. Do not rely on JournalPulse as your only copy of important writing.</p>
+      </section>
+      <section><h2>Contact</h2>
+        <p>For privacy questions or help closing your account, email <a href="mailto:yusenrong46@gmail.com">yusenrong46@gmail.com</a>. Please do not include journal entries, passwords, or sign-in links in your message.</p>
       </section>
     </PublicInformation>
   );
