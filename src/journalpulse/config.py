@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 from dataclasses import dataclass
+from datetime import datetime
 from ipaddress import ip_address
 from math import isfinite
 from pathlib import Path
@@ -117,6 +118,8 @@ class Settings:
     chat_timeout_seconds: float = 45.0
     # Shared with the database (private.server_secrets) to sign provenance writes.
     write_signing_key: str | None = None
+    write_signing_key_previous: str | None = None
+    write_signing_key_previous_expires_at: str | None = None
     # Open-web discovery is an explicit opt-in; the existing resource catalog remains separate.
     search_feature_enabled: bool = False
     search_api_key: str | None = None
@@ -141,8 +144,20 @@ class Settings:
         return bool(self.supabase_url and self.supabase_anon_key)
 
     @property
+    def previous_signing_key_deadline(self) -> datetime | None:
+        try:
+            deadline = datetime.fromisoformat(self.write_signing_key_previous_expires_at or "")
+            return deadline if deadline.tzinfo is not None else None
+        except ValueError:
+            return None
+
+    @property
     def configuration_issues(self) -> list[str]:
         issues: list[str] = []
+        if self.write_signing_key_previous and (
+            len(self.write_signing_key_previous) < 32 or self.previous_signing_key_deadline is None
+        ):
+            issues.append("previous_signing_key_invalid")
         if self.max_request_bytes < 5_000:
             issues.append("request_limit_too_small")
         if self.analysis_rate_limit_per_minute < 1:
@@ -212,6 +227,10 @@ def load_settings() -> Settings:
         chat_model=os.getenv("JOURNALPULSE_CHAT_MODEL", "openai/gpt-6-luna").strip(),
         chat_timeout_seconds=float(os.getenv("JOURNALPULSE_CHAT_TIMEOUT_SECONDS", "45")),
         write_signing_key=os.getenv("JOURNALPULSE_WRITE_SIGNING_KEY") or None,
+        write_signing_key_previous=os.getenv("JOURNALPULSE_WRITE_SIGNING_KEY_PREVIOUS") or None,
+        write_signing_key_previous_expires_at=(
+            os.getenv("JOURNALPULSE_WRITE_SIGNING_KEY_PREVIOUS_EXPIRES_AT") or None
+        ),
         search_feature_enabled=_flag("JOURNALPULSE_SEARCH_ENABLED", False),
         search_api_key=os.getenv("JOURNALPULSE_SEARCH_API_KEY") or None,
         search_timeout_seconds=float(os.getenv("JOURNALPULSE_SEARCH_TIMEOUT_SECONDS", "8")),

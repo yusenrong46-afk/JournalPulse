@@ -9,6 +9,7 @@ import { SystemStatus } from "@/components/system-status";
 import { useRoutePath } from "@/lib/route-path";
 import { useTimeOfDay } from "@/lib/time-of-day";
 import { usePreferences } from "@/lib/preferences";
+import { PUBLIC_INFORMATION_PATHS } from "@/lib/public-routes";
 
 const navigation: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "Home", icon: "home" },
@@ -27,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRoutePath();
   const time = useTimeOfDay();
   const [preferences] = usePreferences();
-  const quiet = PRIVATE_FRAME.has(pathname);
+  const quiet = PRIVATE_FRAME.has(pathname) || PUBLIC_INFORMATION_PATHS.has(pathname);
   const chat = pathname === "/talk";
   useEffect(() => { if (time) document.documentElement.dataset.time = time; }, [time]);
   useEffect(() => {

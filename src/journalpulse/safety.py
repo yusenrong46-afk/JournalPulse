@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 from .domain import SafetyMode, SafetyResult
 
@@ -39,7 +40,22 @@ PRESENT_MARKER = re.compile(
 NEGATED_PATTERNS = (
     r"\b(?:not|never) suicidal\b",
     r"\b(?:do not|don't|never) want to (?:die|hurt myself|harm myself|kill myself|end my life)\b",
+    r"\b(?:not|never) going to (?:die|hurt myself|harm myself|kill myself|end my life)\b",
+    r"\b(?:will not|won't) (?:hurt myself|harm myself|kill myself|end my life)\b",
 )
+
+# Deliberately bounded spelling variants. This is not a semantic classifier or
+# general spell checker. Normalize denials and affirmative phrases identically.
+_WORD_VARIANTS = {"wanna": "want to", "gonna": "going to", "suicdial": "suicidal", "kil": "kill"}
+_VARIANT_PATTERN = re.compile(r"\b(?:" + "|".join(_WORD_VARIANTS) + r")\b")
+
+
+def _normalize(text: str) -> str:
+    text = unicodedata.normalize("NFKC", text).casefold().replace("’", "'")
+    # Ignore common invisible separators without discarding real clause breaks.
+    text = text.translate(dict.fromkeys(map(ord, "\u200b\u200c\u200d\ufeff")))
+    text = _VARIANT_PATTERN.sub(lambda match: _WORD_VARIANTS[match.group()], text)
+    return "\n".join(" ".join(line.split()) for line in text.splitlines())
 
 SUPPORT_BY_LOCALE = {
     "CA": (
@@ -174,9 +190,7 @@ def _clause_has_unnegated_risk(clause: str) -> bool:
 
 
 def assess_safety(text: str, locale: str = "CA") -> SafetyResult:
-    normalized = "\n".join(
-        " ".join(line.split()) for line in text.lower().replace("’", "'").splitlines()
-    )
+    normalized = _normalize(text)
     if not any(_clause_has_unnegated_risk(clause) for clause in _clauses(normalized)):
         return SafetyResult(mode=SafetyMode.NORMAL, locale=locale.upper(), exploration_allowed=True)
 

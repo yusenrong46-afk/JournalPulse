@@ -6,15 +6,22 @@ import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { Luna } from "@/components/luna";
 import { activateBrowserAccount } from "@/lib/account-storage";
 import { useRoutePath } from "@/lib/route-path";
+import { PUBLIC_INFORMATION_PATHS } from "@/lib/public-routes";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
-
-const PUBLIC_PATHS = new Set(["/login", "/welcome"]);
 
 export function AuthBoundary({ children }: { children: ReactNode }) {
   const pathname = useRoutePath();
+  if (PUBLIC_INFORMATION_PATHS.has(pathname) || pathname === "/login") return children;
+  // Returning from a public page must perform a fresh session check, even when
+  // the destination was authorized earlier. Do not reuse an old account result.
+  return <SessionBoundary key={pathname}>{children}</SessionBoundary>;
+}
+
+function SessionBoundary({ children }: { children: ReactNode }) {
+  const pathname = useRoutePath();
   const router = useRouter();
   const configured = isSupabaseConfigured();
-  const publicPath = PUBLIC_PATHS.has(pathname);
+  const publicPath = pathname === "/welcome";
   const [authorization, setAuthorization] = useState<{ path: string; userId: string | null } | null>(null);
   const [error, setError] = useState(false);
   const [retry, setRetry] = useState(0);

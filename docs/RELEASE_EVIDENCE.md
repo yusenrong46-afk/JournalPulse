@@ -1,5 +1,7 @@
 # Release Evidence
 
+> Historical snapshot. The “Still open” list below records the state at that release; some entries were subsequently repaired. Use [current limitations](TRUST_HARDENING_2026-10-14.md) and current source before treating an item as unresolved today.
+
 > Historical evidence: the results below belong to their stated dates. See [Engineering verification](ENGINEERING.md#verification) for the October 7 repair snapshot and current test scope.
 
 For the follow-on implementation measured locally on 2026-10-04, see

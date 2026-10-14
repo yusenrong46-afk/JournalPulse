@@ -188,3 +188,52 @@ then check both the existing site's readiness and the preview's readiness and us
 - Set `JOURNALPULSE_LLM_ENABLED=false` to stop all model calls. Chats continue with Simple Luna.
 - The adaptive-policy and memory flags are independent kill switches and stay off until their research
   gates pass.
+
+## Signing-key rotation with bounded overlap
+
+Candidate migration `202610140001_signing_key_overlap.sql` adds an optional expiry
+column to `private.server_secrets` and verifies the active key plus one previous key.
+The candidate API similarly verifies resource receipts with an optional previous key.
+New writes and receipts are always signed with `JOURNALPULSE_WRITE_SIGNING_KEY`.
+This migration is not a key rotation and does not change stored key values.
+
+Use a separate fresh key for each environment. Never put real keys in SQL files,
+command history, logs, browser variables, or this document. Set them through the
+protected deployment/database secret-management process.
+
+For a planned rotation from K1 to K2:
+
+1. Apply the additive migration and deploy the overlap-capable API everywhere while
+   keeping K1 active. Verify ordinary signed writes and readiness.
+2. Prepare both verifiers before changing either signer: set database row
+   `write_signing_key_previous` to K2 with an explicit future `expires_at`, and prepare
+   every active API deployment with `JOURNALPULSE_WRITE_SIGNING_KEY_PREVIOUS=K2` and
+   `JOURNALPULSE_WRITE_SIGNING_KEY_PREVIOUS_EXPIRES_AT` as the same timezone-aware ISO
+   timestamp. K1 remains active. Verify K1 and K2 readiness signatures privately.
+3. Switch API signers to K2, with K1 as their previous verification key. In one
+   database transaction, set `write_signing_key` to K2 and the previous row to K1,
+   preserving the bounded expiry. Prepared old and new deployments can now coexist.
+4. Drain old deployments and allow outstanding receipts to expire before retiring
+   K1. Check current writes and receipts during this transition. Remove the previous
+   API variables and previous database row at the agreed deadline. Expired previous
+   keys are rejected even if cleanup is delayed.
+
+Do not use a long overlap after suspected compromise: revoke the compromised key
+and accept the need to refresh outstanding operations. Missing expiry never enables
+an indefinite overlap. Restores may restore secret values too; reconcile the database
+and deployment keys before admitting traffic.
+
+## Recovery verification evidence
+
+The local runner `scripts/verify_recovery.py` only accepts a task-owned,
+network-isolated Docker container with its database in tmpfs and no persistent mounts. It creates fresh scratch
+databases, applies all migrations, writes fictional data, takes a custom-format dump,
+restores it into a different database, and verifies RLS, deleted-ID replay rejection,
+new signed writes, and key overlap. It refuses existing scratch database names.
+This tests mechanics; it does not verify managed Supabase backups or hosted identity.
+
+Before expanding the hosted beta, record: backup schedule and retention, the latest
+successful backup, recovery-point and recovery-time objectives, a successful restore
+into a separate hosted project, account-isolation tests there, and deletion
+reconciliation for requests received after the backup. Keep that target isolated and
+close it afterward. Never restore over the live database to test the procedure.

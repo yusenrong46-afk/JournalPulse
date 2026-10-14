@@ -130,7 +130,7 @@ export default function MePage() {
         <details className="explain">
           <summary>Safety comes first</summary>
           <div>
-            <p>JournalPulse checks messages for certain clear crisis phrases. These checks can miss signs of distress. When a phrase is detected, Luna switches to support information and points you toward human help.</p>
+            <p>JournalPulse currently supports English only. It checks messages for certain English crisis phrases. These checks can still miss signs of distress or misread harmless statements. When a phrase is detected, Luna switches to support information and points you toward human help.</p>
           </div>
         </details>
         <details className="explain">

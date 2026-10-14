@@ -73,9 +73,8 @@ def test_ordinary_frustration_stays_in_the_normal_chat(text: str):
     assert assess_safety(text, "CA").mode == SafetyMode.NORMAL
 
 
-def test_unrecognised_negation_errs_toward_support():
-    # "not going to" is not a known negation, so the gate stays cautious.
-    assert assess_safety("I'm not going to kill myself", "CA").mode == SafetyMode.SUPPORT
+def test_clear_negated_future_intent_does_not_lock_the_chat():
+    assert assess_safety("I'm not going to kill myself", "CA").mode == SafetyMode.NORMAL
 
 
 @pytest.mark.parametrize(

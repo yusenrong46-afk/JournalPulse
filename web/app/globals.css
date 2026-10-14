@@ -2276,3 +2276,15 @@ ol.how-steps {
     display: none;
   }
 }
+
+/* Public disclosures stay readable before sign-in and during auth outages. */
+.public-information { max-width: 760px; margin-inline: auto; }
+.public-information-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 24px; }
+.public-information-links a, .public-information a, .public-support a { text-decoration: underline; text-underline-offset: 3px; }
+.public-information .public-information-links { justify-content: flex-start; }
+.public-information-body { line-height: 1.75; overflow-wrap: anywhere; }
+.public-information-body section { margin-block: 28px; }
+.public-information-body h2 { margin-bottom: 10px; }
+.public-support { padding: 16px; border: 1px solid var(--line); border-radius: 16px; text-align: left; font-size: 0.9rem; line-height: 1.6; }
+.public-support p + p { margin-top: 10px; }
+.focus-page > .public-support { margin-top: 20px; }

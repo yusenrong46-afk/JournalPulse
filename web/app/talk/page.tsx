@@ -956,7 +956,7 @@ function ChatWorkspace() {
           {stage !== "welcome" && <Luna mood={mood} size={44} />}
           <span className="chat-who-text">
             <strong>Luna</strong>
-            <small aria-live="polite">{status}</small>
+            <small id="chat-language" aria-live="polite">{status} · English only</small>
           </span>
         </div>
         {conversation && stage !== "saved" ? (
@@ -1328,6 +1328,7 @@ function ChatWorkspace() {
           <label className="sr-only" htmlFor="chat-input">Message Luna</label>
           <textarea
             id="chat-input"
+            aria-describedby="chat-language"
             ref={inputRef}
             rows={1}
             maxLength={2000}

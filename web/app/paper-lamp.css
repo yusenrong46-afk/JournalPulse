@@ -708,3 +708,6 @@ html[data-time='night'] .nook-chat-app :is(.check-in-more summary, .offer-steps 
 }
 /* Weekday initials label the first week only; the second row aligns beneath them. */
 .moon-grid li:nth-child(n + 8) > span { display: none; }
+
+/* Disclosures are immediately readable, including without JavaScript. */
+.paper-lamp .public-information { width: 100%; max-width: 760px; margin-inline: auto; animation: none; }
