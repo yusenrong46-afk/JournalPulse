@@ -404,7 +404,7 @@ test("the main navigation has three calm destinations", async ({ page }) => {
   await expect(page.getByText(/Observe|Orient/)).toHaveCount(0);
 });
 
-for (const [from, to] of [["/reflect", "/talk"], ["/history", "/journey"], ["/patterns", "/journey"], ["/privacy", "/me"]]) {
+for (const [from, to] of [["/reflect", "/talk"], ["/history", "/journey"], ["/patterns", "/journey"]]) {
   test(`${from} now leads to ${to}`, async ({ page }) => {
     await seed(page);
     await page.route(`${API}/**`, (route) => fulfilJson(route, { items: [] }));

@@ -1,5 +1,7 @@
 # Luna full release benchmark — October 5, 2026
 
+> Historical evaluation: this report tests `guided-action-2026-10-05.3`. It does not qualify the current `guided-action-2026-10-06.2` runtime. See [current limitations](../../docs/TRUST_HARDENING_2026-10-14.md).
+
 The benchmark run is complete. **The release decision is incomplete.**
 All language quality/completeness gates pass; the physical-warning safety grade
 remains uncertain. No preview update or shared database migration was performed.

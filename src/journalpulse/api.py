@@ -76,12 +76,29 @@ class CapabilitiesResponse(BaseModel):
 class FreshStaticFiles(StaticFiles):
     """Export archives normalize mtimes; metadata-only ETags can collide across builds."""
 
+    def __init__(self, *, directory: Path, html: bool, supabase_url: str | None = None) -> None:
+        super().__init__(directory=directory, html=html)
+        self.supabase_url = supabase_url
+
     def is_not_modified(self, response_headers: Headers, request_headers: Headers) -> bool:
         return False
 
     async def get_response(self, path: str, scope: Scope) -> Response:
         response = await super().get_response(path, scope)
         response.headers["Cache-Control"] = "no-store"
+        if response.headers.get("content-type", "").startswith("text/html") and hasattr(response, "path"):
+            from asyncio import to_thread
+
+            from .web_security import content_security_policy
+
+            body = await to_thread(Path(response.path).read_bytes)
+            response.headers["Content-Security-Policy"] = content_security_policy(body, self.supabase_url)
+            # Serve the same bytes whose scripts were hashed; do not reopen the
+            # file after building the policy, including during a rolling release.
+            response = Response(
+                content=b"" if scope["method"] == "HEAD" else body,
+                status_code=response.status_code, headers=dict(response.headers),
+            )
         return response
 
 
@@ -177,7 +194,13 @@ def create_app(
         if not web_dist.is_absolute():
             web_dist = PROJECT_ROOT / web_dist
         web_dist = web_dist.resolve()
-    app = FastAPI(title="JournalPulse Research Beta API", version="1.0.0")
+    public_docs = settings.environment != "production"
+    app = FastAPI(
+        title="JournalPulse Research Beta API", version="1.0.0",
+        docs_url="/docs" if public_docs else None,
+        redoc_url="/redoc" if public_docs else None,
+        openapi_url="/openapi.json" if public_docs else None,
+    )
     app.add_middleware(RequestContextMiddleware, max_request_bytes=settings.max_request_bytes)
     app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
     app.add_middleware(
@@ -681,7 +704,8 @@ def create_app(
     )
 
     if web_dist is not None and web_dist.is_dir():
-        app.mount("/", FreshStaticFiles(directory=web_dist, html=True), name="journalpulse-web")
+        app.mount("/", FreshStaticFiles(directory=web_dist, html=True, supabase_url=settings.supabase_url),
+                  name="journalpulse-web")
 
     return app
 

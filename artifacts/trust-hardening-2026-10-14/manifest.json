@@ -1,0 +1,59 @@
+{
+  "base_commit": "7be3bf82e695f32dae491ef38afc05554c7217c5",
+  "branch": "codex/journalpulse-trust-hardening",
+  "files": {
+    "README.md": "ed57e75cb05516275b8a6e1b3224a73873fba38b86d43131014a0a21df844139",
+    "artifacts/luna-release-benchmark/README.md": "9a7db9045862ace365bdea0188202aa8cbf11cc3f9e86b5443149b8ed1ec60eb",
+    "assets/evaluation/safety/development.json": "08c6649fd2a5ffea84b24a5ade5445ec4101e70c564361fe3935101f1ee932be",
+    "docs/LUNA_FULL_RELEASE_BENCHMARK_2026-10-05.md": "3c896af2c73373474725319bd3ef903b2d6b977ecf4871cdd4e77b4e41c60a41",
+    "docs/OPERATIONS.md": "2aeb51bd022557eccc49c6a4c7deb51a85e13a13260807a9472b4a2e485f2dd3",
+    "docs/RELEASE_EVIDENCE.md": "9f1499d6e12c104fc1da1cf544e1e9ca7a9c55aa535ebaccc314fda250f29a16",
+    "docs/TRUST_HARDENING_2026-10-14.md": "9fb47272d1d37f64044d72da2c35573f96b9178aeaf8326ade9e77b388b7e3fa",
+    "scripts/evaluate_safety.py": "5de14bd7fe467f4b2d797e783d94ca8fb350c470684644ea5c51ce38e642337e",
+    "scripts/verify_recovery.py": "24f922e1d78ebace6cb4ad6dfa38b22bf51d686b5cb634f3f977666971f02903",
+    "src/journalpulse/activity_resources.py": "b7617a6ef8440b17e1022a89416a12dc52f854195602789cb89bc21d037b866f",
+    "src/journalpulse/api.py": "5a023de39b396caeaa71e98307dbb82e2a5cdf80b334e66a7ba0b00dea6b25ea",
+    "src/journalpulse/config.py": "573e0e066bf4a9b8c9dc8c0b9ca7c11c44680792ef696412d99f7b72094ac65c",
+    "src/journalpulse/safety.py": "162417a861a7dc0fcf31627e22aaa4898b076221e6c1101393deb5a0ae4c4da5",
+    "src/journalpulse/web_security.py": "7b96d429ea428d3b12c127b4313867810f02e8f9efe7b81f3a4bdbdc8fb77558",
+    "supabase/migrations/202610140001_signing_key_overlap.sql": "45b4944b1e35a49951e45bb375971f655dc651cb3f65b44c1895cfe3eef8db25",
+    "tests/test_public_web_security.py": "525b62b0067a03042e849ddc77a35121aa379a4bb1d853df943b6c5ab157ca76",
+    "tests/test_research_beta_safety.py": "45b96f897f0cdce52d8a4e211521c75a199b97a19220106470857c580d9daccb",
+    "tests/test_safety_language_variants.py": "a8371fe9ff8ec31e9c33fc41a92eedfdb2f16adb87257edabb3ead8258463a8b",
+    "tests/test_signing_key_overlap.py": "68e38d1eaa277b84bd23091cb9d0d92ced7c42e4e6fec9bcac00f0dfd3f1d742",
+    "web/app/globals.css": "aeb71865c0791f6fd4f1ad98a1c0288660ed1bcc1bb762f0e3e0d523bd22b7ec",
+    "web/app/how-ai-works/page.tsx": "6a85307ad09bf6ffae05b82cd46d587474c17a4ab048166546fcf528ec975986",
+    "web/app/login/page.tsx": "e96c69bc0cab203c673308779b864b9ccafdd56bf2fdcef17c4cf40962ca3599",
+    "web/app/paper-lamp.css": "f32fe3073d1b5c176b1635dc7f2c94721a21e78aef233e2df95d9591c2e8e00a",
+    "web/app/privacy/page.tsx": "8107a0e718e75e1d845461bfae9eddee3bc504105664183b1272063aa1ac6d0f",
+    "web/app/terms/page.tsx": "21796067365d8cf9f20fe6ac2e5f658882bb7adcc7ea7da2bea4c21d25706c93",
+    "web/components/app-shell.tsx": "62e1a6d37aaef29e4ee409d7eb9909bd89e97041b46f8d589e4a0654783460ba",
+    "web/components/auth-boundary.tsx": "067d1d6535335ffa706c517c84e41f7455cd220951f7ecca1c2351504b70cc2e",
+    "web/components/public-information.tsx": "b2664a8b45a43151635b99428af304e65d726d84bc24e451fd7c3caa55c0d52b",
+    "web/lib/public-routes.ts": "35dee4159b6044657bdb4763cfdc1a52ca2091da0ab211aea279ccf766e0648a",
+    "web/tests/e2e/accessibility.spec.ts": "c71109f55f0f7d97677ba5a35acad69d702524a547e0f137260ebd1026db7435",
+    "web/tests/e2e/core-flow.spec.ts": "52de2bc0d2fdb000d9bedff551e20ab1f5a18e4c78d29bab04aac60f43f1c82c",
+    "web/tests/e2e/public-information.spec.ts": "0f2e78a5b1a136eb0acc7598615672dd3dcba6f6140b65e068dcc851b2bc717b",
+    "web/tests/unit/public-access.test.tsx": "004c0ff4b6dd3a1c31146c1ee0b03263f3e38adcc8bcf63bc222f5b8ef549c91"
+  },
+  "checks": {
+    "backend_tests": 1305,
+    "backend_coverage_percent": 92.03,
+    "frontend_unit_tests": 225,
+    "focused_browser_checks": 16,
+    "local_recovery_rotation_assertions": 15
+  },
+  "not_done": [
+    "deployment",
+    "hosted migration",
+    "hosted backup restore",
+    "classifier qualification",
+    "fresh model quality evaluation",
+    "external resume update"
+  ],
+  "remote_changes": [
+    "closed redundant PR 5",
+    "closed redundant PR 6",
+    "closed redundant PR 7"
+  ]
+}

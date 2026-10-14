@@ -441,8 +441,15 @@ def verify_resource_offer(
             raise ValueError("Invalid resource receipt")
         raw = base64.urlsafe_b64decode(encoded + "=" * (-len(encoded) % 4))
         signature = base64.urlsafe_b64decode(encoded_signature + "=" * (-len(encoded_signature) % 4))
-        expected = hmac.new(_signing_key(settings), _TOKEN_DOMAIN + raw, hashlib.sha256).digest()
-        if not hmac.compare_digest(signature, expected):
+        keys = [_signing_key(settings)]
+        deadline = settings.previous_signing_key_deadline
+        previous = settings.write_signing_key_previous
+        if (previous and len(previous) >= 32 and deadline is not None
+                and (now or datetime.now(UTC)) < deadline):
+            keys.append(previous.encode())
+        if not any(hmac.compare_digest(
+            signature, hmac.new(key, _TOKEN_DOMAIN + raw, hashlib.sha256).digest()
+        ) for key in keys):
             raise ValueError("Invalid resource receipt")
         receipt = _ResourceReceipt.model_validate_json(raw)
     except (ValueError, UnicodeError, binascii.Error, RecursionError) as exc:

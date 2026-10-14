@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 import { Luna } from "@/components/luna";
+import { CrisisSupport, PublicInformationLinks } from "@/components/public-information";
 import { getSupabase } from "@/lib/supabase";
 
 function LoginWorkspace() {
@@ -57,6 +58,7 @@ function LoginWorkspace() {
       <Luna mood={message ? "proud" : error ? "oops" : "idle"} size={150} />
       <h1>{message ? "Link on its way!" : "Welcome to JournalPulse"}</h1>
       <p>{message || "No password needed. Luna will email you a sign-in link."}</p>
+      <p className="small"><strong>English only.</strong> Please write to Luna in English.</p>
       {!message && (
         <form className="stack" onSubmit={submit}>
           <label className="text-field" style={{ textAlign: "left" }}>
@@ -82,6 +84,9 @@ function LoginWorkspace() {
       )}
       {error && <p className="note error" role="alert">{error}</p>}
       <p className="small">Luna is a companion, not a therapist.</p>
+      <p className="small">A research beta for journaling and reflection. Read how your data is used before signing in.</p>
+      <PublicInformationLinks />
+      <CrisisSupport />
     </div>
   );
 }

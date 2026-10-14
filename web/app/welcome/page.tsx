@@ -45,6 +45,7 @@ function WelcomeWorkspace() {
           <span className="welcome-luna"><Luna mood="checkin" size={150} /></span>
           <h1>Hi, I’m Luna.</h1>
           <p className="welcome-lede">A quiet place to put the day down.</p>
+          <p className="small"><strong>English only.</strong> Please write to Luna in English.</p>
           <p>We talk for a minute. If you want, I’ll suggest one small thing, and later you can tell me honestly how it went.</p>
           <ul className="welcome-promises">
             <li><Icon name="chat" />Talk it through, in your own words</li>

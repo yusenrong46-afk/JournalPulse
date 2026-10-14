@@ -1,0 +1,60 @@
+[
+  {
+    "width": 390,
+    "path": "login",
+    "status": "pass"
+  },
+  {
+    "width": 390,
+    "path": "privacy",
+    "status": "pass"
+  },
+  {
+    "width": 390,
+    "path": "terms",
+    "status": "pass"
+  },
+  {
+    "width": 390,
+    "path": "how-ai-works",
+    "status": "pass"
+  },
+  {
+    "width": 1440,
+    "path": "login",
+    "status": "pass"
+  },
+  {
+    "width": 1440,
+    "path": "privacy",
+    "status": "pass"
+  },
+  {
+    "width": 1440,
+    "path": "terms",
+    "status": "pass"
+  },
+  {
+    "width": 1440,
+    "path": "how-ai-works",
+    "status": "pass"
+  },
+  {
+    "path": "privacy",
+    "javascript": false,
+    "status": "pass"
+  },
+  {
+    "path": "terms",
+    "javascript": false,
+    "status": "pass"
+  },
+  {
+    "path": "how-ai-works",
+    "javascript": false,
+    "status": "pass"
+  },
+  {
+    "csp": "untrusted inline script blocked"
+  }
+]

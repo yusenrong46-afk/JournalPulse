@@ -1,5 +1,7 @@
 # JournalPulse
 
+**Language support: English only.** AI replies and phrase-based safety checks can still make mistakes in English.
+
 **A quiet place to write, reflect, and choose one small next step.**
 
 JournalPulse is a deployed research beta for people who want to keep their own words,
@@ -93,6 +95,8 @@ The [engineering guide](docs/ENGINEERING.md#reproduction) records the verificati
 Hosted configuration, secrets, migrations and rollback belong in the [operations runbook](docs/OPERATIONS.md).
 
 ## Verification and limits
+
+[October 14 trust-hardening candidate and remaining gates](docs/TRUST_HARDENING_2026-10-14.md).
 
 The October 7 repair snapshot passed **1,270 backend tests**, **217 frontend unit tests**,
 **46 browser checks with mocked APIs**, and **22 integrations through the real API, PostgREST

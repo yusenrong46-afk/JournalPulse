@@ -1,0 +1,21 @@
+{
+  "scope": "English-only disclosure; multilingual classifier canceled by user",
+  "classifier_added": false,
+  "provider_calls": 0,
+  "deployed": false,
+  "checks": {
+    "focused_frontend_tests": 16,
+    "typecheck": "pass",
+    "lint": "pass",
+    "static_build": "pass"
+  },
+  "files": {
+    "web/app/login/page.tsx": "1a5c3d97c8c4e9325fa9f7b7b5c3f6a578df232b91db25afd2a8c87708cd2945",
+    "web/app/welcome/page.tsx": "1c216e36bf451f1057b9cd00742ab604d3c2272f85804153905b572e5522da42",
+    "web/app/talk/page.tsx": "e46098f68ed7780b93e2e56abfe9c28bf52726bcd2a11f0a010bfdb04eee6c61",
+    "web/app/how-ai-works/page.tsx": "6d3135b92b7dd84643e11077647b5f035c729635d4cc5d2893ff911aa30d1a76",
+    "web/app/me/page.tsx": "a19d2188bd99b0d03eb4297640846094db9e5a07ea6d53831b843d507bcef7b2",
+    "README.md": "73ff102e50b25398bde5982c7b07f06078a9ddb5074a03352cecdf2ac8565a66",
+    "docs/TRUST_HARDENING_2026-10-14.md": "689bc9b6cf82f605318894335fac066d5bddc21116b67003957f79f7526bbdbb"
+  }
+}
