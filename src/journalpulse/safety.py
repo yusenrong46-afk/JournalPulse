@@ -48,6 +48,10 @@ NEGATED_PATTERNS = (
     r"\b(?:will not|won't) (?:hurt myself|harm myself|kill myself|end my life|unalive myself)\b",
 )
 
+# A postponed act is not a denial. Keep this suffix check local to a matched
+# denial so an unrelated "until" elsewhere cannot cancel genuine negation.
+_DELAYED_DENIAL = re.compile(r"\s+(?:yet\b|until\b|before\b)")
+
 # Deliberately bounded spelling variants. This is not a semantic classifier or
 # general spell checker. Normalize denials and affirmative phrases identically.
 _WORD_VARIANTS = {"wanna": "want to", "gonna": "going to", "suicdial": "suicidal", "kil": "kill",
@@ -176,9 +180,9 @@ def _clauses(normalized: str) -> list[str]:
 
 
 def _clause_has_unnegated_risk(clause: str) -> bool:
-    negated_spans = [
-        match.span() for pattern in NEGATED_PATTERNS for match in re.finditer(pattern, clause)
-    ]
+    denials = [match for pattern in NEGATED_PATTERNS for match in re.finditer(pattern, clause)]
+    delayed = [match for match in denials if _DELAYED_DENIAL.match(clause, match.end())]
+    negated_spans = [match.span() for match in denials if match not in delayed]
     # A denial applies only to the phrase it contains. "I don't want to die and
     # I might act on these thoughts" still contains a separate affirmative risk.
     present = PRESENT_MARKER.search(clause) is not None
@@ -189,7 +193,9 @@ def _clause_has_unnegated_risk(clause: str) -> bool:
         historical = HISTORICAL_PREFIX.search(clause, 0, match.start()) is not None
         return present or not historical
 
-    return any(
+    # Some denials ("won't kill myself") contain no independent affirmative
+    # pattern. Their explicit postponement still needs the same routing check.
+    return any(is_risk(match) for match in delayed) or any(
         is_risk(match) for pattern in HIGH_RISK_PATTERNS for match in re.finditer(pattern, clause)
     )
 

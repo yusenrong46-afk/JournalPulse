@@ -1,0 +1,60 @@
+FFFF.......                                                              [100%]
+=================================== FAILURES ===================================
+_______________________ test_temporal_pairs[delay-want] ________________________
+
+case = {'id': 'delay-want', 'text': "I don't want to die until tonight.", 'expected': 'support'}
+
+    @pytest.mark.parametrize("case", FIXTURES, ids=[c["id"] for c in FIXTURES])
+    def test_temporal_pairs(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_temporal_negation.py:15: AssertionError
+_______________________ test_temporal_pairs[delay-plan] ________________________
+
+case = {'id': 'delay-plan', 'text': "I'm not planning to kill myself until tomorrow.", 'expected': 'support'}
+
+    @pytest.mark.parametrize("case", FIXTURES, ids=[c["id"] for c in FIXTURES])
+    def test_temporal_pairs(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_temporal_negation.py:15: AssertionError
+_______________________ test_temporal_pairs[delay-will] ________________________
+
+case = {'id': 'delay-will', 'text': "I won't hurt myself until tonight.", 'expected': 'support'}
+
+    @pytest.mark.parametrize("case", FIXTURES, ids=[c["id"] for c in FIXTURES])
+    def test_temporal_pairs(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_temporal_negation.py:15: AssertionError
+________________________ test_temporal_pairs[delay-yet] ________________________
+
+case = {'id': 'delay-yet', 'text': "I'm not suicidal yet.", 'expected': 'support'}
+
+    @pytest.mark.parametrize("case", FIXTURES, ids=[c["id"] for c in FIXTURES])
+    def test_temporal_pairs(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_temporal_negation.py:15: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_temporal_negation.py::test_temporal_pairs[delay-want] - Ass...
+FAILED tests/test_temporal_negation.py::test_temporal_pairs[delay-plan] - Ass...
+FAILED tests/test_temporal_negation.py::test_temporal_pairs[delay-will] - Ass...
+FAILED tests/test_temporal_negation.py::test_temporal_pairs[delay-yet] - Asse...
+4 failed, 7 passed in 0.21s

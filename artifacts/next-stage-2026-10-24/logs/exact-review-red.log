@@ -1,0 +1,18 @@
+.............F..                                                         [100%]
+=================================== FAILURES ===================================
+__________________ test_temporal_pairs[audit-before-goodbye] ___________________
+
+case = {'id': 'audit-before-goodbye', 'text': 'I will not harm myself before I say goodbye', 'expected': 'support'}
+
+    @pytest.mark.parametrize("case", FIXTURES, ids=[c["id"] for c in FIXTURES])
+    def test_temporal_pairs(case):
+>       assert assess_safety(case["text"]).mode.value == case["expected"]
+E       AssertionError: assert 'normal' == 'support'
+E         
+E         - support
+E         + normal
+
+tests/test_temporal_negation.py:15: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_temporal_negation.py::test_temporal_pairs[audit-before-goodbye]
+1 failed, 15 passed in 0.19s
