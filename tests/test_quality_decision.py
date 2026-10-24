@@ -128,3 +128,19 @@ def test_missing_accounting_blocks(cohort):
     bundle, _, review = cohort
     (bundle / "ledger.json").unlink()
     assert qd.decision(bundle, review)["decision"] == "BLOCKED"
+
+
+def test_missing_summary_does_not_hide_a_confirmed_critical_failure(cohort):
+    bundle, _, review = cohort
+    (bundle / "REPORT.md").unlink()
+    review["sampled"][0]["grade"] = grade(5, "fail")
+    assert qd.decision(bundle, review)["decision"] == "FAIL"
+
+
+def test_invalid_human_grades_block_instead_of_becoming_observed_low_scores(cohort):
+    bundle, _, review = cohort
+    for row in review["sampled"][:3]:
+        row["grade"] = None
+    result = qd.decision(bundle, review)
+    assert result["decision"] == "BLOCKED"
+    assert result["metrics"]["human"]["denominator"] == 20

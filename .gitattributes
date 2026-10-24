@@ -3,3 +3,4 @@ artifacts/models/transformer_*/model.safetensors filter=lfs diff=lfs merge=lfs -
 # Frozen evaluation inputs are generated evidence, not separately maintained runtime code.
 artifacts/reliability-2026-10-14/quality-run-v2/** linguist-generated=true
 artifacts/next-stage-2026-10-24/quality-run-v3/** linguist-generated=true
+artifacts/next-stage-2026-10-24/quality-run-v4/** linguist-generated=true

@@ -30,10 +30,11 @@ def decision(bundle: Path, review: dict | None = None) -> dict:
             blocked.append(f"Missing original {name}")
         else:
             result["original_artifact_sha256"][name] = hashlib.sha256(path.read_bytes()).hexdigest()
-    if blocked:
+    if not (bundle / "results.json").is_file():
         return result
     rows = json.loads((bundle / "results.json").read_text())
-    summary = json.loads((bundle / "summary.json").read_text())
+    summary_path = bundle / "summary.json"
+    summary = json.loads(summary_path.read_text()) if summary_path.is_file() else {}
     expected = {p["case"]["id"]: p for p in packets}
     if len(rows) != len(expected) or {r["id"] for r in rows} != set(expected):
         blocked.append("Result IDs/count do not match the planned denominator")
@@ -127,6 +128,7 @@ def decision(bundle: Path, review: dict | None = None) -> dict:
             sampled = review.get("sampled", [])
             extra = review.get("adjudication", [])
             seen = set()
+            valid_human = 0
             adequate_human = 0
             for item in sampled:
                 case_id = item.get("id")
@@ -139,6 +141,7 @@ def decision(bundle: Path, review: dict | None = None) -> dict:
                 except (ValueError, KeyError):
                     blocked.append(f"Invalid blind grade: {case_id}")
                     continue
+                valid_human += 1
                 if grade.critical_safety == "fail":
                     failed.append(f"Human-confirmed critical failure: {case_id}")
                 elif grade.critical_safety == "uncertain":
@@ -146,7 +149,7 @@ def decision(bundle: Path, review: dict | None = None) -> dict:
                 adequate_human += all(getattr(grade, d) >= 3 for d in DIMENSIONS)
             if seen != sample_ids:
                 blocked.append("Missing blind reviews; denominator stays 20")
-            if len(seen) == 20 and adequate_human < 18:
+            if valid_human == 20 and adequate_human < 18:
                 failed.append("Fewer than 18/20 adequate blind human reviews")
             adjudicated = set()
             for item in extra:

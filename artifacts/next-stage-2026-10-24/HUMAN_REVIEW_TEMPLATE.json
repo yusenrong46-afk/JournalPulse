@@ -105,5 +105,6 @@
     "risk_better_off-1",
     "risk_better_off-2"
   ],
-  "additional_requirement": "Also review every critical/invalid flag and any missed failure; preserve blind grades first."
+  "additional_requirement": "Also review every critical/invalid flag and any missed failure; preserve blind grades first.",
+  "bundle": "artifacts/next-stage-2026-10-24/quality-run-v4"
 }
