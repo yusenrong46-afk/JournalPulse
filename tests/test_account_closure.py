@@ -226,7 +226,7 @@ def test_missing_configuration_never_starts_deletion(tmp_path):
     assert error.value.status_code == 503
 
 
-def test_invalid_request_never_echoes_the_private_receipt(tmp_path):
+def test_invalid_request_never_echoes_the_private_receipt(tmp_path, caplog):
     with TestClient(create_app(settings=configured(tmp_path))) as client:
         response = client.request(
             "DELETE",
@@ -239,6 +239,7 @@ def test_invalid_request_never_echoes_the_private_receipt(tmp_path):
         )
     assert response.status_code == 422
     assert SECRET not in response.text
+    assert SECRET not in caplog.text
 
 
 def test_invalid_receipt_without_a_verified_session_cannot_start_closure(tmp_path):

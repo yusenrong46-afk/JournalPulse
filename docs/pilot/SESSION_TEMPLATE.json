@@ -1,0 +1,31 @@
+{
+  "record_type": "BLANK_TEMPLATE_NOT_PARTICIPANT_DATA",
+  "status": "NOT_RUN",
+  "consent_version": "pilot-consent-2026-10-24.1",
+  "participant_pseudonym": null,
+  "moderator": null,
+  "candidate_commit": null,
+  "deployment_id": null,
+  "approved_capabilities": [],
+  "session_consent_at_utc": null,
+  "recording_consent": null,
+  "feedback_consent": null,
+  "tasks": [
+    {"task": "save_retrieve", "cap_seconds": 300, "attempt": "initial", "result": "NOT_RUN", "duration_seconds": null},
+    {"task": "chosen_mode_reflection_action", "cap_seconds": 420, "attempt": "initial", "requested_mode": null, "actual_mode": null, "result": "NOT_RUN", "duration_seconds": null},
+    {"task": "export_erase_comprehension", "cap_seconds": 360, "attempt": "initial", "result": "NOT_RUN", "duration_seconds": null}
+  ],
+  "pilot_enrollment_consent_at_utc": null,
+  "pilot_start_utc": null,
+  "pilot_end_utc": null,
+  "participant_timezone": null,
+  "observation_completeness": "UNKNOWN",
+  "retention_owner": null,
+  "cohort_close_utc": null,
+  "delete_raw_records_by_utc": null,
+  "withdrawal_at_utc": null,
+  "deletion_receipt_at_utc": null,
+  "retests": [],
+  "incidents": [],
+  "public_report": "No actual observations exist"
+}

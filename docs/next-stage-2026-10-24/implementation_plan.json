@@ -1,0 +1,358 @@
+{
+  "spec_version": "1.0",
+  "as_of": "2026-10-24",
+  "default_scope": "R1 authorized implementation; prepare R2; integration deferred",
+  "historical_source_snapshot": {
+    "main": "4154de834b4e663d9bc8d7f8c23b3fe7c375d0e4",
+    "pr": 10,
+    "head": "1b7c4ccf4a3e03b44f2314b2c1379ded6db37a53",
+    "must_refresh": true
+  },
+  "dependency_semantics": "Dependencies gate completion/external execution, not safe preparation while a genuine blocker remains.",
+  "status_meaning": "PLANNED and verified=false describe future implementation work, not a claim every current feature is absent or failing.",
+  "stories": [
+    {
+      "id": "US-01",
+      "title": "Reconcile baseline and preserve existing candidate",
+      "phase": "R1",
+      "depends_on": [],
+      "requirement_ids": [
+        "REQ-BASE"
+      ],
+      "acceptance_ids": [
+        "AC-BASE-01",
+        "AC-BASE-02",
+        "AC-BASE-03"
+      ],
+      "deliverable": "Current source/worktree/instruction map and traceability.",
+      "external_dependency": "None beyond preceding stories",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-02",
+      "title": "Correct routing with paired entry-point regression evidence",
+      "phase": "R1",
+      "depends_on": [
+        "US-01"
+      ],
+      "requirement_ids": [
+        "REQ-SAFE"
+      ],
+      "acceptance_ids": [
+        "AC-SAFE-01",
+        "AC-SAFE-02",
+        "AC-SAFE-03"
+      ],
+      "deliverable": "Explained narrow correction, controls and no-provider support-route checks.",
+      "external_dependency": "None beyond preceding stories",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-03",
+      "title": "Correct auth-origin policy and phone target",
+      "phase": "R1",
+      "depends_on": [
+        "US-01"
+      ],
+      "requirement_ids": [
+        "REQ-WEB"
+      ],
+      "acceptance_ids": [
+        "AC-WEB-01",
+        "AC-WEB-02",
+        "AC-WEB-03"
+      ],
+      "deliverable": "Supported-origin configuration behavior and plain phone target.",
+      "external_dependency": "None beyond preceding stories",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-04",
+      "title": "Verify writing, consent and activity behavior under interruption",
+      "phase": "R1",
+      "depends_on": [
+        "US-02"
+      ],
+      "requirement_ids": [
+        "REQ-WRITE",
+        "REQ-CONSENT",
+        "REQ-ACT"
+      ],
+      "acceptance_ids": [
+        "AC-WRITE-01",
+        "AC-WRITE-02",
+        "AC-WRITE-03",
+        "AC-WRITE-04",
+        "AC-CONSENT-01",
+        "AC-CONSENT-02",
+        "AC-CONSENT-03",
+        "AC-CONSENT-04",
+        "AC-ACT-01",
+        "AC-ACT-02",
+        "AC-ACT-03"
+      ],
+      "deliverable": "Current contract regression evidence; fix concrete failures, not rewrite working features.",
+      "external_dependency": "None beyond preceding stories",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-05",
+      "title": "Verify owner isolation, export and erasure fences",
+      "phase": "R1",
+      "depends_on": [
+        "US-04"
+      ],
+      "requirement_ids": [
+        "REQ-OWN"
+      ],
+      "acceptance_ids": [
+        "AC-OWN-01",
+        "AC-OWN-02",
+        "AC-OWN-03",
+        "AC-OWN-04"
+      ],
+      "deliverable": "Two-owner and delayed-response checks; content-free diagnostics.",
+      "external_dependency": "None beyond preceding stories",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-06",
+      "title": "Verify local account-closure state and freshness contract",
+      "phase": "R1",
+      "depends_on": [
+        "US-05"
+      ],
+      "requirement_ids": [
+        "REQ-CLOSE"
+      ],
+      "acceptance_ids": [
+        "AC-CLOSE-02",
+        "AC-CLOSE-03"
+      ],
+      "deliverable": "Fault/concurrency/receipt checks and staged smoke preparation.",
+      "external_dependency": "None beyond preceding stories",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-07",
+      "title": "Perform authorized encrypted export and isolated local restore",
+      "phase": "R1",
+      "depends_on": [
+        "US-05"
+      ],
+      "requirement_ids": [
+        "REQ-REC"
+      ],
+      "acceptance_ids": [
+        "AC-REC-01",
+        "AC-REC-02",
+        "AC-REC-03",
+        "AC-REC-04"
+      ],
+      "deliverable": "Actual recovery receipt and accurate operational scope.",
+      "external_dependency": "Secure database input, private passphrase, Docker/GPG, authorized intended source; no credential reset implied.",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-08",
+      "title": "Qualify exact staged closure capability",
+      "phase": "R1",
+      "depends_on": [
+        "US-06",
+        "US-07"
+      ],
+      "requirement_ids": [
+        "REQ-CLOSE"
+      ],
+      "acceptance_ids": [
+        "AC-CLOSE-01",
+        "AC-CLOSE-04"
+      ],
+      "deliverable": "Compatible migration/readiness and actual disposable hosted smoke.",
+      "external_dependency": "Scoped hosted access and current authorization for migration/staging/disposable cleanup; production enablement remains gated.",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-09",
+      "title": "Freeze repaired inference and qualify AI under predeclared policy",
+      "phase": "R1",
+      "depends_on": [
+        "US-02",
+        "US-04",
+        "US-05"
+      ],
+      "requirement_ids": [
+        "REQ-EVAL"
+      ],
+      "acceptance_ids": [
+        "AC-EVAL-01",
+        "AC-EVAL-02",
+        "AC-EVAL-03",
+        "AC-EVAL-04",
+        "AC-EVAL-05",
+        "AC-EVAL-06"
+      ],
+      "deliverable": "New immutable bundle, shared-ledger integrity, actual model report plus separate human review and decision.",
+      "external_dependency": "Existing shared budget ledger, secure provider credential and paid-run authorization; independent human reviewer.",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-10",
+      "title": "Finalize release evidence and authorized hosted promotion",
+      "phase": "R1",
+      "depends_on": [
+        "US-03",
+        "US-05",
+        "US-08",
+        "US-09"
+      ],
+      "requirement_ids": [
+        "REQ-REL"
+      ],
+      "acceptance_ids": [
+        "AC-REL-01",
+        "AC-REL-02",
+        "AC-REL-03"
+      ],
+      "deliverable": "Current CI/evidence manifest, observed hosted identity, rollback/support record.",
+      "external_dependency": "Current deployment authorization/access if promotion is requested; otherwise release-ready work and exact blocker.",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-11",
+      "title": "Prepare minimal measurement and run five moderated sessions",
+      "phase": "R2",
+      "depends_on": [
+        "US-10"
+      ],
+      "requirement_ids": [
+        "REQ-UX",
+        "REQ-OBS"
+      ],
+      "acceptance_ids": [
+        "AC-UX-01",
+        "AC-UX-02",
+        "AC-UX-03",
+        "AC-OBS-01",
+        "AC-OBS-03"
+      ],
+      "deliverable": "Scoped accessibility fixes, tested consent/retention, real task results and separate retests.",
+      "external_dependency": "Five actual consenting adults, moderator, approved candidate; no fabricated observations.",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-12",
+      "title": "Observe voluntary use for seven days and make a product decision",
+      "phase": "R2",
+      "depends_on": [
+        "US-11"
+      ],
+      "requirement_ids": [
+        "REQ-PILOT",
+        "REQ-OBS"
+      ],
+      "acceptance_ids": [
+        "AC-PILOT-01",
+        "AC-PILOT-02",
+        "AC-PILOT-03",
+        "AC-OBS-02"
+      ],
+      "deliverable": "168-hour cohort accounting, reproducible metrics, support findings and next-investment decision.",
+      "external_dependency": "Fresh pilot enrollment, real elapsed observation windows and human feedback.",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-13",
+      "title": "Optional one-destination approved-action integration",
+      "phase": "Conditional R2",
+      "depends_on": [
+        "US-10",
+        "US-11"
+      ],
+      "requirement_ids": [
+        "REQ-INT"
+      ],
+      "acceptance_ids": [
+        "AC-INT-01",
+        "AC-INT-02",
+        "AC-INT-03",
+        "AC-INT-04",
+        "AC-INT-05",
+        "AC-INT-06",
+        "AC-INT-07",
+        "AC-INT-08",
+        "AC-INT-09",
+        "AC-INT-10",
+        "AC-INT-11",
+        "AC-INT-12"
+      ],
+      "deliverable": "One bound adapter/outbox with honest uncertainty, erasure fences and actual provider proof.",
+      "external_dependency": "G6a discovery/scope approval; G6b enablement qualification, delegated account/API access, scoped external-write authorization and deployment-supported dispatcher.",
+      "conditional": true,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    },
+    {
+      "id": "US-14",
+      "title": "Publish-ready evidence and personal ownership walkthrough",
+      "phase": "R3",
+      "depends_on": [
+        "US-10",
+        "US-11",
+        "US-12"
+      ],
+      "requirement_ids": [
+        "REQ-HANDOFF",
+        "REQ-SAFE"
+      ],
+      "acceptance_ids": [
+        "AC-HANDOFF-01",
+        "AC-HANDOFF-02",
+        "AC-SAFE-04"
+      ],
+      "deliverable": "Case study, product/technical demos, guide/runbook and exact claims.",
+      "external_dependency": "Yusen's actual walkthrough and separate publication authorization if publishing is requested.",
+      "conditional": false,
+      "status": "PLANNED",
+      "verified": false,
+      "evidence": []
+    }
+  ]
+}
