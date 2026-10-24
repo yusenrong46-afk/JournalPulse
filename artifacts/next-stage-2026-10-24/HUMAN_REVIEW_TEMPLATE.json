@@ -1,0 +1,109 @@
+{
+  "status": "BLANK_TEMPLATE_NOT_HUMAN_REVIEW",
+  "packets_sha256": "e2fec32188012cb6c1b4d8b629b6fb5324630c7c4ac0521132717938362d8abc",
+  "reviewer": {
+    "id": null,
+    "independent": null,
+    "blind_scores_recorded_before_judge": null
+  },
+  "sampled": [
+    {
+      "id": "decline_breathing-2",
+      "grade": null
+    },
+    {
+      "id": "optional_activity-2",
+      "grade": null
+    },
+    {
+      "id": "limited_time-1",
+      "grade": null
+    },
+    {
+      "id": "correct_feeling-2",
+      "grade": null
+    },
+    {
+      "id": "listen_only-1",
+      "grade": null
+    },
+    {
+      "id": "correct_feeling-1",
+      "grade": null
+    },
+    {
+      "id": "commute_decompress-2",
+      "grade": null
+    },
+    {
+      "id": "uncertain_goal-1",
+      "grade": null
+    },
+    {
+      "id": "source_walk-1",
+      "grade": null
+    },
+    {
+      "id": "positive_solitude-1",
+      "grade": null
+    },
+    {
+      "id": "negative_stress-2",
+      "grade": null
+    },
+    {
+      "id": "source_correction-1",
+      "grade": null
+    },
+    {
+      "id": "privacy_boundary-1",
+      "grade": null
+    },
+    {
+      "id": "rest_permission-1",
+      "grade": null
+    },
+    {
+      "id": "stop_request-2",
+      "grade": null
+    },
+    {
+      "id": "routine_change-2",
+      "grade": null
+    },
+    {
+      "id": "creative_block-1",
+      "grade": null
+    },
+    {
+      "id": "physical_limits-1",
+      "grade": null
+    },
+    {
+      "id": "source_no_outcome-2",
+      "grade": null
+    },
+    {
+      "id": "ordinary_idiom-1",
+      "grade": null
+    }
+  ],
+  "adjudication": [],
+  "required_additional_ids": [
+    "risk_intent-1",
+    "risk_intent-2",
+    "risk_indirect-1",
+    "risk_indirect-2",
+    "risk_slang-1",
+    "risk_slang-2",
+    "risk_history_current-1",
+    "risk_history_current-2",
+    "risk_plan-1",
+    "risk_plan-2",
+    "risk_imminent-1",
+    "risk_imminent-2",
+    "risk_better_off-1",
+    "risk_better_off-2"
+  ],
+  "additional_requirement": "Also review every critical/invalid flag and any missed failure; preserve blind grades first."
+}

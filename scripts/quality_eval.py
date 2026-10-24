@@ -228,6 +228,11 @@ def prepare(destination: Path) -> None:
         raise EvaluationStopped("Use a new bundle directory; never overwrite a frozen run")
     dataset_path = ROOT / "assets/evaluation/luna-quality-2026-10-14.json"
     dataset = Dataset.model_validate_json(dataset_path.read_text())
+    # The 80 general/journal cases are normal controls. The historical dataset
+    # has null expectations; preserve its bytes but make new packet gates explicit.
+    for case in dataset.cases:
+        if case.expected_route is None:
+            case.expected_route = "normal"
     destination.mkdir(parents=True)
     frozen = destination / "frozen"
     source_files = [p for p in (ROOT / "src/journalpulse").rglob("*") if p.suffix in {".py", ".md"}]
@@ -238,6 +243,9 @@ def prepare(destination: Path) -> None:
         ROOT / "pyproject.toml",
         ROOT / "uv.lock",
         ROOT / ".python-version",
+        ROOT / "assets/evaluation/safety/temporal-negation-2026-10-24.json",
+        ROOT / "docs/evaluations/QUALITY_POLICY_2026-10-24.json",
+        ROOT / "scripts/quality_decision.py",
     ]
     hashes = {}
     for source in source_files:
@@ -260,6 +268,21 @@ def prepare(destination: Path) -> None:
             }
         )
     write_json(destination / "packets.json", packets)
+    policy = json.loads((ROOT / "docs/evaluations/QUALITY_POLICY_2026-10-24.json").read_text())
+    sample = {}
+    for split in ("development", "holdout"):
+        eligible = [p["case"]["id"] for p in packets if p["case"]["split"] == split
+                    and p["case"]["expected_route"] == p["safety"]["mode"] == "normal"]
+        eligible.sort(key=lambda case_id: hashlib.sha256(
+            (policy["review_seed"] + ":" + case_id).encode()).hexdigest())
+        if len(eligible) < policy["review_per_split"]:
+            raise EvaluationStopped("Amend review design before running: too few eligible cases")
+        sample[split] = eligible[:policy["review_per_split"]]
+    write_json(destination / "review-selection.json", sample)
+    # The original manifest establishes the one shared budget across worktrees.
+    # Never derive a new allowance from the current checkout's directory.
+    original = ROOT / "artifacts/reliability-2026-10-14/quality-run-v2/manifest.json"
+    authoritative_ledger = json.loads(original.read_text())["ledger_path"]
     write_json(
         destination / "manifest.json",
         {
@@ -272,7 +295,10 @@ def prepare(destination: Path) -> None:
             "cap_usd": "10",
             "created_at": datetime.now(UTC).isoformat(),
             "human_review": "NOT_RUN",
-            "ledger_path": str((ROOT / "artifacts/reliability-2026-10-14/quality-budget.json").resolve()),
+            "ledger_path": authoritative_ledger,
+            "review_selection_sha256": digest(sample),
+            "policy_version": policy["version"],
+            "route_mix": dict(Counter(p["safety"]["mode"] for p in packets)),
         },
     )
     print(f"Frozen 100 fictional cases (40 development / 60 reserved) in {destination}")
@@ -286,6 +312,9 @@ def checked_packets(bundle: Path) -> list:
     packets = json.loads((bundle / "packets.json").read_text())
     if digest(packets) != manifest["packets_sha256"]:
         raise EvaluationStopped("Frozen packets changed")
+    sample = json.loads((bundle / "review-selection.json").read_text())
+    if digest(sample) != manifest["review_selection_sha256"]:
+        raise EvaluationStopped("Frozen review selection changed")
     return packets
 
 
@@ -429,6 +458,8 @@ def run(bundle: Path, ledger_path: Path) -> None:
     manifest = json.loads((bundle / "manifest.json").read_text())
     if ledger_path.resolve() != Path(manifest["ledger_path"]).resolve():
         raise EvaluationStopped("Use the frozen shared budget ledger; do not reset the budget")
+    if not ledger_path.is_file():
+        raise EvaluationStopped("Authoritative shared ledger is missing; reconcile it before paid calls")
     results_path = bundle / "results.json"
     if results_path.exists():
         raise EvaluationStopped("This bundle was attempted already; inspect it instead of rerunning")
