@@ -1,0 +1,102 @@
+ok: signed-in user cannot insert a conversation directly
+ok: signed-in user cannot forge a policy decision
+ok: signed-in user cannot forge a model run
+ok: unsigned reflection function is gone
+ok: signed-in user cannot run the global purge
+ok: forged signature is rejected
+ok: signature from another key is rejected
+ok: a payload signed for another purpose is rejected
+ok: cannot create a conversation for someone else
+ok: create is idempotent
+ok: new chat is revision 0
+ok: signed-in user cannot update a conversation directly
+ok: retried turn is stored once
+ok: turn computed on an old revision is rejected
+ok: each commit bumps revision
+ok: close writes status
+ok: close clears message text
+ok: delayed reply after close is rejected
+ok: delayed reply cannot restore cleared text
+ok: delayed reply cannot reopen the chat
+ok: accept retry stores one reflection
+ok: conversation links the reflection
+ok: accept closes the chat
+ok: accept purges text when not retained
+ok: accept writes the decision row
+ok: accept writes the model run
+ok: a different acceptance is refused
+ok: refused acceptance writes nothing
+ok: accept against an old card is rejected
+ok: rejected accept leaves the chat open
+ok: accept keeps text when the person chose to keep it
+ok: reply after delete cannot recreate the chat
+ok: reply after delete stores no messages
+ok: one outcome per decision
+ok: third event is allowed
+ok: fourth event is refused
+ok: refusal carries retry_after within the window
+ok: buckets are independent
+ok: usage counters are not readable
+ok: B cannot see A conversations
+ok: B cannot see A reflections
+ok: B cannot attach a turn to A's chat
+ok: B cannot replay a payload signed for A
+ok: B cannot close A's chat
+ok: B cannot close A chat
+ok: purge closes idle chats
+ok: purge clears idle chat text
+ok: purge keeps text the person chose to keep
+ok: purge repairs text left on a closed chat
+ok: the existing API retains its readiness schema contract
+ok: the existing API can still verify its shared signing key
+ok: readiness detects a mismatched key
+ok: readiness reports the schema version
+ok: the preview API verifies the same shared signing key
+ok: anonymous callers read nothing
+ok: A deletion removes every A journal row
+ok: deleting a journal does not reset the generation limit
+ok: the scheduled job expires old usage counters
+ok: A deletion leaves B alone
+ok: a turn waiting on a concurrent close is rejected
+ok: concurrent accepts store exactly one reflection
+ok: a turn waiting on a concurrent preference choice is rejected
+ok: legacy JSON without preference keeps its original acceptance contract
+ok: preference persists in PostgreSQL
+ok: replayed Listen returns current Act without changing it
+ok: conflicting preference ID is refused
+ok: a delayed turn cannot restore the withdrawn card
+ok: rejected turn inserts no messages
+ok: older server turn cannot overwrite preference
+ok: database suppresses a model offer while listening
+ok: listening cannot accept an ordinary card
+ok: explicit choice requires client card revision
+ok: other owner cannot change preference
+ok: RLS hides another person's command receipts
+ok: direct preference receipt writes are forbidden
+ok: duplicate command after close returns closed state
+ok: new preference cannot reopen a closed chat
+ok: conversation deletion cascades to receipts
+ok: retention distinguishes a missing job
+ok: a schedule alone is never success
+ok: initial grace includes exactly 30 minutes
+ok: initial grace expires after 30 minutes
+ok: successful scheduled entry point records completion
+ok: manual entry point cannot masquerade as a successful scheduler
+ok: request-time cleanup cannot repair scheduler evidence
+ok: success is fresh at the 30-minute boundary
+ok: stale success is overdue after 30 minutes
+ok: failure after success is observable
+ok: manual completion cannot hide a cron failure
+ok: later completion recovers from failure
+ok: unavailable cron history is unknown
+ok: unreadable cron metadata is unknown
+ok: unexpected schedule is not called healthy
+ok: inactive cron job is missing
+ok: failed cleanup propagates rather than claiming success
+ok: failed cleanup leaves previous success unchanged
+ok: authenticated user cannot mark scheduler success
+ok: authenticated user cannot read or write private monitoring data
+ok: anonymous readiness exposes bounded operational status
+ok: public callers cannot choose the diagnostic clock
+note: retention clock/history checks use cron metadata stand-ins; no worker execution claimed
+PostgreSQL schema verification passed

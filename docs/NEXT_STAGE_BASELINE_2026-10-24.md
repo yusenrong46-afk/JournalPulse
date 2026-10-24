@@ -8,8 +8,10 @@ run 38640357901 succeeded. This is baseline CI, not new-candidate proof.
 The connector's branch search returned names only; `git ls-remote` confirmed SHAs.
 
 Initial tracked work was clean. Numerous untracked historical research/artifact
-files already existed; the exact initial inventory is preserved in
-`artifacts/next-stage-2026-10-24/baseline-status.txt`. Nothing was reset or cleaned.
+files already existed; the public summary and inventory hash are in
+`artifacts/next-stage-2026-10-24/baseline-status.txt`. The exact inventory remains
+in the local ignored `private-baseline-status.txt`; unrelated file names are not
+published. Nothing was reset or cleaned.
 A new `codex/journalpulse-next-stage` branch starts at the verified reliability
 head, in the existing workspace. PR #10 and all historical bundles are preserved.
 The shared evaluation ledger's absolute authority is inherited from v2, not
@@ -25,9 +27,11 @@ their embedded prompts nor old markdown grants new deployment permission.
 
 Python is 3.12.13. Node 22.23.3 is at `/opt/homebrew/opt/node@22/bin`; the default
 Homebrew Node 25 binary is broken by a missing simdjson library. No system runtime
-repair or dependency upgrade was made. Locked `uv sync --frozen --extra dev` and
+repair was made. The initial locked install preceded the bounded security repair
+recorded in NEXT_STAGE_DEPENDENCIES_2026-10-24.md. Locked `uv sync --frozen --extra dev` and
 Node22 `npm ci` succeeded. Initial uv cache sandbox denial was resolved using the
-approved existing cache. Frontend and Python lockfiles remain unchanged.
+approved existing cache. The Python lockfile remains unchanged; the final frontend lockfile carries only
+the reviewed security repair and is reinstalled/retested separately.
 
 Local verification uses macOS, SQLite, Chromium mobile/desktop and a new task-owned
 PostgreSQL16/pgvector container on loopback port46524. Auth/token issuance and
@@ -43,3 +47,6 @@ scope approval). No product telemetry, adapter, subscription or classifier added
 The full per-criterion record names the story, procedure, actual result,
 environment, candidate identity and evidence; blocked external/human gates stay
 blocked. A green test total is not a count of qualified criteria or a safety rate.
+
+Next16.4.3 generated a heading-only change in web/AGENTS.md (`#` to `##`).
+The framework-owned edit is retained; its substantive instructions are unchanged.

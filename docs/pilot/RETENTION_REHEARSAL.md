@@ -1,7 +1,10 @@
 # Fictional manual retention rehearsal
 
-Preparation example; an actual operator rehearsal is NOT_RUN. Never create real
-participant records in this repository.
+The agent executed the fictional test-clock procedure below using task-created
+private temporary fixtures. The content-free result and reproducible script are
+under artifacts/next-stage-2026-10-24/pilot-retention-rehearsal.*. This is not an
+actual operator/participant deletion record. Never create real participant records
+in this repository.
 
 Use a private disposable folder with fictional P01/P02 notes and a separate contact
 mapping. With a controlled clock at 2026-11-01T12:00Z, mark P01 withdrawn at 10:00Z.

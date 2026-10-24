@@ -29,7 +29,7 @@ and repeated frontend checks for the actual resulting package set and status.
 The earlier frontend checks refer to the original lockfile and are superseded by
 `*-release.log` checks for this final lockfile.
 
-The Python inference source, catalog, model requests and v3 evaluation freeze are
+The Python inference source, catalog, model requests and versioned evaluation freezes are
 unchanged by this frontend-only repair. The final source manifest includes the
 new frontend lockfile identity. Advisory absence from a particular audit result
 is not proof that the complete application has no security defects.

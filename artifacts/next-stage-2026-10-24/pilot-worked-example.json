@@ -1,0 +1,39 @@
+{
+  "scope": "FICTIONAL_CALCULATION_ONLY_NOT_PILOT_EVIDENCE",
+  "build": "fictional-build-A; do not pool another build silently",
+  "workflow_overall": {
+    "completed": 2,
+    "fully_followed": 3
+  },
+  "workflow_AI": {
+    "completed": 1,
+    "fully_followed_requested_AI": 2
+  },
+  "workflow_Simple": {
+    "completed": 1,
+    "fully_followed_requested_Simple": 1
+  },
+  "provider_cost_usd": "0.12",
+  "cost_per_completed_AI_usd": "0.12",
+  "cost_per_completed_all_modes_usd": "0.06",
+  "zero_AI_completion_cost": null,
+  "unknown_charge_exact_cost": null,
+  "reported_tried": {
+    "tried_sessions": 2,
+    "reported_sessions": 4,
+    "confirmed_sessions": 5,
+    "no_report_sessions": 1
+  },
+  "participant_accounting": {
+    "enrolled": 5,
+    "fully_observed_mature": 3,
+    "unknown_observation": 1,
+    "partial_window": 1,
+    "activated": 2,
+    "known_zero_use": 1,
+    "return_eligible": 1,
+    "late_activations": 1
+  },
+  "real_participants": 0,
+  "real_pilot_status": "NOT_RUN"
+}

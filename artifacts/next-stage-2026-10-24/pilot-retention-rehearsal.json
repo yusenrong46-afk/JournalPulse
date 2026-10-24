@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "scope": "agent-executed fictional manual-procedure rehearsal with controlled clock",
+  "actual_participants": 0,
+  "withdrawal_removal_within_24h": true,
+  "other_fixture_preserved": true,
+  "summary_recomputed_remaining_count": 1,
+  "raw_notes_and_mapping_absent_by_30_day_deadline": true,
+  "temporary_private_fixture_destroyed": true,
+  "real_research_deletion_performed": false
+}

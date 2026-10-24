@@ -1,0 +1,95 @@
+
+> journalpulse-web@1.0.0 test:e2e
+> playwright test --output=../artifacts/next-stage-2026-10-24/browser-results
+
+[WebServer] (node:82063) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:82064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 62 tests using 5 workers
+
+(node:82075) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82076) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82077) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82074) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82073) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   4 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /talk has no serious automated accessibility violations (1.4s)
+  ✓   5 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /discover has no serious automated accessibility violations (1.6s)
+  ✓   2 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journey has no serious automated accessibility violations (1.7s)
+  ✓   3 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journal has no serious automated accessibility violations (1.7s)
+  ✓   1 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations (1.7s)
+  ✓   6 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /me has no serious automated accessibility violations (1.2s)
+  ✓   7 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /welcome has no serious automated accessibility violations (1.5s)
+  ✓   8 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /login has no serious automated accessibility violations (1.5s)
+  ✓  10 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /privacy has no serious automated accessibility violations (1.4s)
+  ✓   9 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /check-in has no serious automated accessibility violations (1.4s)
+  ✓  11 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /terms has no serious automated accessibility violations (1.2s)
+  ✓  15 [mobile-chromium] › tests/e2e/core-flow.spec.ts:99:5 › the chat composer keeps pasted messages within the API's limit (948ms)
+  ✓  12 [mobile-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /how-ai-works has no serious automated accessibility violations (1.3s)
+  ✓  16 [mobile-chromium] › tests/e2e/core-flow.spec.ts:127:5 › chat privacy and options support keyboard focus and dismissal (721ms)
+  ✓  19 [mobile-chromium] › tests/e2e/core-flow.spec.ts:269:5 › after a reload the chat keeps the feelings the person confirmed, not Luna's guess (740ms)
+  ✓  13 [mobile-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when unavailable (2.3s)
+  ✓  14 [mobile-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured (2.3s)
+  ✓  20 [mobile-chromium] › tests/e2e/core-flow.spec.ts:290:5 › a reply to a chat that closed elsewhere is not shown as saved (505ms)
+  ✓  21 [mobile-chromium] › tests/e2e/core-flow.spec.ts:318:5 › support mode puts people first and hides the chat box (528ms)
+  ✓  23 [mobile-chromium] › tests/e2e/core-flow.spec.ts:376:5 › journey grows a plant for each check-in and names what helped (477ms)
+  ✓  24 [mobile-chromium] › tests/e2e/core-flow.spec.ts:394:5 › the main navigation has three calm destinations (448ms)
+  ✓  18 [mobile-chromium] › tests/e2e/core-flow.spec.ts:195:5 › a chat goes from a mood tap to one saved small step (2.3s)
+  ✓  26 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /history now leads to /journey (371ms)
+  ✓  25 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /reflect now leads to /talk (462ms)
+  ✓  17 [mobile-chromium] › tests/e2e/core-flow.spec.ts:173:5 › a new person meets Luna and chooses how Luna replies (2.9s)
+  ✓  28 [mobile-chromium] › tests/e2e/public-information.spec.ts:8:7 › /privacy is a public disclosure, not an account-settings redirect (292ms)
+  ✓  29 [mobile-chromium] › tests/e2e/public-information.spec.ts:8:7 › /terms is a public disclosure, not an account-settings redirect (296ms)
+  ✓  27 [mobile-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /patterns now leads to /journey (606ms)
+  ✓  30 [mobile-chromium] › tests/e2e/public-information.spec.ts:8:7 › /how-ai-works is a public disclosure, not an account-settings redirect (303ms)
+  ✓  31 [mobile-chromium] › tests/e2e/public-information.spec.ts:20:5 › sign-in links to disclosures before an email is submitted (476ms)
+  ✓  22 [mobile-chromium] › tests/e2e/core-flow.spec.ts:350:5 › a check-in records how much the step helped (2.0s)
+(node:82258) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82265) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82264) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82266) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:82267) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  32 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › / has no serious automated accessibility violations (1.4s)
+  ✓  33 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /talk has no serious automated accessibility violations (1.4s)
+  ✓  34 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journal has no serious automated accessibility violations (1.5s)
+  ✓  36 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /journey has no serious automated accessibility violations (1.4s)
+  ✓  35 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /discover has no serious automated accessibility violations (1.4s)
+  ✓  37 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /me has no serious automated accessibility violations (1.2s)
+  ✓  38 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /welcome has no serious automated accessibility violations (1.3s)
+  ✓  39 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /login has no serious automated accessibility violations (1.5s)
+  ✓  40 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /check-in has no serious automated accessibility violations (1.3s)
+  ✓  41 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /privacy has no serious automated accessibility violations (1.3s)
+  ✓  42 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /terms has no serious automated accessibility violations (1.4s)
+  ✓  46 [desktop-chromium] › tests/e2e/core-flow.spec.ts:99:5 › the chat composer keeps pasted messages within the API's limit (729ms)
+  ✓  43 [desktop-chromium] › tests/e2e/accessibility.spec.ts:22:7 › /how-ai-works has no serious automated accessibility violations (1.5s)
+  ✓  45 [desktop-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when configured (1.5s)
+  ✓  47 [desktop-chromium] › tests/e2e/core-flow.spec.ts:127:5 › chat privacy and options support keyboard focus and dismissal (810ms)
+  ✓  44 [desktop-chromium] › tests/e2e/account-closure.spec.ts:5:7 › account closure disclosure is accessible when unavailable (2.2s)
+  ✓  51 [desktop-chromium] › tests/e2e/core-flow.spec.ts:290:5 › a reply to a chat that closed elsewhere is not shown as saved (596ms)
+  ✓  50 [desktop-chromium] › tests/e2e/core-flow.spec.ts:269:5 › after a reload the chat keeps the feelings the person confirmed, not Luna's guess (938ms)
+  ✓  52 [desktop-chromium] › tests/e2e/core-flow.spec.ts:318:5 › support mode puts people first and hides the chat box (550ms)
+  ✓  54 [desktop-chromium] › tests/e2e/core-flow.spec.ts:376:5 › journey grows a plant for each check-in and names what helped (413ms)
+  ✓  55 [desktop-chromium] › tests/e2e/core-flow.spec.ts:394:5 › the main navigation has three calm destinations (402ms)
+  ✓  56 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /reflect now leads to /talk (396ms)
+  ✓  49 [desktop-chromium] › tests/e2e/core-flow.spec.ts:195:5 › a chat goes from a mood tap to one saved small step (2.5s)
+  ✓  48 [desktop-chromium] › tests/e2e/core-flow.spec.ts:173:5 › a new person meets Luna and chooses how Luna replies (2.8s)
+  ✓  57 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /history now leads to /journey (577ms)
+  ✓  58 [desktop-chromium] › tests/e2e/core-flow.spec.ts:408:7 › /patterns now leads to /journey (530ms)
+  ✓  59 [desktop-chromium] › tests/e2e/public-information.spec.ts:8:7 › /privacy is a public disclosure, not an account-settings redirect (321ms)
+  ✓  53 [desktop-chromium] › tests/e2e/core-flow.spec.ts:350:5 › a check-in records how much the step helped (1.7s)
+  ✓  60 [desktop-chromium] › tests/e2e/public-information.spec.ts:8:7 › /terms is a public disclosure, not an account-settings redirect (344ms)
+  ✓  61 [desktop-chromium] › tests/e2e/public-information.spec.ts:8:7 › /how-ai-works is a public disclosure, not an account-settings redirect (402ms)
+  ✓  62 [desktop-chromium] › tests/e2e/public-information.spec.ts:20:5 › sign-in links to disclosures before an email is submitted (434ms)
+
+  62 passed (20.1s)

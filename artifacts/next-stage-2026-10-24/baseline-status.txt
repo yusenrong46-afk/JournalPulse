@@ -1,0 +1,14 @@
+{
+  "branch": "codex/journalpulse-reliability",
+  "head": "1b7c4ccf4a3e03b44f2314b2c1379ded6db37a53",
+  "tracked_changes": 0,
+  "untracked_paths": 1988,
+  "untracked_top_level_counts": {
+    "artifacts": 772,
+    "design-qa.md": 1,
+    "research": 1215
+  },
+  "private_inventory_sha256": "40bfd7234f1351f090f534191f3c1093063c47837d63a084fb5c7c20256706fb",
+  "local_only_inventory": "artifacts/next-stage-2026-10-24/private-baseline-status.txt",
+  "note": "Full unrelated local file names remain in the ignored inventory; only this summary is published."
+}

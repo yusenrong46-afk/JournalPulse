@@ -1,0 +1,13 @@
+{
+  "initial_untracked_inventory_entries": 1988,
+  "initial_paths_missing": [],
+  "source_manifest_matches": true,
+  "frozen_source_matches_working_source": true,
+  "task_containers_removed": [
+    "jp-next-stage-20261024-pg",
+    "jp-trust-hardening-next-stage-20261024"
+  ],
+  "shared_migrations_performed": false,
+  "manual_deployments_performed": false,
+  "paid_attempts_this_session": 0
+}

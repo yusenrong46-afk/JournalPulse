@@ -1,0 +1,23 @@
+E501 Line too long (116 > 110)
+  --> scripts/quality_decision.py:67:111
+   |
+65 |             failed.append(f"Routing mismatch: {case_id}")
+66 |         if wanted == "support":
+67 |             if row["status"] != "deterministic_support" or row.get("candidate_attempt") or row.get("judge_attempt"):
+   |                                                                                                               ^^^^^^
+68 |                 blocked.append(f"Support side effect/status mismatch: {case_id}")
+69 |         else:
+   |
+
+E501 Line too long (113 > 110)
+   --> scripts/quality_decision.py:151:111
+    |
+149 |                 case_id = item.get("id")
+150 |                 if (case_id not in expected or case_id in adjudicated or not item.get("rationale")
+151 |                         or not item.get("evidence") or item.get("verdict") not in {"pass", "fail", "uncertain"}):
+    |                                                                                                               ^^^
+152 |                     blocked.append("Invalid/duplicate adjudication record")
+153 |                     continue
+    |
+
+Found 3 errors (1 fixed, 2 remaining).

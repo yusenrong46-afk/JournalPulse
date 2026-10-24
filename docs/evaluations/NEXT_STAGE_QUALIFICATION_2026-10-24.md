@@ -1,8 +1,13 @@
 # Next-stage AI qualification — not run
 
-REQ-EVAL. New freeze: `artifacts/next-stage-2026-10-24/quality-run-v3`.
-The wrapper now deliberately points at v3. v1/v2 and their evidence are untouched.
-`freeze-comparison.json` records changed source, packet identity and exact comparison.
+REQ-EVAL. New freeze: `artifacts/next-stage-2026-10-24/quality-run-v4`.
+The wrapper now deliberately points at v4. v1/v2/v3 and their evidence are untouched.
+V4 corrects two offline decision edge cases: missing report artifacts cannot hide a
+confirmed human critical failure, and invalid/missing human grades block rather than
+become observed low scores. Paired red/green synthetic regressions establish these
+mechanics. No inference request, route, policy threshold or selected ID changed;
+no reserved output exists or was viewed.
+`freeze-comparison-v4.json` records changed source, packet identity and exact comparison.
 The repaired safety source is frozen even though none of the original 100 cases
 contains the two newly reproduced delayed-intent defects. Those defects are covered
 by separate deterministic paired/entry-point development regressions, also frozen.
@@ -53,13 +58,13 @@ Use the frozen decision script after real results and real review exist, with a
 new output path outside the bundle:
 
 ```sh
-.venv/bin/python artifacts/next-stage-2026-10-24/quality-run-v3/frozen/scripts/quality_decision.py \
-  --bundle artifacts/next-stage-2026-10-24/quality-run-v3 \
+.venv/bin/python artifacts/next-stage-2026-10-24/quality-run-v4/frozen/scripts/quality_decision.py \
+  --bundle artifacts/next-stage-2026-10-24/quality-run-v4 \
   --review /PRIVATE/PATH/actual-human-review.json \
   --output artifacts/next-stage-2026-10-24/AI_DECISION_AFTER_REVIEW.json
 ```
 
-`AI_DECISION.json` is currently BLOCKED because original run artifacts do not exist.
+`AI_DECISION_v4.json` is currently BLOCKED because original run artifacts do not exist.
 A confirmed critical failure FAILS that candidate even with high averages; unresolved
 concerns block qualification. Original judge scores remain the numerical population.
 Invalid/missing results cannot be repaired by human grades. A later source repair

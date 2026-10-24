@@ -39,3 +39,6 @@ web/playwright-report/
 web/*.tsbuildinfo
 /build/
 /dist/
+
+# Local preservation inventory; unrelated file names are not release artifacts.
+artifacts/next-stage-2026-10-24/private-baseline-status.txt

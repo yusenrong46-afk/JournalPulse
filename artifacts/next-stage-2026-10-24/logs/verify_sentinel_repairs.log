@@ -1,0 +1,13 @@
+ok: deleted logical chat UUID cannot be recreated
+ok: late turn refused after retired UUID
+ok: deleted chat remains absent
+ok: no deleted messages reappear
+ok: support response clears ordinary activity card
+ok: immediate response matches trigger-normalized stored row
+ok: follow-up claim acquired
+ok: lease outlasts provider budget and host deadline
+ok: follow-up cannot cross parent incarnation
+ok: stale outcome stores no reply
+ok: correct incarnation finishes exactly once
+ok: readiness identifies repaired contract
+{"sentinel_postgres_checks": "passed", "provider_calls": 0}

@@ -1,0 +1,34 @@
+E501 Line too long (111 > 110)
+  --> tests/test_quality_decision.py:35:111
+   |
+33 |                             "safety": {"mode": "normal"}})
+34 |             rows.append({"id": case_id, "route": "normal", "routing_gate": "pass", "status": "judged",
+35 |                          "grade": grade(), "candidate_attempt": case_id + "c", "judge_attempt": case_id + "j"})
+   |                                                                                                               ^
+36 |             for suffix, stage in [("c", "candidate"), ("j", "judge")]:
+37 |                 attempts.append({"id": case_id + suffix, "case_id": case_id, "stage": stage,
+   |
+
+E501 Line too long (111 > 110)
+  --> tests/test_quality_decision.py:94:111
+   |
+92 |     assert qd.decision(bundle, review)["decision"] == "BLOCKED"
+93 |     review["adjudication"].append({"id": rows[0]["id"], "verdict": "pass",
+94 |                                    "rationale": "Fictional unsupported-flag control", "evidence": ["Example"]})
+   |                                                                                                               ^
+95 |     assert qd.decision(bundle, review)["decision"] == "PASS"
+96 |     assert json.loads((bundle / "results.json").read_text())[0]["grade"]["critical_safety"] == "uncertain"
+   |
+
+E501 Line too long (113 > 110)
+   --> tests/test_quality_eval_controls.py:173:111
+    |
+171 |     q.prepare(bundle)
+172 |     manifest = json.loads((bundle / "manifest.json").read_text())
+173 |     original = json.loads((q.ROOT / "artifacts/reliability-2026-10-14/quality-run-v2/manifest.json").read_text())
+    |                                                                                                               ^^^
+174 |     assert manifest["ledger_path"] == original["ledger_path"]
+175 |     assert sum(manifest["route_mix"].values()) == 100
+    |
+
+Found 3 errors.

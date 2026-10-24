@@ -1,0 +1,24 @@
+ok: closure cannot target a different authenticated owner
+ok: closure recovery ledger is private
+ok: browser cannot resolve privileged closure receipts directly
+ok: browser cannot mark closure complete
+ok: same closure request is idempotent
+ok: new signed writes are blocked while closure is pending
+ok: pending closure blocks model-entry mutations early
+ok: other account remains readable
+ok: scoped receipt resolves only its original owner
+ok: incorrect receipt is rejected
+ok: completion cannot be reported before identity removal
+ok: expired receipt is rejected
+ok: fresh signed initiation renews an expired same-request receipt
+ok: identity cascade deletes writing
+ok: identity cascade deletes linked conversations
+ok: identity cascade deletes linked reflections
+ok: content-free recovery record survives identity deletion
+ok: completion verifies cascaded application deletion
+ok: lost completion response can be retried
+ok: readiness verifies closure write guards
+ok: readiness advertises closure schema
+ok: closure barrier serializes with writes, closure_first=True
+ok: closure barrier serializes with writes, closure_first=False
+{"account_closure_postgres": "passed", "provider_calls": 0, "live_auth_deletion_tested": false}

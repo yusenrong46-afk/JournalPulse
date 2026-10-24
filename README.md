@@ -96,6 +96,9 @@ Hosted configuration, secrets, migrations and rollback belong in the [operations
 
 ## Verification and limits
 
+[October 24 next-stage candidate, evidence and blockers](docs/NEXT_STAGE_PROGRESS_2026-10-24.md).
+This separate candidate preserves PR #10 and is not a hosted release.
+
 [October 14 trust-hardening candidate and remaining gates](docs/TRUST_HARDENING_2026-10-14.md).
 
 The follow-up [reliability work](docs/RELIABILITY_PROGRESS_2026-10-14.md) is on a
