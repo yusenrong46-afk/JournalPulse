@@ -1,0 +1,26 @@
+{
+  "status": "fulfilled",
+  "value": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Action completed."
+      }
+    ],
+    "structuredContent": {
+      "workflow_runs": [
+        {
+          "id": 38640357901,
+          "name": "release-gates",
+          "status": "completed",
+          "conclusion": "success",
+          "run_number": 46,
+          "jobs_url": "https://api.github.com/repos/yusenrong46-afk/JournalPulse/actions/runs/38640357901/jobs",
+          "logs_url": "https://api.github.com/repos/yusenrong46-afk/JournalPulse/actions/runs/38640357901/logs",
+          "workflow_id": 312404436
+        }
+      ]
+    },
+    "isError": false
+  }
+}

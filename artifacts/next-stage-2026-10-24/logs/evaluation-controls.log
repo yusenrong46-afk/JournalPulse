@@ -1,0 +1,1046 @@
+............F.FFF........                                                [100%]
+=================================== FAILURES ===================================
+___________________ test_frozen_case_counts_and_family_split ___________________
+
+    def test_frozen_case_counts_and_family_split():
+        data = json.loads(
+            (Path(__file__).parents[1] / "assets/evaluation/luna-quality-2026-10-14.json").read_text()
+        )
+>       dataset = q.Dataset.model_validate(data)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 80 validation errors for Dataset
+E       cases.0.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.1.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.2.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.3.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.4.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.5.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.6.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.7.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.8.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.9.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.10.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.11.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.12.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.13.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.14.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.15.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.16.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.17.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.18.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.19.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.20.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.21.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.22.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.23.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.24.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.25.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.26.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.27.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.28.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.29.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.30.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.31.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.32.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.33.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.34.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.35.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.36.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.37.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.38.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.39.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.40.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.41.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.42.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.43.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.44.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.45.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.46.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.47.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.48.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.49.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.50.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.51.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.52.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.53.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.54.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.55.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.56.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.57.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.58.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.59.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.60.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.61.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.62.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.63.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.64.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.65.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.66.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.67.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.68.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.69.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.70.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.71.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.72.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.73.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.74.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.75.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.76.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.77.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.78.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.79.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+
+tests/test_quality_eval_controls.py:129: ValidationError
+__________ test_all_packets_prepare_and_frozen_inputs_detect_changes ___________
+
+tmp_path = PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1059/test_all_packets_prepare_and_f0')
+
+    def test_all_packets_prepare_and_frozen_inputs_detect_changes(tmp_path):
+        bundle = tmp_path / "frozen-test"
+>       q.prepare(bundle)
+
+tests/test_quality_eval_controls.py:158: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+destination = PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1059/test_all_packets_prepare_and_f0/frozen-test')
+
+    def prepare(destination: Path) -> None:
+        if destination.exists():
+            raise EvaluationStopped("Use a new bundle directory; never overwrite a frozen run")
+        dataset_path = ROOT / "assets/evaluation/luna-quality-2026-10-14.json"
+>       dataset = Dataset.model_validate_json(dataset_path.read_text())
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 80 validation errors for Dataset
+E       cases.0.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.1.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.2.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.3.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.4.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.5.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.6.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.7.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.8.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.9.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.10.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.11.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.12.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.13.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.14.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.15.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.16.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.17.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.18.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.19.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.20.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.21.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.22.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.23.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.24.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.25.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.26.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.27.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.28.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.29.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.30.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.31.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.32.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.33.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.34.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.35.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.36.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.37.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.38.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.39.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.40.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.41.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.42.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.43.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.44.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.45.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.46.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.47.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.48.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.49.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.50.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.51.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.52.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.53.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.54.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.55.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.56.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.57.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.58.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.59.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.60.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.61.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.62.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.63.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.64.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.65.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.66.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.67.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.68.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.69.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.70.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.71.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.72.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.73.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.74.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.75.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.76.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.77.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.78.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.79.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+
+scripts/quality_eval.py:232: ValidationError
+______ test_new_freeze_keeps_authoritative_ledger_and_locks_review_sample ______
+
+tmp_path = PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1059/test_new_freeze_keeps_authorit0')
+
+    def test_new_freeze_keeps_authoritative_ledger_and_locks_review_sample(tmp_path):
+        bundle = tmp_path / "freeze"
+>       q.prepare(bundle)
+
+tests/test_quality_eval_controls.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+destination = PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1059/test_new_freeze_keeps_authorit0/freeze')
+
+    def prepare(destination: Path) -> None:
+        if destination.exists():
+            raise EvaluationStopped("Use a new bundle directory; never overwrite a frozen run")
+        dataset_path = ROOT / "assets/evaluation/luna-quality-2026-10-14.json"
+>       dataset = Dataset.model_validate_json(dataset_path.read_text())
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 80 validation errors for Dataset
+E       cases.0.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.1.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.2.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.3.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.4.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.5.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.6.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.7.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.8.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.9.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.10.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.11.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.12.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.13.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.14.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.15.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.16.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.17.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.18.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.19.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.20.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.21.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.22.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.23.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.24.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.25.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.26.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.27.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.28.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.29.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.30.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.31.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.32.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.33.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.34.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.35.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.36.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.37.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.38.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.39.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.40.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.41.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.42.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.43.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.44.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.45.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.46.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.47.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.48.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.49.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.50.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.51.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.52.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.53.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.54.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.55.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.56.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.57.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.58.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.59.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.60.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.61.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.62.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.63.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.64.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.65.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.66.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.67.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.68.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.69.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.70.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.71.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.72.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.73.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.74.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.75.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.76.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.77.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.78.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.79.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+
+scripts/quality_eval.py:232: ValidationError
+__________ test_frozen_run_cannot_initialize_a_missing_shared_ledger ___________
+
+tmp_path = PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1059/test_frozen_run_cannot_initial0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1089345c0>
+
+    def test_frozen_run_cannot_initialize_a_missing_shared_ledger(tmp_path, monkeypatch):
+        bundle = tmp_path / "freeze"
+>       q.prepare(bundle)
+
+tests/test_quality_eval_controls.py:187: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+destination = PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1059/test_frozen_run_cannot_initial0/freeze')
+
+    def prepare(destination: Path) -> None:
+        if destination.exists():
+            raise EvaluationStopped("Use a new bundle directory; never overwrite a frozen run")
+        dataset_path = ROOT / "assets/evaluation/luna-quality-2026-10-14.json"
+>       dataset = Dataset.model_validate_json(dataset_path.read_text())
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 80 validation errors for Dataset
+E       cases.0.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.1.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.2.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.3.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.4.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.5.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.6.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.7.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.8.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.9.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.10.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.11.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.12.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.13.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.14.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.15.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.16.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.17.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.18.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.19.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.20.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.21.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.22.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.23.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.24.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.25.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.26.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.27.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.28.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.29.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.30.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.31.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.32.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.33.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.34.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.35.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.36.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.37.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.38.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.39.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.40.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.41.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.42.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.43.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.44.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.45.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.46.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.47.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.48.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.49.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.50.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.51.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.52.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.53.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.54.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.55.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.56.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.57.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.58.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.59.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.60.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.61.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.62.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.63.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.64.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.65.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.66.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.67.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.68.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.69.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.70.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.71.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.72.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.73.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.74.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.75.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.76.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.77.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.78.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+E       cases.79.expected_route
+E         Input should be 'normal' or 'support' [type=literal_error, input_value=None, input_type=NoneType]
+E           For further information visit https://errors.pydantic.dev/2.13/v/literal_error
+
+scripts/quality_eval.py:232: ValidationError
+=========================== short test summary info ============================
+FAILED tests/test_quality_eval_controls.py::test_frozen_case_counts_and_family_split
+FAILED tests/test_quality_eval_controls.py::test_all_packets_prepare_and_frozen_inputs_detect_changes
+FAILED tests/test_quality_eval_controls.py::test_new_freeze_keeps_authoritative_ledger_and_locks_review_sample
+FAILED tests/test_quality_eval_controls.py::test_frozen_run_cannot_initialize_a_missing_shared_ledger
+4 failed, 21 passed in 0.33s

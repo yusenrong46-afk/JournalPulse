@@ -1,0 +1,225 @@
+Refreshing run status every 30 seconds. Press Ctrl+C to quit.
+
+* codex/journalpulse-next-stage release-gates yusenrong46-afk/JournalPulse#11 · 40119655378
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ frontend in 2m13s (ID 120948199174)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ Run npm ci
+  ✓ Run npm run lint
+  ✓ Run npm run typecheck
+  ✓ Run npm run test:unit
+  ✓ Run npm run generate:api && git diff --exit-code -- openapi.json lib/generated-api.ts
+  ✓ Run npm run build
+  ✓ Run npx playwright install --with-deps chromium
+  ✓ Run npm run test:e2e
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* integration (ID 120948199317)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-python@v5
+  ✓ Run astral-sh/setup-uv@v6
+  ✓ Run uv sync --frozen --extra dev
+  ✓ Run actions/setup-node@v4
+  ✓ Install PostgreSQL client
+  ✓ Run npm ci
+  ✓ Run npx playwright install --with-deps chromium
+  * Run npm run test:integration
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run astral-sh/setup-uv@v6
+  * Post Run actions/setup-python@v5
+  * Post Run actions/checkout@v4
+  * Stop containers
+* backend (ID 120948199348)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-python@v5
+  ✓ Run astral-sh/setup-uv@v6
+  ✓ Run uv sync --frozen --extra dev
+  ✓ Run uv run ruff check src tests scripts
+  ✓ Run uv run mypy src
+  ✓ Run uv run python scripts/export_openapi.py --check
+  * Run uv run pytest --cov=journalpulse --cov-report=term-missing
+  * Run uv run python scripts/validate_resources.py
+  * Install PostgreSQL client
+  * Verify migrations against PostgreSQL
+  * Verify standalone journal ownership and source lifecycle
+  * Verify signed usage policy and request replay integrity
+  * Verify guided activity ownership, receipts, timer, and report lifecycle
+  * Verify Sentinel privacy, support-response, and lease regressions
+  * Verify erasure identities and in-flight write boundaries
+  * Verify account closure, recovery records, and concurrent writes
+  * Post Run astral-sh/setup-uv@v6
+  * Post Run actions/setup-python@v5
+  * Post Run actions/checkout@v4
+  * Stop containers
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+frontend: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+frontend: .github#1
+
+Refreshing run status every 30 seconds. Press Ctrl+C to quit.
+
+* codex/journalpulse-next-stage release-gates yusenrong46-afk/JournalPulse#11 · 40119655378
+Triggered via pull_request about 2 minutes ago
+
+JOBS
+✓ frontend in 2m13s (ID 120948199174)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ Run npm ci
+  ✓ Run npm run lint
+  ✓ Run npm run typecheck
+  ✓ Run npm run test:unit
+  ✓ Run npm run generate:api && git diff --exit-code -- openapi.json lib/generated-api.ts
+  ✓ Run npm run build
+  ✓ Run npx playwright install --with-deps chromium
+  ✓ Run npm run test:e2e
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+* integration (ID 120948199317)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-python@v5
+  ✓ Run astral-sh/setup-uv@v6
+  ✓ Run uv sync --frozen --extra dev
+  ✓ Run actions/setup-node@v4
+  ✓ Install PostgreSQL client
+  ✓ Run npm ci
+  ✓ Run npx playwright install --with-deps chromium
+  * Run npm run test:integration
+  * Run actions/upload-artifact@v4
+  * Post Run actions/setup-node@v4
+  * Post Run astral-sh/setup-uv@v6
+  * Post Run actions/setup-python@v5
+  * Post Run actions/checkout@v4
+  * Stop containers
+* backend (ID 120948199348)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-python@v5
+  ✓ Run astral-sh/setup-uv@v6
+  ✓ Run uv sync --frozen --extra dev
+  ✓ Run uv run ruff check src tests scripts
+  ✓ Run uv run mypy src
+  ✓ Run uv run python scripts/export_openapi.py --check
+  ✓ Run uv run pytest --cov=journalpulse --cov-report=term-missing
+  ✓ Run uv run python scripts/validate_resources.py
+  ✓ Install PostgreSQL client
+  ✓ Verify migrations against PostgreSQL
+  ✓ Verify standalone journal ownership and source lifecycle
+  ✓ Verify signed usage policy and request replay integrity
+  ✓ Verify guided activity ownership, receipts, timer, and report lifecycle
+  ✓ Verify Sentinel privacy, support-response, and lease regressions
+  ✓ Verify erasure identities and in-flight write boundaries
+  * Verify account closure, recovery records, and concurrent writes
+  * Post Run astral-sh/setup-uv@v6
+  * Post Run actions/setup-python@v5
+  * Post Run actions/checkout@v4
+  * Stop containers
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+frontend: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+frontend: .github#1
+
+✓ codex/journalpulse-next-stage release-gates yusenrong46-afk/JournalPulse#11 · 40119655378
+Triggered via pull_request about 3 minutes ago
+
+JOBS
+✓ frontend in 2m13s (ID 120948199174)
+  ✓ Set up job
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-node@v4
+  ✓ Run npm ci
+  ✓ Run npm run lint
+  ✓ Run npm run typecheck
+  ✓ Run npm run test:unit
+  ✓ Run npm run generate:api && git diff --exit-code -- openapi.json lib/generated-api.ts
+  ✓ Run npm run build
+  ✓ Run npx playwright install --with-deps chromium
+  ✓ Run npm run test:e2e
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run actions/checkout@v4
+  ✓ Complete job
+✓ integration in 3m6s (ID 120948199317)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-python@v5
+  ✓ Run astral-sh/setup-uv@v6
+  ✓ Run uv sync --frozen --extra dev
+  ✓ Run actions/setup-node@v4
+  ✓ Install PostgreSQL client
+  ✓ Run npm ci
+  ✓ Run npx playwright install --with-deps chromium
+  ✓ Run npm run test:integration
+  - Run actions/upload-artifact@v4
+  ✓ Post Run actions/setup-node@v4
+  ✓ Post Run astral-sh/setup-uv@v6
+  ✓ Post Run actions/setup-python@v5
+  ✓ Post Run actions/checkout@v4
+  ✓ Stop containers
+  ✓ Complete job
+✓ backend in 3m0s (ID 120948199348)
+  ✓ Set up job
+  ✓ Initialize containers
+  ✓ Run actions/checkout@v4
+  ✓ Run actions/setup-python@v5
+  ✓ Run astral-sh/setup-uv@v6
+  ✓ Run uv sync --frozen --extra dev
+  ✓ Run uv run ruff check src tests scripts
+  ✓ Run uv run mypy src
+  ✓ Run uv run python scripts/export_openapi.py --check
+  ✓ Run uv run pytest --cov=journalpulse --cov-report=term-missing
+  ✓ Run uv run python scripts/validate_resources.py
+  ✓ Install PostgreSQL client
+  ✓ Verify migrations against PostgreSQL
+  ✓ Verify standalone journal ownership and source lifecycle
+  ✓ Verify signed usage policy and request replay integrity
+  ✓ Verify guided activity ownership, receipts, timer, and report lifecycle
+  ✓ Verify Sentinel privacy, support-response, and lease regressions
+  ✓ Verify erasure identities and in-flight write boundaries
+  ✓ Verify account closure, recovery records, and concurrent writes
+  ✓ Post Run astral-sh/setup-uv@v6
+  ✓ Post Run actions/setup-python@v5
+  ✓ Post Run actions/checkout@v4
+  ✓ Stop containers
+  ✓ Complete job
+
+ANNOTATIONS
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+frontend: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+frontend: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4, actions/setup-python@v5, astral-sh/setup-uv@v6. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+integration: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+integration: .github#1
+
+! Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5, astral-sh/setup-uv@v6. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+backend: .github#2
+
+- "The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748"
+backend: .github#1
+

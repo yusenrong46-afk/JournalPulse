@@ -1,0 +1,136 @@
+{
+  "status": "fulfilled",
+  "value": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Action completed."
+      }
+    ],
+    "structuredContent": {
+      "review_threads": [
+        {
+          "id": "PRRT_kwDOSYJX0s6sfGne",
+          "is_resolved": false,
+          "is_outdated": false,
+          "path": "artifacts/trust-hardening-2026-10-14/manifest.json",
+          "line": 5,
+          "diff_side": "RIGHT",
+          "start_line": 5,
+          "start_diff_side": null,
+          "original_line": 5,
+          "original_start_line": null,
+          "resolved_by": null,
+          "comments": [
+            {
+              "id": "PRRC_kwDOSYJX0s7-1Lr8",
+              "database_id": 4275354364,
+              "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Regenerate the manifest after the final file changes**\n\nRegenerate this manifest from the final candidate: the recorded SHA-256 for `README.md` is `ed57…`, while the committed file hashes to `73ff…`; the entries for `docs/TRUST_HARDENING_2026-10-14.md`, `web/app/how-ai-works/page.tsx`, and `web/app/login/page.tsx` are also stale, and the changed `me`, `talk`, and `welcome` pages are omitted. Anyone using this artifact to bind the reported checks to the reviewed candidate will therefore reject valid files or verify an incomplete snapshot.\n\nUseful? React with 👍 / 👎.",
+              "created_at": "2026-10-14T19:33:33Z",
+              "updated_at": "2026-10-14T19:33:34Z",
+              "author": {
+                "login": "chatgpt-codex-connector",
+                "name": "chatgpt-codex-connector",
+                "email": null,
+                "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+                "id": null
+              },
+              "viewer_did_author": false
+            }
+          ]
+        },
+        {
+          "id": "PRRT_kwDOSYJX0s6sfGnk",
+          "is_resolved": false,
+          "is_outdated": false,
+          "path": "web/components/public-information.tsx",
+          "line": 18,
+          "diff_side": "RIGHT",
+          "start_line": 18,
+          "start_diff_side": null,
+          "original_line": 18,
+          "original_start_line": null,
+          "resolved_by": null,
+          "comments": [
+            {
+              "id": "PRRC_kwDOSYJX0s7-1LsE",
+              "database_id": 4275354372,
+              "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Use a valid telephone URI for the crisis call**\n\nWhen a user taps the crisis call link, `tel:988?oai_link_source=model_response_hotline` is outside the `tel:` URI grammar, which permits telephone parameters separated with semicolons rather than an HTTP-style query; handset handling of this malformed target is platform-dependent and may reject or misinterpret the number. Because this is the primary crisis call action, use a plain dialing target such as `tel:988` and keep attribution on the HTTPS link instead. See the [RFC 3966 telephone URI syntax](https://www.rfc-editor.org/info/rfc3966/).\n\nUseful? React with 👍 / 👎.",
+              "created_at": "2026-10-14T19:33:33Z",
+              "updated_at": "2026-10-14T19:33:34Z",
+              "author": {
+                "login": "chatgpt-codex-connector",
+                "name": "chatgpt-codex-connector",
+                "email": null,
+                "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+                "id": null
+              },
+              "viewer_did_author": false
+            }
+          ]
+        },
+        {
+          "id": "PRRT_kwDOSYJX0s6sfGno",
+          "is_resolved": false,
+          "is_outdated": false,
+          "path": "src/journalpulse/safety.py",
+          "line": 44,
+          "diff_side": "RIGHT",
+          "start_line": 43,
+          "start_diff_side": "RIGHT",
+          "original_line": 44,
+          "original_start_line": 43,
+          "resolved_by": null,
+          "comments": [
+            {
+              "id": "PRRC_kwDOSYJX0s7-1LsJ",
+              "database_id": 4275354377,
+              "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Preserve support routing for delayed intent**\n\nThese new negation patterns suppress any matching risk phrase even when the rest of the clause makes the intent affirmative but delayed: for example, `I won't kill myself until tonight` and `I will not harm myself before I say goodbye` now both return `NORMAL`, whereas the previous high-risk patterns routed them to support. A present marker such as “tonight” cannot recover the match because `_clause_has_unnegated_risk` rejects negated spans before considering `present`; constrain these denials so temporal qualifiers do not turn explicit future intent into a normal chat.\n\nUseful? React with 👍 / 👎.",
+              "created_at": "2026-10-14T19:33:33Z",
+              "updated_at": "2026-10-14T19:33:34Z",
+              "author": {
+                "login": "chatgpt-codex-connector",
+                "name": "chatgpt-codex-connector",
+                "email": null,
+                "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+                "id": null
+              },
+              "viewer_did_author": false
+            }
+          ]
+        },
+        {
+          "id": "PRRT_kwDOSYJX0s6sfGnt",
+          "is_resolved": false,
+          "is_outdated": false,
+          "path": "src/journalpulse/api.py",
+          "line": 707,
+          "diff_side": "RIGHT",
+          "start_line": 707,
+          "start_diff_side": null,
+          "original_line": 707,
+          "original_start_line": null,
+          "resolved_by": null,
+          "comments": [
+            {
+              "id": "PRRC_kwDOSYJX0s7-1LsV",
+              "database_id": 4275354389,
+              "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Whitelist the Supabase origin embedded in the frontend**\n\nWhen `NEXT_PUBLIC_SUPABASE_URL` is set independently from `SUPABASE_URL`, which `scripts/build_vercel_web.py` explicitly permits, the compiled browser client connects to the former but this CSP allows only `settings.supabase_url`. If those origins differ—for example when the browser uses a custom Supabase domain—`connect-src` blocks all authentication requests and sign-in becomes unusable; build the policy from the frontend's actual public origin or safely include both configured origins.\n\nUseful? React with 👍 / 👎.",
+              "created_at": "2026-10-14T19:33:33Z",
+              "updated_at": "2026-10-14T19:33:34Z",
+              "author": {
+                "login": "chatgpt-codex-connector",
+                "name": "chatgpt-codex-connector",
+                "email": null,
+                "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+                "id": null
+              },
+              "viewer_did_author": false
+            }
+          ]
+        }
+      ]
+    },
+    "isError": false
+  }
+}

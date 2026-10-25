@@ -1,0 +1,33 @@
+{
+  "observed_at": "2026-10-25T12:29:06.436682+00:00",
+  "goal_turn_classification": "progress",
+  "source_candidate": "41ca7f58c1fda43b1cd5de330c3e5047ee7c208b",
+  "current_runtime_and_operator_source_hashes_match": true,
+  "v5_frozen_source_hashes_match": true,
+  "old_sealed_release_record_hash_preserved": true,
+  "all_65_criteria_have_procedure_observation_evidence": true,
+  "r1_applicable_criteria_count": 42,
+  "r1_unachieved_criteria": [
+    "AC-OWN-01",
+    "AC-OWN-03",
+    "AC-CLOSE-01",
+    "AC-CLOSE-02",
+    "AC-CLOSE-04",
+    "AC-REC-01",
+    "AC-REC-02",
+    "AC-REC-03",
+    "AC-WEB-03",
+    "AC-EVAL-04",
+    "AC-EVAL-05",
+    "AC-REL-02",
+    "AC-REL-03"
+  ],
+  "complete": false,
+  "no_paid_calls": true,
+  "ledger_attempts": 0,
+  "real_recovery_receipts": 0,
+  "human_review": "NOT_RUN",
+  "scope": "R1 qualification plus R2 preparation, integration deferred",
+  "blocking_condition": "Unavailable credentialed database/provider execution and actual hosted/human evidence; no invented substitutes.",
+  "blocked_audit_status": "First active-goal turn made concrete progress. Goal remains active; blocked threshold not met."
+}

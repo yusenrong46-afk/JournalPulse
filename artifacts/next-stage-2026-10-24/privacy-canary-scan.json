@@ -1,0 +1,14 @@
+{
+  "scope": "operational verification logs only; intentional fictional test/evaluation source inputs are separate",
+  "files_scanned": 59,
+  "canary_hits": [],
+  "status": "PASS",
+  "content_free_evidence_fields": [
+    "request_id",
+    "candidate_commit",
+    "operation_class",
+    "bounded_error_stage",
+    "check_status"
+  ],
+  "no_real_private_data_used": true
+}

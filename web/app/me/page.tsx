@@ -154,6 +154,7 @@ export default function MePage() {
       </div>
       <section className="stack settings-data" aria-labelledby="data-heading">
         <h2 id="data-heading">Your data</h2>
+        <p className="muted small">Your download contains the saved JournalPulse records in this account. It does not include unsaved drafts, sign-in credentials or copies held by an AI or search provider.</p>
         <div className="row">
           <button className="btn btn-soft" type="button" onClick={exportData}>Download my data</button>
           <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => void signOut()}>Sign out</button>

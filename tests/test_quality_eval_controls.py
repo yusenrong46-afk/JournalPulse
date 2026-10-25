@@ -164,3 +164,35 @@ def test_all_packets_prepare_and_frozen_inputs_detect_changes(tmp_path):
     (bundle / "frozen/src/journalpulse/safety.py").write_text("changed")
     with pytest.raises(q.EvaluationStopped, match="Frozen source changed"):
         q.checked_packets(bundle)
+
+
+def test_new_freeze_keeps_authoritative_ledger_and_locks_review_sample(tmp_path):
+    bundle = tmp_path / "freeze"
+    q.prepare(bundle)
+    manifest = json.loads((bundle / "manifest.json").read_text())
+    original_path = q.ROOT / "artifacts/reliability-2026-10-14/quality-run-v2/manifest.json"
+    original = json.loads(original_path.read_text())
+    assert manifest["ledger_path"] == original["ledger_path"]
+    assert sum(manifest["route_mix"].values()) == 100
+    sample = json.loads((bundle / "review-selection.json").read_text())
+    assert {split: len(ids) for split, ids in sample.items()} == {"development": 10, "holdout": 10}
+    assert all(p["case"]["expected_route"] in {"normal", "support"} for p in q.checked_packets(bundle))
+    sample["holdout"][0] = "tampered"
+    (bundle / "review-selection.json").write_text(json.dumps(sample))
+    with pytest.raises(q.EvaluationStopped, match="review selection"):
+        q.checked_packets(bundle)
+
+
+def test_frozen_run_cannot_initialize_a_missing_shared_ledger(tmp_path, monkeypatch):
+    bundle = tmp_path / "freeze"
+    q.prepare(bundle)
+    manifest_path = bundle / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    missing = tmp_path / "nonexistent-authoritative-ledger.json"
+    manifest["ledger_path"] = str(missing)
+    manifest_path.write_text(json.dumps(manifest))
+    monkeypatch.setattr(q, "ROOT", bundle / "frozen")
+    with pytest.raises(q.EvaluationStopped, match="ledger is missing"):
+        q.run(bundle, missing)
+    assert not missing.exists()
+    assert not (bundle / "results.json").exists()

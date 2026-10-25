@@ -1,0 +1,20 @@
+ok: legacy production generation policy still enforces the window
+ok: direct RPC cannot shorten and erase usage history
+ok: direct RPC cannot widen generation limits
+ok: signed usage RPC rejects a forged signature
+ok: signed and legacy generation calls share the same usage history
+ok: rejected policy changes never delete usage events
+ok: signed usage policy remains owner bound
+ok: identical creation retry returns the same conversation
+ok: creation retry cannot change retention choice
+ok: creation retry cannot change AI consent
+ok: creation retry cannot change locale
+ok: identical turn replay does not regenerate
+ok: changed text cannot reuse a turn ID
+ok: changed reported mood cannot reuse a turn ID
+ok: purged turn replay is refused without retaining text hashes
+ok: identical acceptance retry returns the same receipt
+ok: one acceptance receipt cannot be attached to another conversation
+ok: conflicting acceptance leaves the second conversation open
+ok: acceptance replay cannot change the selected action
+Audit integrity verification passed

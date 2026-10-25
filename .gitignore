@@ -39,3 +39,10 @@ web/playwright-report/
 web/*.tsbuildinfo
 /build/
 /dist/
+
+# Local preservation inventory; unrelated file names are not release artifacts.
+artifacts/next-stage-2026-10-24/private-baseline-status.txt
+
+# One mutable, authoritative evaluation ledger; never version/reset it per checkout.
+artifacts/reliability-2026-10-14/quality-budget.json
+artifacts/reliability-2026-10-14/quality-budget.lock

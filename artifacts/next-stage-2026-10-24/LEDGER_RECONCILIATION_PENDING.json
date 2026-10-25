@@ -1,0 +1,86 @@
+{
+  "observed_at": "2026-10-24T18:26:13.728042+00:00",
+  "candidate_commit": "be14ffc6a3c4e5777d00ab2fd4518e3f7da22ae4",
+  "canonical_ledger": "/Users/thomas/Documents/ChatGPT/JP/artifacts/reliability-2026-10-14/quality-budget.json",
+  "canonical_ledger_exists": false,
+  "git_history_for_canonical_ledger": [],
+  "registered_worktrees": 1,
+  "additional_ledger_filename_search_locations": [
+    "/Users/thomas/.codex/worktrees",
+    "/Users/thomas/Desktop/JournalPulse_new",
+    "/Users/thomas/Documents/ChatGPT"
+  ],
+  "additional_ledger_matches": [],
+  "frozen_bundles": [
+    {
+      "path": "artifacts/reliability-2026-10-14/quality-run",
+      "manifest_sha256": "21fc5288867d587b55a28abfe798c55915ba4ab0039405deec6f4f72feece8da",
+      "ledger_path": "/Users/thomas/Documents/ChatGPT/JP/artifacts/reliability-2026-10-14/quality-budget.json",
+      "execution_artifact_presence": {
+        "results.json": false,
+        "STOPPED.json": false,
+        "endpoint-preflight.json": false,
+        "requests": false,
+        "responses": false,
+        "observations": false
+      }
+    },
+    {
+      "path": "artifacts/reliability-2026-10-14/quality-run-v2",
+      "manifest_sha256": "6b184960ae79ab2381cb28ef1bda91927f4ce71699ca1006db70b375db163c5d",
+      "ledger_path": "/Users/thomas/Documents/ChatGPT/JP/artifacts/reliability-2026-10-14/quality-budget.json",
+      "execution_artifact_presence": {
+        "results.json": false,
+        "STOPPED.json": false,
+        "endpoint-preflight.json": false,
+        "requests": false,
+        "responses": false,
+        "observations": false
+      }
+    },
+    {
+      "path": "artifacts/next-stage-2026-10-24/quality-run-v3",
+      "manifest_sha256": "67817bf60e119093105fb7e92def3216800f3b12a1cb9e1591ac2f8127e4f4f6",
+      "ledger_path": "/Users/thomas/Documents/ChatGPT/JP/artifacts/reliability-2026-10-14/quality-budget.json",
+      "execution_artifact_presence": {
+        "results.json": false,
+        "STOPPED.json": false,
+        "endpoint-preflight.json": false,
+        "requests": false,
+        "responses": false,
+        "observations": false
+      }
+    },
+    {
+      "path": "artifacts/next-stage-2026-10-24/quality-run-v4",
+      "manifest_sha256": "0793b54d8d6eb0785a3ee89ddd9c3f61b5f10576e4c1be34715c9b0f00eaf1f1",
+      "ledger_path": "/Users/thomas/Documents/ChatGPT/JP/artifacts/reliability-2026-10-14/quality-budget.json",
+      "execution_artifact_presence": {
+        "results.json": false,
+        "STOPPED.json": false,
+        "endpoint-preflight.json": false,
+        "requests": false,
+        "responses": false,
+        "observations": false
+      }
+    }
+  ],
+  "historical_blocker_record": "artifacts/reliability-2026-10-14/BLOCKER_AUDIT.json",
+  "local_interpretation": "Consistent with never initialized; absence alone does not prove no outside/provider attempts.",
+  "operator_history_confirmation": "PENDING",
+  "provider_accounting": "NOT_CHECKED",
+  "known_prior_spend_usd": null,
+  "remaining_allowance_usd": null,
+  "ledger_written_or_reset": false,
+  "paid_calls_this_turn": 0,
+  "recovery_preflight": {
+    "tool_sha256": "0bc7ce3861d50ad3c7f2801fa15b649942675232bcaa2b4418f5655d0bb08c3f",
+    "matches_tested_source": true,
+    "docker_daemon": "29.5.2",
+    "pinned_image_present": true,
+    "gpg_available": true,
+    "pg_override_names_present": [],
+    "real_backup_started": false,
+    "credential_input_channel": "User-owned interactive terminal getpass prompts only"
+  }
+}

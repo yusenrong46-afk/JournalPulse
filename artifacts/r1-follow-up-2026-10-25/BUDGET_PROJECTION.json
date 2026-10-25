@@ -1,0 +1,36 @@
+{
+  "scope": "PRE_RUN_SCENARIOS_NOT_PAID_RESULTS",
+  "source_bundle": "artifacts/next-stage-2026-10-24/quality-run-v4",
+  "generation_requests_this_check": 0,
+  "model_cases": 86,
+  "deterministic_support_cases": 14,
+  "shared_cap_usd": "10",
+  "scenarios": [
+    {
+      "assumed_additional_serialized_answer_bytes_per_case": 0,
+      "candidate_plus_judge_reservations_usd": "7.07177060",
+      "fits_current_cap_under_this_scenario": true
+    },
+    {
+      "assumed_additional_serialized_answer_bytes_per_case": 4000,
+      "candidate_plus_judge_reservations_usd": "8.10377060",
+      "fits_current_cap_under_this_scenario": true
+    },
+    {
+      "assumed_additional_serialized_answer_bytes_per_case": 8000,
+      "candidate_plus_judge_reservations_usd": "9.13577060",
+      "fits_current_cap_under_this_scenario": true
+    },
+    {
+      "assumed_additional_serialized_answer_bytes_per_case": 16000,
+      "candidate_plus_judge_reservations_usd": "11.19977060",
+      "fits_current_cap_under_this_scenario": false
+    }
+  ],
+  "limitations": [
+    "Actual candidate outputs are unknown.",
+    "Scenarios are not strict output-byte bounds or an estimate of actual charged spend.",
+    "Runner still reserves against actual request bytes, locks endpoint prices, reconciles costs and stops before exceeding cap.",
+    "No allowance reset or model/provider fallback is authorized."
+  ]
+}

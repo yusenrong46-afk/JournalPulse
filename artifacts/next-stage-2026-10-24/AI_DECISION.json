@@ -1,0 +1,15 @@
+{
+  "policy": "next-stage-2026-10-24.1",
+  "packets_sha256": "e2fec32188012cb6c1b4d8b629b6fb5324630c7c4ac0521132717938362d8abc",
+  "decision": "BLOCKED",
+  "human_review": "NOT_RUN",
+  "clinical_validation": "NOT_RUN",
+  "blockers": [
+    "Missing original results.json",
+    "Missing original summary.json",
+    "Missing original REPORT.md"
+  ],
+  "failures": [],
+  "metrics": {},
+  "original_artifact_sha256": {}
+}

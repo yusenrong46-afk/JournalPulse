@@ -275,7 +275,7 @@ def test_deleting_entry_while_reflecting_discards_delayed_reply(tmp_path: Path):
         )
 
 
-def test_reflection_error_propagates_safe_stage_without_private_output(tmp_path: Path):
+def test_reflection_error_propagates_safe_stage_without_private_output(tmp_path: Path, caplog):
     private = "PRIVATE_JOURNAL_AND_PROVIDER_TEXT"
     model = OpenRouterConversationClient(
         settings(tmp_path),
@@ -292,6 +292,7 @@ def test_reflection_error_propagates_safe_stage_without_private_output(tmp_path:
         assert response.headers["X-JournalPulse-Error-Stage"] == "output_schema"
         assert "reply.missing" in response.headers["X-JournalPulse-Error-Fields"]
         assert private not in response.text + str(response.headers)
+        assert private not in caplog.text
         assert "entry is still saved" in response.json()["detail"]
         assert client.get(f"/v1/journal/entries/{saved['id']}", headers=HEADERS).json() == saved
         assert client.get("/v1/export", headers=HEADERS).json()["reflections"] == []

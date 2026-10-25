@@ -10,6 +10,9 @@ for (const [path, heading] of [
     await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "About JournalPulse" })).toBeVisible();
     await expect(page.getByRole("complementary", { name: "Crisis support" })).toBeVisible();
+    // Inspect targets only: automated tests must never place a helpline call.
+    await expect(page.locator('a[href="tel:988"]')).toHaveText("988");
+    await expect(page.locator('a[href="sms:988"]')).toHaveText("988");
     expect(new URL(page.url()).pathname.replace(/\/$/, "")).toBe(path);
   });
 }

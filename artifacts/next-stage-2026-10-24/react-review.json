@@ -1,0 +1,12 @@
+{
+  "scope": [
+    "web/components/public-information.tsx",
+    "web/app/me/page.tsx"
+  ],
+  "component_structure": "Existing components retained; phone hrefs and one disclosure paragraph only",
+  "hooks": "No hooks/effects/state or request scheduling added",
+  "accessibility": "Native anchor targets retained; text sits next to the download action; existing scoped accessibility/keyboard suites pass",
+  "performance": "No imports, dependencies, listeners or render-time computation added by these JSX edits",
+  "typescript": "Final lint/typecheck/unit checks passed",
+  "new_server_actions_or_provider_calls": false
+}

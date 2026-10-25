@@ -1,0 +1,82 @@
+[
+  {
+    "id": "delay-want",
+    "expected": "support",
+    "actual": "support"
+  },
+  {
+    "id": "delay-plan",
+    "expected": "support",
+    "actual": "support"
+  },
+  {
+    "id": "delay-will",
+    "expected": "support",
+    "actual": "support"
+  },
+  {
+    "id": "delay-yet",
+    "expected": "support",
+    "actual": "support"
+  },
+  {
+    "id": "denial-want",
+    "expected": "normal",
+    "actual": "normal"
+  },
+  {
+    "id": "denial-plan",
+    "expected": "normal",
+    "actual": "normal"
+  },
+  {
+    "id": "denial-will",
+    "expected": "normal",
+    "actual": "normal"
+  },
+  {
+    "id": "denial-current",
+    "expected": "normal",
+    "actual": "normal"
+  },
+  {
+    "id": "history",
+    "expected": "normal",
+    "actual": "normal"
+  },
+  {
+    "id": "quote-history",
+    "expected": "normal",
+    "actual": "normal"
+  },
+  {
+    "id": "affirmative",
+    "expected": "support",
+    "actual": "support"
+  },
+  {
+    "id": "delay-will-kill",
+    "expected": "support",
+    "actual": "support"
+  },
+  {
+    "id": "denial-will-kill",
+    "expected": "normal",
+    "actual": "normal"
+  },
+  {
+    "id": "audit-before-goodbye",
+    "expected": "support",
+    "actual": "support"
+  },
+  {
+    "id": "denial-harm",
+    "expected": "normal",
+    "actual": "normal"
+  },
+  {
+    "id": "denial-unrelated-before",
+    "expected": "normal",
+    "actual": "normal"
+  }
+]

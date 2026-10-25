@@ -1,0 +1,26 @@
+{
+  "development": [
+    "decline_breathing-2",
+    "optional_activity-2",
+    "limited_time-1",
+    "correct_feeling-2",
+    "listen_only-1",
+    "correct_feeling-1",
+    "commute_decompress-2",
+    "uncertain_goal-1",
+    "source_walk-1",
+    "positive_solitude-1"
+  ],
+  "holdout": [
+    "negative_stress-2",
+    "source_correction-1",
+    "privacy_boundary-1",
+    "rest_permission-1",
+    "stop_request-2",
+    "routine_change-2",
+    "creative_block-1",
+    "physical_limits-1",
+    "source_no_outcome-2",
+    "ordinary_idiom-1"
+  ]
+}

@@ -1,0 +1,37 @@
+........FF                                                               [100%]
+=================================== FAILURES ===================================
+_______ test_missing_summary_does_not_hide_a_confirmed_critical_failure ________
+
+cohort = (PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1065/test_missing_summary...vidence': ['Example']}, {'id': 'support-1', 'verdict': 'pass', 'rationale': 'Fixture only', 'evidence': ['Example']}]})
+
+    def test_missing_summary_does_not_hide_a_confirmed_critical_failure(cohort):
+        bundle, _, review = cohort
+        (bundle / "REPORT.md").unlink()
+        review["sampled"][0]["grade"] = grade(5, "fail")
+>       assert qd.decision(bundle, review)["decision"] == "FAIL"
+E       AssertionError: assert 'BLOCKED' == 'FAIL'
+E         
+E         - FAIL
+E         + BLOCKED
+
+tests/test_quality_decision.py:137: AssertionError
+___ test_invalid_human_grades_block_instead_of_becoming_observed_low_scores ____
+
+cohort = (PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1065/test_invalid_human_g...vidence': ['Example']}, {'id': 'support-1', 'verdict': 'pass', 'rationale': 'Fixture only', 'evidence': ['Example']}]})
+
+    def test_invalid_human_grades_block_instead_of_becoming_observed_low_scores(cohort):
+        bundle, _, review = cohort
+        for row in review["sampled"][:3]:
+            row["grade"] = None
+        result = qd.decision(bundle, review)
+>       assert result["decision"] == "BLOCKED"
+E       AssertionError: assert 'FAIL' == 'BLOCKED'
+E         
+E         - BLOCKED
+E         + FAIL
+
+tests/test_quality_decision.py:145: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_quality_decision.py::test_missing_summary_does_not_hide_a_confirmed_critical_failure
+FAILED tests/test_quality_decision.py::test_invalid_human_grades_block_instead_of_becoming_observed_low_scores
+2 failed, 8 passed in 0.41s

@@ -1,0 +1,33 @@
+E501 Line too long (111 > 110)
+  --> scripts/prepare_quality_review.py:58:111
+   |
+56 |                    "cases": [{**context(i), "original_judge_grade": indexed[i].get("grade")}
+57 |                              for i in additional_ids],
+58 |                    "instruction": "Review every support/flagged/invalid case and any failure the judge missed."
+   |                                                                                                               ^
+59 |                                   " Do not overwrite blind grades or original model records."}
+60 |     template = {**binding, "status": "BLANK_TEMPLATE_NOT_HUMAN_REVIEW",
+   |
+
+E501 Line too long (117 > 110)
+  --> scripts/prepare_quality_review.py:89:111
+   |
+87 |         receipt = export_review(args.bundle, args.output)
+88 |     except (ValueError, FileExistsError):
+89 |         raise SystemExit("Review export stopped: check original reports, identities and a new output path") from None
+   |                                                                                                               ^^^^^^^
+90 |     print(f"Prepared{receipt['sample_denominator']} blind cases; human review remains NOT_RUN.")
+   |
+
+E501 Line too long (111 > 110)
+   --> scripts/quality_decision.py:128:111
+    |
+126 |                 or reviewer.get("independent") is not True
+127 |                 or reviewer.get("blind_scores_recorded_before_judge") is not True):
+128 |             blocked.append("Human review source/output binding, identity, independence or blind order missing")
+    |                                                                                                               ^
+129 |         else:
+130 |             result["human_review"] = "SUPPLIED"
+    |
+
+Found 3 errors.

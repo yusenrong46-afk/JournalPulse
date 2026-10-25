@@ -23,7 +23,10 @@ from test_journals_api import settings as journal_settings
 from test_research_beta_api import USER_A, reflection_payload
 from test_research_beta_api import settings as reflection_settings
 
-RISK = ["I intend to end my life tonight.", "I'm considering suicide.", "I'm gonna unalive myself tonight."]
+RISK = ["I intend to end my life tonight.", "I'm considering suicide.", "I'm gonna unalive myself tonight.",
+        "I don't want to die until tonight.", "I'm not planning to kill myself until tomorrow.",
+        "I won't hurt myself until tonight.", "I'm not suicidal yet.",
+        "I won't kill myself until tonight.", "I will not harm myself before I say goodbye"]
 
 
 class ForbiddenProvider:

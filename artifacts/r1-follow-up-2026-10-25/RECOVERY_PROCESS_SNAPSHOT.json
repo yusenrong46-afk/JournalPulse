@@ -1,0 +1,10 @@
+{
+  "observed_at": "2026-10-25T12:08:39.252805+00:00",
+  "process_pids": [
+    7304,
+    7312
+  ],
+  "process_alive": true,
+  "verification_receipts": [],
+  "terminal_input_or_output_read": false
+}

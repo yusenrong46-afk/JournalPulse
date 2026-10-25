@@ -1,0 +1,57 @@
+
+> journalpulse-web@1.0.0 test:unit
+> vitest run --reporter=default --reporter=json --outputFile=../artifacts/next-stage-2026-10-24/frontend-results.json
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.11 /Users/thomas/Documents/ChatGPT/JP/web
+
+ ✓ tests/unit/account-data-erasure.test.ts (15 tests) 69ms
+ ✓ tests/unit/api-data-revision.test.ts (16 tests) 284ms
+ ✓ tests/unit/journey-workspace.test.tsx (7 tests) 302ms
+ ✓ tests/unit/journal-workspace.test.tsx (11 tests) 361ms
+ ✓ tests/unit/activity-session.test.tsx (14 tests) 328ms
+ ✓ tests/unit/journal-delete-order.test.tsx (7 tests) 866ms
+   ✓ confirmed deletion prevents replay after a committed save loses its response  570ms
+ ✓ tests/unit/api-cancellation.test.ts (9 tests) 91ms
+ ✓ tests/unit/close-account.test.tsx (5 tests) 137ms
+ ✓ tests/unit/discovery.test.ts (6 tests) 17ms
+ ✓ tests/unit/account-isolation.test.tsx (3 tests) 64ms
+ ✓ tests/unit/api-auth-deadline.test.ts (10 tests) 19ms
+ ✓ tests/unit/check-in-workspace.test.tsx (5 tests) 236ms
+ ✓ tests/unit/conversation.test.ts (9 tests) 5ms
+ ✓ tests/unit/login-workspace.test.tsx (4 tests) 162ms
+ ✓ tests/unit/api.test.ts (4 tests) 13ms
+ ✓ tests/unit/sentinel-activity-regressions.test.tsx (9 tests) 691ms
+ ✓ tests/unit/public-access.test.tsx (8 tests) 82ms
+ ✓ tests/unit/discovery-workspace.test.tsx (5 tests) 700ms
+     ✓ prefills only a general goal and requires fresh search consent  337ms
+ ✓ tests/unit/api-account-epoch.test.ts (3 tests) 65ms
+ ✓ tests/unit/activity-discovery.test.tsx (1 test) 92ms
+ ✓ tests/unit/luna-motion.test.ts (11 tests) 4ms
+ ✓ tests/unit/chat-keyboard-review.test.tsx (7 tests) 1073ms
+     ✓ opening privacy moves keyboard focus into its modal  419ms
+ ✓ tests/unit/journal-reflection-deadline.test.ts (3 tests) 14ms
+ ✓ tests/unit/journal-chat.test.tsx (32 tests) 2767ms
+     ✓ returning to a committed delayed turn does not restore submitted wording as a fresh draft  439ms
+     ✓ an unresolved submitted turn returns with its original retry receipt  493ms
+ ✓ tests/unit/account-settings.test.tsx (2 tests) 111ms
+ ✓ tests/unit/tab-session.test.ts (3 tests) 5ms
+ ✓ tests/unit/supabase.test.ts (2 tests) 6ms
+ ✓ tests/unit/feelings.test.ts (4 tests) 4ms
+ ✓ tests/unit/preferences.test.tsx (3 tests) 39ms
+ ✓ tests/unit/action-timer-recovery.test.tsx (2 tests) 88ms
+ ✓ tests/unit/reminders.test.ts (1 test) 4ms
+ ✓ tests/unit/reflection-draft.test.ts (1 test) 12ms
+ ✓ tests/unit/moon-days.test.ts (2 tests) 16ms
+ ✓ tests/unit/route-path.test.ts (2 tests) 2ms
+ ✓ tests/unit/optional-onboarding.test.tsx (4 tests) 76ms
+
+ Test Files  35 passed (35)
+      Tests  230 passed (230)
+   Start at  14:55:14
+   Duration  8.60s (transform 2.10s, setup 1.88s, import 18.47s, tests 8.80s, environment 37.47s)
+
+JSON report written to /Users/thomas/Documents/ChatGPT/JP/artifacts/next-stage-2026-10-24/frontend-results.json

@@ -1,0 +1,639 @@
+{
+  "deployment_id": "dpl_2j2ihbjwUZVZbdAuyTSMxYZJerE9",
+  "metadata_file_count": 95,
+  "current_file_comparison": [
+    {
+      "path": "app.py",
+      "deployment_uid": "9127ed62834760be8865d988c9ad19ad1cf651ab",
+      "current_content_sha1": "9127ed62834760be8865d988c9ad19ad1cf651ab",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "assets/resources/catalog.json",
+      "deployment_uid": "83ed5c0de175304b7347783405ae82b9afd60232",
+      "current_content_sha1": "83ed5c0de175304b7347783405ae82b9afd60232",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "pyproject.toml",
+      "deployment_uid": "cd5c72ea09c9c2d0f3e1ba3e61dc02d4acf5353a",
+      "current_content_sha1": "cd5c72ea09c9c2d0f3e1ba3e61dc02d4acf5353a",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "scripts/build_vercel_web.py",
+      "deployment_uid": "9401557cb208b85d2600a723c0bed50f3e42e9ef",
+      "current_content_sha1": "c0af256f2c99dc4c4e1d94b412c51b651ddbc042",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "src/journalpulse/__init__.py",
+      "deployment_uid": "ed58f36a422faa12c94dca55b973d5d0245373f6",
+      "current_content_sha1": "ed58f36a422faa12c94dca55b973d5d0245373f6",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/activity_chat.py",
+      "deployment_uid": "afa434caf05bd4445b571527e6374d65f96b3c13",
+      "current_content_sha1": "afa434caf05bd4445b571527e6374d65f96b3c13",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/activity_lifecycle.py",
+      "deployment_uid": "1c0f53acd7e3c566de18ce7344355894f12d4df9",
+      "current_content_sha1": "1c0f53acd7e3c566de18ce7344355894f12d4df9",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/activity_models.py",
+      "deployment_uid": "b5804abecdad22f9fe556404dab203d8ae7a9332",
+      "current_content_sha1": "b5804abecdad22f9fe556404dab203d8ae7a9332",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/activity_resources.py",
+      "deployment_uid": "cdcb80955384b05be20d39314970258a2cfd4f48",
+      "current_content_sha1": "cdcb80955384b05be20d39314970258a2cfd4f48",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/activity_sessions.py",
+      "deployment_uid": "cf6ff5782040f82e30218805c86205e55d63d298",
+      "current_content_sha1": "cf6ff5782040f82e30218805c86205e55d63d298",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/api.py",
+      "deployment_uid": "1ea8f5a723a9bf8d96b5ec4d14e2ea68bad9399c",
+      "current_content_sha1": "8438d3bccedc9e866d3511edbf794799161301d9",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "src/journalpulse/auth.py",
+      "deployment_uid": "31c87b8ee5e5c30aba01f863926455e0735cd39d",
+      "current_content_sha1": "31c87b8ee5e5c30aba01f863926455e0735cd39d",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/config.py",
+      "deployment_uid": "da67e9437b6be20ce61159d4dafa352d00cb4556",
+      "current_content_sha1": "2a2842057781c47853c608f06665c060658f6260",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "src/journalpulse/conversations.py",
+      "deployment_uid": "d9c9de1ce06bdfa6505fa98a1febb5a898c2b8df",
+      "current_content_sha1": "d9c9de1ce06bdfa6505fa98a1febb5a898c2b8df",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/discovery.py",
+      "deployment_uid": "c75dc5dfde5e3659096c766e07a3475e7e54d8a9",
+      "current_content_sha1": "c75dc5dfde5e3659096c766e07a3475e7e54d8a9",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/discovery_models.py",
+      "deployment_uid": "3925c3d8bee189eef0315b1d43bda23d050a7231",
+      "current_content_sha1": "3925c3d8bee189eef0315b1d43bda23d050a7231",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/discovery_prompts.py",
+      "deployment_uid": "cb387e6519b2957fcfa376737d15046860594c98",
+      "current_content_sha1": "cb387e6519b2957fcfa376737d15046860594c98",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/domain.py",
+      "deployment_uid": "0fa951a6192691a1cb1f0699891c3856584912af",
+      "current_content_sha1": "0fa951a6192691a1cb1f0699891c3856584912af",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/erasure.py",
+      "deployment_uid": "e1c26145b92e8a5ae017ee30f036e8e1962d240f",
+      "current_content_sha1": "885dd1754344dc386ab9ce3748729b6d3a22824f",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "src/journalpulse/evaluation.py",
+      "deployment_uid": "7243e5f3f395f778331947bf1ac824c080c97afa",
+      "current_content_sha1": "7243e5f3f395f778331947bf1ac824c080c97afa",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/guided.py",
+      "deployment_uid": "7581aa8407ab175ece5d200b86708dd7905c31b0",
+      "current_content_sha1": "7581aa8407ab175ece5d200b86708dd7905c31b0",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/guided_action.py",
+      "deployment_uid": "cbfa05f787231d75b69eb8d116d71c9c653899aa",
+      "current_content_sha1": "cbfa05f787231d75b69eb8d116d71c9c653899aa",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/guided_evaluation.py",
+      "deployment_uid": "ef429ff785f36e394f49a6f63e28a6add8501736",
+      "current_content_sha1": "ef429ff785f36e394f49a6f63e28a6add8501736",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/http_clients.py",
+      "deployment_uid": "d62c0458ce31a5e91b9116ca5094f29f4f1fff46",
+      "current_content_sha1": "d62c0458ce31a5e91b9116ca5094f29f4f1fff46",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/inline_discovery.py",
+      "deployment_uid": "8ae7b2b4d70f46fa0777fd57b032c63856767a77",
+      "current_content_sha1": "8ae7b2b4d70f46fa0777fd57b032c63856767a77",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/intelligence.py",
+      "deployment_uid": "a5be63d4f717acc7262f82beb73e785e64a359c7",
+      "current_content_sha1": "a5be63d4f717acc7262f82beb73e785e64a359c7",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/journal_models.py",
+      "deployment_uid": "f135c9625d6232d4d744a0f0e248c4a4c9290e47",
+      "current_content_sha1": "f135c9625d6232d4d744a0f0e248c4a4c9290e47",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/journals.py",
+      "deployment_uid": "08233aebbc307f6a5c4d37de3d75cfe398fc248c",
+      "current_content_sha1": "08233aebbc307f6a5c4d37de3d75cfe398fc248c",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/middleware.py",
+      "deployment_uid": "5700829f076ede4ab02606d68488d71e6706aca2",
+      "current_content_sha1": "5700829f076ede4ab02606d68488d71e6706aca2",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/persistence.py",
+      "deployment_uid": "b0ee166b558cd4aa53c3fd5b8ef9de2f769b9cb1",
+      "current_content_sha1": "cc953a9cf9d7b08f72a87af7c2107f41a1807a93",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "src/journalpulse/policy.py",
+      "deployment_uid": "cf5c86fd939ab9028d82ca5ff439078f6e1f8a30",
+      "current_content_sha1": "cf5c86fd939ab9028d82ca5ff439078f6e1f8a30",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/reflection_prompts.py",
+      "deployment_uid": "587d8807c890de3795cfc97980d2021e9497da07",
+      "current_content_sha1": "587d8807c890de3795cfc97980d2021e9497da07",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/resources.py",
+      "deployment_uid": "271b9dd56536ab5a6e0e022c553797bb88ae3283",
+      "current_content_sha1": "271b9dd56536ab5a6e0e022c553797bb88ae3283",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/safety.py",
+      "deployment_uid": "5b7fe70a65fe9e90d79947e05accb7137a7a3a98",
+      "current_content_sha1": "6bd6e60968fe67c57c614c334c4f0e9204b17d22",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "src/journalpulse/self_report.py",
+      "deployment_uid": "8d90d19c3d54c1f6ee01f1b92b259291d7560057",
+      "current_content_sha1": "8d90d19c3d54c1f6ee01f1b92b259291d7560057",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/signing.py",
+      "deployment_uid": "55b56e459506bceb7e1e76102d0b9b36a2c1f848",
+      "current_content_sha1": "55b56e459506bceb7e1e76102d0b9b36a2c1f848",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "src/journalpulse/web_security.py",
+      "deployment_uid": "8745c0e6bb77384c481b19ea1cbb5b6ca7faa364",
+      "current_content_sha1": "8745c0e6bb77384c481b19ea1cbb5b6ca7faa364",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "uv.lock",
+      "deployment_uid": "5792194a34399ca8ce457b46a0d76c6f65f542e3",
+      "current_content_sha1": "5792194a34399ca8ce457b46a0d76c6f65f542e3",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/app/error.tsx",
+      "deployment_uid": "c82e1111050351dea8c3994933af5fbab3b872dc",
+      "current_content_sha1": "c82e1111050351dea8c3994933af5fbab3b872dc",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/app/globals.css",
+      "deployment_uid": "ecc97729f6c245f8d5b65c9b9428dcba114920ba",
+      "current_content_sha1": "129939102bf4395cdb771f246d9d615dc299c09e",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "web/app/icon.svg",
+      "deployment_uid": "428d71f62b859ade6d4cd69a685c3d5ee460b58c",
+      "current_content_sha1": "428d71f62b859ade6d4cd69a685c3d5ee460b58c",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/app/layout.tsx",
+      "deployment_uid": "a7083c8e7f595deb6361eb4b34d47eda6dace4bd",
+      "current_content_sha1": "a7083c8e7f595deb6361eb4b34d47eda6dace4bd",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/app/loading.tsx",
+      "deployment_uid": "b105a5f8137383e94c0519f3aab6055cde39f220",
+      "current_content_sha1": "b105a5f8137383e94c0519f3aab6055cde39f220",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/app/manifest.ts",
+      "deployment_uid": "d76e084965e78290c33daeca7a74375fc70b030c",
+      "current_content_sha1": "d76e084965e78290c33daeca7a74375fc70b030c",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/app/not-found.tsx",
+      "deployment_uid": "863edc3517fcdb37c17c29428fc26ae06b8c3d10",
+      "current_content_sha1": "863edc3517fcdb37c17c29428fc26ae06b8c3d10",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/app/page.tsx",
+      "deployment_uid": "453092b7ae01c08a892e3db7a38ec15edc56c9ec",
+      "current_content_sha1": "453092b7ae01c08a892e3db7a38ec15edc56c9ec",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/app/paper-lamp.css",
+      "deployment_uid": "00dda04117366a995b0a8ec53c2c34b4f1b73cd5",
+      "current_content_sha1": "00dda04117366a995b0a8ec53c2c34b4f1b73cd5",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/app/quiet-nook.css",
+      "deployment_uid": "7aef45f84e79929c7c7545a7afc82c5ad9975b1b",
+      "current_content_sha1": "7aef45f84e79929c7c7545a7afc82c5ad9975b1b",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/action-timer.tsx",
+      "deployment_uid": "7954fbb328282ca00823a40965e571e5694364c1",
+      "current_content_sha1": "7954fbb328282ca00823a40965e571e5694364c1",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/activity-bar.tsx",
+      "deployment_uid": "273029ae2a78f5067eeb15c830e7cd58fedf22a9",
+      "current_content_sha1": "273029ae2a78f5067eeb15c830e7cd58fedf22a9",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/activity-preferences.tsx",
+      "deployment_uid": "d5bc02c4cefe12a17b4e0fa7e8c909b4fbd01545",
+      "current_content_sha1": "d5bc02c4cefe12a17b4e0fa7e8c909b4fbd01545",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/activity-session-discovery.tsx",
+      "deployment_uid": "380090e13d846de360b68343650e992440e72e6e",
+      "current_content_sha1": "380090e13d846de360b68343650e992440e72e6e",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/activity-session-panel.tsx",
+      "deployment_uid": "a7953ac9d329b5b774dc27993390766b52bb1e1a",
+      "current_content_sha1": "a7953ac9d329b5b774dc27993390766b52bb1e1a",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/activity-session-workspace.tsx",
+      "deployment_uid": "dcf742df0f44b4602ab15fad66040315f472c49e",
+      "current_content_sha1": "dcf742df0f44b4602ab15fad66040315f472c49e",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/ambient.tsx",
+      "deployment_uid": "297aaca913a34ec8a9b3912324965cf489ec1b4f",
+      "current_content_sha1": "297aaca913a34ec8a9b3912324965cf489ec1b4f",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/app-shell.tsx",
+      "deployment_uid": "b554af7e347712a679ba1bbcd841d0f3d8a70e4b",
+      "current_content_sha1": "b554af7e347712a679ba1bbcd841d0f3d8a70e4b",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/auth-boundary.tsx",
+      "deployment_uid": "baae88ae381a6fc57a7044d7953d1ad578997af1",
+      "current_content_sha1": "baae88ae381a6fc57a7044d7953d1ad578997af1",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/discovery-availability.tsx",
+      "deployment_uid": "3cc30f49ab02a781cab7296c172cfee48fe1ec03",
+      "current_content_sha1": "3cc30f49ab02a781cab7296c172cfee48fe1ec03",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/luna.tsx",
+      "deployment_uid": "0b0822633bf9882e75c6364f8b8a1c87ff737279",
+      "current_content_sha1": "0b0822633bf9882e75c6364f8b8a1c87ff737279",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/moon-mark.tsx",
+      "deployment_uid": "85443abb26663943cb539b2eaedf4c1f91394ff2",
+      "current_content_sha1": "85443abb26663943cb539b2eaedf4c1f91394ff2",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/nav-icon.tsx",
+      "deployment_uid": "ac3317cffafa40e1fa3a922674855c7cf5a8f616",
+      "current_content_sha1": "ac3317cffafa40e1fa3a922674855c7cf5a8f616",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/offer-scene.tsx",
+      "deployment_uid": "3e0a4fb832252571434e468d0fa47eb3dbd31699",
+      "current_content_sha1": "3e0a4fb832252571434e468d0fa47eb3dbd31699",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/plant.tsx",
+      "deployment_uid": "76637d0512ae8f528af680ebe19afbbe37583301",
+      "current_content_sha1": "76637d0512ae8f528af680ebe19afbbe37583301",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/public-information.tsx",
+      "deployment_uid": "8f5a212b55fc4cb6bf8c90dfab37659e729f8145",
+      "current_content_sha1": "d1f0662685bc3b8044d16486f15b86648159adf0",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "web/components/redirect.tsx",
+      "deployment_uid": "625d7189fd028e2ef378cf9f0ec3c96f74fc584b",
+      "current_content_sha1": "625d7189fd028e2ef378cf9f0ec3c96f74fc584b",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/reviewed-activities.tsx",
+      "deployment_uid": "9f0d1f06d4479573f8a01e1046094234b2703f9d",
+      "current_content_sha1": "9f0d1f06d4479573f8a01e1046094234b2703f9d",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/service-worker.tsx",
+      "deployment_uid": "5d6229f2441b2cd500b4b0815eb2067c4abeb910",
+      "current_content_sha1": "5d6229f2441b2cd500b4b0815eb2067c4abeb910",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/components/system-status.tsx",
+      "deployment_uid": "29a5edb5848432ada39c8c96e9f64a2967fb8d13",
+      "current_content_sha1": "29a5edb5848432ada39c8c96e9f64a2967fb8d13",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/account-data.ts",
+      "deployment_uid": "8fab52d8ba3d8ba325910000cba89bc8847b06c5",
+      "current_content_sha1": "8fab52d8ba3d8ba325910000cba89bc8847b06c5",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/account-storage.ts",
+      "deployment_uid": "ac7b95e4429770c236617800de98744eeda19d8d",
+      "current_content_sha1": "6e7c8468457c4c6eed60648f69b810467ec5819b",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "web/lib/activity-card.ts",
+      "deployment_uid": "d096e9278f4d57de7ea02173f6455961ed74b774",
+      "current_content_sha1": "d096e9278f4d57de7ea02173f6455961ed74b774",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/activity-session.ts",
+      "deployment_uid": "76b639d67b862dd4517a055827ab334d316c544d",
+      "current_content_sha1": "76b639d67b862dd4517a055827ab334d316c544d",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/api.ts",
+      "deployment_uid": "57e5a03cd0cce27c94bbd7b52794aad5bea026d5",
+      "current_content_sha1": "1de016918f6b827098b142c0efa4d03e49536bd7",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "web/lib/capabilities.ts",
+      "deployment_uid": "2ecec36cd703bf7739762cd792e10d62b2be245b",
+      "current_content_sha1": "2ecec36cd703bf7739762cd792e10d62b2be245b",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/conversation.ts",
+      "deployment_uid": "072c67bd2951e4d20fab38b099f30468e8026689",
+      "current_content_sha1": "072c67bd2951e4d20fab38b099f30468e8026689",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/discovery.ts",
+      "deployment_uid": "69a5b1e44bf12d2954367a9924a9520fbfcc7926",
+      "current_content_sha1": "69a5b1e44bf12d2954367a9924a9520fbfcc7926",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/feelings.ts",
+      "deployment_uid": "3bbb8da5fea2eb57fa15f01f35731bcdf48f7fbb",
+      "current_content_sha1": "3bbb8da5fea2eb57fa15f01f35731bcdf48f7fbb",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/garden.ts",
+      "deployment_uid": "864adf2e7f6b2dd9a9115bdbd5e7109a2338f2c8",
+      "current_content_sha1": "864adf2e7f6b2dd9a9115bdbd5e7109a2338f2c8",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/generated-api.ts",
+      "deployment_uid": "961b2c8112b892e3d254e2864aef0c5804748c07",
+      "current_content_sha1": "38c58a6720f58bec840a9697a6732f5432bec3d4",
+      "matches_current_content_sha1": false
+    },
+    {
+      "path": "web/lib/journal-save.ts",
+      "deployment_uid": "77201f87271ce85033b81104d00c4c6671cd4b08",
+      "current_content_sha1": "77201f87271ce85033b81104d00c4c6671cd4b08",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/journal-types.ts",
+      "deployment_uid": "6cff279b97f4658f514a97930f137180c2398d76",
+      "current_content_sha1": "6cff279b97f4658f514a97930f137180c2398d76",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/journal.ts",
+      "deployment_uid": "c2b0f11afd81136633cb65411a3bf53fbce7f2ea",
+      "current_content_sha1": "c2b0f11afd81136633cb65411a3bf53fbce7f2ea",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/luna-motion.ts",
+      "deployment_uid": "a5041fad0abe6130a1256ea7fdf7bbc756ecc836",
+      "current_content_sha1": "a5041fad0abe6130a1256ea7fdf7bbc756ecc836",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/moon-days.ts",
+      "deployment_uid": "1e5393f7549fbe49355bb147bfe226bb3e700de6",
+      "current_content_sha1": "1e5393f7549fbe49355bb147bfe226bb3e700de6",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/preferences.ts",
+      "deployment_uid": "11ab3c9f08bb27c294ef5e3ac465427e65180fb8",
+      "current_content_sha1": "11ab3c9f08bb27c294ef5e3ac465427e65180fb8",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/public-routes.ts",
+      "deployment_uid": "eb2b307ea272ccfee9814ace3f482d1c8de068af",
+      "current_content_sha1": "eb2b307ea272ccfee9814ace3f482d1c8de068af",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/reflection-draft.ts",
+      "deployment_uid": "a3fad798ffc22a05686723469b1e21d46404cade",
+      "current_content_sha1": "a3fad798ffc22a05686723469b1e21d46404cade",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/reminders.ts",
+      "deployment_uid": "1f44e8251551e0dbbe43206998569dbe101f6532",
+      "current_content_sha1": "1f44e8251551e0dbbe43206998569dbe101f6532",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/request-deadlines.ts",
+      "deployment_uid": "fda50dca4cd5c0a2a8e923ddd52b0006714cfa5e",
+      "current_content_sha1": "fda50dca4cd5c0a2a8e923ddd52b0006714cfa5e",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/route-path.ts",
+      "deployment_uid": "7ca05e5bc93c9f7c25bd0ec4d94cd3d79b28329b",
+      "current_content_sha1": "7ca05e5bc93c9f7c25bd0ec4d94cd3d79b28329b",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/supabase.ts",
+      "deployment_uid": "32c2abdbc6456073be3fbc90ef3653788bb9ee17",
+      "current_content_sha1": "32c2abdbc6456073be3fbc90ef3653788bb9ee17",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/tab-session.ts",
+      "deployment_uid": "0f05bb24b0ce382ab4683f346885611a7fce4c0c",
+      "current_content_sha1": "0f05bb24b0ce382ab4683f346885611a7fce4c0c",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/time-of-day.ts",
+      "deployment_uid": "7fd459e0b1a57f94ba66cce8aca3786ac917ecc9",
+      "current_content_sha1": "7fd459e0b1a57f94ba66cce8aca3786ac917ecc9",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/types.ts",
+      "deployment_uid": "8f2a22a02de510115845e9e714223a8d1b2ddbb6",
+      "current_content_sha1": "8f2a22a02de510115845e9e714223a8d1b2ddbb6",
+      "matches_current_content_sha1": true
+    },
+    {
+      "path": "web/lib/use-chat-scroll.ts",
+      "deployment_uid": "5ee2ac9209a209c4d86c33e04cea5f790e646e9c",
+      "current_content_sha1": "5ee2ac9209a209c4d86c33e04cea5f790e646e9c",
+      "matches_current_content_sha1": true
+    }
+  ],
+  "historical_comparisons": [
+    {
+      "revision": "4154de8",
+      "matching_content_sha1_count": 95,
+      "different_content_sha1_paths": [],
+      "not_in_revision": []
+    },
+    {
+      "revision": "1b7c4cc",
+      "matching_content_sha1_count": 86,
+      "different_content_sha1_paths": [
+        "src/journalpulse/api.py",
+        "src/journalpulse/config.py",
+        "src/journalpulse/erasure.py",
+        "src/journalpulse/persistence.py",
+        "src/journalpulse/safety.py",
+        "web/app/globals.css",
+        "web/lib/account-storage.ts",
+        "web/lib/api.ts",
+        "web/lib/generated-api.ts"
+      ],
+      "not_in_revision": []
+    },
+    {
+      "revision": "be14ffc",
+      "matching_content_sha1_count": 84,
+      "different_content_sha1_paths": [
+        "scripts/build_vercel_web.py",
+        "src/journalpulse/api.py",
+        "src/journalpulse/config.py",
+        "src/journalpulse/erasure.py",
+        "src/journalpulse/persistence.py",
+        "src/journalpulse/safety.py",
+        "web/app/globals.css",
+        "web/components/public-information.tsx",
+        "web/lib/account-storage.ts",
+        "web/lib/api.ts",
+        "web/lib/generated-api.ts"
+      ],
+      "not_in_revision": []
+    },
+    {
+      "revision": "HEAD",
+      "matching_content_sha1_count": 84,
+      "different_content_sha1_paths": [
+        "scripts/build_vercel_web.py",
+        "src/journalpulse/api.py",
+        "src/journalpulse/config.py",
+        "src/journalpulse/erasure.py",
+        "src/journalpulse/persistence.py",
+        "src/journalpulse/safety.py",
+        "web/app/globals.css",
+        "web/components/public-information.tsx",
+        "web/lib/account-storage.ts",
+        "web/lib/api.ts",
+        "web/lib/generated-api.ts"
+      ],
+      "not_in_revision": []
+    }
+  ],
+  "interpretation": "Observed file IDs compare as SHA1 content digests on known local anchors; this is a metadata-based source comparison, not an asserted Git commit or deployed-candidate qualification.",
+  "deployment_git_commit": null,
+  "deployed_candidate_verified": false
+}

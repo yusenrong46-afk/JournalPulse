@@ -1,0 +1,18 @@
+{
+  "ledger": "RECONCILED_FIRST_INITIALIZATION",
+  "ledger_receipt": "artifacts/next-stage-2026-10-24/LEDGER_RECONCILIATION_COMPLETE.json",
+  "authoritative_path": "/Users/thomas/Documents/ChatGPT/JP/artifacts/reliability-2026-10-14/quality-budget.json",
+  "cap_usd": "10",
+  "attempts": 0,
+  "recorded_spend_usd": "0",
+  "remaining_protocol_allowance_usd": "10",
+  "provider_balance": "NOT_CHECKED",
+  "paid_evaluation": "NOT_RUN",
+  "recovery": "READY_FOR_USER_HIDDEN_TERMINAL_INPUT",
+  "recovery_started": false,
+  "hosted_closure": "BLOCKED",
+  "independent_human_review": "NOT_RUN",
+  "release": "BLOCKED",
+  "previous_sealed_release_evidence": "artifacts/next-stage-2026-10-24/RELEASE_EVIDENCE.json",
+  "note": "Incremental gate update; previous sealed evidence and frozen bundles retained unchanged."
+}

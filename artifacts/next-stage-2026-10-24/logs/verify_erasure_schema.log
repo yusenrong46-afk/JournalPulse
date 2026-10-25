@@ -1,0 +1,48 @@
+ok: chat: retired chat ID cannot be recreated
+ok: chat: delayed acceptance cannot restore a deleted summary
+ok: chat: delayed offer cannot attach to a deleted chat
+ok: chat: pre-read preference targets no replacement
+ok: chat: old activity start is rejected
+ok: chat: old activity report is rejected
+ok: chat: old follow-up claim is rejected
+ok: chat: session ID cannot be recreated on a new chat
+ok: chat: no old summary was stored
+ok: chat: no deleted message was restored
+ok: source: retired chat ID cannot be recreated
+ok: source: delayed acceptance cannot restore a deleted summary
+ok: source: delayed offer cannot attach to a deleted chat
+ok: source: pre-read preference targets no replacement
+ok: source: old activity start is rejected
+ok: source: old activity report is rejected
+ok: source: old follow-up claim is rejected
+ok: source: session ID cannot be recreated on a new chat
+ok: source: no old summary was stored
+ok: source: no deleted message was restored
+ok: account: retired chat ID cannot be recreated
+ok: account: delayed acceptance cannot restore a deleted summary
+ok: account: delayed offer cannot attach to a deleted chat
+ok: account: pre-read preference targets no replacement
+ok: account: old activity start is rejected
+ok: account: old activity report is rejected
+ok: account: old follow-up claim is rejected
+ok: account: session ID cannot be recreated on a new chat
+ok: account: no old summary was stored
+ok: account: no deleted message was restored
+ok: existing journal retry remains idempotent
+ok: entry deletion rejects a lost-response save retry
+ok: reflection deletion rejects a summary replay
+ok: account erasure retains the deleted entry marker
+ok: account erasure retains the deleted reflection marker
+ok: deletion markers are not client-readable
+ok: deletion markers cannot be reset by clients
+ok: another account cannot claim an erased global UUID
+ok: never-committed authenticated save is fenced by account erase
+ok: rejected new ID writes no text
+ok: fresh authenticated request after erasure can save
+ok: legacy readiness contract remains compatible
+ok: new readiness identifies erasure guard schema
+ok: new readiness verifies all identity triggers
+ok: auth identity deletion removes prior and cascading markers
+ok: auth identity deletion removes account revision
+ok: account erase and content writes serialize correctly in both transaction orders
+{"erasure_postgres_checks": "passed", "provider_calls": 0}

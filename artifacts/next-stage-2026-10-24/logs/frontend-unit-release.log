@@ -1,0 +1,53 @@
+
+> journalpulse-web@1.0.0 test:unit
+> vitest run --reporter=default --reporter=json --outputFile=../artifacts/next-stage-2026-10-24/frontend-release-results.json
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.12 /Users/thomas/Documents/ChatGPT/JP/web
+
+ ✓ tests/unit/account-data-erasure.test.ts (15 tests) 66ms
+ ✓ tests/unit/api-data-revision.test.ts (16 tests) 291ms
+ ✓ tests/unit/journey-workspace.test.tsx (7 tests) 273ms
+ ✓ tests/unit/activity-session.test.tsx (14 tests) 272ms
+ ✓ tests/unit/journal-workspace.test.tsx (11 tests) 326ms
+ ✓ tests/unit/journal-delete-order.test.tsx (7 tests) 786ms
+   ✓ confirmed deletion prevents replay after a committed save loses its response  547ms
+ ✓ tests/unit/api-cancellation.test.ts (9 tests) 81ms
+ ✓ tests/unit/discovery.test.ts (6 tests) 30ms
+ ✓ tests/unit/close-account.test.tsx (5 tests) 150ms
+ ✓ tests/unit/account-isolation.test.tsx (3 tests) 67ms
+ ✓ tests/unit/api-auth-deadline.test.ts (10 tests) 19ms
+ ✓ tests/unit/check-in-workspace.test.tsx (5 tests) 219ms
+ ✓ tests/unit/conversation.test.ts (9 tests) 6ms
+ ✓ tests/unit/login-workspace.test.tsx (4 tests) 125ms
+ ✓ tests/unit/sentinel-activity-regressions.test.tsx (9 tests) 639ms
+ ✓ tests/unit/api.test.ts (4 tests) 22ms
+ ✓ tests/unit/public-access.test.tsx (8 tests) 86ms
+ ✓ tests/unit/activity-discovery.test.tsx (1 test) 37ms
+ ✓ tests/unit/api-account-epoch.test.ts (3 tests) 65ms
+ ✓ tests/unit/journal-chat.test.tsx (32 tests) 1513ms
+ ✓ tests/unit/luna-motion.test.ts (11 tests) 3ms
+ ✓ tests/unit/discovery-workspace.test.tsx (5 tests) 143ms
+ ✓ tests/unit/chat-keyboard-review.test.tsx (7 tests) 519ms
+ ✓ tests/unit/account-settings.test.tsx (2 tests) 194ms
+ ✓ tests/unit/journal-reflection-deadline.test.ts (3 tests) 20ms
+ ✓ tests/unit/supabase.test.ts (2 tests) 9ms
+ ✓ tests/unit/tab-session.test.ts (3 tests) 9ms
+ ✓ tests/unit/feelings.test.ts (4 tests) 2ms
+ ✓ tests/unit/preferences.test.tsx (3 tests) 41ms
+ ✓ tests/unit/action-timer-recovery.test.tsx (2 tests) 99ms
+ ✓ tests/unit/reflection-draft.test.ts (1 test) 12ms
+ ✓ tests/unit/reminders.test.ts (1 test) 5ms
+ ✓ tests/unit/moon-days.test.ts (2 tests) 21ms
+ ✓ tests/unit/route-path.test.ts (2 tests) 1ms
+ ✓ tests/unit/optional-onboarding.test.tsx (4 tests) 68ms
+
+ Test Files  35 passed (35)
+      Tests  230 passed (230)
+   Start at  15:05:30
+   Duration  7.58s (transform 1.73s, setup 1.41s, import 17.77s, tests 6.22s, environment 32.63s)
+
+JSON report written to /Users/thomas/Documents/ChatGPT/JP/artifacts/next-stage-2026-10-24/frontend-release-results.json

@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "scope": "local fictional PostgreSQL only",
+  "assertions": [
+    "current key accepted",
+    "previous key accepted during overlap",
+    "forged signature rejected",
+    "previous key rejected after expiry",
+    "missing overlap deadline fails closed",
+    "missing previous deadline does not break current key",
+    "infinite overlap fails closed",
+    "both retained records restored",
+    "pre-backup erased content stays absent",
+    "deletion marker restored",
+    "owner isolation after restore",
+    "deleted ID replay rejected after restore",
+    "new signed writes work after restore",
+    "current signing key restored",
+    "bounded verification overlap restored"
+  ],
+  "archive_sha256": "929435ad713e4c8e4963f72a3f03478c66502da12f96bdbc982cb7aa1d431b2c",
+  "archive_bytes": 243031,
+  "hosted_backup_verified": false,
+  "hosted_pitr_verified": false,
+  "post_backup_deletion_reconciliation_verified": false
+}

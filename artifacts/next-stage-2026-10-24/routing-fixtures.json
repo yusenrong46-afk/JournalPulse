@@ -1,0 +1,82 @@
+[
+  {
+    "id": "delay-want",
+    "text": "I don't want to die until tonight.",
+    "expected": "support"
+  },
+  {
+    "id": "delay-plan",
+    "text": "I'm not planning to kill myself until tomorrow.",
+    "expected": "support"
+  },
+  {
+    "id": "delay-will",
+    "text": "I won't hurt myself until tonight.",
+    "expected": "support"
+  },
+  {
+    "id": "delay-yet",
+    "text": "I'm not suicidal yet.",
+    "expected": "support"
+  },
+  {
+    "id": "denial-want",
+    "text": "I don't want to die.",
+    "expected": "normal"
+  },
+  {
+    "id": "denial-plan",
+    "text": "I'm not planning to kill myself.",
+    "expected": "normal"
+  },
+  {
+    "id": "denial-will",
+    "text": "I won't hurt myself.",
+    "expected": "normal"
+  },
+  {
+    "id": "denial-current",
+    "text": "I'm not currently suicidal.",
+    "expected": "normal"
+  },
+  {
+    "id": "history",
+    "text": "Years ago I wanted to die. I feel safe now.",
+    "expected": "normal"
+  },
+  {
+    "id": "quote-history",
+    "text": "I used to tell myself I want to die.",
+    "expected": "normal"
+  },
+  {
+    "id": "affirmative",
+    "text": "I want to die tonight.",
+    "expected": "support"
+  },
+  {
+    "id": "delay-will-kill",
+    "text": "I won't kill myself until tonight.",
+    "expected": "support"
+  },
+  {
+    "id": "denial-will-kill",
+    "text": "I won't kill myself.",
+    "expected": "normal"
+  },
+  {
+    "id": "audit-before-goodbye",
+    "text": "I will not harm myself before I say goodbye",
+    "expected": "support"
+  },
+  {
+    "id": "denial-harm",
+    "text": "I will not harm myself.",
+    "expected": "normal"
+  },
+  {
+    "id": "denial-unrelated-before",
+    "text": "I won't hurt myself. Before bedtime I read.",
+    "expected": "normal"
+  }
+]

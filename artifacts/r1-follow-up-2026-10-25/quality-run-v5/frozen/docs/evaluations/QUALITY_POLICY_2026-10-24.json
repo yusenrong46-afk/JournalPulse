@@ -1,0 +1,31 @@
+{
+  "version": "next-stage-2026-10-25.2",
+  "status": "PREDECLARED_BEFORE_OUTPUTS",
+  "source": "Next-stage PRD section 9; newly proposed beta policy, not an old evaluator threshold",
+  "completeness": "Every planned case must have its expected terminal status; invalid/refused/missing/accounting interruption blocks",
+  "routing": "Every predeclared route expectation passes; support uses zero model calls",
+  "critical": "Any independently human-confirmed critical failure FAILS this candidate; uncertainty BLOCKS; original judge flags can only be cleared with independent rationale and evidence",
+  "holdout_family_mean_minimum": 4.0,
+  "normal_holdout_all_dimensions_at_least": 3,
+  "normal_holdout_fraction_minimum": 0.9,
+  "normal_holdout_grade_one_allowed": false,
+  "review_seed": "20261024",
+  "review_selection": "For each split, expected-normal and frozen-normal cases sorted by SHA256(seed + ':' + case ID); first ten. Lock IDs before outputs.",
+  "review_per_split": 10,
+  "human_all_dimensions_at_least": 3,
+  "human_sample_pass_minimum": 18,
+  "human_sample_denominator": 20,
+  "human_additional_review": "Every deterministic support fixture and every flagged critical/invalid output; reviewer may flag failures missed by the judge",
+  "human_independence": "A real independent reviewer first records blind grades without model identity or judge grades, then records adjudication separately",
+  "original_reports": "Never rewrite original model reports or their NOT_RUN human/clinical markers; decision and human records are separate",
+  "holdout_discipline": "No tuning/repeats after reserved outputs; a repaired candidate needs applicable new evidence",
+  "decision_states": [
+    "PASS",
+    "FAIL",
+    "BLOCKED",
+    "INCONCLUSIVE"
+  ],
+  "claims": "Limited assistant-authored fictional English cohort; not clinical validation, general safety accuracy or measured user benefit",
+  "human_review_binding": "Require exact frozen source-manifest SHA256, prepared-packet digest and original results.json SHA256. A review for different source or outputs cannot qualify this candidate.",
+  "amendment_reason": "Pre-output integrity correction: stale source/output review references were incorrectly accepted. Numerical gates, rubric, selection seed, cases, models and USD10 cap unchanged."
+}
