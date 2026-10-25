@@ -1,0 +1,38 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_human_review_from_another_source_or_output_cannot_qualify[source_manifest_sha256] _
+
+cohort = (PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1072/test_human_review_fr...ce': ['Example']}, {'id': 'support-1', 'verdict': 'pass', 'rationale': 'Fixture only', 'evidence': ['Example']}], ...})
+field = 'source_manifest_sha256'
+
+    @pytest.mark.parametrize('field', ['source_manifest_sha256', 'model_results_sha256'])
+    def test_human_review_from_another_source_or_output_cannot_qualify(cohort, field):
+        bundle, _, review = cohort
+        review[field] = '0' * 64
+>       assert qd.decision(bundle, review)['decision'] == 'BLOCKED'
+E       AssertionError: assert 'PASS' == 'BLOCKED'
+E         
+E         - BLOCKED
+E         + PASS
+
+tests/test_quality_decision.py:153: AssertionError
+_ test_human_review_from_another_source_or_output_cannot_qualify[model_results_sha256] _
+
+cohort = (PosixPath('/private/var/folders/4_/8z1gcr8s12q1hmbll3g4j70r0000gn/T/pytest-of-thomas/pytest-1072/test_human_review_fr...ce': ['Example']}, {'id': 'support-1', 'verdict': 'pass', 'rationale': 'Fixture only', 'evidence': ['Example']}], ...})
+field = 'model_results_sha256'
+
+    @pytest.mark.parametrize('field', ['source_manifest_sha256', 'model_results_sha256'])
+    def test_human_review_from_another_source_or_output_cannot_qualify(cohort, field):
+        bundle, _, review = cohort
+        review[field] = '0' * 64
+>       assert qd.decision(bundle, review)['decision'] == 'BLOCKED'
+E       AssertionError: assert 'PASS' == 'BLOCKED'
+E         
+E         - BLOCKED
+E         + PASS
+
+tests/test_quality_decision.py:153: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_quality_decision.py::test_human_review_from_another_source_or_output_cannot_qualify[source_manifest_sha256]
+FAILED tests/test_quality_decision.py::test_human_review_from_another_source_or_output_cannot_qualify[model_results_sha256]
+2 failed, 10 deselected in 0.41s

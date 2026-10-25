@@ -1,0 +1,134 @@
+{
+  "checked_at": "2026-10-25T12:02:50.538291+00:00",
+  "scope": "public readiness/configuration and endpoint metadata only; no generation or journal reads",
+  "paid_calls": 0,
+  "public_readiness": [
+    {
+      "url": "https://journalpulse-yusenrong46-9212s-projects.vercel.app/ready",
+      "status_code": 200,
+      "response": {
+        "status": "ready",
+        "checks": {
+          "configuration": "ready",
+          "resources": "ready",
+          "llm": "configured:not_probed",
+          "web": "ready",
+          "database": "reachable",
+          "schema": "schema_ready",
+          "signing": "valid",
+          "activities": "ready",
+          "retention_job": "scheduled",
+          "retention_state": "healthy",
+          "retention_last_success": "2026-10-25 12:00:00.084673+00",
+          "retention_last_run_status": "succeeded",
+          "retention_overdue": "false"
+        }
+      }
+    },
+    {
+      "url": "https://journalpulse-yusenrong46-9212s-projects.vercel.app/v1/capabilities",
+      "status_code": 200,
+      "response": {
+        "discovery": "configured"
+      }
+    },
+    {
+      "url": "https://journalpulse-inv4zs18u-yusenrong46-9212s-projects.vercel.app/ready",
+      "status_code": 200,
+      "response": {
+        "status": "ready",
+        "checks": {
+          "configuration": "ready",
+          "resources": "ready",
+          "llm": "configured:not_probed",
+          "web": "ready",
+          "database": "reachable",
+          "schema": "schema_ready",
+          "signing": "valid",
+          "activities": "ready",
+          "retention_job": "scheduled",
+          "retention_state": "healthy",
+          "retention_last_success": "2026-10-25 12:00:00.084673+00",
+          "retention_last_run_status": "succeeded",
+          "retention_overdue": "false"
+        }
+      }
+    },
+    {
+      "url": "https://journalpulse-inv4zs18u-yusenrong46-9212s-projects.vercel.app/v1/capabilities",
+      "status_code": 200,
+      "response": {
+        "discovery": "configured"
+      }
+    }
+  ],
+  "approved_endpoint_preflight": {
+    "status": "AVAILABLE",
+    "models": {
+      "openai/gpt-6-luna": {
+        "tag": "azure",
+        "provider_name": "Azure",
+        "pricing": {
+          "prompt": "0.0000001",
+          "completion": "0.0000005",
+          "web_search": "0.01",
+          "input_cache_read": "0.00000001",
+          "input_cache_write": "0.000000125",
+          "discount": 0,
+          "overrides": [
+            {
+              "min_prompt_tokens": 272000,
+              "prompt": "0.0000002",
+              "completion": "0.00000075",
+              "input_cache_read": "0.00000002",
+              "input_cache_write": "0.00000025"
+            }
+          ]
+        },
+        "supported_parameters": [
+          "reasoning",
+          "include_reasoning",
+          "max_completion_tokens",
+          "tools",
+          "tool_choice",
+          "seed",
+          "response_format",
+          "structured_outputs",
+          "verbosity",
+          "reasoning_effort"
+        ]
+      },
+      "anthropic/claude-sonnet-4.6": {
+        "tag": "amazon-bedrock/global",
+        "provider_name": "Amazon Bedrock",
+        "pricing": {
+          "prompt": "0.000003",
+          "completion": "0.000015",
+          "web_search": "0.01",
+          "input_cache_read": "0.0000003",
+          "input_cache_write": "0.00000375",
+          "input_cache_write_1h": "0.000006",
+          "discount": 0
+        },
+        "supported_parameters": [
+          "reasoning",
+          "include_reasoning",
+          "max_tokens",
+          "temperature",
+          "top_p",
+          "top_k",
+          "stop",
+          "tools",
+          "tool_choice",
+          "structured_outputs",
+          "response_format",
+          "verbosity",
+          "reasoning_effort"
+        ]
+      }
+    }
+  },
+  "candidate_stage_reservation_sum_usd": "0.72704060",
+  "candidate_stage_model_cases": 86,
+  "cost_note": "Conservative candidate-stage reservations only; excludes judge stages and is not actual spend or a guarantee the full run fits USD10."
+}

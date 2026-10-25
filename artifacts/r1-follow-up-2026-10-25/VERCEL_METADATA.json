@@ -1,0 +1,174 @@
+{
+  "project": {
+    "id": "prj_EOSYVlo1KjkdnOAT8Smm72LdgFrV",
+    "name": "journalpulse",
+    "account_id": "team_AewB0gNEwKvTOeGFr3718mnG",
+    "node_version": "24.x"
+  },
+  "production": {
+    "id": "dpl_2j2ihbjwUZVZbdAuyTSMxYZJerE9",
+    "url": "journalpulse-inv4zs18u-yusenrong46-9212s-projects.vercel.app",
+    "state": "READY",
+    "target": "production",
+    "source": "cli",
+    "aliases": [
+      "journalpulse-yusenrong46-9212s-projects.vercel.app"
+    ],
+    "commit_identity": null,
+    "commit_identity_status": "NOT_ESTABLISHED_FROM_RETURNED_METADATA"
+  },
+  "environment_names_and_types": [
+    {
+      "key": "JOURNALPULSE_SEARCH_API_KEY",
+      "type": "sensitive",
+      "target": [
+        "preview",
+        "production"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_SEARCH_ENABLED",
+      "type": "plain",
+      "target": [
+        "preview",
+        "production"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_LLM_MAX_ATTEMPTS",
+      "type": "plain",
+      "target": [
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_LLM_ENABLED",
+      "type": "plain",
+      "target": [
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_WRITE_SIGNING_KEY",
+      "type": "sensitive",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "SUPABASE_URL",
+      "type": "encrypted",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_WEB_DIST",
+      "type": "encrypted",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_ADAPTIVE_POLICY_ENABLED",
+      "type": "encrypted",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_MEMORY_ENABLED",
+      "type": "encrypted",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_CHAT_TIMEOUT_SECONDS",
+      "type": "encrypted",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_CHAT_MODEL",
+      "type": "encrypted",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_LLM_MODEL",
+      "type": "encrypted",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_LLM_ZDR",
+      "type": "encrypted",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_LLM_ENABLED",
+      "type": "encrypted",
+      "target": [
+        "production"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_LLM_API_KEY",
+      "type": "sensitive",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "SUPABASE_ANON_KEY",
+      "type": "sensitive",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    },
+    {
+      "key": "JOURNALPULSE_ENV",
+      "type": "encrypted",
+      "target": [
+        "production",
+        "preview"
+      ],
+      "git_branch": null
+    }
+  ],
+  "values_requested": false,
+  "credential_values_exposed": false
+}

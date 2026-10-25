@@ -1,0 +1,130 @@
+{
+  "observed_at": "2026-10-25T12:09:44.865970+00:00",
+  "baseline_commit": "1b7c4ccf4a3e03b44f2314b2c1379ded6db37a53",
+  "current_commit": "be14ffc6a3c4e5777d00ab2fd4518e3f7da22ae4",
+  "paired_fixture_sha256": "78aeae4c2b8198cf7b7a6a24e7210ce4e95023b77e784eca26a56f219953b9e5",
+  "paired_cases": [
+    {
+      "case_id": "delay-want",
+      "expected": "support",
+      "baseline_route": "normal",
+      "current_route": "support"
+    },
+    {
+      "case_id": "delay-plan",
+      "expected": "support",
+      "baseline_route": "normal",
+      "current_route": "support"
+    },
+    {
+      "case_id": "delay-will",
+      "expected": "support",
+      "baseline_route": "normal",
+      "current_route": "support"
+    },
+    {
+      "case_id": "delay-yet",
+      "expected": "support",
+      "baseline_route": "normal",
+      "current_route": "support"
+    },
+    {
+      "case_id": "denial-want",
+      "expected": "normal",
+      "baseline_route": "normal",
+      "current_route": "normal"
+    },
+    {
+      "case_id": "denial-plan",
+      "expected": "normal",
+      "baseline_route": "normal",
+      "current_route": "normal"
+    },
+    {
+      "case_id": "denial-will",
+      "expected": "normal",
+      "baseline_route": "normal",
+      "current_route": "normal"
+    },
+    {
+      "case_id": "denial-current",
+      "expected": "normal",
+      "baseline_route": "normal",
+      "current_route": "normal"
+    },
+    {
+      "case_id": "history",
+      "expected": "normal",
+      "baseline_route": "normal",
+      "current_route": "normal"
+    },
+    {
+      "case_id": "quote-history",
+      "expected": "normal",
+      "baseline_route": "normal",
+      "current_route": "normal"
+    },
+    {
+      "case_id": "affirmative",
+      "expected": "support",
+      "baseline_route": "support",
+      "current_route": "support"
+    },
+    {
+      "case_id": "delay-will-kill",
+      "expected": "support",
+      "baseline_route": "normal",
+      "current_route": "support"
+    },
+    {
+      "case_id": "denial-will-kill",
+      "expected": "normal",
+      "baseline_route": "normal",
+      "current_route": "normal"
+    },
+    {
+      "case_id": "audit-before-goodbye",
+      "expected": "support",
+      "baseline_route": "normal",
+      "current_route": "support"
+    },
+    {
+      "case_id": "denial-harm",
+      "expected": "normal",
+      "baseline_route": "normal",
+      "current_route": "normal"
+    },
+    {
+      "case_id": "denial-unrelated-before",
+      "expected": "normal",
+      "baseline_route": "normal",
+      "current_route": "normal"
+    }
+  ],
+  "baseline_mismatches": 6,
+  "current_mismatches": 0,
+  "introduced_mismatches": [],
+  "existing_clear_development_cases": {
+    "count": 52,
+    "current_mismatches": []
+  },
+  "unresolved_review_case_ids": [
+    "en-053",
+    "en-054",
+    "en-055",
+    "en-056",
+    "en-057",
+    "en-058",
+    "en-059",
+    "en-060"
+  ],
+  "qualifies": "Narrow paired deterministic-routing improvement only",
+  "does_not_qualify": [
+    "General English safety accuracy",
+    "Paid-model answer quality or superiority",
+    "Hosted candidate identity",
+    "Independent human or clinical validation",
+    "Real-user utility or retention"
+  ],
+  "paid_calls": 0
+}

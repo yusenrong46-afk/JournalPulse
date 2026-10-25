@@ -1,0 +1,387 @@
+{
+  "deployment_id": "dpl_2j2ihbjwUZVZbdAuyTSMxYZJerE9",
+  "source": "Authenticated Vercel deployment source-file tree; no file contents or environment secrets requested",
+  "archive_prefix_removed": "src/",
+  "files": [
+    {
+      "path": "app.py",
+      "uid": "9127ed62834760be8865d988c9ad19ad1cf651ab"
+    },
+    {
+      "path": "assets/resources/catalog.json",
+      "uid": "83ed5c0de175304b7347783405ae82b9afd60232"
+    },
+    {
+      "path": "pyproject.toml",
+      "uid": "cd5c72ea09c9c2d0f3e1ba3e61dc02d4acf5353a"
+    },
+    {
+      "path": "scripts/build_vercel_web.py",
+      "uid": "9401557cb208b85d2600a723c0bed50f3e42e9ef"
+    },
+    {
+      "path": "src/journalpulse/__init__.py",
+      "uid": "ed58f36a422faa12c94dca55b973d5d0245373f6"
+    },
+    {
+      "path": "src/journalpulse/activity_chat.py",
+      "uid": "afa434caf05bd4445b571527e6374d65f96b3c13"
+    },
+    {
+      "path": "src/journalpulse/activity_lifecycle.py",
+      "uid": "1c0f53acd7e3c566de18ce7344355894f12d4df9"
+    },
+    {
+      "path": "src/journalpulse/activity_models.py",
+      "uid": "b5804abecdad22f9fe556404dab203d8ae7a9332"
+    },
+    {
+      "path": "src/journalpulse/activity_resources.py",
+      "uid": "cdcb80955384b05be20d39314970258a2cfd4f48"
+    },
+    {
+      "path": "src/journalpulse/activity_sessions.py",
+      "uid": "cf6ff5782040f82e30218805c86205e55d63d298"
+    },
+    {
+      "path": "src/journalpulse/api.py",
+      "uid": "1ea8f5a723a9bf8d96b5ec4d14e2ea68bad9399c"
+    },
+    {
+      "path": "src/journalpulse/auth.py",
+      "uid": "31c87b8ee5e5c30aba01f863926455e0735cd39d"
+    },
+    {
+      "path": "src/journalpulse/config.py",
+      "uid": "da67e9437b6be20ce61159d4dafa352d00cb4556"
+    },
+    {
+      "path": "src/journalpulse/conversations.py",
+      "uid": "d9c9de1ce06bdfa6505fa98a1febb5a898c2b8df"
+    },
+    {
+      "path": "src/journalpulse/discovery.py",
+      "uid": "c75dc5dfde5e3659096c766e07a3475e7e54d8a9"
+    },
+    {
+      "path": "src/journalpulse/discovery_models.py",
+      "uid": "3925c3d8bee189eef0315b1d43bda23d050a7231"
+    },
+    {
+      "path": "src/journalpulse/discovery_prompts.py",
+      "uid": "cb387e6519b2957fcfa376737d15046860594c98"
+    },
+    {
+      "path": "src/journalpulse/domain.py",
+      "uid": "0fa951a6192691a1cb1f0699891c3856584912af"
+    },
+    {
+      "path": "src/journalpulse/erasure.py",
+      "uid": "e1c26145b92e8a5ae017ee30f036e8e1962d240f"
+    },
+    {
+      "path": "src/journalpulse/evaluation.py",
+      "uid": "7243e5f3f395f778331947bf1ac824c080c97afa"
+    },
+    {
+      "path": "src/journalpulse/guided.py",
+      "uid": "7581aa8407ab175ece5d200b86708dd7905c31b0"
+    },
+    {
+      "path": "src/journalpulse/guided_action.py",
+      "uid": "cbfa05f787231d75b69eb8d116d71c9c653899aa"
+    },
+    {
+      "path": "src/journalpulse/guided_evaluation.py",
+      "uid": "ef429ff785f36e394f49a6f63e28a6add8501736"
+    },
+    {
+      "path": "src/journalpulse/http_clients.py",
+      "uid": "d62c0458ce31a5e91b9116ca5094f29f4f1fff46"
+    },
+    {
+      "path": "src/journalpulse/inline_discovery.py",
+      "uid": "8ae7b2b4d70f46fa0777fd57b032c63856767a77"
+    },
+    {
+      "path": "src/journalpulse/intelligence.py",
+      "uid": "a5be63d4f717acc7262f82beb73e785e64a359c7"
+    },
+    {
+      "path": "src/journalpulse/journal_models.py",
+      "uid": "f135c9625d6232d4d744a0f0e248c4a4c9290e47"
+    },
+    {
+      "path": "src/journalpulse/journals.py",
+      "uid": "08233aebbc307f6a5c4d37de3d75cfe398fc248c"
+    },
+    {
+      "path": "src/journalpulse/middleware.py",
+      "uid": "5700829f076ede4ab02606d68488d71e6706aca2"
+    },
+    {
+      "path": "src/journalpulse/persistence.py",
+      "uid": "b0ee166b558cd4aa53c3fd5b8ef9de2f769b9cb1"
+    },
+    {
+      "path": "src/journalpulse/policy.py",
+      "uid": "cf5c86fd939ab9028d82ca5ff439078f6e1f8a30"
+    },
+    {
+      "path": "src/journalpulse/reflection_prompts.py",
+      "uid": "587d8807c890de3795cfc97980d2021e9497da07"
+    },
+    {
+      "path": "src/journalpulse/resources.py",
+      "uid": "271b9dd56536ab5a6e0e022c553797bb88ae3283"
+    },
+    {
+      "path": "src/journalpulse/safety.py",
+      "uid": "5b7fe70a65fe9e90d79947e05accb7137a7a3a98"
+    },
+    {
+      "path": "src/journalpulse/self_report.py",
+      "uid": "8d90d19c3d54c1f6ee01f1b92b259291d7560057"
+    },
+    {
+      "path": "src/journalpulse/signing.py",
+      "uid": "55b56e459506bceb7e1e76102d0b9b36a2c1f848"
+    },
+    {
+      "path": "src/journalpulse/web_security.py",
+      "uid": "8745c0e6bb77384c481b19ea1cbb5b6ca7faa364"
+    },
+    {
+      "path": "uv.lock",
+      "uid": "5792194a34399ca8ce457b46a0d76c6f65f542e3"
+    },
+    {
+      "path": "web/app/error.tsx",
+      "uid": "c82e1111050351dea8c3994933af5fbab3b872dc"
+    },
+    {
+      "path": "web/app/globals.css",
+      "uid": "ecc97729f6c245f8d5b65c9b9428dcba114920ba"
+    },
+    {
+      "path": "web/app/icon.svg",
+      "uid": "428d71f62b859ade6d4cd69a685c3d5ee460b58c"
+    },
+    {
+      "path": "web/app/layout.tsx",
+      "uid": "a7083c8e7f595deb6361eb4b34d47eda6dace4bd"
+    },
+    {
+      "path": "web/app/loading.tsx",
+      "uid": "b105a5f8137383e94c0519f3aab6055cde39f220"
+    },
+    {
+      "path": "web/app/manifest.ts",
+      "uid": "d76e084965e78290c33daeca7a74375fc70b030c"
+    },
+    {
+      "path": "web/app/not-found.tsx",
+      "uid": "863edc3517fcdb37c17c29428fc26ae06b8c3d10"
+    },
+    {
+      "path": "web/app/page.tsx",
+      "uid": "453092b7ae01c08a892e3db7a38ec15edc56c9ec"
+    },
+    {
+      "path": "web/app/paper-lamp.css",
+      "uid": "00dda04117366a995b0a8ec53c2c34b4f1b73cd5"
+    },
+    {
+      "path": "web/app/quiet-nook.css",
+      "uid": "7aef45f84e79929c7c7545a7afc82c5ad9975b1b"
+    },
+    {
+      "path": "web/components/action-timer.tsx",
+      "uid": "7954fbb328282ca00823a40965e571e5694364c1"
+    },
+    {
+      "path": "web/components/activity-bar.tsx",
+      "uid": "273029ae2a78f5067eeb15c830e7cd58fedf22a9"
+    },
+    {
+      "path": "web/components/activity-preferences.tsx",
+      "uid": "d5bc02c4cefe12a17b4e0fa7e8c909b4fbd01545"
+    },
+    {
+      "path": "web/components/activity-session-discovery.tsx",
+      "uid": "380090e13d846de360b68343650e992440e72e6e"
+    },
+    {
+      "path": "web/components/activity-session-panel.tsx",
+      "uid": "a7953ac9d329b5b774dc27993390766b52bb1e1a"
+    },
+    {
+      "path": "web/components/activity-session-workspace.tsx",
+      "uid": "dcf742df0f44b4602ab15fad66040315f472c49e"
+    },
+    {
+      "path": "web/components/ambient.tsx",
+      "uid": "297aaca913a34ec8a9b3912324965cf489ec1b4f"
+    },
+    {
+      "path": "web/components/app-shell.tsx",
+      "uid": "b554af7e347712a679ba1bbcd841d0f3d8a70e4b"
+    },
+    {
+      "path": "web/components/auth-boundary.tsx",
+      "uid": "baae88ae381a6fc57a7044d7953d1ad578997af1"
+    },
+    {
+      "path": "web/components/discovery-availability.tsx",
+      "uid": "3cc30f49ab02a781cab7296c172cfee48fe1ec03"
+    },
+    {
+      "path": "web/components/luna.tsx",
+      "uid": "0b0822633bf9882e75c6364f8b8a1c87ff737279"
+    },
+    {
+      "path": "web/components/moon-mark.tsx",
+      "uid": "85443abb26663943cb539b2eaedf4c1f91394ff2"
+    },
+    {
+      "path": "web/components/nav-icon.tsx",
+      "uid": "ac3317cffafa40e1fa3a922674855c7cf5a8f616"
+    },
+    {
+      "path": "web/components/offer-scene.tsx",
+      "uid": "3e0a4fb832252571434e468d0fa47eb3dbd31699"
+    },
+    {
+      "path": "web/components/plant.tsx",
+      "uid": "76637d0512ae8f528af680ebe19afbbe37583301"
+    },
+    {
+      "path": "web/components/public-information.tsx",
+      "uid": "8f5a212b55fc4cb6bf8c90dfab37659e729f8145"
+    },
+    {
+      "path": "web/components/redirect.tsx",
+      "uid": "625d7189fd028e2ef378cf9f0ec3c96f74fc584b"
+    },
+    {
+      "path": "web/components/reviewed-activities.tsx",
+      "uid": "9f0d1f06d4479573f8a01e1046094234b2703f9d"
+    },
+    {
+      "path": "web/components/service-worker.tsx",
+      "uid": "5d6229f2441b2cd500b4b0815eb2067c4abeb910"
+    },
+    {
+      "path": "web/components/system-status.tsx",
+      "uid": "29a5edb5848432ada39c8c96e9f64a2967fb8d13"
+    },
+    {
+      "path": "web/lib/account-data.ts",
+      "uid": "8fab52d8ba3d8ba325910000cba89bc8847b06c5"
+    },
+    {
+      "path": "web/lib/account-storage.ts",
+      "uid": "ac7b95e4429770c236617800de98744eeda19d8d"
+    },
+    {
+      "path": "web/lib/activity-card.ts",
+      "uid": "d096e9278f4d57de7ea02173f6455961ed74b774"
+    },
+    {
+      "path": "web/lib/activity-session.ts",
+      "uid": "76b639d67b862dd4517a055827ab334d316c544d"
+    },
+    {
+      "path": "web/lib/api.ts",
+      "uid": "57e5a03cd0cce27c94bbd7b52794aad5bea026d5"
+    },
+    {
+      "path": "web/lib/capabilities.ts",
+      "uid": "2ecec36cd703bf7739762cd792e10d62b2be245b"
+    },
+    {
+      "path": "web/lib/conversation.ts",
+      "uid": "072c67bd2951e4d20fab38b099f30468e8026689"
+    },
+    {
+      "path": "web/lib/discovery.ts",
+      "uid": "69a5b1e44bf12d2954367a9924a9520fbfcc7926"
+    },
+    {
+      "path": "web/lib/feelings.ts",
+      "uid": "3bbb8da5fea2eb57fa15f01f35731bcdf48f7fbb"
+    },
+    {
+      "path": "web/lib/garden.ts",
+      "uid": "864adf2e7f6b2dd9a9115bdbd5e7109a2338f2c8"
+    },
+    {
+      "path": "web/lib/generated-api.ts",
+      "uid": "961b2c8112b892e3d254e2864aef0c5804748c07"
+    },
+    {
+      "path": "web/lib/journal-save.ts",
+      "uid": "77201f87271ce85033b81104d00c4c6671cd4b08"
+    },
+    {
+      "path": "web/lib/journal-types.ts",
+      "uid": "6cff279b97f4658f514a97930f137180c2398d76"
+    },
+    {
+      "path": "web/lib/journal.ts",
+      "uid": "c2b0f11afd81136633cb65411a3bf53fbce7f2ea"
+    },
+    {
+      "path": "web/lib/luna-motion.ts",
+      "uid": "a5041fad0abe6130a1256ea7fdf7bbc756ecc836"
+    },
+    {
+      "path": "web/lib/moon-days.ts",
+      "uid": "1e5393f7549fbe49355bb147bfe226bb3e700de6"
+    },
+    {
+      "path": "web/lib/preferences.ts",
+      "uid": "11ab3c9f08bb27c294ef5e3ac465427e65180fb8"
+    },
+    {
+      "path": "web/lib/public-routes.ts",
+      "uid": "eb2b307ea272ccfee9814ace3f482d1c8de068af"
+    },
+    {
+      "path": "web/lib/reflection-draft.ts",
+      "uid": "a3fad798ffc22a05686723469b1e21d46404cade"
+    },
+    {
+      "path": "web/lib/reminders.ts",
+      "uid": "1f44e8251551e0dbbe43206998569dbe101f6532"
+    },
+    {
+      "path": "web/lib/request-deadlines.ts",
+      "uid": "fda50dca4cd5c0a2a8e923ddd52b0006714cfa5e"
+    },
+    {
+      "path": "web/lib/route-path.ts",
+      "uid": "7ca05e5bc93c9f7c25bd0ec4d94cd3d79b28329b"
+    },
+    {
+      "path": "web/lib/supabase.ts",
+      "uid": "32c2abdbc6456073be3fbc90ef3653788bb9ee17"
+    },
+    {
+      "path": "web/lib/tab-session.ts",
+      "uid": "0f05bb24b0ce382ab4683f346885611a7fce4c0c"
+    },
+    {
+      "path": "web/lib/time-of-day.ts",
+      "uid": "7fd459e0b1a57f94ba66cce8aca3786ac917ecc9"
+    },
+    {
+      "path": "web/lib/types.ts",
+      "uid": "8f2a22a02de510115845e9e714223a8d1b2ddbb6"
+    },
+    {
+      "path": "web/lib/use-chat-scroll.ts",
+      "uid": "5ee2ac9209a209c4d86c33e04cea5f790e646e9c"
+    }
+  ]
+}

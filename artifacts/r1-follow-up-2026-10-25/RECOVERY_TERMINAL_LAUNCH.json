@@ -1,0 +1,12 @@
+{
+  "requested_at": "2026-10-25T12:06:30.424467+00:00",
+  "launcher_path": "/private/tmp/journalpulse-recovery-20261025.command",
+  "launcher_contains_credentials": false,
+  "tool_sha256": "0bc7ce3861d50ad3c7f2801fa15b649942675232bcaa2b4418f5655d0bb08c3f",
+  "python_version_requested": "3.12",
+  "terminal_launch_exit_code": 0,
+  "private_terminal_output_read": false,
+  "secret_input_channel": "User-owned Terminal getpass prompts",
+  "recovery_verified": false,
+  "ledger_touched": false
+}

@@ -1,0 +1,10 @@
+{
+  "observed_at": "2026-10-25T12:20:53.327164+00:00",
+  "reason": "User requested autonomous work without further questions; secure input is unavailable. Close only the task-created unstarted interactive prompt.",
+  "backup_directory_exists": false,
+  "stopped_pids": [
+    7312
+  ],
+  "private_terminal_contents_read": false,
+  "database_operation_interrupted": false
+}
