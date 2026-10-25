@@ -202,6 +202,12 @@ def prepare_case(
         ]
         prompt_version = DISCOVERY_PROMPT_VERSION
     else:
+        # Every language track must reject deleted/foreign fixtures before their
+        # text can enter a prepared request, including standalone reflection.
+        if case.journal is not None and (
+            case.journal.deleted or case.journal.owner != "fictional-owner-a"
+        ):
+            raise ValueError("Deleted or foreign source cannot enter a model prompt")
         schema = CONVERSATION_JSON_SCHEMA
         prompt_version = CONVERSATION_PROMPT_VERSION
         messages = [{"role": "system", "content": CONVERSATION_SYSTEM_PROMPT}]
@@ -217,10 +223,6 @@ def prepare_case(
             if case.interaction_preference == "listen":
                 messages.append({"role": "system", "content": LISTEN_CONTEXT_INSTRUCTION})
             if case.journal is not None:
-                # A deleted/foreign source is a system-boundary fixture and must
-                # never be made into a provider request by this language track.
-                if case.journal.deleted or case.journal.owner != "fictional-owner-a":
-                    raise ValueError("Deleted or foreign source cannot enter a model prompt")
                 messages.extend(
                     [
                         {"role": "system", "content": JOURNAL_CONTEXT_INSTRUCTION},

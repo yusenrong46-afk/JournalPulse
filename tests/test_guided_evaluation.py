@@ -173,8 +173,11 @@ def test_journal_injection_stays_in_json_user_data() -> None:
 
 
 @pytest.mark.parametrize("field,value", [("deleted", True), ("owner", "fictional-owner-b")])
-def test_invalid_journal_source_never_enters_model_request(field: str, value: str | bool) -> None:
-    fixture = case(load_dataset(), "j01_past_and_present")
+@pytest.mark.parametrize("case_id", ["j01_past_and_present", "j03_standalone_no_action"])
+def test_invalid_journal_source_never_enters_model_request(
+    field: str, value: str | bool, case_id: str,
+) -> None:
+    fixture = case(load_dataset(), case_id)
     assert fixture.journal is not None
     source = fixture.journal.model_copy(update={field: value})
     with pytest.raises(ValueError, match="Deleted or foreign"):
