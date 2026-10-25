@@ -246,6 +246,7 @@ def prepare(destination: Path) -> None:
         ROOT / "assets/evaluation/safety/temporal-negation-2026-10-24.json",
         ROOT / "docs/evaluations/QUALITY_POLICY_2026-10-24.json",
         ROOT / "scripts/quality_decision.py",
+        ROOT / "scripts/prepare_quality_review.py",
     ]
     hashes = {}
     for source in source_files:

@@ -1,5 +1,6 @@
 """Synthetic policy mechanics only; no model or human qualification is claimed."""
 import copy
+import hashlib
 import importlib.util
 import json
 import sys
@@ -60,11 +61,18 @@ def cohort(tmp_path, monkeypatch):
               "sampled": [{"id": i, "grade": grade()} for ids in selection.values() for i in ids],
               "adjudication": [{"id": f"support-{i}", "verdict": "pass", "rationale": "Fixture only",
                                 "evidence": ["Example"]} for i in range(2)]}
+    bind_review(tmp_path, review)
     return tmp_path, rows, review
 
 
-def update(bundle, rows):
+def bind_review(bundle, review):
+    review["source_manifest_sha256"] = hashlib.sha256((bundle / "manifest.json").read_bytes()).hexdigest()
+    review["model_results_sha256"] = hashlib.sha256((bundle / "results.json").read_bytes()).hexdigest()
+
+
+def update(bundle, rows, review):
     (bundle / "results.json").write_text(json.dumps(rows))
+    bind_review(bundle, review)
 
 
 def test_missing_human_review_blocks_and_originals_are_unchanged(cohort):
@@ -89,7 +97,7 @@ def test_critical_failure_fails_even_with_high_averages_and_missing_reviews(coho
 def test_judge_flag_needs_separate_human_adjudication(cohort):
     bundle, rows, review = cohort
     rows[0]["grade"] = grade(5, "uncertain")
-    update(bundle, rows)
+    update(bundle, rows, review)
     assert qd.decision(bundle, review)["decision"] == "BLOCKED"
     review["adjudication"].append({"id": rows[0]["id"], "verdict": "pass",
                                    "rationale": "Fictional unsupported-flag control",
@@ -102,7 +110,7 @@ def test_missing_results_stay_in_denominator(cohort):
     bundle, rows, review = cohort
     rows[-3]["status"] = "unobserved"
     rows[-3].pop("grade")
-    update(bundle, rows)
+    update(bundle, rows, review)
     result = qd.decision(bundle, review)
     assert result["decision"] == "BLOCKED"
     assert result["metrics"]["normal_holdout"]["denominator"] == 10
@@ -111,7 +119,7 @@ def test_missing_results_stay_in_denominator(cohort):
 def test_safety_group_normal_controls_are_in_quality_tail(cohort):
     bundle, rows, review = cohort
     rows[-3]["grade"] = grade(1)
-    update(bundle, rows)
+    update(bundle, rows, review)
     result = qd.decision(bundle, review)
     assert result["decision"] == "FAIL"
     assert result["metrics"]["normal_holdout"]["denominator"] == 10
@@ -144,3 +152,10 @@ def test_invalid_human_grades_block_instead_of_becoming_observed_low_scores(coho
     result = qd.decision(bundle, review)
     assert result["decision"] == "BLOCKED"
     assert result["metrics"]["human"]["denominator"] == 20
+
+
+@pytest.mark.parametrize('field', ['source_manifest_sha256', 'model_results_sha256'])
+def test_human_review_from_another_source_or_output_cannot_qualify(cohort, field):
+    bundle, _, review = cohort
+    review[field] = '0' * 64
+    assert qd.decision(bundle, review)['decision'] == 'BLOCKED'

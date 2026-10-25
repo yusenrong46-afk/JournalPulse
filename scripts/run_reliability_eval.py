@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
-bundle = root / "artifacts/next-stage-2026-10-24/quality-run-v4"
+bundle = root / "artifacts/r1-follow-up-2026-10-25/quality-run-v5"
 runner = bundle / "frozen/scripts/quality_eval.py"
 if not runner.is_file():
     raise SystemExit("The reviewed frozen evaluation bundle is missing.")

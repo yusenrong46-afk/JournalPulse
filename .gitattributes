@@ -4,3 +4,4 @@ artifacts/models/transformer_*/model.safetensors filter=lfs diff=lfs merge=lfs -
 artifacts/reliability-2026-10-14/quality-run-v2/** linguist-generated=true
 artifacts/next-stage-2026-10-24/quality-run-v3/** linguist-generated=true
 artifacts/next-stage-2026-10-24/quality-run-v4/** linguist-generated=true
+artifacts/r1-follow-up-2026-10-25/quality-run-v5/** linguist-generated=true

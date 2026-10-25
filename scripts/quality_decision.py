@@ -21,6 +21,7 @@ def decision(bundle: Path, review: dict | None = None) -> dict:
     policy = json.loads((bundle / "frozen/docs/evaluations/QUALITY_POLICY_2026-10-24.json").read_text())
     selection = json.loads((bundle / "review-selection.json").read_text())
     result = {"policy": policy["version"], "packets_sha256": manifest["packets_sha256"],
+              "source_manifest_sha256": hashlib.sha256((bundle / "manifest.json").read_bytes()).hexdigest(),
               "decision": "BLOCKED", "human_review": "NOT_RUN", "clinical_validation": "NOT_RUN",
               "blockers": [], "failures": [], "metrics": {}, "original_artifact_sha256": {}}
     blocked, failed = result["blockers"], result["failures"]
@@ -120,9 +121,11 @@ def decision(bundle: Path, review: dict | None = None) -> dict:
         result["human_review_sha256"] = digest(review)
         reviewer = review.get("reviewer", {})
         if (review.get("packets_sha256") != manifest["packets_sha256"] or not reviewer.get("id")
+                or review.get("source_manifest_sha256") != result["source_manifest_sha256"]
+                or review.get("model_results_sha256") != result["original_artifact_sha256"]["results.json"]
                 or reviewer.get("independent") is not True
                 or reviewer.get("blind_scores_recorded_before_judge") is not True):
-            blocked.append("Human review identity, independence or blind-order attestation missing")
+            blocked.append("Human review binding, identity, independence or blind order missing")
         else:
             result["human_review"] = "SUPPLIED"
             sampled = review.get("sampled", [])
