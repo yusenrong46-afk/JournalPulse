@@ -6,8 +6,8 @@ import unicodedata
 from .domain import SafetyMode, SafetyResult
 
 HIGH_RISK_PATTERNS = (
-    r"\b(?:want|plan|going) to (?:die|kill myself|end my life)\b",
-    r"\bi(?: will|'ll) (?:kill myself|end my life)\b",
+    r"\b(?:want|plan|going|intend|planning) to (?:die|kill myself|end my life|unalive myself)\b",
+    r"\bi(?: will|'ll) (?:kill myself|end my life|unalive myself)\b",
     r"\b(?:hurt|harm) myself\b",
     r"\b(?:not|do not|don't) feel safe(?: (?:right now|tonight|today|alone))?\b",
     r"\bi (?:have|made) a suicide plan\b",
@@ -21,6 +21,7 @@ HIGH_RISK_PATTERNS = (
     r"\b(?:end|ending) it all\b",
     r"\bi (?:won't|will not|'m not going to|am not going to) be (?:around|here) much longer\b",
     r"\bsuicidal\b",
+    r"\bi(?: am|'m) considering (?:suicide|(?:killing|hurting|harming) myself|ending my life)\b",
     r"\b(?:thinking|thoughts?) (?:about|of) (?:killing myself|suicide|ending my life)\b",
     r"\bi wish i (?:was|were) dead\b",
     r"\bi (?:don't|do not) want to (?:be alive|live|exist) anymore\b",
@@ -38,15 +39,23 @@ PRESENT_MARKER = re.compile(
 )
 
 NEGATED_PATTERNS = (
-    r"\b(?:not|never) suicidal\b",
-    r"\b(?:do not|don't|never) want to (?:die|hurt myself|harm myself|kill myself|end my life)\b",
-    r"\b(?:not|never) going to (?:die|hurt myself|harm myself|kill myself|end my life)\b",
-    r"\b(?:will not|won't) (?:hurt myself|harm myself|kill myself|end my life)\b",
+    r"\bno thoughts? (?:about|of) (?:suicide|killing myself|ending my life)\b",
+    r"\b(?:not|never)(?: (?:currently|feeling))? suicidal\b",
+    r"\b(?:do not|don't|never) (?:want|intend|plan) to "
+    r"(?:die|hurt myself|harm myself|kill myself|end my life|unalive myself)\b",
+    r"\b(?:not|never) (?:going|planning) to "
+    r"(?:die|hurt myself|harm myself|kill myself|end my life|unalive myself)\b",
+    r"\b(?:will not|won't) (?:hurt myself|harm myself|kill myself|end my life|unalive myself)\b",
 )
+
+# A postponed act is not a denial. Keep this suffix check local to a matched
+# denial so an unrelated "until" elsewhere cannot cancel genuine negation.
+_DELAYED_DENIAL = re.compile(r"\s+(?:yet\b|until\b|before\b)")
 
 # Deliberately bounded spelling variants. This is not a semantic classifier or
 # general spell checker. Normalize denials and affirmative phrases identically.
-_WORD_VARIANTS = {"wanna": "want to", "gonna": "going to", "suicdial": "suicidal", "kil": "kill"}
+_WORD_VARIANTS = {"wanna": "want to", "gonna": "going to", "suicdial": "suicidal", "kil": "kill",
+                  "dont": "don't", "wont": "won't"}
 _VARIANT_PATTERN = re.compile(r"\b(?:" + "|".join(_WORD_VARIANTS) + r")\b")
 
 
@@ -171,9 +180,9 @@ def _clauses(normalized: str) -> list[str]:
 
 
 def _clause_has_unnegated_risk(clause: str) -> bool:
-    negated_spans = [
-        match.span() for pattern in NEGATED_PATTERNS for match in re.finditer(pattern, clause)
-    ]
+    denials = [match for pattern in NEGATED_PATTERNS for match in re.finditer(pattern, clause)]
+    delayed = [match for match in denials if _DELAYED_DENIAL.match(clause, match.end())]
+    negated_spans = [match.span() for match in denials if match not in delayed]
     # A denial applies only to the phrase it contains. "I don't want to die and
     # I might act on these thoughts" still contains a separate affirmative risk.
     present = PRESENT_MARKER.search(clause) is not None
@@ -184,7 +193,9 @@ def _clause_has_unnegated_risk(clause: str) -> bool:
         historical = HISTORICAL_PREFIX.search(clause, 0, match.start()) is not None
         return present or not historical
 
-    return any(
+    # Some denials ("won't kill myself") contain no independent affirmative
+    # pattern. Their explicit postponement still needs the same routing check.
+    return any(is_risk(match) for match in delayed) or any(
         is_risk(match) for pattern in HIGH_RISK_PATTERNS for match in re.finditer(pattern, clause)
     )
 
