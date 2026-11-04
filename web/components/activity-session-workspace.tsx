@@ -223,6 +223,14 @@ export function ActivitySessionWorkspace({
     if (!value) return;
     const started = generation.current;
     const key = `command:${value.id}:${command}`;
+    // A kept receipt exists to retry the same command against the same server state.
+    // Once the session has moved past that revision (a sync showed the committed result,
+    // or another command ran), replaying it would return the current state and silently
+    // ignore this new click, so build a fresh receipt instead.
+    const kept = receipts.current.get(key);
+    if (kept && (JSON.parse(kept.payload) as { expected_revision: number }).expected_revision !== value.revision) {
+      receipts.current.delete(key);
+    }
     const payload = receipt(key, (requestId) => ({ ...activityReceipt(value, chat.current, requestId), command }));
     await operation(async (signal) => {
       const next = await commandActivity(value.id, payload, signal);
