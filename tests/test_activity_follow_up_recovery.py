@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from journalpulse.activity_models import FOLLOW_UP_LEASE_SECONDS, ActivityFollowUpRequest
@@ -102,3 +103,44 @@ def test_expired_claim_recovery_preserves_the_three_attempt_limit(tmp_path: Path
         assert model.calls == 0
         assert repository.get_activity_session(OWNER, claimed.id) == claimed
         assert repository.list_messages(OWNER, chat.id) == []
+
+
+class RejectedProposalThenReply:
+    """First call fails the way validated_activity_update does for a disallowed proposal."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self.reply = FollowUpDouble()
+
+    def __call__(self, conversation, messages, session):  # type: ignore[no-untyped-def]
+        self.calls += 1
+        if self.calls == 1:
+            raise HTTPException(
+                502, "Luna's option did not match the approved resources or your limits. Please retry."
+            )
+        return self.reply(conversation, messages, session)
+
+
+def test_a_non_provider_generation_failure_releases_the_claim_for_an_immediate_retry(
+    tmp_path: Path,
+) -> None:
+    # Regression: only provider errors released the claim. A validator 502 left it
+    # "generating", so the retry the message asked for returned 202 for the whole lease.
+    configured, clock, model = settings(tmp_path), Clock(), RejectedProposalThenReply()
+    chat = seed_conversation(configured, clock)
+    with TestClient(
+        create_app(settings=configured, clock=clock, activity_follow_up_generator=model),
+        raise_server_exceptions=False,
+    ) as client:
+        session = reported(client, command(client, command(client, offered(client, chat), "start"), "stop"))
+        url = f"/v1/activity-sessions/{session['id']}/follow-up"
+        first = client.post(url, headers=OWNER_HEADERS, json=follow_up_body(session))
+        assert first.status_code == 502
+        read = client.get(f"/v1/activity-sessions/{session['id']}", headers=OWNER_HEADERS).json()
+        assert read["follow_up_status"] == "failed"
+        assert read["follow_up_lease_until"] is None
+        retry = client.post(url, headers=OWNER_HEADERS, json=follow_up_body(read))
+        assert retry.status_code == 200
+        assert retry.json()["follow_up_status"] == "ready"
+        assert retry.json()["follow_up_attempts"] == 2
+        assert model.calls == 2
