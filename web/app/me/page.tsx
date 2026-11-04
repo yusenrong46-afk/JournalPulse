@@ -51,9 +51,21 @@ export default function MePage() {
       invalidateAccountDataRequests();
       writeOpenConversationId(null);
       clearReminders();
-      await clearReflectionDraft();
+      // The server deletion is already confirmed here. Earlier versions could leave
+      // an encrypted draft in IndexedDB, so try to clear it, but a browser that blocks
+      // IndexedDB (private mode, blocked site data) must not turn a finished deletion
+      // into "Deletion didn't finish".
+      let localDraftCleared = true;
+      try {
+        await clearReflectionDraft();
+      } catch {
+        localDraftCleared = false;
+      }
       setConfirmation("");
-      setMessage(`Done. ${result.deleted_records} saved items were deleted. You’re still signed in.`);
+      setMessage(
+        `Done. ${result.deleted_records} saved items were deleted. You’re still signed in.`
+        + (localDraftCleared ? "" : " This browser blocked its local storage, so an old draft from an earlier version could not be checked."),
+      );
     } catch {
       setError("Deletion didn’t finish. Nothing is assumed deleted; please try again.");
     } finally {
