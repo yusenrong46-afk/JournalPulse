@@ -78,7 +78,15 @@ function CheckInWorkspace() {
     const controller = new AbortController();
     submission.current = controller;
     // Covers revision lookup and authentication as well as the write itself.
-    const deadline = window.setTimeout(() => controller.abort(), 15_000);
+    // The same controller is aborted by unmount and by this deadline. Only an
+    // unmount should stay silent; an expired deadline is an unconfirmed save the
+    // person must be able to retry with the same receipt.
+    let timedOut = false;
+    const deadline = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 15_000);
+    const unmounted = () => controller.signal.aborted && !timedOut;
     setBusy(true);
     setSlow(false);
     setError("");
@@ -105,21 +113,25 @@ function CheckInWorkspace() {
         // receipt. A lost response must retry these exact answers and timestamp.
         body: pendingOutcome.current,
       });
-      if (controller.signal.aborted) return;
+      if (unmounted()) return;
       clearReminder(reflection.decision.decision_id);
       setRetryPending(false);
       setSaved(true);
     } catch (reason) {
-      if (!controller.signal.aborted) {
+      if (!unmounted()) {
         // Validation rejects before saving, so those answers remain editable.
-        const rejected = reason instanceof ApiError && [400, 422].includes(reason.status);
+        const rejected = !timedOut && reason instanceof ApiError && [400, 422].includes(reason.status);
         if (rejected) pendingOutcome.current = null;
         setRetryPending(!rejected);
-        setError(reason instanceof Error ? reason.message : "The save could not be confirmed. Please retry.");
+        setError(
+          timedOut
+            ? "The save took too long to confirm. Your answers are kept; retry to confirm the same check-in."
+            : reason instanceof Error ? reason.message : "The save could not be confirmed. Please retry.",
+        );
       }
     } finally {
       window.clearTimeout(deadline);
-      if (!controller.signal.aborted) setBusy(false);
+      if (!unmounted()) setBusy(false);
       if (submission.current === controller) submission.current = null;
     }
   }
