@@ -1,0 +1,19 @@
+{
+  "source_commit": "084c97f",
+  "base_main": "4154de834b4e663d9bc8d7f8c23b3fe7c375d0e4",
+  "backend_tests_passed": 1409,
+  "backend_coverage_percent": 91.69,
+  "frontend_unit_tests_passed": 230,
+  "mock_browser_tests_passed": 62,
+  "integration_tests_passed": 22,
+  "optional_integration_tours_skipped": 4,
+  "postgresql_local_checks": "passed",
+  "live_encrypted_recovery": "NOT_RUN",
+  "hosted_admin_account_closure": "NOT_RUN",
+  "ai_evaluation": "NOT_RUN",
+  "paid_attempts_recorded": 0,
+  "migration_202610140002": "LOCAL_ONLY",
+  "deployment": "NOT_DEPLOYED",
+  "resume": "REVISED_COPY_VERIFIED",
+  "evidence_log_normalization": "Trailing whitespace and terminal carriage returns removed; test outcomes unchanged."
+}

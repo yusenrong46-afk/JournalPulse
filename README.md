@@ -98,6 +98,12 @@ Hosted configuration, secrets, migrations and rollback belong in the [operations
 
 [October 14 trust-hardening candidate and remaining gates](docs/TRUST_HARDENING_2026-10-14.md).
 
+The follow-up [reliability work](docs/RELIABILITY_PROGRESS_2026-10-14.md) is on a
+separate branch and has not yet been released. Its local snapshot passed 1,409
+backend tests (91.69% coverage), 230 frontend unit tests and 62 mocked browser
+checks. Real encrypted recovery, fresh AI results and hosted account closure have
+separate completion gates; these test counts do not establish them.
+
 The October 7 repair snapshot passed **1,270 backend tests**, **217 frontend unit tests**,
 **46 browser checks with mocked APIs**, and **22 integrations through the real API, PostgREST
 and PostgreSQL**. Backend coverage was **91.88%**, with branch measurement enabled.

@@ -139,7 +139,7 @@ export async function apiRequest<T>(path: string, init: ApiRequestInit = {}): Pr
   // logical request, so retries and SDK refreshes must never fetch a newer epoch
   // and reauthorize an old payload after erasure on another device.
   const needsDataRevision = !["GET", "HEAD", "OPTIONS"].includes(method)
-    && !(method === "DELETE" && path.split("?")[0] === "/v1/account/data");
+    && !(method === "DELETE" && ["/v1/account/data", "/v1/account"].includes(path.split("?")[0]));
   let mutationDataRevision: number | undefined;
   if (needsDataRevision) {
     const observed = await apiRequest<{ revision?: unknown } | null>("/v1/account/data-revision", {

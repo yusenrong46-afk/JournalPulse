@@ -45,7 +45,7 @@ from .domain import (
     SafetyMode,
     SafetyResult,
 )
-from .erasure import AccountDataErased, DeletedObjectIdentity, write_scope
+from .erasure import AccountClosurePending, AccountDataErased, DeletedObjectIdentity, write_scope
 from .http_clients import managed_http_client
 from .journal_models import JournalEntry
 from .signing import readiness_probe, signed_payload
@@ -1889,6 +1889,8 @@ class SupabaseRepository:
         if status == 404 and message == "Journal entry not found":
             raise JournalEntryNotFound(message)
         if status == 409:
+            if message == "Account closure is pending or complete":
+                raise AccountClosurePending(message)
             if message == "Creation request ID was deleted; use a new request ID":
                 raise DeletedObjectIdentity(message)
             if message == "Account data was erased":
@@ -2479,7 +2481,7 @@ def supabase_readiness(settings: Settings, client: httpx.Client | None = None) -
         with managed_http_client(client, timeout=5) as transport:
             response = transport.post(
                 # Keep the live reliability API's RPC unchanged during a preview rollout.
-                f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/jp_readiness_v5",
+                f"{settings.supabase_url.rstrip('/')}/rest/v1/rpc/jp_readiness_v6",
                 headers={
                     "apikey": settings.supabase_anon_key or "",
                     "Authorization": f"Bearer {settings.supabase_anon_key or ''}",
@@ -2507,9 +2509,9 @@ def supabase_readiness(settings: Settings, client: httpx.Client | None = None) -
     return {
         "database": "reachable",
         "schema": "schema_ready"
-        if (body.get("schema") == "erasure-boundaries-1"
+        if (body.get("schema") == "account-closure-1"
             and body.get("activities") == "ready" and body.get("repairs") == "ready"
-            and body.get("erasure") == "ready")
+            and body.get("erasure") == "ready" and body.get("account_closure") == "ready")
         else f"schema_outdated:{body.get('schema')}",
         "signing": signing,
         "activities": str(body.get("activities", "missing")),

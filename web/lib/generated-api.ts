@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Close Account */
+        delete: operations["close_account_v1_account_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/account/data": {
         parameters: {
             query?: never;
@@ -567,6 +584,21 @@ export interface components {
             /** Expected Revision */
             expected_revision?: number | null;
             self_report?: components["schemas"]["AffectiveState"] | null;
+        };
+        /** AccountClosureRequest */
+        AccountClosureRequest: {
+            /**
+             * Confirmation
+             * @constant
+             */
+            confirmation: "delete my account";
+            /** Receipt Secret */
+            receipt_secret: string;
+            /**
+             * Request Id
+             * Format: uuid4
+             */
+            request_id: string;
         };
         /** AccountDataRevisionResponse */
         AccountDataRevisionResponse: {
@@ -1739,6 +1771,12 @@ export interface components {
         };
         /** SystemStatusResponse */
         SystemStatusResponse: {
+            /**
+             * Account Closure
+             * @default unavailable
+             * @enum {string}
+             */
+            account_closure: "configured" | "unavailable";
             /** Analysis Mode */
             analysis_mode: string;
             /** Message */
@@ -1939,6 +1977,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReadinessResponse"];
+                };
+            };
+        };
+    };
+    close_account_v1_account_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountClosureRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

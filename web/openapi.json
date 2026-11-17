@@ -50,6 +50,33 @@
         "title": "AcceptConversationRequest",
         "type": "object"
       },
+      "AccountClosureRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmation": {
+            "const": "delete my account",
+            "title": "Confirmation",
+            "type": "string"
+          },
+          "receipt_secret": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Receipt Secret",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid4",
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "confirmation",
+          "request_id",
+          "receipt_secret"
+        ],
+        "title": "AccountClosureRequest",
+        "type": "object"
+      },
       "AccountDataRevisionResponse": {
         "properties": {
           "revision": {
@@ -3428,6 +3455,15 @@
       },
       "SystemStatusResponse": {
         "properties": {
+          "account_closure": {
+            "default": "unavailable",
+            "enum": [
+              "configured",
+              "unavailable"
+            ],
+            "title": "Account Closure",
+            "type": "string"
+          },
           "analysis_mode": {
             "title": "Analysis Mode",
             "type": "string"
@@ -3933,6 +3969,55 @@
           }
         },
         "summary": "Ready"
+      }
+    },
+    "/v1/account": {
+      "delete": {
+        "operationId": "close_account_v1_account_delete",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountClosureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Close Account"
       }
     },
     "/v1/account/data": {

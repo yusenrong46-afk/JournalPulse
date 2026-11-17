@@ -284,7 +284,7 @@ def test_readiness_distinguishes_schema_signing_and_reachability(tmp_path: Path)
     def ready(request: httpx.Request) -> httpx.Response:
         # A separate RPC lets the preview require its new schema while the live
         # reliability API continues checking the original readiness contract.
-        assert request.url.path == "/rest/v1/rpc/jp_readiness_v5"
+        assert request.url.path == "/rest/v1/rpc/jp_readiness_v6"
         body = json.loads(request.content)
         assert body["probe"].startswith("readiness:")
         assert body["signature"] == sign_text(body["probe"], KEY)
@@ -292,7 +292,10 @@ def test_readiness_distinguishes_schema_signing_and_reachability(tmp_path: Path)
         return httpx.Response(
             200,
             json={
-                "schema": "erasure-boundaries-1", "repairs": "ready", "erasure": "ready",
+                "schema": "account-closure-1",
+                "account_closure": "ready",
+                "repairs": "ready",
+                "erasure": "ready",
                 "activities": "ready",
                 "signing": "valid",
                 "retention_job": "scheduled",
@@ -352,7 +355,10 @@ def test_readiness_reports_scheduler_execution_without_content(tmp_path: Path):
         return httpx.Response(
             200,
             json={
-                "schema": "erasure-boundaries-1", "repairs": "ready", "erasure": "ready",
+                "schema": "account-closure-1",
+                "account_closure": "ready",
+                "repairs": "ready",
+                "erasure": "ready",
                 "activities": "ready",
                 "signing": "valid",
                 "retention_job": "scheduled",

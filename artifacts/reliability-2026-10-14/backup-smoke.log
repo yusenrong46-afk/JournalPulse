@@ -1,0 +1,2 @@
+Encrypted fictional archive roundtrip passed
+{"status": "PASS", "scope": "FICTIONAL FIXTURE ONLY; live export not run", "table_checksums_match": true, "owner_isolation": true, "signed_write": true, "fixture_deletion_reconciliation": true, "container_removed": true, "hosted_auth_service_tested": false, "managed_backups_verified": false}

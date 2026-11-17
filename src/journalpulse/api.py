@@ -11,7 +11,10 @@ from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
+import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -20,6 +23,7 @@ from starlette.datastructures import Headers
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.types import Scope
 
+from .account_closure import AccountClosureRequest, AccountClosureService
 from .activity_chat import generate_activity_follow_up
 from .activity_sessions import ActivityFollowUpGenerator, register_activity_routes
 from .auth import AuthContext, resolve_auth
@@ -41,7 +45,7 @@ from .domain import (
     ReflectionRequest,
     SafetyMode,
 )
-from .erasure import AccountDataErased, DeletedObjectIdentity, bind_repository
+from .erasure import AccountClosurePending, AccountDataErased, DeletedObjectIdentity, bind_repository
 from .inline_discovery import register_inline_discovery_routes
 from .intelligence import OpenRouterReflectionClient, UnsupportedProviderResponse, safe_analyze
 from .journals import register_journal_routes
@@ -138,6 +142,7 @@ class AccountDataRevisionResponse(BaseModel):
 
 
 class SystemStatusResponse(BaseModel):
+    account_closure: Literal["configured", "unavailable"] = "unavailable"
     analysis_mode: str
     persistence_mode: str
     message: str
@@ -150,6 +155,7 @@ def create_app(
     policy: ReflectionPolicy | None = None,
     intelligence_client: OpenRouterReflectionClient | None = None,
     conversation_client: ConversationClient | None = None,
+    account_closure_client: httpx.Client | None = None,
     discovery_client: DiscoveryClient | None = None,
     activity_follow_up_generator: ActivityFollowUpGenerator | None = None,
     clock: Callable[[], datetime] | None = None,
@@ -215,12 +221,27 @@ def create_app(
         expose_headers=["X-Request-ID", "Server-Timing"],
     )
 
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError) -> Response:
+        if request.url.path.rstrip("/") == "/v1/account":
+            return JSONResponse(status_code=422, content={
+                "detail": "Invalid account-closure request. Enter the confirmation phrase and try again."
+            })
+        return await request_validation_exception_handler(request, exc)
+
     @app.exception_handler(DeletedObjectIdentity)
     def deleted_object_identity(request: Request, exc: DeletedObjectIdentity) -> JSONResponse:
         del request, exc
         return JSONResponse(status_code=409, content={
             "detail": "This creation request was deleted. Start a new request."
         })
+
+    @app.exception_handler(AccountClosurePending)
+    def account_closure_pending(request: Request, exc: AccountClosurePending) -> JSONResponse:
+        del request, exc
+        return JSONResponse(status_code=409, content={"detail": (
+            "Account closure is pending. New writing is paused; retry closure from Settings."
+        )})
 
     @app.exception_handler(AccountDataErased)
     def account_data_erased(request: Request, exc: AccountDataErased) -> JSONResponse:
@@ -351,6 +372,7 @@ def create_app(
             message = "AI conversation is unavailable. You can still write or use guided prompts."
         return SystemStatusResponse(
             analysis_mode=analysis_mode,
+            account_closure="configured" if settings.account_closure_configured else "unavailable",
             persistence_mode="account" if settings.supabase_enabled else "server_sqlite",
             message=message,
         )
@@ -655,6 +677,11 @@ def create_app(
     ) -> AccountDataRevisionResponse:
         response.headers["Cache-Control"] = "no-store"
         return AccountDataRevisionResponse(revision=make_repository(auth).get_erasure_revision(auth.user_id))
+
+    @app.delete("/v1/account", status_code=204)
+    def close_account(payload: AccountClosureRequest,
+                      authorization: str | None = Header(default=None)) -> None:
+        AccountClosureService(settings, account_closure_client).close(payload, authorization, now())
 
     @app.delete("/v1/account/data", response_model=DeletionResponse)
     def delete_account_data(auth: AuthContext = Depends(auth_dependency)) -> DeletionResponse:

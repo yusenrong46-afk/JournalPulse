@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from ipaddress import ip_address
 from math import isfinite
@@ -118,6 +118,8 @@ class Settings:
     chat_timeout_seconds: float = 45.0
     # Shared with the database (private.server_secrets) to sign provenance writes.
     write_signing_key: str | None = None
+    supabase_service_role_key: str | None = field(default=None, repr=False)
+    account_closure_enabled: bool = False
     write_signing_key_previous: str | None = None
     write_signing_key_previous_expires_at: str | None = None
     # Open-web discovery is an explicit opt-in; the existing resource catalog remains separate.
@@ -144,6 +146,11 @@ class Settings:
         return bool(self.supabase_url and self.supabase_anon_key)
 
     @property
+    def account_closure_configured(self) -> bool:
+        return bool(self.account_closure_enabled and self.supabase_enabled
+                    and self.supabase_service_role_key and self.write_signing_key)
+
+    @property
     def previous_signing_key_deadline(self) -> datetime | None:
         try:
             deadline = datetime.fromisoformat(self.write_signing_key_previous_expires_at or "")
@@ -154,6 +161,8 @@ class Settings:
     @property
     def configuration_issues(self) -> list[str]:
         issues: list[str] = []
+        if self.account_closure_enabled and not self.account_closure_configured:
+            issues.append("account_closure_configuration_missing")
         if self.write_signing_key_previous and (
             len(self.write_signing_key_previous) < 32 or self.previous_signing_key_deadline is None
         ):
@@ -227,6 +236,8 @@ def load_settings() -> Settings:
         chat_model=os.getenv("JOURNALPULSE_CHAT_MODEL", "openai/gpt-6-luna").strip(),
         chat_timeout_seconds=float(os.getenv("JOURNALPULSE_CHAT_TIMEOUT_SECONDS", "45")),
         write_signing_key=os.getenv("JOURNALPULSE_WRITE_SIGNING_KEY") or None,
+        supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY") or None,
+        account_closure_enabled=_flag("JOURNALPULSE_ACCOUNT_CLOSURE_ENABLED", False),
         write_signing_key_previous=os.getenv("JOURNALPULSE_WRITE_SIGNING_KEY_PREVIOUS") or None,
         write_signing_key_previous_expires_at=(
             os.getenv("JOURNALPULSE_WRITE_SIGNING_KEY_PREVIOUS_EXPIRES_AT") or None
