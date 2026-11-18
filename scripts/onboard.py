@@ -425,6 +425,21 @@ class Environment:
         return path
 
 
+def base_images() -> list[str]:
+    """External images named in FROM lines of the Dockerfiles that Compose builds."""
+    images: list[str] = []
+    for dockerfile in (ROOT / "Dockerfile.api", ROOT / "deploy" / "onboarding" / "Dockerfile.auth"):
+        stages: set[str] = set()
+        for line in dockerfile.read_text().splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and parts[0].upper() == "FROM":
+                if parts[1] not in stages and parts[1] not in images:
+                    images.append(parts[1])
+                if len(parts) >= 4 and parts[2].upper() == "AS":
+                    stages.add(parts[3])
+    return images
+
+
 def compose_available(environment: Environment) -> str | None:
     """None when Compose can run this environment; otherwise the reason, in one line."""
     if shutil.which("docker") is None:
@@ -432,6 +447,10 @@ def compose_available(environment: Environment) -> str | None:
     try:
         environment.compose("version", quiet=True)
         environment.compose("--profile", "app", "pull", "--ignore-buildable", "db", "postgrest", quiet=True)
+        # The images are built here too, so their base images must be reachable as well.
+        for image in base_images():
+            if subprocess.run(["docker", "image", "inspect", image], capture_output=True, check=False).returncode:
+                subprocess.run(["docker", "pull", "-q", image], capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as error:
         detail = (error.stderr or error.stdout or "").strip().splitlines()
         reason = next((line for line in reversed(detail) if line.strip()), f"exit {error.returncode}")

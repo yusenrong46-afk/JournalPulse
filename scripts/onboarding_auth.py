@@ -91,7 +91,10 @@ def make_handler(secret: str, database_url: str, postgrest_url: str) -> type[Bas
             for key, value in extra:
                 self.send_header(key, value)
             self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # the caller gave up first (its timeout is shorter); nothing to deliver
 
         def _json(self, status: int, payload: object) -> None:
             self._send(status, json.dumps(payload).encode())
