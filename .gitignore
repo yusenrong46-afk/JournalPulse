@@ -35,7 +35,9 @@ web/.next/
 web/out/
 web/test-results/
 web/test-results-integration/
+web/test-results-demo/
 web/playwright-report/
 web/*.tsbuildinfo
 /build/
 /dist/
+.demo/

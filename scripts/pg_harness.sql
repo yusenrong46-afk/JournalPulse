@@ -25,6 +25,9 @@ create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
   email text unique
 );
+-- Supabase marks anonymous sign-ins (used by the portfolio demo) and records creation.
+alter table auth.users add column if not exists is_anonymous boolean not null default false;
+alter table auth.users add column if not exists created_at timestamptz not null default now();
 
 -- Mirrors Supabase: the subject claim of the request's JWT, null when absent.
 -- PostgREST 11+ sets request.jwt.claims; older setups set request.jwt.claim.sub.

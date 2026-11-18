@@ -10,7 +10,7 @@ JournalPulse is a journaling web app for English-speaking adults who want to wri
 ![Journal workspace with a fictional entry, optional prompts, Save entry, and a disclosure that unsaved writing stays in the current browser tab.](assets/showcase/journal.jpg)
 
 <!-- readme:see-it -->
-**See it:** [journalpulse.vercel.app](https://journalpulse.vercel.app) (sign-in required), or run it locally with `make setup && make run` ([details](#run-locally)).
+**See it:** run the demo locally with `make setup && make demo`, open http://127.0.0.1:8000/login/ and press **Try the demo** (fictional data, AI off, no sign-up; [details](#try-the-demo)). The hosted app is [journalpulse.vercel.app](https://journalpulse.vercel.app) (sign-in required).
 
 English only. Not therapy or crisis care: in Canada, call or text [9-8-8](https://988.ca/).
 [Engineering guide](docs/ENGINEERING.md) · [Operations](docs/OPERATIONS.md) · [Upgrade status](upgrade/STATUS.md)
@@ -76,6 +76,21 @@ Search and AI output are validated before becoming a saved activity.
 Production serves the exported frontend and API together on Vercel. Local development uses SQLite.
 Optional providers are OpenRouter for Luna and Brave for search. There is no custom trained NLP
 model in the active application; adaptive-policy and memory research flags remain off.
+
+## Try the demo
+
+`make demo` builds the web app and serves it with the API on http://127.0.0.1:8000 from a
+fresh SQLite database. Press **Try the demo** on the sign-in screen: you get an isolated
+identity with no email, three fictional entries and one finished Simple Luna activity. Every
+view says "Demo: fictional data, AI off", the Canadian 9-8-8 line stays on screen, and the API
+refuses model and search requests for demo identities (asking for AI gives Simple mode).
+
+`make demo-check` drives that journey in Chromium (Try the demo, save an entry, Simple Luna,
+choose an activity, check in, see it in Journey), fails if any request leaves the machine, and
+saves [three screenshots and a short video](docs/demo/) under `docs/demo/`. Hosting the demo
+needs owner steps in Supabase and Vercel: see [docs/DEPLOY_DEMO.md](docs/DEPLOY_DEMO.md).
+
+![Journey after the demo check-in](docs/demo/03-journey.png)
 
 ## Run locally
 

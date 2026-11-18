@@ -5,6 +5,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 
 import { Luna } from "@/components/luna";
 import { CrisisSupport, PublicInformationLinks } from "@/components/public-information";
+import { DEMO_LABEL, demoEnabled, DemoUnavailableError, startDemo } from "@/lib/demo";
 import { getSupabase } from "@/lib/supabase";
 
 function LoginWorkspace() {
@@ -20,6 +21,27 @@ function LoginWorkspace() {
     mounted.current = true;
     return () => { mounted.current = false; };
   }, []);
+
+  async function tryDemo() {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    setLoading(true);
+    setError("");
+    try {
+      await startDemo();
+      // A full load starts every workspace fresh as the demo identity, so no in-memory
+      // state from an earlier identity survives the switch.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      if (mounted.current) window.location.assign("/");
+    } catch (reason) {
+      if (mounted.current) {
+        setError(reason instanceof DemoUnavailableError ? reason.message : "The demo could not start. Please try again.");
+      }
+    } finally {
+      inFlight.current = false;
+      if (mounted.current) setLoading(false);
+    }
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -81,6 +103,14 @@ function LoginWorkspace() {
       )}
       {message && (
         <button className="btn btn-ghost" type="button" onClick={() => setMessage("")}>Use a different email</button>
+      )}
+      {!message && demoEnabled() && (
+        <div className="stack demo-entry">
+          <button className="btn btn-soft btn-block" type="button" disabled={loading} onClick={tryDemo}>
+            Try the demo
+          </button>
+          <p className="small">{DEMO_LABEL}. No email needed; the demo account and its fictional entries are erased within a day.</p>
+        </div>
       )}
       {error && <p className="note error" role="alert">{error}</p>}
       <p className="small">Luna is a companion, not a therapist.</p>

@@ -139,7 +139,10 @@ def register_journal_routes(
                     prompt_version=REFLECTION_SKILL_VERSION,
                 ),
             )
-        if not settings.openrouter_enabled or not settings.chat_model or not settings.openrouter_zdr:
+        if (
+            auth.demo or not settings.openrouter_enabled
+            or not settings.chat_model or not settings.openrouter_zdr
+        ):
             raise HTTPException(
                 status_code=503,
                 detail="AI reflection is unavailable. Your entry is saved and you can return to it anytime.",

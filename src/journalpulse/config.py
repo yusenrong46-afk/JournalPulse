@@ -124,6 +124,9 @@ class Settings:
     search_feature_enabled: bool = False
     search_api_key: str | None = None
     search_timeout_seconds: float = 8.0
+    # Portfolio demo sandbox: "Try the demo" creates an email-less identity with AI off.
+    demo_enabled: bool = False
+    demo_creation_limit_per_hour: int = 20
 
     @property
     def discovery_enabled(self) -> bool:
@@ -176,6 +179,8 @@ class Settings:
             issues.append("chat_model_missing")
         if self.search_feature_enabled and not self.discovery_enabled:
             issues.append("discovery_missing")
+        if self.demo_creation_limit_per_hour < 1:
+            issues.append("demo_rate_limit_invalid")
         if not 1 <= self.search_timeout_seconds <= 20:
             issues.append("search_timeout_invalid")
         if self.environment == "production":
@@ -234,4 +239,6 @@ def load_settings() -> Settings:
         search_feature_enabled=_flag("JOURNALPULSE_SEARCH_ENABLED", False),
         search_api_key=os.getenv("JOURNALPULSE_SEARCH_API_KEY") or None,
         search_timeout_seconds=float(os.getenv("JOURNALPULSE_SEARCH_TIMEOUT_SECONDS", "8")),
+        demo_enabled=_flag("JOURNALPULSE_DEMO_ENABLED", False),
+        demo_creation_limit_per_hour=int(os.getenv("JOURNALPULSE_DEMO_CREATION_LIMIT_PER_HOUR", "20")),
     )

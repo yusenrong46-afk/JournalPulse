@@ -25,6 +25,7 @@ from .activity_sessions import ActivityFollowUpGenerator, register_activity_rout
 from .auth import AuthContext, resolve_auth
 from .config import PROJECT_ROOT, Settings, load_settings
 from .conversations import ConversationClient, register_conversation_routes
+from .demo import register_demo_routes
 from .discovery import DiscoveryClient, register_discovery_routes
 from .domain import (
     ActionPreview,
@@ -411,7 +412,7 @@ def create_app(
                         settings,
                         text=payload.text,
                         context=payload.context,
-                        consent=payload.llm_consent,
+                        consent=payload.llm_consent and not auth.demo,
                         self_report=payload.self_report,
                         client=intelligence_client,
                     )
@@ -515,7 +516,7 @@ def create_app(
                 settings,
                 text=payload.text,
                 context=payload.context,
-                consent=payload.llm_consent,
+                consent=payload.llm_consent and not auth.demo,
                 self_report=None,
                 client=intelligence_client,
             )
@@ -702,6 +703,8 @@ def create_app(
         conversation_client=conversation_client,
         clock=clock or (lambda: datetime.now(UTC)),
     )
+
+    register_demo_routes(app, settings=settings)
 
     if web_dist is not None and web_dist.is_dir():
         app.mount("/", FreshStaticFiles(directory=web_dist, html=True, supabase_url=settings.supabase_url),

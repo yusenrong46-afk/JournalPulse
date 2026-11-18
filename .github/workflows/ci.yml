@@ -66,6 +66,10 @@ jobs:
         env:
           JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
         run: uv run python scripts/verify_erasure_schema.py
+      - name: Verify demo identity isolation and 24-hour demo erasure
+        env:
+          JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+        run: uv run python scripts/verify_demo_sandbox.py
 
   frontend:
     runs-on: ubuntu-latest

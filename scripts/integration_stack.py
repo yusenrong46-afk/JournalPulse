@@ -376,7 +376,31 @@ class Gateway(BaseHTTPRequestHandler):
             claims = verify(token)
             if not claims or claims.get("role") != "authenticated":
                 return self._json(401, {"message": "invalid token"})
-            return self._json(200, {"id": claims["sub"], "aud": "authenticated"})
+            return self._json(200, {
+                "id": claims["sub"], "aud": "authenticated", "role": "authenticated",
+                "is_anonymous": claims.get("is_anonymous") is True,
+            })
+        if self.path == "/auth/v1/signup" and self.command == "POST":
+            # Stand-in for a Supabase anonymous sign-in (portfolio demo): a new identity
+            # with no email, marked is_anonymous in auth.users and in its token.
+            if (self.headers.get("apikey") or "") != ANON_KEY:
+                return self._json(401, {"message": "invalid apikey"})
+            length = int(self.headers.get("Content-Length") or 0)
+            if length:
+                self.rfile.read(length)
+            user_id = uuid4()
+            psql(DATABASE, f"insert into auth.users (id, is_anonymous) values ('{user_id}', true);")
+            token = mint({
+                "sub": str(user_id), "role": "authenticated", "aud": "authenticated",
+                "is_anonymous": True, "exp": int(time.time()) + 86400,
+            })
+            return self._json(200, {
+                "access_token": token, "token_type": "bearer", "expires_in": 86400,
+                "refresh_token": f"integration-refresh-{user_id}",
+                "user": {
+                    "id": str(user_id), "aud": "authenticated", "role": "authenticated", "is_anonymous": True,
+                },
+            })
         if self.path.startswith("/test/session/"):
             name = self.path.rsplit("/", 1)[-1]
             if name not in USERS:
@@ -417,6 +441,7 @@ def build_web() -> None:
         "NEXT_PUBLIC_SUPABASE_URL": GATEWAY_URL,
         "NEXT_PUBLIC_SUPABASE_ANON_KEY": ANON_KEY,
         "NEXT_PUBLIC_API_BASE_URL": "",
+        "NEXT_PUBLIC_JOURNALPULSE_DEMO_ENABLED": "true",
     }
     subprocess.run(["npm", "run", "build"], cwd=ROOT / "web", env=environment, check=True)
 
@@ -556,6 +581,7 @@ def api_settings() -> Settings:
         write_signing_key=SIGNING_KEY,
         search_feature_enabled=True,
         search_api_key="integration-fake-search-key",
+        demo_enabled=True,
     )
 
 

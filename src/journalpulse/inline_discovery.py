@@ -120,6 +120,8 @@ def register_inline_discovery_routes(
             raise HTTPException(409, "This chat changed. Refresh before searching.")
         if not conversation.llm_consent or not payload.llm_consent:
             raise HTTPException(409, "Choose web-search consent before searching.")
+        if auth.demo:
+            raise HTTPException(403, "Web search is off in the demo.")
         if not settings.discovery_enabled:
             raise HTTPException(
                 503, "Web search is unavailable. You can keep talking or try an app activity."

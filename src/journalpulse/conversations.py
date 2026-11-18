@@ -155,7 +155,10 @@ def register_conversation_routes(
         auth: AuthContext = Depends(auth_dependency),
     ) -> Conversation:
         repository = sweep(auth)
-        use_model = payload.llm_consent and settings.openrouter_enabled
+        # A demo identity that asks for AI gets Simple mode: consent is recorded as off,
+        # so every later turn, follow-up and search check refuses the provider path.
+        llm_consent = payload.llm_consent and not auth.demo
+        use_model = llm_consent and settings.openrouter_enabled
         source_entry = _require_source(repository, auth.user_id, payload.source_entry_id)
         if source_entry is not None and (not use_model or not settings.openrouter_zdr):
             raise HTTPException(
@@ -173,7 +176,7 @@ def register_conversation_routes(
             user_id=auth.user_id,
             created_at=moment,
             updated_at=moment,
-            llm_consent=payload.llm_consent,
+            llm_consent=llm_consent,
             source_entry_id=source_entry.id if source_entry is not None else None,
             source_entry_created_at=source_entry.created_at if source_entry is not None else None,
             mode=ConversationMode.AI if use_model else ConversationMode.GUIDED,
@@ -542,7 +545,7 @@ def _take_turn(
         # A chat's stored AI mode cannot override today's consent and provider
         # configuration, including after the global feature has been disabled.
         if (
-            not conversation.llm_consent or not settings.openrouter_enabled
+            auth.demo or not conversation.llm_consent or not settings.openrouter_enabled
             or not settings.chat_model.strip() or not settings.openrouter_zdr
         ):
             raise HTTPException(

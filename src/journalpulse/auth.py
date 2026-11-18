@@ -9,12 +9,20 @@ from fastapi import HTTPException
 from .config import Settings
 from .http_clients import managed_http_client
 
+# Local demo identities carry this prefix. Local development trusts the user header
+# anyway, so the prefix only marks the identity; production uses Supabase's
+# is_anonymous claim, which the browser cannot set.
+LOCAL_DEMO_PREFIX = "de300000-"
+
 
 @dataclass(frozen=True)
 class AuthContext:
     user_id: UUID
     access_token: str | None = None
     erasure_revision: int | None = None
+    # A demo identity can never cause a model or search request; routes check this
+    # before any provider call and fall back to Simple mode or refuse.
+    demo: bool = False
 
 
 def resolve_auth(
@@ -56,11 +64,16 @@ def resolve_auth(
             user_id = UUID(identity["id"])
         except (ValueError, RecursionError) as exc:
             raise HTTPException(status_code=503, detail="Authentication service unavailable") from exc
-        return AuthContext(user_id=user_id, access_token=token)
+        # Every anonymous (email-less) Supabase account is treated as a demo identity,
+        # whether or not the demo is currently enabled. Conservative: AI stays off.
+        return AuthContext(
+            user_id=user_id, access_token=token, demo=identity.get("is_anonymous") is True
+        )
 
     if settings.environment == "production":
         raise HTTPException(status_code=503, detail="Supabase authentication is required in production")
     try:
-        return AuthContext(user_id=UUID(development_user or "00000000-0000-4000-8000-000000000001"))
+        user_id = UUID(development_user or "00000000-0000-4000-8000-000000000001")
+        return AuthContext(user_id=user_id, demo=str(user_id).startswith(LOCAL_DEMO_PREFIX))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid development user ID") from exc

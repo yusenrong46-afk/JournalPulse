@@ -39,7 +39,7 @@ function wait(milliseconds: number, signal?: AbortSignal | null): Promise<void> 
   });
 }
 
-function apiBase(): string {
+export function apiBase(): string {
   if (CONFIGURED_API_BASE) return CONFIGURED_API_BASE;
   // Only the Next.js dev server (port 3000) talks to a separate local API. Every other
   // origin, including FastAPI serving the exported site, is same-origin.

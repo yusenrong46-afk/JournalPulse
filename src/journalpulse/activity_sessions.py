@@ -406,7 +406,10 @@ def register_activity_routes(
         support = conversation.safety_mode == SafetyMode.SUPPORT
         use_model = not support and conversation.mode == ConversationMode.AI
         if use_model and current.follow_up_status != "ready":
-            if not conversation.llm_consent or not settings.openrouter_enabled or not settings.openrouter_zdr:
+            if (
+                auth.demo or not conversation.llm_consent
+                or not settings.openrouter_enabled or not settings.openrouter_zdr
+            ):
                 raise HTTPException(409, "Private AI help needs consent and provider retention disabled")
             if follow_up is None and default_follow_up is None:
                 raise HTTPException(
