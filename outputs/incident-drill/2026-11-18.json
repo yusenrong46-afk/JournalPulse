@@ -1,0 +1,50 @@
+{
+  "commit": "761ab6f156a45fe56def5a08732d08b4cffde5d9",
+  "runtime": "host",
+  "timeline": [
+    {
+      "t_seconds": 14.0,
+      "event": "environment ready",
+      "runtime": "host"
+    },
+    {
+      "t_seconds": 14.0,
+      "event": "signed in an anonymous drill identity"
+    },
+    {
+      "t_seconds": 14.1,
+      "event": "database paused (unreachable)"
+    },
+    {
+      "t_seconds": 49.2,
+      "event": "/ready returned 503",
+      "checks": {
+        "database": "unreachable"
+      }
+    },
+    {
+      "t_seconds": 64.2,
+      "event": "journal save during outage",
+      "status": 503,
+      "detail": "Your journal could not be reached. We could not confirm its latest state; please retry."
+    },
+    {
+      "t_seconds": 64.3,
+      "event": "database resumed"
+    },
+    {
+      "t_seconds": 80.4,
+      "event": "/ready returned 200"
+    },
+    {
+      "t_seconds": 80.6,
+      "event": "same save retried after recovery",
+      "status": 201
+    },
+    {
+      "t_seconds": 80.8,
+      "event": "entries stored for the drill identity",
+      "count": 1
+    }
+  ]
+}
