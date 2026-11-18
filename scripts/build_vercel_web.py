@@ -53,6 +53,9 @@ def main() -> None:
     env = os.environ.copy()
     env["JOURNALPULSE_STATIC_EXPORT"] = "true"
     env.setdefault("NEXT_PUBLIC_API_BASE_URL", "")
+    # The "Try the demo" button follows the API's demo switch unless set separately.
+    demo_on = env.get("JOURNALPULSE_DEMO_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
+    env.setdefault("NEXT_PUBLIC_JOURNALPULSE_DEMO_ENABLED", "true" if demo_on else "false")
     if not env.get("NEXT_PUBLIC_SUPABASE_URL") and env.get("SUPABASE_URL"):
         env["NEXT_PUBLIC_SUPABASE_URL"] = env["SUPABASE_URL"]
     if not env.get("NEXT_PUBLIC_SUPABASE_ANON_KEY") and env.get("SUPABASE_ANON_KEY"):

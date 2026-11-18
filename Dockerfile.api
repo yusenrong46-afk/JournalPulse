@@ -10,7 +10,10 @@ COPY web ./
 # client key and has to be present while Next compiles the sign-in screen.
 ARG SUPABASE_URL
 ARG SUPABASE_ANON_KEY
+# Off unless the build asks for it (see docs/DEPLOY_DEMO.md); the button is a build input.
+ARG JOURNALPULSE_DEMO_ENABLED=false
 ENV JOURNALPULSE_STATIC_EXPORT=true
+ENV NEXT_PUBLIC_JOURNALPULSE_DEMO_ENABLED=$JOURNALPULSE_DEMO_ENABLED
 ENV NEXT_PUBLIC_SUPABASE_URL=$SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_API_BASE_URL=
@@ -39,6 +42,10 @@ COPY assets ./assets
 COPY --from=web-builder /web/out ./web-out
 
 ENV JOURNALPULSE_WEB_DIST=/app/web-out
+# Build identity: /v1/system/status and the X-JournalPulse-Commit header on /health report it.
+# Render also sets RENDER_GIT_COMMIT at run time, which src/journalpulse/build_info.py reads.
+ARG JOURNALPULSE_GIT_COMMIT=
+ENV JOURNALPULSE_GIT_COMMIT=$JOURNALPULSE_GIT_COMMIT
 
 EXPOSE 8000
 

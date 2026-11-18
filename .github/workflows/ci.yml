@@ -66,6 +66,10 @@ jobs:
         env:
           JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
         run: uv run python scripts/verify_erasure_schema.py
+      - name: Verify demo identity isolation and 24-hour demo erasure
+        env:
+          JOURNALPULSE_PG_DSN: postgresql://postgres:postgres@localhost:5432/postgres
+        run: uv run python scripts/verify_demo_sandbox.py
 
   frontend:
     runs-on: ubuntu-latest
@@ -133,5 +137,101 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: integration-traces
-          path: web/test-results
+          path: web/test-results-integration
           retention-days: 7
+
+  portfolio-gates:
+    # Portfolio Standard gate scripts (upgrade/SPEC.md). Setup and tests run in the jobs above.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen --extra dev
+      - run: make gate-scripts
+
+  portfolio-demo:
+    # L2: the local demo journey in a browser, with every outside request refused.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: make setup
+      - run: npx --prefix web playwright install --with-deps chromium
+      - run: make demo-check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demo-check
+          path: |
+            docs/demo/
+            web/test-results-demo/
+          retention-days: 7
+
+  portfolio-eval:
+    # L3: the README results block matches the committed results, then a fresh offline
+    # evaluation must not fall below docs/evaluations/portfolio/baseline.json.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: make setup
+      - run: make check-docs
+      - run: make eval-guard
+
+  portfolio-onboard:
+    # L4: `make onboard` with Docker Compose (PostgreSQL, PostgREST, auth stand-in, the API image
+    # with the exported web): every migration and verifier, /ready, build identity, demo journey.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: make setup
+      - run: npx --prefix web playwright install --with-deps chromium
+      - run: uv run python scripts/onboard.py ci --runtime compose
+      - run: make container-smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: onboarding-ci
+          path: |
+            outputs/onboarding/ci/
+            outputs/container-smoke/
+          retention-days: 7
+

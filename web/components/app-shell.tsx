@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, type ReactNode } from "react";
 import { Ambient } from "@/components/ambient";
 import { AuthBoundary } from "@/components/auth-boundary";
+import { DemoBanner } from "@/components/demo-banner";
 import { Icon, type IconName } from "@/components/nav-icon";
 import { SystemStatus } from "@/components/system-status";
 import { useRoutePath } from "@/lib/route-path";
@@ -54,6 +55,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       </header>}
       <main id="main" className="app-main">
+        <DemoBanner />
         <SystemStatus />
         <AuthBoundary>{children}</AuthBoundary>
       </main>

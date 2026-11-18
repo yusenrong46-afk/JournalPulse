@@ -346,6 +346,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/demo/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Demo Session */
+        post: operations["create_demo_session_v1_demo_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/discovery/search": {
         parameters: {
             query?: never;
@@ -927,6 +944,13 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** BuildIdentity */
+        BuildIdentity: {
+            /** Commit */
+            commit: string;
+            /** Source */
+            source: string;
+        };
         /** CapabilitiesResponse */
         CapabilitiesResponse: {
             /**
@@ -1152,6 +1176,25 @@ export interface components {
              * @default Journal data was deleted. Your sign-in identity remains active.
              */
             note: string;
+        };
+        /** DemoSessionResponse */
+        DemoSessionResponse: {
+            /** Access Token */
+            access_token?: string | null;
+            /** Expires In */
+            expires_in?: number | null;
+            /**
+             * Label
+             * @default Demo: fictional data, AI off
+             */
+            label: string;
+            /** Refresh Token */
+            refresh_token?: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** DiscoveryCandidate */
         DiscoveryCandidate: {
@@ -1741,6 +1784,7 @@ export interface components {
         SystemStatusResponse: {
             /** Analysis Mode */
             analysis_mode: string;
+            build: components["schemas"]["BuildIdentity"];
             /** Message */
             message: string;
             /** Persistence Mode */
@@ -2661,6 +2705,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_demo_session_v1_demo_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemoSessionResponse"];
                 };
             };
         };

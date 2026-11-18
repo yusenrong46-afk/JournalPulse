@@ -23,8 +23,10 @@ from starlette.types import Scope
 from .activity_chat import generate_activity_follow_up
 from .activity_sessions import ActivityFollowUpGenerator, register_activity_routes
 from .auth import AuthContext, resolve_auth
+from .build_info import BuildIdentity, build_identity
 from .config import PROJECT_ROOT, Settings, load_settings
 from .conversations import ConversationClient, register_conversation_routes
+from .demo import register_demo_routes
 from .discovery import DiscoveryClient, register_discovery_routes
 from .domain import (
     ActionPreview,
@@ -141,6 +143,7 @@ class SystemStatusResponse(BaseModel):
     analysis_mode: str
     persistence_mode: str
     message: str
+    build: BuildIdentity
 
 
 def create_app(
@@ -194,6 +197,7 @@ def create_app(
         if not web_dist.is_absolute():
             web_dist = PROJECT_ROOT / web_dist
         web_dist = web_dist.resolve()
+    build = build_identity()  # read once: the commit cannot change while this process runs
     public_docs = settings.environment != "production"
     app = FastAPI(
         title="JournalPulse Research Beta API", version="1.0.0",
@@ -289,7 +293,10 @@ def create_app(
         return auth
 
     @app.get("/health")
-    def health() -> dict:
+    def health(response: Response) -> dict:
+        # The body stays {"status": "ok"}; the deployed commit rides in a header so a
+        # public probe can confirm which build answers without signing in.
+        response.headers["X-JournalPulse-Commit"] = build.commit
         return {"status": "ok"}
 
     @app.get("/v1/capabilities", response_model=CapabilitiesResponse)
@@ -353,6 +360,7 @@ def create_app(
             analysis_mode=analysis_mode,
             persistence_mode="account" if settings.supabase_enabled else "server_sqlite",
             message=message,
+            build=build,
         )
 
     @app.post("/v1/reflections", response_model=ReflectionRecord, status_code=201)
@@ -411,7 +419,7 @@ def create_app(
                         settings,
                         text=payload.text,
                         context=payload.context,
-                        consent=payload.llm_consent,
+                        consent=payload.llm_consent and not auth.demo,
                         self_report=payload.self_report,
                         client=intelligence_client,
                     )
@@ -515,7 +523,7 @@ def create_app(
                 settings,
                 text=payload.text,
                 context=payload.context,
-                consent=payload.llm_consent,
+                consent=payload.llm_consent and not auth.demo,
                 self_report=None,
                 client=intelligence_client,
             )
@@ -702,6 +710,8 @@ def create_app(
         conversation_client=conversation_client,
         clock=clock or (lambda: datetime.now(UTC)),
     )
+
+    register_demo_routes(app, settings=settings)
 
     if web_dist is not None and web_dist.is_dir():
         app.mount("/", FreshStaticFiles(directory=web_dist, html=True, supabase_url=settings.supabase_url),

@@ -2288,3 +2288,17 @@ ol.how-steps {
 .public-support { padding: 16px; border: 1px solid var(--line); border-radius: 16px; text-align: left; font-size: 0.9rem; line-height: 1.6; }
 .public-support p + p { margin-top: 10px; }
 .focus-page > .public-support { margin-top: 20px; }
+
+/* Portfolio demo sandbox: a plain, always-visible label on every demo view. */
+.demo-banner {
+  margin: 0 auto 12px;
+  max-width: 720px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px dashed currentColor;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  text-align: center;
+}
+.demo-banner a { text-decoration: underline; text-underline-offset: 3px; }
+.demo-entry { margin-top: 4px; }

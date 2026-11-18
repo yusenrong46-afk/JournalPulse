@@ -65,6 +65,52 @@ describe("check-in identity", () => {
     await act(async () => fail(new Error("Timed out")));
     expect(container.textContent).toContain("Your save is not confirmed");
   });
+  test("the page deadline ends a hanging save with a retry of the same receipt", async () => {
+    // Regression: the page's own 15s abort used to skip both the error and setBusy(false),
+    // leaving "Saving…" disabled forever. The request here only settles when aborted.
+    vi.useFakeTimers();
+    const fallback = requested.getMockImplementation()!;
+    const writes: string[] = [];
+    requested.mockImplementation(async (path, options) => {
+      if (path === "/v1/outcomes" && options?.method === "POST") {
+        writes.push(String(options.body));
+        if (writes.length > 1) return JSON.parse(writes[0]);
+        return new Promise((_resolve, reject) => {
+          options.signal!.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+        });
+      }
+      return fallback(path, options);
+    });
+    await mount(); await click("Not yet"); await click("Skip this one");
+    await act(async () => vi.advanceTimersByTime(15_000));
+    const retry = [...container.querySelectorAll("button")].find((button) => button.textContent?.trim() === "Retry saving check-in");
+    expect(retry?.disabled).toBe(false);
+    expect(container.querySelector("[role=alert]")?.textContent).toContain("took too long to confirm");
+    expect(container.textContent).not.toContain("Still saving your check-in");
+    await click("Retry saving check-in");
+    expect(writes).toHaveLength(2);
+    expect(writes[1]).toBe(writes[0]);
+    expect(container.textContent).toContain("Thank you!");
+  });
+
+  test("unmounting during a save stays silent", async () => {
+    const fallback = requested.getMockImplementation()!;
+    requested.mockImplementation(async (path, options) => {
+      if (path === "/v1/outcomes" && options?.method === "POST") {
+        return new Promise((_resolve, reject) => {
+          options.signal!.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+        });
+      }
+      return fallback(path, options);
+    });
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    await mount(); await click("Not yet"); await click("Skip this one");
+    await act(async () => { root.unmount(); });
+    root = createRoot(container);
+    expect(errors).not.toHaveBeenCalled();
+    errors.mockRestore();
+  });
+
   test("an old load cannot replace the check-in selected by a newer URL", async () => {
     let finish!: (value: typeof history) => void;
     requested.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));

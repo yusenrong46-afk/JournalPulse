@@ -169,6 +169,25 @@ then check both the existing site's readiness and the preview's readiness and us
 | Oversized request | 413 before any model or database work |
 | Device offline | A banner says nothing new will be sent; the offline page is the only cached page |
 
+## Incident: database unreachable
+
+Added after the 2026-11-18 drill ([INCIDENT_DRILL.md](INCIDENT_DRILL.md)), which found no step-by-step
+procedure here. Signals: the synthetic-check issue, `/ready` 503 with `database: unreachable`, people
+seeing "Your journal could not be reached".
+
+1. **Confirm.** `curl -s https://<address>/ready` shows `database: unreachable` (the result is cached
+   for up to 30 seconds, so allow a minute). `/health` stays 200: the API itself is up.
+2. **Leave the app alone.** Writes already fail closed with 503 and store nothing, and the browser
+   keeps unsaved text in the tab. Do not restart or redeploy to "fix" it, and never switch to a
+   development identity or SQLite.
+3. **Look at the database side.** Supabase dashboard: project status (a paused project must be
+   restored), Database health and connections, and the Supabase status page. Switching
+   `JOURNALPULSE_LLM_ENABLED=false` is not needed: no model call happens without a reachable database.
+4. **Recover, then verify.** When the database is back, `/ready` returns 200 within about 30 seconds.
+   With a disposable account, save one entry and confirm it appears once.
+5. **Record.** Close the synthetic-check issue with the start and end times from
+   `status/history.jsonl` on the `status` branch, the cause, and anything this list missed.
+
 ## Data recovery and deletion
 
 - Enable and test Supabase backups and point-in-time recovery for the chosen plan. Before inviting more

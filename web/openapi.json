@@ -1140,6 +1140,24 @@
         "title": "AnalysisRequest",
         "type": "object"
       },
+      "BuildIdentity": {
+        "properties": {
+          "commit": {
+            "title": "Commit",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "commit",
+          "source"
+        ],
+        "title": "BuildIdentity",
+        "type": "object"
+      },
       "CapabilitiesResponse": {
         "properties": {
           "discovery": {
@@ -1815,6 +1833,58 @@
           "deleted_records"
         ],
         "title": "DeletionResponse",
+        "type": "object"
+      },
+      "DemoSessionResponse": {
+        "properties": {
+          "access_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Token"
+          },
+          "expires_in": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires In"
+          },
+          "label": {
+            "default": "Demo: fictional data, AI off",
+            "title": "Label",
+            "type": "string"
+          },
+          "refresh_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refresh Token"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id"
+        ],
+        "title": "DemoSessionResponse",
         "type": "object"
       },
       "DiscoveryCandidate": {
@@ -3432,6 +3502,9 @@
             "title": "Analysis Mode",
             "type": "string"
           },
+          "build": {
+            "$ref": "#/components/schemas/BuildIdentity"
+          },
           "message": {
             "title": "Message",
             "type": "string"
@@ -3444,7 +3517,8 @@
         "required": [
           "analysis_mode",
           "persistence_mode",
-          "message"
+          "message",
+          "build"
         ],
         "title": "SystemStatusResponse",
         "type": "object"
@@ -5672,6 +5746,24 @@
           }
         },
         "summary": "Change Preference"
+      }
+    },
+    "/v1/demo/sessions": {
+      "post": {
+        "operationId": "create_demo_session_v1_demo_sessions_post",
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoSessionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Create Demo Session"
       }
     },
     "/v1/discovery/search": {

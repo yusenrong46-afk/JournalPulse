@@ -428,6 +428,8 @@ def register_discovery_routes(
             )
         if not payload.llm_consent:
             raise HTTPException(status_code=403, detail="Approve AI use before searching for resources.")
+        if auth.demo:
+            raise HTTPException(status_code=403, detail="Web search is off in the demo.")
         if not settings.discovery_enabled:
             raise HTTPException(
                 status_code=503,
