@@ -15,7 +15,7 @@ JournalPulse is a journaling web app for English-speaking adults who want to wri
 **See it:** run the demo locally with `make setup && make demo`, open http://127.0.0.1:8000/login/ and press **Try the demo** (fictional data, AI off, no sign-up; [details](#try-the-demo)). The hosted app is [journalpulse.vercel.app](https://journalpulse.vercel.app) (sign-in required).
 
 English only. Not therapy or crisis care: in Canada, call or text [9-8-8](https://988.ca/).
-[Engineering guide](docs/ENGINEERING.md) · [Operations](docs/OPERATIONS.md) · [API](docs/API.md) · [Onboarding](docs/ONBOARDING.md) · [Upgrade status](upgrade/STATUS.md)
+[Engineering guide](docs/ENGINEERING.md) · [Operations](docs/OPERATIONS.md) · [API](docs/API.md) · [Onboarding](docs/ONBOARDING.md) · [Walkthrough](docs/WALKTHROUGH.md) · [Case study](docs/CASE_STUDY.md) · [Upgrade status](upgrade/STATUS.md)
 
 **Production, 30-day availability:** ![30-day availability](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyusenrong46-afk%2FJournalPulse%2Fstatus%2Fstatus%2Favailability.json) from an hourly check of `/health` and `/ready` ([SLO](docs/SLO.md); "no data" until the check runs from `main`).
 

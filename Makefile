@@ -14,6 +14,7 @@
 #                   cannot run): migrations, verifiers, /ready, demo journey; timed REPORT.md
 #   make container-smoke  build Dockerfile.api and check /health names this commit
 #   make gate-l4    gate-l3, onboard, container smoke, operations docs present
+#   make gate-l5    gate-l4, walkthrough pointers resolve, exercises fail on their stubs, docs present
 #
 # Postgres and browser suites run in CI and locally with: make test-postgres, make test-browser,
 # make test-integration (they need JOURNALPULSE_PG_DSN pointing at a disposable local database).
@@ -28,7 +29,8 @@ PG_VERIFIERS := verify_postgres_schema verify_journal_schema verify_integrity_up
 .PHONY: setup test lint test-postgres test-browser test-integration test-all run \
 	check-readme secret-scan gate-scripts gate-l1 demo demo-check gate-l2 \
 	eval eval-guard eval-readme eval-repeatable check-docs gate-l3 \
-	onboard container-smoke check-l4-docs gate-l4
+	onboard container-smoke check-l4-docs gate-l4 \
+	check-walkthrough check-exercises check-l5-docs gate-l5
 
 setup:
 	$(UV) sync --frozen --extra dev
@@ -137,3 +139,19 @@ gate-l4: gate-l3 check-l4-docs
 	$(MAKE) onboard NAME=gate-l4
 	$(MAKE) container-smoke
 	@echo "gate-l4: PASS"
+
+check-walkthrough:
+	$(UV) run python scripts/check_walkthrough.py
+
+check-exercises:
+	$(UV) run python scripts/check_exercises.py
+
+check-l5-docs:
+	@for file in docs/WALKTHROUGH.md docs/CASE_STUDY.md docs/DEMO_SCRIPT.md upgrade/RESUME_BULLETS.md \
+	  exercises/README.md; do \
+	  test -s $$file || { echo "check-l5-docs: $$file is missing"; exit 1; }; done
+	$(UV) run python scripts/resume_numbers.py --check
+	@echo "check-l5-docs passed"
+
+gate-l5: gate-l4 check-walkthrough check-exercises check-l5-docs
+	@echo "gate-l5: PASS"
