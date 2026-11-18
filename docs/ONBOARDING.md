@@ -21,7 +21,9 @@ recorded run is [outputs/onboarding/first-run/REPORT.md](../outputs/onboarding/f
 | AI and search | Off (`JOURNALPULSE_LLM_ENABLED=false`, no provider key) | — |
 
 Every port binds 127.0.0.1 and is chosen at random, so environments with different names can
-exist side by side. Secrets (JWT secret, signing key, database passwords) are generated per run,
+exist side by side. Under Compose the API shares the auth stand-in's network namespace, so
+the API and the browser reach auth at the same `http://127.0.0.1:<port>` address: the API builds
+its Content-Security-Policy `connect-src` from that address, and the browser blocks any other. Secrets (JWT secret, signing key, database passwords) are generated per run,
 passed only through process environments, and never printed or written to the report.
 
 ## What it checks, in order

@@ -34,8 +34,13 @@ services:
       JP_AUTH_DATABASE_URL: postgresql://postgres:${JP_DB_PASSWORD:?}@db:5432/${JP_DATABASE:?}
       JP_POSTGREST_URL: http://postgrest:3000
       JP_AUTH_BIND: 0.0.0.0
-      JP_AUTH_PORT: "54321"
-    ports: ["127.0.0.1:${JP_AUTH_PORT:?}:54321"]
+      # Same port inside and outside: the API shares this network namespace (below), so the
+      # API and the browser reach auth at one address, and the API's Content-Security-Policy
+      # (connect-src, built from SUPABASE_URL) names the address the browser actually uses.
+      JP_AUTH_PORT: ${JP_AUTH_PORT:?}
+    ports:
+      - "127.0.0.1:${JP_AUTH_PORT:?}:${JP_AUTH_PORT:?}"
+      - "127.0.0.1:${JP_API_PORT:?}:8000"   # the API's port, published here because of network_mode
     depends_on: [postgrest]
 
   api:
@@ -49,14 +54,14 @@ services:
         JOURNALPULSE_DEMO_ENABLED: "true"
         JOURNALPULSE_GIT_COMMIT: ${JP_GIT_COMMIT:-}
     profiles: [app]
+    network_mode: "service:auth"
     environment:
       JOURNALPULSE_ENV: onboarding
-      SUPABASE_URL: http://auth:54321
+      SUPABASE_URL: http://127.0.0.1:${JP_AUTH_PORT:?}
       SUPABASE_ANON_KEY: ${JP_ANON_KEY:?}
       JOURNALPULSE_WRITE_SIGNING_KEY: ${JP_SIGNING_KEY:?}
       JOURNALPULSE_LLM_ENABLED: "false"
       JOURNALPULSE_SEARCH_ENABLED: "false"
       JOURNALPULSE_DEMO_ENABLED: "true"
       JOURNALPULSE_CORS_ORIGINS: http://127.0.0.1:${JP_API_PORT:?}
-    ports: ["127.0.0.1:${JP_API_PORT:?}:8000"]
     depends_on: [auth]
