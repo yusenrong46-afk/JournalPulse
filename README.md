@@ -1,5 +1,22 @@
 # JournalPulse
 
+<!-- readme:purpose -->
+JournalPulse is a journaling web app for English-speaking adults who want to write privately, talk a day through with an optional AI companion called Luna, and choose one small activity, with a safety and consent gate in front of every model call.
+
+<!-- readme:result -->
+**Measured 2026-11-18:** 1,402 backend tests passed with 92.01% branch-aware coverage, plus 230 frontend unit tests, 58 browser checks and 22 real-PostgreSQL integration journeys (`make test`, `make test-all`).
+
+<!-- readme:image -->
+![Journal workspace with a fictional entry, optional prompts, Save entry, and a disclosure that unsaved writing stays in the current browser tab.](assets/showcase/journal.jpg)
+
+<!-- readme:see-it -->
+**See it:** [journalpulse.vercel.app](https://journalpulse.vercel.app) (sign-in required), or run it locally with `make setup && make run` ([details](#run-locally)).
+
+English only. Not therapy or crisis care: in Canada, call or text [9-8-8](https://988.ca/).
+[Engineering guide](docs/ENGINEERING.md) · [Operations](docs/OPERATIONS.md) · [Upgrade status](upgrade/STATUS.md)
+
+## What it is
+
 **Language support: English only.** AI replies and phrase-based safety checks can still make mistakes in English.
 
 **A quiet place to write, reflect, and choose one small next step.**
@@ -8,13 +25,9 @@ JournalPulse is a deployed research beta for people who want to keep their own w
 talk through a day with Luna, and see what helped afterward. Journaling works on its own;
 AI chat and the scripted **Simple mode** are separate, optional choices.
 
-[Try JournalPulse](https://journalpulse.vercel.app) · [Engineering guide](docs/ENGINEERING.md) ·
-[Run locally](#run-locally) · [Operations](docs/OPERATIONS.md)
-
-![Journal workspace with a fictional entry, optional prompts, Save entry, and a disclosure that unsaved writing stays in the current browser tab.](assets/showcase/journal.jpg)
-
-*Real app, fictional writing. Captured locally on October 7, 2026 with AI and external search
-disabled. The draft shown here was restored after refresh. [Capture scope and text walkthrough](docs/ENGINEERING.md#demonstration).*
+*The screenshot is the real app with fictional writing, captured locally on October 7, 2026 with AI
+and external search disabled. The draft shown was restored after refresh.
+[Capture scope and text walkthrough](docs/ENGINEERING.md#demonstration).*
 
 ## The experience
 
@@ -98,7 +111,8 @@ Hosted configuration, secrets, migrations and rollback belong in the [operations
 
 [October 14 trust-hardening candidate and remaining gates](docs/TRUST_HARDENING_2026-10-14.md).
 
-The October 7 repair snapshot passed **1,270 backend tests**, **217 frontend unit tests**,
+Hand-typed counts dated 2026-10-07 (not regenerated; the dated result at the top of this README
+was measured on 2026-11-18): the October 7 repair snapshot passed **1,270 backend tests**, **217 frontend unit tests**,
 **46 browser checks with mocked APIs**, and **22 integrations through the real API, PostgREST
 and PostgreSQL**. Backend coverage was **91.88%**, with branch measurement enabled.
 Four optional integration tours were skipped.

@@ -135,3 +135,19 @@ jobs:
           name: integration-traces
           path: web/test-results
           retention-days: 7
+
+  portfolio-gates:
+    # Portfolio Standard gate scripts (upgrade/SPEC.md). Setup and tests run in the jobs above.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen --extra dev
+      - run: make gate-scripts
