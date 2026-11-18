@@ -41,3 +41,5 @@ web/*.tsbuildinfo
 /build/
 /dist/
 .demo/
+docs/evaluations/portfolio/timings.json
+docs/evaluations/portfolio/.first-run.json

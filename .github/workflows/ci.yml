@@ -155,3 +155,52 @@ jobs:
           enable-cache: true
       - run: uv sync --frozen --extra dev
       - run: make gate-scripts
+
+  portfolio-demo:
+    # L2: the local demo journey in a browser, with every outside request refused.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: make setup
+      - run: npx --prefix web playwright install --with-deps chromium
+      - run: make demo-check
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demo-check
+          path: |
+            docs/demo/
+            web/test-results-demo/
+          retention-days: 7
+
+  portfolio-eval:
+    # L3: the README results block matches the committed results, then a fresh offline
+    # evaluation must not fall below docs/evaluations/portfolio/baseline.json.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: make setup
+      - run: make check-docs
+      - run: make eval-guard

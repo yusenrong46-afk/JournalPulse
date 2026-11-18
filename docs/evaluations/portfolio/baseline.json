@@ -1,0 +1,14 @@
+{
+  "note": "Guarded numbers for `make eval-guard` (CI job portfolio-eval). Raise a floor when a result improves; never lower one to make a change pass. Safety floors come from the P3 spec (29 pass, 3 missed support, 2 review required on the 34-case development set). Coverage has 0.4 points of slack because local .env files and machines move it by about 0.1.",
+  "set_on": "2026-11-18",
+  "guarded": {
+    "safety_pass": {"at_least": 29},
+    "safety_missed_support": {"at_most": 3},
+    "safety_review_required": {"at_most": 2},
+    "backend_tests_passed": {"at_least": 1415},
+    "backend_tests_failed": {"at_most": 0},
+    "backend_branch_coverage_percent": {"at_least": 91.5},
+    "frontend_unit_tests_passed": {"at_least": 238},
+    "benchmark_discrepancies": {"at_most": 0}
+  }
+}

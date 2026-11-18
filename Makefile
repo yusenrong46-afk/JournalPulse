@@ -7,6 +7,9 @@
 #   make demo       the portfolio demo on http://127.0.0.1:8000/login/ (fictional data, AI off)
 #   make demo-check drive the demo journey in a browser; saves docs/demo/ screenshots and video
 #   make gate-l2    gate-l1 plus demo-check
+#   make eval       offline evaluation (safety, benchmark recompute, tests); docs/evaluations/portfolio/
+#   make check-docs the README results block matches results.json
+#   make gate-l3    gate-l2, eval twice (byte-identical), guarded numbers, check-docs
 #
 # Postgres and browser suites run in CI and locally with: make test-postgres, make test-browser,
 # make test-integration (they need JOURNALPULSE_PG_DSN pointing at a disposable local database).
@@ -19,7 +22,8 @@ PG_VERIFIERS := verify_postgres_schema verify_journal_schema verify_integrity_up
 	verify_activity_schema verify_sentinel_repairs verify_erasure_schema verify_demo_sandbox
 
 .PHONY: setup test lint test-postgres test-browser test-integration test-all run \
-	check-readme secret-scan gate-scripts gate-l1 demo demo-check gate-l2
+	check-readme secret-scan gate-scripts gate-l1 demo demo-check gate-l2 \
+	eval eval-guard eval-readme eval-repeatable check-docs gate-l3
 
 setup:
 	$(UV) sync --frozen --extra dev
@@ -82,3 +86,28 @@ demo-check:
 
 gate-l2: gate-l1 demo-check
 	@echo "gate-l2: PASS"
+
+eval:
+	$(UV) run python scripts/portfolio_eval.py
+
+eval-guard:
+	$(UV) run python scripts/portfolio_eval.py --guard
+
+eval-readme:
+	$(UV) run python scripts/portfolio_eval.py --readme write
+
+check-docs:
+	$(UV) run python scripts/portfolio_eval.py --readme check
+
+# Two runs on one commit must write byte-identical results (timings live in a sidecar).
+eval-repeatable:
+	$(UV) run python scripts/portfolio_eval.py
+	cp docs/evaluations/portfolio/results.json docs/evaluations/portfolio/.first-run.json
+	$(UV) run python scripts/portfolio_eval.py --guard
+	cmp docs/evaluations/portfolio/.first-run.json docs/evaluations/portfolio/results.json
+	rm docs/evaluations/portfolio/.first-run.json
+	@echo "eval-repeatable: two runs wrote byte-identical results.json"
+
+# check-docs runs first, against the committed results.json, before eval rewrites it.
+gate-l3: gate-l2 check-docs eval-repeatable
+	@echo "gate-l3: PASS"

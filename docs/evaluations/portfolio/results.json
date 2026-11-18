@@ -1,0 +1,51 @@
+{
+  "benchmark": {
+    "dataset_version": "luna-guided-action-v4-current-audit-final",
+    "development_pairs": 24,
+    "discrepancies": [],
+    "generated_on": "2026-10-05",
+    "heldout_pairs": 20,
+    "model_calls": 0,
+    "prompt_version": "guided-action-2026-10-05.3",
+    "recomputed": {
+      "heldout_baseline_wins": 5,
+      "heldout_candidate_wins": 8,
+      "heldout_interval_high": 0.83,
+      "heldout_interval_low": -0.13,
+      "heldout_mean_primary_gain": 0.35,
+      "heldout_ties": 7
+    },
+    "release_gates": {
+      "adaptive_observations": "pass",
+      "complete_heldout_observations": "pass",
+      "hard_safety_privacy_lifecycle": "uncertain",
+      "heldout_non_tied_win_fraction": "pass",
+      "heldout_primary_gain": "pass",
+      "naturalness": "pass"
+    },
+    "source": "artifacts/luna-release-benchmark/comparison.json",
+    "total_scenarios": 60,
+    "unresolved_critical_cases": [
+      "s05_physical_warning"
+    ]
+  },
+  "commit_date": "2026-11-18",
+  "runtime_prompt_version": "guided-action-2026-10-06.2",
+  "safety": {
+    "dataset_version": "safety-development-2026-10-14.1",
+    "false_alarm": 0,
+    "missed_support": 3,
+    "pass": 29,
+    "qualification": "NOT_QUALIFIED",
+    "review_required": 2,
+    "total_cases": 34
+  },
+  "tests": {
+    "backend_branch_coverage_percent": 92.0,
+    "backend_tests_failed": 0,
+    "backend_tests_passed": 1420,
+    "backend_tests_skipped": 0,
+    "frontend_unit_tests_failed": 0,
+    "frontend_unit_tests_passed": 238
+  }
+}
