@@ -15,3 +15,7 @@ web/playwright-report
 web/test-results
 __pycache__
 *.pyc
+.demo
+.onboarding
+outputs
+web/test-results-*

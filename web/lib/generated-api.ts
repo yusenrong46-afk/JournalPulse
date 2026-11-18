@@ -944,6 +944,13 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** BuildIdentity */
+        BuildIdentity: {
+            /** Commit */
+            commit: string;
+            /** Source */
+            source: string;
+        };
         /** CapabilitiesResponse */
         CapabilitiesResponse: {
             /**
@@ -1777,6 +1784,7 @@ export interface components {
         SystemStatusResponse: {
             /** Analysis Mode */
             analysis_mode: string;
+            build: components["schemas"]["BuildIdentity"];
             /** Message */
             message: string;
             /** Persistence Mode */

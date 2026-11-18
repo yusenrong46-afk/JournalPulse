@@ -6,12 +6,19 @@ import path from "node:path";
 
 import { expect, test } from "@playwright/test";
 
-const DOCS = path.resolve(__dirname, "../../../docs/demo");
+// `make onboard` points the journey at an onboarded environment and keeps its pictures there.
+const DOCS = process.env.JP_DEMO_OUTPUT_DIR ?? path.resolve(__dirname, "../../../docs/demo");
+// An onboarded environment signs demo visitors in through its local auth stand-in.
+const EXTRA_HOSTS = (process.env.JP_DEMO_EXTRA_HOSTS ?? "").split(",").filter(Boolean);
 const LABEL = "Demo: fictional data, AI off";
 
 test("the demo journey works with fictional data, AI off and no outside requests", async ({ browser, baseURL }) => {
   mkdirSync(DOCS, { recursive: true });
-  const allowed = new URL(baseURL!).host;
+  const allowed = new Set([new URL(baseURL!).host, ...EXTRA_HOSTS]);
+  // Only the hourly synthetic check (JP_DEMO_ALLOW_REMOTE=1) may name a hosted app and its auth host.
+  if (process.env.JP_DEMO_ALLOW_REMOTE !== "1") {
+    for (const host of allowed) expect(host, "the journey only talks to this machine").toMatch(/^127\.0\.0\.1:\d+$/);
+  }
   const outside: string[] = [];
   const context = await browser.newContext({
     ...test.info().project.use,
@@ -21,7 +28,7 @@ test("the demo journey works with fictional data, AI off and no outside requests
   // Anything not served by the demo server is recorded and refused before it leaves.
   await context.route("**/*", (route) => {
     const url = new URL(route.request().url());
-    if (url.protocol === "data:" || url.protocol === "blob:" || url.host === allowed) return route.continue();
+    if (url.protocol === "data:" || url.protocol === "blob:" || allowed.has(url.host)) return route.continue();
     outside.push(`${route.request().method()} ${url.protocol}//${url.host}`);
     return route.abort();
   });

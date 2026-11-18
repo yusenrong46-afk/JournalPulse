@@ -204,3 +204,34 @@ jobs:
       - run: make setup
       - run: make check-docs
       - run: make eval-guard
+
+  portfolio-onboard:
+    # L4: `make onboard` with Docker Compose (PostgreSQL, PostgREST, auth stand-in, the API image
+    # with the exported web): every migration and verifier, /ready, build identity, demo journey.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: make setup
+      - run: npx --prefix web playwright install --with-deps chromium
+      - run: uv run python scripts/onboard.py ci --runtime compose
+      - run: make container-smoke
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: onboarding-ci
+          path: |
+            outputs/onboarding/ci/
+            outputs/container-smoke/
+          retention-days: 7
+

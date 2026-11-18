@@ -10,6 +10,10 @@
 #   make eval       offline evaluation (safety, benchmark recompute, tests); docs/evaluations/portfolio/
 #   make check-docs the README results block matches results.json
 #   make gate-l3    gate-l2, eval twice (byte-identical), guarded numbers, check-docs
+#   make onboard NAME=<env>  a whole local environment (Compose, or host processes when Docker
+#                   cannot run): migrations, verifiers, /ready, demo journey; timed REPORT.md
+#   make container-smoke  build Dockerfile.api and check /health names this commit
+#   make gate-l4    gate-l3, onboard, container smoke, operations docs present
 #
 # Postgres and browser suites run in CI and locally with: make test-postgres, make test-browser,
 # make test-integration (they need JOURNALPULSE_PG_DSN pointing at a disposable local database).
@@ -23,7 +27,8 @@ PG_VERIFIERS := verify_postgres_schema verify_journal_schema verify_integrity_up
 
 .PHONY: setup test lint test-postgres test-browser test-integration test-all run \
 	check-readme secret-scan gate-scripts gate-l1 demo demo-check gate-l2 \
-	eval eval-guard eval-readme eval-repeatable check-docs gate-l3
+	eval eval-guard eval-readme eval-repeatable check-docs gate-l3 \
+	onboard container-smoke check-l4-docs gate-l4
 
 setup:
 	$(UV) sync --frozen --extra dev
@@ -111,3 +116,24 @@ eval-repeatable:
 # check-docs runs first, against the committed results.json, before eval rewrites it.
 gate-l3: gate-l2 check-docs eval-repeatable
 	@echo "gate-l3: PASS"
+
+NAME ?= local
+
+onboard:
+	$(UV) run python scripts/onboard.py $(NAME)
+
+container-smoke:
+	bash scripts/container_smoke.sh
+
+check-l4-docs:
+	@for file in docs/API.md docs/SLO.md docs/INCIDENT_DRILL.md docs/ONBOARDING.md \
+	  .github/workflows/synthetic.yml deploy/onboarding/compose.yaml; do \
+	  test -s $$file || { echo "check-l4-docs: $$file is missing"; exit 1; }; done
+	@grep -q "30-day availability" README.md || { echo "check-l4-docs: README availability line missing"; exit 1; }
+	@echo "check-l4-docs passed"
+
+# Needs JOURNALPULSE_PG_DSN (a disposable local PostgreSQL 16) when Compose cannot run here.
+gate-l4: gate-l3 check-l4-docs
+	$(MAKE) onboard NAME=gate-l4
+	$(MAKE) container-smoke
+	@echo "gate-l4: PASS"

@@ -41,9 +41,9 @@
     "total_cases": 34
   },
   "tests": {
-    "backend_branch_coverage_percent": 92.0,
+    "backend_branch_coverage_percent": 92.07,
     "backend_tests_failed": 0,
-    "backend_tests_passed": 1420,
+    "backend_tests_passed": 1436,
     "backend_tests_skipped": 0,
     "frontend_unit_tests_failed": 0,
     "frontend_unit_tests_passed": 238

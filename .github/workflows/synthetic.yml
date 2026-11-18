@@ -1,0 +1,106 @@
+# Hourly synthetic check of production (docs/SLO.md). No secret is used: the job reads public
+# URLs and writes with the workflow's own GITHUB_TOKEN. Scheduled runs start only once this file
+# is on the default branch. Results go to status/history.jsonl on the `status` branch; the
+# README badge reads status/availability.json from there.
+name: Synthetic check
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: synthetic-check
+  cancel-in-progress: false
+
+env:
+  BASE_URL: ${{ vars.JOURNALPULSE_PRODUCTION_URL || 'https://journalpulse.vercel.app' }}
+  # The hosted Supabase host the demo signs in through (public, not a secret). Until it is set,
+  # the browser journey is skipped and only the probes run.
+  SUPABASE_HOST: ${{ vars.JOURNALPULSE_SUPABASE_HOST }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out the status branch (created on the first run)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git fetch --depth=200 origin status:status 2>/dev/null; then
+            git worktree add status-branch status
+          else
+            git worktree add --orphan -b status status-branch
+          fi
+
+      - name: Is the demo live?
+        id: demo
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 -X POST \
+            -H 'Content-Type: application/json' -d '{}' "$BASE_URL/v1/demo/sessions" || true)
+          if [ "$code" = "401" ] || [ "$code" = "403" ]; then live=true; else live=false; fi
+          echo "live=$live" >> "$GITHUB_OUTPUT"
+          echo "demo route answered $code (live=$live)"
+
+      - uses: actions/setup-node@v4
+        if: steps.demo.outputs.live == 'true' && env.SUPABASE_HOST != ''
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Demo journey against production
+        id: journey
+        if: steps.demo.outputs.live == 'true' && env.SUPABASE_HOST != ''
+        continue-on-error: true
+        working-directory: web
+        env:
+          JP_DEMO_BASE_URL: ${{ env.BASE_URL }}
+          JP_DEMO_EXTRA_HOSTS: ${{ env.SUPABASE_HOST }}
+          JP_DEMO_ALLOW_REMOTE: "1"
+          JP_DEMO_OUTPUT_DIR: ${{ runner.temp }}/demo
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.demo.config.ts
+
+      - name: Probe /health and /ready, append to the history
+        id: probe
+        run: |
+          python3 scripts/synthetic_check.py --base-url "$BASE_URL" \
+            --journey "${{ steps.journey.outcome || 'skipped' }}" \
+            --history status-branch/status/history.jsonl \
+            --badge status-branch/status/availability.json
+
+      - name: Push the history to the status branch
+        working-directory: status-branch
+        run: |
+          git add status/history.jsonl status/availability.json
+          git commit -q -m "chore(status): synthetic check $(date -u +%Y-%m-%dT%H:%MZ)"
+          for attempt in 1 2 3; do
+            git push origin HEAD:status && exit 0
+            git pull --rebase origin status || true
+            sleep $((attempt * 5))
+          done
+          exit 1
+
+      - name: Open an issue after two consecutive failures
+        if: steps.probe.outputs.consecutive_failures >= 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAILURES: ${{ steps.probe.outputs.consecutive_failures }}
+        run: |
+          title="Synthetic check failing on production"
+          open=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq 'length')
+          if [ "$open" = "0" ]; then
+            gh issue create --title "$title" --body "The hourly synthetic check has failed $FAILURES times in a row against $BASE_URL. History: the status branch, status/history.jsonl. Follow docs/INCIDENT_DRILL.md and docs/OPERATIONS.md. Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          else
+            echo "An issue is already open; not opening another."
+          fi

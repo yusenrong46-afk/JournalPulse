@@ -1,0 +1,62 @@
+# Local environment for `make onboard NAME=<env>` (scripts/onboard.py writes the variables).
+# Real: PostgreSQL 16 with every migration applied by scripts/onboard.py, PostgREST 12 (the
+# REST layer Supabase uses), the API image from Dockerfile.api with the exported web inside.
+# Stand-in: Supabase Auth (scripts/onboarding_auth.py, anonymous demo sign-ins only).
+# AI and search are off; nothing here talks to a hosted service. Every port binds 127.0.0.1.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_PASSWORD: ${JP_DB_PASSWORD:?}
+    ports: ["127.0.0.1:${JP_DB_PORT:?}:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  postgrest:
+    image: postgrest/postgrest:v12.2.12
+    profiles: [app]
+    environment:
+      PGRST_DB_URI: postgres://${JP_AUTHENTICATOR_ROLE:?}:${JP_AUTHENTICATOR_PASSWORD:?}@db:5432/${JP_DATABASE:?}
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JP_JWT_SECRET:?}
+    depends_on:
+      db: {condition: service_healthy}
+
+  auth:
+    build: {context: ../.., dockerfile: deploy/onboarding/Dockerfile.auth}
+    profiles: [app]
+    environment:
+      JP_AUTH_JWT_SECRET: ${JP_JWT_SECRET:?}
+      JP_AUTH_DATABASE_URL: postgresql://postgres:${JP_DB_PASSWORD:?}@db:5432/${JP_DATABASE:?}
+      JP_POSTGREST_URL: http://postgrest:3000
+      JP_AUTH_BIND: 0.0.0.0
+      JP_AUTH_PORT: "54321"
+    ports: ["127.0.0.1:${JP_AUTH_PORT:?}:54321"]
+    depends_on: [postgrest]
+
+  api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.api
+      args:
+        # Baked into the exported web: the browser reaches auth on the host's loopback port.
+        SUPABASE_URL: http://127.0.0.1:${JP_AUTH_PORT:?}
+        SUPABASE_ANON_KEY: ${JP_ANON_KEY:?}
+        JOURNALPULSE_DEMO_ENABLED: "true"
+        JOURNALPULSE_GIT_COMMIT: ${JP_GIT_COMMIT:-}
+    profiles: [app]
+    environment:
+      JOURNALPULSE_ENV: onboarding
+      SUPABASE_URL: http://auth:54321
+      SUPABASE_ANON_KEY: ${JP_ANON_KEY:?}
+      JOURNALPULSE_WRITE_SIGNING_KEY: ${JP_SIGNING_KEY:?}
+      JOURNALPULSE_LLM_ENABLED: "false"
+      JOURNALPULSE_SEARCH_ENABLED: "false"
+      JOURNALPULSE_DEMO_ENABLED: "true"
+      JOURNALPULSE_CORS_ORIGINS: http://127.0.0.1:${JP_API_PORT:?}
+    ports: ["127.0.0.1:${JP_API_PORT:?}:8000"]
+    depends_on: [auth]

@@ -5,7 +5,7 @@ JournalPulse is a journaling web app for English-speaking adults who want to wri
 
 <!-- readme:result -->
 <!-- headline:begin (generated) -->
-**Measured 2026-11-18:** 1,420 backend tests passed with 92.00% branch-aware coverage, plus 238 frontend unit tests; the safety router passes 29 of 34 development cases (`make eval`, [results](#results)).
+**Measured 2026-11-18:** 1,436 backend tests passed with 92.07% branch-aware coverage, plus 238 frontend unit tests; the safety router passes 29 of 34 development cases (`make eval`, [results](#results)).
 <!-- headline:end -->
 
 <!-- readme:image -->
@@ -15,7 +15,9 @@ JournalPulse is a journaling web app for English-speaking adults who want to wri
 **See it:** run the demo locally with `make setup && make demo`, open http://127.0.0.1:8000/login/ and press **Try the demo** (fictional data, AI off, no sign-up; [details](#try-the-demo)). The hosted app is [journalpulse.vercel.app](https://journalpulse.vercel.app) (sign-in required).
 
 English only. Not therapy or crisis care: in Canada, call or text [9-8-8](https://988.ca/).
-[Engineering guide](docs/ENGINEERING.md) · [Operations](docs/OPERATIONS.md) · [Upgrade status](upgrade/STATUS.md)
+[Engineering guide](docs/ENGINEERING.md) · [Operations](docs/OPERATIONS.md) · [API](docs/API.md) · [Onboarding](docs/ONBOARDING.md) · [Upgrade status](upgrade/STATUS.md)
+
+**Production, 30-day availability:** ![30-day availability](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fyusenrong46-afk%2FJournalPulse%2Fstatus%2Fstatus%2Favailability.json) from an hourly check of `/health` and `/ready` ([SLO](docs/SLO.md); "no data" until the check runs from `main`).
 
 ## What it is
 
@@ -101,7 +103,7 @@ Generated from [`docs/evaluations/portfolio/results.json`](docs/evaluations/port
 
 | Measure | Result | Source and date |
 |---|---|---|
-| Backend tests | 1,420 passed, 0 failed, 92.00% branch-aware coverage | pytest, 2026-11-18 |
+| Backend tests | 1,436 passed, 0 failed, 92.07% branch-aware coverage | pytest, 2026-11-18 |
 | Frontend unit tests | 238 passed | vitest, 2026-11-18 |
 | Safety routing, development set (NOT_QUALIFIED) | 29 pass, 3 missed support, 2 review required, 0 false alarms of 34 | `safety-development-2026-10-14.1` |
 | Release benchmark, held-out preferences | 8 wins, 5 losses, 7 ties (20 pairs of 60 scenarios) | prompt `guided-action-2026-10-05.3`, 2026-10-05 |

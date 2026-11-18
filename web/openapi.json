@@ -1140,6 +1140,24 @@
         "title": "AnalysisRequest",
         "type": "object"
       },
+      "BuildIdentity": {
+        "properties": {
+          "commit": {
+            "title": "Commit",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "commit",
+          "source"
+        ],
+        "title": "BuildIdentity",
+        "type": "object"
+      },
       "CapabilitiesResponse": {
         "properties": {
           "discovery": {
@@ -3484,6 +3502,9 @@
             "title": "Analysis Mode",
             "type": "string"
           },
+          "build": {
+            "$ref": "#/components/schemas/BuildIdentity"
+          },
           "message": {
             "title": "Message",
             "type": "string"
@@ -3496,7 +3517,8 @@
         "required": [
           "analysis_mode",
           "persistence_mode",
-          "message"
+          "message",
+          "build"
         ],
         "title": "SystemStatusResponse",
         "type": "object"
