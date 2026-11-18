@@ -431,7 +431,35 @@ def register_activity_routes(
             response.status_code = 202 if claimed.follow_up_status == "generating" else 200
             return view(repository, auth, claimed)
         conversation = owned_chat(repository, auth, claimed.conversation_id, open_only=True)
+
+        def release_claim(conversation_revision: int) -> None:
+            """Mark only this request's claim failed so a retry is not held by its lease.
+
+            Without this, any failure after the claim left it "generating" and every
+            retry returned 202 for FOLLOW_UP_LEASE_SECONDS. Release is best-effort: if
+            the guarded transaction refuses (a concurrent change already superseded the
+            claim), the lease still expires and the original error is what the client sees.
+            """
+            try:
+                translated(
+                    lambda: repository.finish_activity_follow_up(
+                        auth.user_id,
+                        session_id,
+                        request_id=payload.client_request_id,
+                        expected_revision=claimed.revision,
+                        expected_conversation_revision=conversation_revision,
+                        expected_session_created_at=claimed.created_at,
+                        expected_conversation_incarnation_id=conversation.incarnation_id,
+                        reply=None,
+                        model_run=None,
+                        now=clock(),
+                    )
+                )
+            except HTTPException:
+                pass
+
         if conversation.revision != payload.expected_conversation_revision:
+            release_claim(conversation.revision)
             raise HTTPException(409, "This chat changed before Luna could reflect. Your check-in is saved.")
         canonical = repository.get_activity_session(auth.user_id, session_id)
         if canonical is None or canonical.revision != claimed.revision:
@@ -479,6 +507,11 @@ def register_activity_routes(
             raise HTTPException(
                 503, "Your check-in is saved. Luna could not reply; you can retry the follow-up."
             ) from None
+        except Exception:
+            # Every other failure after the claim, such as the activity validator's 502
+            # for a disallowed proposal, must release it too, then surface unchanged.
+            release_claim(generation_revision)
+            raise
         # Re-read source identity after generation too. The conditional transaction
         # is the final authority if deletion/preferences/support raced this check.
         owned_chat(repository, auth, claimed.conversation_id, open_only=True)

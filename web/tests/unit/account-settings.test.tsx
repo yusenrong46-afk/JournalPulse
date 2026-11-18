@@ -50,4 +50,26 @@ describe("account settings", () => {
     expect(readOpenConversationId(window.localStorage)).toBeNull();
     expect(window.localStorage.getItem("journalpulse_reminders_v1")).toBe("[]");
   });
+
+  test("blocked IndexedDB does not report a confirmed server deletion as failed", async () => {
+    // Regression: clearing the old local draft threw inside the same try as the DELETE,
+    // so a finished deletion was shown as "Deletion didn't finish".
+    const open = vi.spyOn(indexedDB, "open").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    try {
+      await mount();
+      await act(async () => {
+        const input = container.querySelector('input[autocomplete="off"]')!;
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "delete my journal");
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      await click("Delete my journal");
+      expect(container.querySelector('[role="alert"]')).toBeNull();
+      expect(container.textContent).toContain("3 saved items were deleted");
+      expect(container.textContent).toContain("old draft from an earlier version could not be checked");
+    } finally {
+      open.mockRestore();
+    }
+  });
 });
