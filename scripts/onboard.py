@@ -352,11 +352,23 @@ class Environment:
             "JP_DEMO_EXTRA_HOSTS": f"127.0.0.1:{self.auth_port}",
             "JP_DEMO_OUTPUT_DIR": str(pictures),
         }
-        subprocess.run(
+        result = subprocess.run(
             ["npm", "exec", "--", "playwright", "test", "-c", "playwright.demo.config.ts"],
-            cwd=ROOT / "web", env=environment, check=True,
+            cwd=ROOT / "web", env=environment, check=False,
         )
+        if result.returncode != 0:
+            self.journey_diagnostics()
+            raise subprocess.CalledProcessError(result.returncode, result.args)
         return "passed: Try the demo, journal save, Simple Luna activity, check-in, Journey; no outside request"
+
+    def journey_diagnostics(self) -> None:
+        """After a failed journey, print what the page showed and the service logs (fictional data only)."""
+        for context in sorted((ROOT / "web" / "test-results-demo").glob("*/error-context.md")):
+            print(f"== {context.relative_to(ROOT)}", flush=True)
+            print(context.read_text(errors="replace")[:6000], flush=True)
+        if self.runtime == "compose":
+            print("== service logs (api, auth)", flush=True)
+            self.compose("logs", "--no-color", "--tail", "120", "api", "auth", check=False)
 
     def stop(self) -> str:
         for process in self.processes:
