@@ -75,7 +75,7 @@ demo:
 
 # Browsers come from `npx playwright install chromium` (make setup does not download them).
 demo-check:
-	$(NPM) --prefix web exec -- playwright test -c playwright.demo.config.ts
+	cd web && $(NPM) exec -- playwright test -c playwright.demo.config.ts
 	@for file in 01-journal-saved.png 02-simple-luna-activity.png 03-journey.png demo-journey.webm; do \
 	  test -s docs/demo/$$file || { echo "demo-check: docs/demo/$$file was not written"; exit 1; }; done
 	@echo "demo-check: journey passed; 3 screenshots and 1 video in docs/demo/"
