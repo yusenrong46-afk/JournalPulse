@@ -123,6 +123,7 @@ class Environment:
     signing_key: str = field(default_factory=lambda: secrets.token_urlsafe(48))
     authenticator_password: str = field(default_factory=lambda: secrets.token_urlsafe(24))
     db_password: str = field(default_factory=lambda: secrets.token_urlsafe(24))
+    dirty: bool = field(default_factory=lambda: dirty_tree())  # before any build touches files
     steps: list[Step] = field(default_factory=list)
     facts: dict[str, object] = field(default_factory=dict)
     processes: list[subprocess.Popen] = field(default_factory=list)
@@ -392,7 +393,7 @@ class Environment:
             "|---|---|",
             f"| Result | **{outcome}** |",
             f"| Date (UTC) | {datetime.now(UTC).strftime('%Y-%m-%d %H:%M')} |",
-            f"| Commit | `{self.commit or 'unknown'}`{' (working tree had uncommitted changes)' if dirty_tree() else ''} |",
+            f"| Commit | `{self.commit or 'unknown'}`{' (working tree had uncommitted changes)' if self.dirty else ''} |",
             f"| Runtime | {self.runtime}{(' (' + self.runtime_note + ')') if self.runtime_note else ''} |",
             f"| Total time | {total:.1f} s |",
             "| AI and search | off (`JOURNALPULSE_LLM_ENABLED=false`, no provider key in the API's environment) |",
@@ -454,6 +455,8 @@ def compose_available(environment: Environment) -> str | None:
     except subprocess.CalledProcessError as error:
         detail = (error.stderr or error.stdout or "").strip().splitlines()
         reason = next((line for line in reversed(detail) if line.strip()), f"exit {error.returncode}")
+        # Signed CDN URLs carry tokens: keep only the host.
+        reason = re.sub(r"https?://([^/\s\"]+)\S*", r"https://\1/...", reason)
         if len(reason) > 200:  # keep the start (what failed) and the end (why: 429, Forbidden, ...)
             reason = f"{reason[:110]} ... {reason[-80:]}"
         return f"Docker Compose unavailable: {reason}"
